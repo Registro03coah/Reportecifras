@@ -1,222 +1,242 @@
-
-// ==========================================
-// 1. IMPORTACIONES Y CONFIGURACIÓN FIREBASE
-// ==========================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, onValue, set, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+const APP_VERSION = "11.3.0"; 
+document.getElementById('versionDisplay').innerText = `Versión ${APP_VERSION}`;
 
 const firebaseConfig = {
     apiKey: "AIzaSyA6jvnsXZwF2anOJo3VadfNvn7Fl6Z5efY",
     authDomain: "sistema-mac-reportes.firebaseapp.com",
     databaseURL: "https://sistema-mac-reportes-default-rtdb.firebaseio.com",
-    projectId: "sistema-mac-reportes",
-    storageBucket: "sistema-mac-reportes.firebasestorage.app",
-    messagingSenderId: "776250701305",
-    appId: "1:776250701305:web:ac542564b7f7a136cef928"
+    projectId: "sistema-mac-reportes"
 };
-
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// ==========================================
-// 2. SISTEMA DE CONTADOR DE VERSIÓN
-// ==========================================
-function actualizarContadorVersion() {
-    let buildVersion = localStorage.getItem('macs_build_version');
-    buildVersion = buildVersion ? parseInt(buildVersion) + 1 : 1;
-    localStorage.setItem('macs_build_version', buildVersion);
-    document.getElementById('versionDisplay').innerText = `Versión 11.0.${buildVersion}`;
-}
-actualizarContadorVersion();
+const TOTAL_COLUMNAS = 75;
+const DIAS_SEMANA = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
-// ==========================================
-// 3. GENERAR FILAS DEL FORMULARIO DE CAPTURA
-// ==========================================
-const conceptosFijos = [
-    "Inscripciones",
-    "Correcciones",
-    "Cambio de Domicilio",
-    "Reposiciones",
-    "Reincorporaciones",
-    "Reemplazos",
-    "Entregas"
+// Encabezados transcritos de tu imagen
+const ENCABEZADOS = [
+    "DÍA", "DD/MM/AA", "Horas trabajadas", "Sedes visitadas", "INICIAL", "FINAL", "TOTAL DE FOLIOS", 
+    "INSCRIPCIONES", "CORRECCION DE DATOS PERSONALES", "CAMBIO DE DOMICILIO", "REPOSISION", 
+    "CORR. DE DATOS DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL DE TRAMITES", 
+    "CANCELADOS", "TOTAL DE ANEXO DE RECHAZO", "CPV devuelta entrega", "DISPONIBLES AL DIA ANTERIOR", 
+    "RECIBIDAS", "RECIBIDAS DE OTROS TIPOS", "ENTREGADAS", "RECIBO Y/O EXTRAVIO", "ANEXAS A FUAR", 
+    "DATOS ERRONEOS", "FOTO MAL IMPRESA", "REIMPRESION", "'RETIRADAS POR CAUSA", "DISPONIBLES", 
+    "credenciales x canje", "fichas Entregadas", "fichas atendidas", "Dias trabajados", 
+    "SOLICITUD EXPEDICIÓN REPATRIADOS", "SOLICITUD EXPEDICIÓN ORDINARIA", "SOLICITU DE RECTIFICACIÓN", 
+    "DEMANDA DE JUICIO", "REMESA", "Total de movimientos", "DEVUELTAS POR TERCEROS:", 
+    "34 Imagen inconsistente", "35 Movimiento posterior", "CONFIGURACION", "ENT", "DTTO", 
+    "MÓDULO", "RESGUARDO", "SOLICITUD DE REIMPRESION", "CPV devuelta entrega", "ript ejecutad", 
+    "FOLIO NEC", "cartografia", "lotes de credenciales", "registradas por dia", "faltantes", "observaciones"
 ];
+// (Las columnas 58 a 75 quedan como "Columna X" hasta que las nombres si las necesitas)
 
-function generarFilasCaptura() {
-    const tbody = document.querySelector('#tablaCaptura tbody');
-    conceptosFijos.forEach((concepto, index) => {
-        let tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td><input type="text" class="form-control fw-bold captura-concepto" value="${concepto}" readonly></td>
-            <td><input type="number" class="form-control captura-lunes" value="0" min="0"></td>
-            <td><input type="number" class="form-control captura-martes" value="0" min="0"></td>
-            <td><input type="number" class="form-control captura-miercoles" value="0" min="0"></td>
-            <td><input type="number" class="form-control captura-jueves" value="0" min="0"></td>
-            <td><input type="number" class="form-control captura-viernes" value="0" min="0"></td>
-            <td><input type="number" class="form-control captura-sabado" value="0" min="0"></td>
-            <td><input type="number" class="form-control captura-domingo" value="0" min="0"></td>
-        `;
-        tbody.appendChild(tr);
-    });
-}
-generarFilasCaptura();
-
-// ==========================================
-// 4. LÓGICA DE COPIAR Y PEGAR DESDE EXCEL
-// ==========================================
-const pasteZone = document.getElementById('pasteZone');
-
-pasteZone.addEventListener('paste', (e) => {
-    e.preventDefault();
-    const clipboardData = e.clipboardData || window.clipboardData;
-    const pastedData = clipboardData.getData('Text');
+function generarEncabezados(selectorTabla) {
+    const thead = document.querySelector(`${selectorTabla} thead`);
+    let trTitulos = document.createElement('tr');
+    let trNumeros = document.createElement('tr');
     
-    // Dividir los datos pegados por filas y luego por columnas (tabuladores)
-    const rows = pastedData.split('\n');
-    const tbody = document.querySelector('#tablaCaptura tbody');
-    const tableRows = tbody.querySelectorAll('tr');
+    for(let i = 1; i <= TOTAL_COLUMNAS; i++) {
+        let thT = document.createElement('th');
+        let thN = document.createElement('th');
+        
+        thT.innerText = ENCABEZADOS[i-1] || `Columna ${i}`;
+        
+        // Estilos de la imagen
+        if(i >= 5 && i <= 7) thT.classList.add('bg-folios');
+        if(i >= 19 && i <= 30) thT.classList.add('bg-retiradas');
+        if(i === 16) thT.style.backgroundColor = "#92d050"; // Verde total trámites
+        if(i === 17) thT.style.backgroundColor = "red"; // Rojo cancelados
+        if(i === 18) thT.style.backgroundColor = "yellow"; // Amarillo
+        
+        thN.innerText = i;
+        thN.className = "table-light";
+        
+        trTitulos.appendChild(thT);
+        trNumeros.appendChild(thN);
+    }
+    thead.appendChild(trTitulos);
+    thead.appendChild(trNumeros);
+}
 
+generarEncabezados('#tablaCaptura');
+generarEncabezados('#tablaSemanal');
+generarEncabezados('#tablaCampana');
+generarEncabezados('#tablaAcumulado');
+
+const tbodyCaptura = document.querySelector('#tablaCaptura tbody');
+DIAS_SEMANA.forEach((dia) => {
+    let tr = document.createElement('tr');
+    for(let c = 1; c <= TOTAL_COLUMNAS; c++) {
+        let td = document.createElement('td');
+        if(c === 1) {
+            td.innerHTML = `<input type="text" class="fw-bold text-center" value="${dia}" readonly>`;
+        } else if(c === 2) {
+            td.innerHTML = `<input type="text" class="form-control-sm text-center" placeholder="DD/MM/AA">`;
+        } else {
+            // Se cambia a tipo TEXT para que soporte datos como "MVA 050351" o folios de 13 dígitos
+            td.innerHTML = `<input type="text" class="calc-input col-${c}" value="">`;
+        }
+        tr.appendChild(td);
+    }
+    tbodyCaptura.appendChild(tr);
+});
+
+const tfootCaptura = document.querySelector('#tablaCaptura tfoot');
+let trTotal = document.createElement('tr');
+trTotal.classList.add('table-success', 'fw-bold');
+for(let c = 1; c <= TOTAL_COLUMNAS; c++) {
+    let td = document.createElement('td');
+    if(c === 1) td.innerText = "LINEA TOTALES";
+    else if(c === 2) td.innerText = "-";
+    else td.innerHTML = `<span id="tot-cap-${c}"></span>`;
+    trTotal.appendChild(td);
+}
+tfootCaptura.appendChild(trTotal);
+
+// Recalcular totales: Ignora texto, solo suma si es número
+tbodyCaptura.addEventListener('input', () => {
+    for(let c = 3; c <= TOTAL_COLUMNAS; c++) {
+        let suma = 0;
+        let tieneDatos = false;
+        document.querySelectorAll(`.col-${c}`).forEach(inp => {
+            let val = inp.value.trim();
+            if(val !== "" && !isNaN(val)) {
+                suma += parseFloat(val);
+                tieneDatos = true;
+            }
+        });
+        document.getElementById(`tot-cap-${c}`).innerText = tieneDatos ? suma : "";
+    }
+});
+
+// PEGAR DESDE EXCEL
+document.getElementById('pasteZone').addEventListener('paste', (e) => {
+    e.preventDefault();
+    const pastedData = (e.clipboardData || window.clipboardData).getData('Text');
+    const rows = pastedData.split('\n');
+    const tableRows = tbodyCaptura.querySelectorAll('tr');
+
+    let rowOffset = 0;
+    
     rows.forEach((row, rowIndex) => {
-        if (row.trim() === '') return; // Saltar filas vacías
+        if (row.trim() === '') return;
         const columns = row.split('\t');
         
-        if (rowIndex < tableRows.length) {
-            const inputs = tableRows[rowIndex].querySelectorAll('input[type="number"]');
-            
-            // Si el usuario pegó los conceptos también, ajustamos el índice
-            let startIndex = 0;
-            if (isNaN(parseInt(columns[0].trim())) && columns.length > 7) {
-                 startIndex = 1; // Ignorar la primera columna si parece texto
-            }
+        // Saltarse los encabezados si los copian
+        if(rowIndex === 0 && (columns[0].toUpperCase().includes("DÍA") || columns[0] == "1")) {
+            rowOffset++; return; 
+        }
 
+        const targetRow = tableRows[rowIndex - rowOffset];
+        if (targetRow) {
+            const inputs = targetRow.querySelectorAll('input');
             inputs.forEach((input, colIndex) => {
-                if (columns[startIndex + colIndex]) {
-                    // Limpiar el dato y asignarlo
-                    let val = parseInt(columns[startIndex + colIndex].trim().replace(/,/g, ''));
-                    input.value = isNaN(val) ? 0 : val;
+                if (columns[colIndex]) {
+                    let val = columns[colIndex].trim().replace(/,/g, '');
+                    if(colIndex === 0) return; // No sobreescribir día (Lunes, etc)
+                    input.value = val; // Se pega tal cual para preservar "MVA 050351"
                 }
             });
         }
     });
     
-    alert("Datos pegados correctamente. Revisa que todo coincida.");
+    tbodyCaptura.dispatchEvent(new Event('input'));
+    alert("Datos pegados con éxito. Los folios y sedes se mantuvieron intactos.");
 });
 
-// ==========================================
-// 5. GUARDAR DATOS EN FIREBASE
-// ==========================================
 document.getElementById('formularioCaptura').addEventListener('submit', (e) => {
     e.preventDefault();
-    
     const tipoReporte = document.getElementById('tipoReporte').value;
-    const tbody = document.querySelector('#tablaCaptura tbody');
-    const filas = tbody.querySelectorAll('tr');
+    const dbRef = ref(db, `reportes_v11/${tipoReporte}`);
+    const filas = tbodyCaptura.querySelectorAll('tr');
     
-    // Validar si es semanal (sobrescribir) o los otros (agregar al histórico)
-    const dbRef = ref(db, `reportes/${tipoReporte}`);
-    
-    // Armar el arreglo de datos
     let datosAGuardar = [];
     filas.forEach(fila => {
-        let concepto = fila.querySelector('.captura-concepto').value;
-        let lunes = parseInt(fila.querySelector('.captura-lunes').value) || 0;
-        let martes = parseInt(fila.querySelector('.captura-martes').value) || 0;
-        let miercoles = parseInt(fila.querySelector('.captura-miercoles').value) || 0;
-        let jueves = parseInt(fila.querySelector('.captura-jueves').value) || 0;
-        let viernes = parseInt(fila.querySelector('.captura-viernes').value) || 0;
-        let sabado = parseInt(fila.querySelector('.captura-sabado').value) || 0;
-        let domingo = parseInt(fila.querySelector('.captura-domingo').value) || 0;
-        
-        datosAGuardar.push({ concepto, lunes, martes, miercoles, jueves, viernes, sabado, domingo });
+        let filaArray = [];
+        fila.querySelectorAll('input').forEach((input) => {
+            filaArray.push(input.value);
+        });
+        datosAGuardar.push(filaArray);
     });
 
     if (tipoReporte === 'semanal') {
-        // El semanal se reemplaza por completo cada vez
-        set(dbRef, datosAGuardar)
-            .then(() => alert("Reporte Semanal actualizado correctamente."))
-            .catch(error => console.error("Error:", error));
+        set(dbRef, datosAGuardar).then(() => alert("Reporte Semanal actualizado."));
     } else {
-        // Campaña y Acumulado se agrega un nuevo registro (push)
-        push(dbRef, datosAGuardar)
-            .then(() => alert(`Datos agregados al reporte ${tipoReporte} correctamente.`))
-            .catch(error => console.error("Error:", error));
+        push(dbRef, datosAGuardar).then(() => alert(`Histórico agregado a ${tipoReporte}.`));
     }
-    
-    // Limpiar formulario a ceros
-    document.getElementById('formularioCaptura').reset();
-    document.querySelectorAll('#tablaCaptura input[type="number"]').forEach(inp => inp.value = 0);
 });
 
-// ==========================================
-// 6. LÓGICA PARA PINTAR LAS TABLAS DESDE FIREBASE
-// ==========================================
-function procesarYRenderizarDatos(idTabla, datosFirebase, sumarDatos = false) {
+function renderizarVisual(idTabla, datosFirebase, sumarDatos = false) {
     const tbody = document.querySelector(`#${idTabla} tbody`);
-    tbody.innerHTML = ''; 
+    const tfoot = document.querySelector(`#${idTabla} tfoot`);
+    tbody.innerHTML = ''; tfoot.innerHTML = '';
 
-    if (!datosFirebase || Object.keys(datosFirebase).length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted">No hay datos registrados aún.</td></tr>`;
-        return;
-    }
+    if (!datosFirebase) return;
 
-    let datosProcesados = [];
+    let matrizFinal = [];
 
     if (sumarDatos) {
-        let sumatoria = {};
-        
-        // Iteramos sobre las "llaves" generadas por el push de Firebase
-        Object.values(datosFirebase).forEach(grupoDatos => {
-             // Cada grupo es el arreglo que guardamos
-             grupoDatos.forEach(row => {
-                if (!sumatoria[row.concepto]) {
-                    sumatoria[row.concepto] = { 
-                        concepto: row.concepto, lunes: 0, martes: 0, miercoles: 0, jueves: 0, viernes: 0, sabado: 0, domingo: 0 
-                    };
+        for(let f = 0; f < 7; f++) {
+            matrizFinal.push(new Array(TOTAL_COLUMNAS).fill(""));
+            matrizFinal[f][0] = DIAS_SEMANA[f]; 
+            matrizFinal[f][1] = "Acumulado";   
+        }
+
+        Object.values(datosFirebase).forEach(cargaSemanal => {
+            cargaSemanal.forEach((filaArray, rowIndex) => {
+                if(rowIndex < 7) {
+                    for(let colIndex = 2; colIndex < TOTAL_COLUMNAS; colIndex++) {
+                        let val = filaArray[colIndex];
+                        if(val && !isNaN(val)) {
+                            matrizFinal[rowIndex][colIndex] = Number(matrizFinal[rowIndex][colIndex]) + Number(val);
+                        } else if (val && isNaN(val)) {
+                            // Si es texto (ej. MVA 050351), solo muestra el último registrado
+                            matrizFinal[rowIndex][colIndex] = val; 
+                        }
+                    }
                 }
-                sumatoria[row.concepto].lunes += Number(row.lunes || 0);
-                sumatoria[row.concepto].martes += Number(row.martes || 0);
-                sumatoria[row.concepto].miercoles += Number(row.miercoles || 0);
-                sumatoria[row.concepto].jueves += Number(row.jueves || 0);
-                sumatoria[row.concepto].viernes += Number(row.viernes || 0);
-                sumatoria[row.concepto].sabado += Number(row.sabado || 0);
-                sumatoria[row.concepto].domingo += Number(row.domingo || 0);
-             });
+            });
         });
-        datosProcesados = Object.values(sumatoria);
     } else {
-        // Para el semanal que es un set directo (arreglo plano)
-        datosProcesados = Object.values(datosFirebase);
+        matrizFinal = datosFirebase;
     }
 
-    datosProcesados.forEach(fila => {
-        let totalFila = Number(fila.lunes) + Number(fila.martes) + Number(fila.miercoles) + 
-                        Number(fila.jueves) + Number(fila.viernes) + Number(fila.sabado) + Number(fila.domingo);
-        
+    let totales = new Array(TOTAL_COLUMNAS).fill(0);
+    
+    matrizFinal.forEach(filaArray => {
         let tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td class="fw-bold text-start">${fila.concepto}</td>
-            <td>${fila.lunes}</td>
-            <td>${fila.martes}</td>
-            <td>${fila.miercoles}</td>
-            <td>${fila.jueves}</td>
-            <td>${fila.viernes}</td>
-            <td>${fila.sabado}</td>
-            <td>${fila.domingo}</td>
-            <td class="table-success fw-bold">${totalFila}</td>
-        `;
+        for(let c = 0; c < TOTAL_COLUMNAS; c++) {
+            let td = document.createElement('td');
+            let valor = filaArray[c] || '';
+            
+            if(c < 2) {
+                td.innerHTML = `<strong>${valor}</strong>`;
+            } else {
+                td.innerText = valor;
+                if(valor !== "" && !isNaN(valor)) {
+                    totales[c] += Number(valor);
+                }
+            }
+            tr.appendChild(td);
+        }
         tbody.appendChild(tr);
     });
+
+    let trTotal = document.createElement('tr');
+    trTotal.className = "table-success fw-bold";
+    for(let c = 0; c < TOTAL_COLUMNAS; c++) {
+        let td = document.createElement('td');
+        if(c === 0) td.innerText = "LINEA TOTALES";
+        else if(c === 1) td.innerText = "-";
+        else td.innerText = totales[c] > 0 ? totales[c] : "";
+        trTotal.appendChild(td);
+    }
+    tfoot.appendChild(trTotal);
 }
 
-// Escuchadores de Firebase en tiempo real
-onValue(ref(db, 'reportes/semanal'), (snapshot) => {
-    procesarYRenderizarDatos('tablaSemanal', snapshot.val(), false); 
-});
-
-onValue(ref(db, 'reportes/campana'), (snapshot) => {
-    procesarYRenderizarDatos('tablaCampana', snapshot.val(), true); 
-});
-
-onValue(ref(db, 'reportes/acumulado'), (snapshot) => {
-    procesarYRenderizarDatos('tablaAcumulado', snapshot.val(), true); 
-});
+onValue(ref(db, 'reportes_v11/semanal'), snapshot => renderizarVisual('tablaSemanal', snapshot.val(), false));
+onValue(ref(db, 'reportes_v11/campana'), snapshot => renderizarVisual('tablaCampana', snapshot.val(), true));
+onValue(ref(db, 'reportes_v11/acumulado'), snapshot => renderizarVisual('tablaAcumulado', snapshot.val(), true));
