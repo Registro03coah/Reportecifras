@@ -21,7 +21,7 @@ const ENCABEZADOS = [
     "MOV.POST.", "ANEXAS A SOLICITUD", "OTRAS BAJAS"
 ];
 
-function generarEncabezados(selectorTabla) {
+function generarEncabezados(selectorTabla, isTotales = false) {
     const thead = document.querySelector(`${selectorTabla} thead`);
     let trTitulos = document.createElement('tr');
     let trNumeros = document.createElement('tr');
@@ -30,20 +30,41 @@ function generarEncabezados(selectorTabla) {
         let thT = document.createElement('th');
         let thN = document.createElement('th');
         
-        thT.innerText = ENCABEZADOS[i-1] || `Columna ${i}`;
+        let tituloStr = ENCABEZADOS[i-1] || `Columna ${i}`;
+        // Si estamos en la tabla de Totales, la primera columna se llama "MÓDULO"
+        if(isTotales && i === 1) tituloStr = "MÓDULO";
+        
+        thT.innerText = tituloStr;
+        
+        // Asignación inteligente de anchos para que las columnas de números sean super angostas
+        let anchoCelda = "45px"; 
+        if(i === 1) anchoCelda = "110px"; // Día o Módulo (más ancho)
+        else if(i === 2) anchoCelda = "70px"; // Fecha
+        else if(i === 4) anchoCelda = "85px"; // Sedes visitadas
+        else if(i === 5 || i === 6) anchoCelda = "105px"; // Inicial y Final (13 dígitos)
+        else if(i === 61 || i === 62) anchoCelda = "80px"; // MAC que recibe/entrega
+        
+        thT.style.width = anchoCelda;
+        thT.style.minWidth = anchoCelda;
+        thT.style.maxWidth = anchoCelda;
         
         if(i >= 5 && i <= 7) thT.classList.add('bg-folios');
         if(i >= 19 && i <= 30) thT.classList.add('bg-retiradas');
         if(i === 16) thT.style.backgroundColor = "#92d050"; 
         if(i === 17) thT.style.backgroundColor = "red"; 
         if(i === 18) thT.style.backgroundColor = "yellow"; 
-        
         if(i >= 58 && i <= 60) thT.style.backgroundColor = "#e8e8f4"; 
         if(i === 61 || i === 62) thT.style.backgroundColor = "#9b9649"; 
         if(i === 63 || i === 64) thT.style.backgroundColor = "yellow"; 
         
         thN.innerText = i;
         thN.className = "table-light";
+        
+        // Si estamos en Totales y es col 2, 3 o 4, las ocultamos visualmente
+        if(isTotales && i >= 2 && i <= 4) {
+            thT.style.display = "none";
+            thN.style.display = "none";
+        }
         
         trTitulos.appendChild(thT);
         trNumeros.appendChild(thN);
@@ -96,49 +117,46 @@ function generarCuerpoTotales() {
             } else if (c === 2 || c === 4) {
                 td.innerHTML = `<input type="text" readonly tabindex="-1">`;
             } else {
-                // Asignamos un ID único para poder mandarle los datos desde JS
                 let idCelda = `totales-${fila}-col-${c}`;
                 td.innerHTML = `<input type="text" id="${idCelda}" readonly tabindex="-1" value="0">`;
             }
+            
+            // Ocultamos las celdas 2 a 4 visualmente, pero se mantienen para no romper el conteo
+            if(c >= 2 && c <= 4) {
+                td.style.display = "none";
+            }
+            
             tr.appendChild(td);
         }
         tbody.appendChild(tr);
     });
 }
 
-// Función maestra para sincronizar los totales hacia la tabla concentradora
+// Sincronización
 function sincronizarTotales() {
-    // Recorremos desde la columna 3 hasta la 75
     for(let c = 3; c <= TOTAL_COLUMNAS; c++) {
-        if(c === 4) continue; // Saltamos "Sedes visitadas"
+        if(c === 4) continue; 
         
         let granTotalColumna = 0;
         
         MODULOS.forEach(mod => {
-            // Obtenemos la última fila (LINEA TOTALES) del módulo actual
             const tbodyMod = document.querySelector(`#tablaCaptura_${mod} tbody`);
-            const filaTotalMod = tbodyMod.querySelectorAll('tr')[7]; // Index 7 es LINEA TOTALES
+            const filaTotalMod = tbodyMod.querySelectorAll('tr')[7]; 
             const inputMod = filaTotalMod.querySelectorAll('td')[c-1].querySelector('input');
             
-            // Leemos el valor, lo limpiamos de comas y si está vacío lo tomamos como 0
             let valorStr = inputMod.value.trim().replace(/,/g, '');
             let valorNum = isNaN(parseFloat(valorStr)) ? 0 : parseFloat(valorStr);
             
-            // Escribimos el valor en la tabla Concentradora
             let inputDestino = document.getElementById(`totales-${mod}-col-${c}`);
             if (inputDestino) {
-                // Si el valor numérico no es cero, o si era un texto legítimo (como un folio inicial), lo pintamos.
-                // Como indicaste que lo vacío se trata como 0:
                 inputDestino.value = valorNum === 0 && valorStr !== "0" ? valorStr || "0" : valorNum;
             }
             
-            // Acumulamos para el gran total solo si es un número válido
             if(!isNaN(valorNum)) {
                 granTotalColumna += valorNum;
             }
         });
         
-        // Escribimos el GRAN TOTAL general
         let inputGranTotal = document.getElementById(`totales-GRAN TOTAL-col-${c}`);
         if(inputGranTotal) {
             inputGranTotal.value = granTotalColumna;
@@ -146,17 +164,13 @@ function sincronizarTotales() {
     }
 }
 
-// Inicializar tablas para los 3 módulos
 MODULOS.forEach(mod => {
-    generarEncabezados(`#tablaCaptura_${mod}`);
+    generarEncabezados(`#tablaCaptura_${mod}`, false);
     generarCuerpoCaptura(`#tablaCaptura_${mod}`);
     
     const tbodyMod = document.querySelector(`#tablaCaptura_${mod} tbody`);
-    
-    // Escuchar cambios manuales para actualizar totales
     tbodyMod.addEventListener('input', sincronizarTotales);
     
-    // Configurar el evento de pegado para cada zona
     document.getElementById(`pasteZone_${mod}`).addEventListener('paste', (e) => {
         e.preventDefault();
         const pastedData = (e.clipboardData || window.clipboardData).getData('Text');
@@ -169,7 +183,6 @@ MODULOS.forEach(mod => {
             if (row.trim() === '') return;
             const columns = row.split('\t');
             
-            // Detectar si copiaron títulos
             if(rowIndex === 0 && (columns[0].toUpperCase().includes("DÍA") || columns[0] == "1")) {
                 rowOffset++; return; 
             }
@@ -189,10 +202,10 @@ MODULOS.forEach(mod => {
         });
         
         alert(`Datos pegados con éxito en la tabla del Módulo ${mod}.`);
-        sincronizarTotales(); // Actualizar la tabla general de totales tras pegar
+        sincronizarTotales(); 
     });
 });
 
-// Inicializar tabla concentradora de Totales
-generarEncabezados('#tablaCaptura_totales');
+// Inicializar Totales (Mandamos true para que aplique los ocultamientos y cambio de nombre)
+generarEncabezados('#tablaCaptura_totales', true);
 generarCuerpoTotales();
