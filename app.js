@@ -16,7 +16,12 @@ const ENCABEZADOS = [
     "DEMANDA DE JUICIO", "REMESA", "Total de movimientos", "DEVUELTAS POR TERCEROS:", 
     "34 Imagen inconsistente", "35 Movimiento posterior", "CONFIGURACION", "ENT", "DTTO", 
     "MÓDULO", "RESGUARDO", "SOLICITUD DE REIMPRESION", "CPV devuelta entrega", "ript ejecutad", 
-    "FOLIO NEC", "cartografia", "lotes de credenciales", "registradas por dia", "faltantes", "observaciones"
+    "FOLIO NEC", "cartografia", "lotes de credenciales", "registradas por dia", "faltantes", "observaciones",
+    // --- Nuevos encabezados desde el 58 hasta el 75 ---
+    "sin nombre1", "sin nombre2", "sin nombre3", "MAC QUE RECIBE", "MAC QUE ENTREGA", 
+    "IMPORTADAS", "EXPORTADAS", "REPOSISION + REIMPRESIONES", "MAL IMPRESA", "ERROR EN CARTOGRAFIA", 
+    "DEFUNCION", "SUSPENSION", "DUPLICADO", "ERROR EN NUM. DE EMISION", "PERDIDA DE VIGENCIA", 
+    "MOV.POST.", "ANEXAS A SOLICITUD", "OTRAS BAJAS"
 ];
 
 function generarEncabezados() {
@@ -30,12 +35,17 @@ function generarEncabezados() {
         
         thT.innerText = ENCABEZADOS[i-1] || `Columna ${i}`;
         
-        // Estilos de color de acuerdo a tu Excel
+        // Estilos de color de acuerdo a tu Excel original
         if(i >= 5 && i <= 7) thT.classList.add('bg-folios');
         if(i >= 19 && i <= 30) thT.classList.add('bg-retiradas');
         if(i === 16) thT.style.backgroundColor = "#92d050"; 
         if(i === 17) thT.style.backgroundColor = "red"; 
         if(i === 18) thT.style.backgroundColor = "yellow"; 
+        
+        // Estilos de color para los nuevos encabezados (58 a 75)
+        if(i >= 58 && i <= 60) thT.style.backgroundColor = "#e8e8f4"; // Ligeramente morado/gris (sin nombres)
+        if(i === 61 || i === 62) thT.style.backgroundColor = "#9b9649"; // Dorado/mostaza (MAC QUE RECIBE/ENTREGA)
+        if(i === 63 || i === 64) thT.style.backgroundColor = "yellow"; // Amarillo (IMPORTADAS/EXPORTADAS)
         
         thN.innerText = i;
         thN.className = "table-light";
