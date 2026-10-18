@@ -1,123 +1,224 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reportes de Cifras - MACs</title>
-    <!-- Bootstrap 5 para el diseño -->
+    <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- PWA Configuración (Asegúrate de tener manifest.json y sw.js) -->
+    <!-- SheetJS para exportar a Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1b396b">
+    <style>
+        /* Estilos personalizados */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; }
+        .header-banner { background: linear-gradient(135deg, #e91e63, #9c27b0); color: white; padding: 20px 0; border-bottom: 5px solid #1b396b; margin-bottom: 30px; }
+        .card-header.semanal { background-color: #00bcd4; color: white; }
+        .card-header.campana { background-color: #4caf50; color: white; }
+        .card-header.acumulado { background-color: #3f51b5; color: white; }
+        .table th { vertical-align: middle; }
+        .avatar-img { max-height: 150px; border-radius: 10px; margin-right: 15px; }
+        .paste-zone { border: 2px dashed #007bff; padding: 20px; text-align: center; background-color: #e9ecef; cursor: pointer; border-radius: 8px; margin-bottom: 20px; transition: background-color 0.3s; }
+        .paste-zone:hover { background-color: #d0d5db; }
+        .btn-export { margin-top: 10px; font-weight: bold; }
+    </style>
 </head>
-<body class="bg-light d-flex flex-column min-vh-100">
+<body class="d-flex flex-column min-vh-100">
 
-<div class="container mt-4 flex-grow-1">
+<!-- Encabezado con imagen -->
+<div class="header-banner text-center d-flex justify-content-center align-items-center">
+    <img src="avatar_bienvenida_3d.png" alt="Bienvenida" class="avatar-img shadow">
+    <div>
+        <h1 class="fw-bold mb-0">Sistema de Reportes MAC</h1>
+        <p class="lead mb-0">Captura y Concentrado de Cifras</p>
+    </div>
+</div>
+
+<div class="container flex-grow-1">
+    
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="text-primary fw-bold mb-0">Concentrado de Cifras</h2>
-        <span class="badge bg-secondary" id="versionDisplay">Cargando versión...</span>
+        <h3 class="text-primary fw-bold mb-0">Panel de Control</h3>
+        <span class="badge bg-secondary fs-6" id="versionDisplay">Cargando versión...</span>
     </div>
 
-    <!-- REPORTE SEMANAL -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">Reporte Semanal</h5>
-        </div>
-        <div class="card-body table-responsive">
-            <table class="table table-bordered table-hover text-center align-middle" id="tablaSemanal">
-                <thead class="table-light">
-                    <tr>
-                        <th>Concepto / Trámite</th>
-                        <th>Lunes</th>
-                        <th>Martes</th>
-                        <th>Miércoles</th>
-                        <th>Jueves</th>
-                        <th>Viernes</th>
-                        <th>Sábado</th>
-                        <th>Domingo</th>
-                        <th class="table-success">Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr><td colspan="9" class="text-center text-muted">Cargando datos...</td></tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
+    <!-- Pestañas para separar Captura y Visualización -->
+    <ul class="nav nav-tabs mb-4" id="myTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active fw-bold" id="captura-tab" data-bs-toggle="tab" data-bs-target="#captura" type="button" role="tab" aria-controls="captura" aria-selected="true">Captura de Datos</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold" id="reportes-tab" data-bs-toggle="tab" data-bs-target="#reportes" type="button" role="tab" aria-controls="reportes" aria-selected="false">Ver Reportes</button>
+        </li>
+    </ul>
 
-    <!-- REPORTE CAMPAÑA -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-success text-white">
-            <h5 class="mb-0">Reporte de Campaña</h5>
-        </div>
-        <div class="card-body table-responsive">
-            <table class="table table-bordered table-hover text-center align-middle" id="tablaCampana">
-                <thead class="table-light">
-                    <tr>
-                        <th>Concepto / Trámite</th>
-                        <th>Lunes</th>
-                        <th>Martes</th>
-                        <th>Miércoles</th>
-                        <th>Jueves</th>
-                        <th>Viernes</th>
-                        <th>Sábado</th>
-                        <th>Domingo</th>
-                        <th class="table-success">Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr><td colspan="9" class="text-center text-muted">Cargando datos...</td></tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
+    <div class="tab-content" id="myTabContent">
+        
+        <!-- PESTAÑA: CAPTURA DE DATOS -->
+        <div class="tab-pane fade show active" id="captura" role="tabpanel" aria-labelledby="captura-tab">
+            <div class="card shadow-sm mb-4 border-primary">
+                <div class="card-header bg-primary text-white d-flex align-items-center">
+                    <img src="avatar_evaluacion_3d.png" alt="Captura" style="height: 40px; margin-right: 15px; border-radius: 5px;">
+                    <h5 class="mb-0">Ingreso de Cifras</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <strong>Instrucciones:</strong> Puedes llenar el formulario manualmente celda por celda, o puedes copiar una tabla desde Excel y pegarla directamente haciendo clic en el cuadro azul de abajo y presionando <kbd>Ctrl+V</kbd>.
+                    </div>
 
-    <!-- REPORTE ACUMULADO -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-dark text-white">
-            <h5 class="mb-0">Reporte Acumulado General</h5>
+                    <!-- Zona para pegar desde Excel -->
+                    <div class="paste-zone shadow-sm" id="pasteZone" tabindex="0">
+                        <h5 class="text-primary mb-0"><i class="bi bi-clipboard-data"></i> Haz clic aquí y presiona Ctrl+V para pegar datos desde Excel</h5>
+                    </div>
+
+                    <form id="formularioCaptura">
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Tipo de Reporte a Guardar</label>
+                                <select class="form-select" id="tipoReporte" required>
+                                    <option value="semanal">Semanal</option>
+                                    <option value="campana">Campaña</option>
+                                    <option value="acumulado">Acumulado General</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-bordered text-center align-middle" id="tablaCaptura">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Concepto / Trámite</th>
+                                        <th>Lunes</th>
+                                        <th>Martes</th>
+                                        <th>Miércoles</th>
+                                        <th>Jueves</th>
+                                        <th>Viernes</th>
+                                        <th>Sábado</th>
+                                        <th>Domingo</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Filas de ejemplo generadas por JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="text-end mt-3">
+                            <button type="submit" class="btn btn-success btn-lg px-5 shadow"><i class="bi bi-cloud-arrow-up"></i> Guardar en Base de Datos</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
-        <div class="card-body table-responsive">
-            <table class="table table-bordered table-hover text-center align-middle" id="tablaAcumulado">
-                <thead class="table-light">
-                    <tr>
-                        <th>Concepto / Trámite</th>
-                        <th>Lunes</th>
-                        <th>Martes</th>
-                        <th>Miércoles</th>
-                        <th>Jueves</th>
-                        <th>Viernes</th>
-                        <th>Sábado</th>
-                        <th>Domingo</th>
-                        <th class="table-success">Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr><td colspan="9" class="text-center text-muted">Cargando datos...</td></tr>
-                </tbody>
-            </table>
+
+        <!-- PESTAÑA: VER REPORTES -->
+        <div class="tab-pane fade" id="reportes" role="tabpanel" aria-labelledby="reportes-tab">
+            
+            <!-- REPORTE SEMANAL -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header semanal">
+                    <h5 class="mb-0">Reporte Semanal</h5>
+                </div>
+                <div class="card-body table-responsive">
+                    <table class="table table-bordered table-hover text-center align-middle" id="tablaSemanal">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Concepto / Trámite</th>
+                                <th>Lunes</th>
+                                <th>Martes</th>
+                                <th>Miércoles</th>
+                                <th>Jueves</th>
+                                <th>Viernes</th>
+                                <th>Sábado</th>
+                                <th>Domingo</th>
+                                <th class="table-success">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody><tr><td colspan="9" class="text-center text-muted">Cargando datos...</td></tr></tbody>
+                    </table>
+                    <button class="btn btn-outline-info btn-export w-100" onclick="exportarExcel('tablaSemanal', 'Reporte_Semanal')">Exportar Semanal a Excel</button>
+                </div>
+            </div>
+
+            <!-- REPORTE CAMPAÑA -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header campana d-flex align-items-center">
+                    <img src="avatar_uniformes_3d.png" alt="Campaña" style="height: 40px; margin-right: 15px; border-radius: 5px;">
+                    <h5 class="mb-0">Reporte de Campaña</h5>
+                </div>
+                <div class="card-body table-responsive">
+                    <table class="table table-bordered table-hover text-center align-middle" id="tablaCampana">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Concepto / Trámite</th>
+                                <th>Lunes</th>
+                                <th>Martes</th>
+                                <th>Miércoles</th>
+                                <th>Jueves</th>
+                                <th>Viernes</th>
+                                <th>Sábado</th>
+                                <th>Domingo</th>
+                                <th class="table-success">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody><tr><td colspan="9" class="text-center text-muted">Cargando datos...</td></tr></tbody>
+                    </table>
+                    <button class="btn btn-outline-success btn-export w-100" onclick="exportarExcel('tablaCampana', 'Reporte_Campana')">Exportar Campaña a Excel</button>
+                </div>
+            </div>
+
+            <!-- REPORTE ACUMULADO -->
+            <div class="card shadow-sm mb-5">
+                <div class="card-header acumulado">
+                    <h5 class="mb-0">Reporte Acumulado General</h5>
+                </div>
+                <div class="card-body table-responsive">
+                    <table class="table table-bordered table-hover text-center align-middle" id="tablaAcumulado">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Concepto / Trámite</th>
+                                <th>Lunes</th>
+                                <th>Martes</th>
+                                <th>Miércoles</th>
+                                <th>Jueves</th>
+                                <th>Viernes</th>
+                                <th>Sábado</th>
+                                <th>Domingo</th>
+                                <th class="table-success">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody><tr><td colspan="9" class="text-center text-muted">Cargando datos...</td></tr></tbody>
+                    </table>
+                    <button class="btn btn-outline-primary btn-export w-100" onclick="exportarExcel('tablaAcumulado', 'Reporte_Acumulado')">Exportar Acumulado a Excel</button>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>
 
 <!-- Pie de página -->
-<footer class="text-center py-4 mt-auto text-muted bg-white border-top">
+<footer class="text-center py-4 mt-auto text-white" style="background-color: #1b396b;">
     <small>
         &copy; 2026 Todos los derechos reservados.<br>
-        Desarrollado por <strong>Carrivers Desing</strong> para Módulos MAC.
+        Desarrollado por <span class="text-info fw-bold">Carrivers Desing</span> para Módulos MAC.
     </small>
 </footer>
 
-<!-- Carga de la lógica principal -->
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Tu lógica principal con Firebase integrada -->
 <script type="module" src="app.js"></script>
 
-<!-- Script de PWA (Opcional, si usas Service Worker) -->
+<!-- Script para la Exportación a Excel (Llamable globalmente) -->
 <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').catch((err) => console.log('SW error', err));
-    });
-  }
+    function exportarExcel(idTabla, nombreArchivo) {
+        let tabla = document.getElementById(idTabla);
+        let wb = XLSX.utils.table_to_book(tabla, {sheet:"Reporte"});
+        XLSX.writeFile(wb, `${nombreArchivo}.xlsx`);
+    }
 </script>
+
 </body>
 </html>
