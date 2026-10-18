@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reportes MAC - Captura</title>
+    <title>Vaciado de Datos MAC</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -13,7 +13,7 @@
         .avatar-img { max-height: 150px; border-radius: 10px; margin-right: 15px; }
 
         /* Contenedor que permite Scroll horizontal estilo Excel */
-        .excel-container { width: 100%; max-height: 70vh; overflow: auto; white-space: nowrap; border: 1px solid #ddd; background: white; }
+        .excel-container { width: 100%; max-height: 65vh; overflow: auto; white-space: nowrap; border: 1px solid #ddd; background: white; }
         .excel-table { min-width: 4000px; margin-bottom: 0; }
         .excel-table th { position: sticky; top: 0; z-index: 2; font-size: 11px; text-transform: uppercase; background-color: #e9ecef; }
         
@@ -39,40 +39,89 @@
         
         /* Estilo para la LÍNEA DE TOTALES */
         .fila-totales input { font-weight: bold !important; }
-        .fila-totales td { background-color: #d1e7dd !important; } /* Fondo verde claro */
-        .fila-totales td:first-child, .fila-totales td:nth-child(2) { background-color: #c3d9d0 !important; } /* Verde más oscuro para columnas fijas */
+        .fila-totales td { background-color: #d1e7dd !important; } 
+        .fila-totales td:first-child, .fila-totales td:nth-child(2) { background-color: #c3d9d0 !important; }
+        
+        /* Pestañas personalizadas */
+        .nav-pills .nav-link { font-weight: bold; font-size: 1.1rem; padding: 10px 30px; border-radius: 8px 8px 0 0; border: 1px solid transparent; }
+        .nav-pills .nav-link.active { background-color: #1b396b; color: white; border-color: #1b396b; }
+        .nav-pills .nav-link:not(.active) { color: #1b396b; background-color: #e9ecef; border-color: #dee2e6; margin-right: 5px; }
     </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
 
-    <!-- Encabezado con imagen restaurado -->
+    <!-- Encabezado con imagen -->
     <div class="header-banner text-center d-flex justify-content-center align-items-center">
         <img src="avatar_bienvenida_3d.png" alt="Bienvenida" class="avatar-img shadow">
         <div>
-            <h1 class="fw-bold mb-0">Sistema de Reportes MAC</h1>
-            <p class="lead mb-0">Matriz Base de 75 Columnas</p>
+            <h1 class="fw-bold mb-0">Vaciado de Datos MAC</h1>
+            <p class="lead mb-0">Captura por Módulo (050351, 050353, 050354)</p>
         </div>
     </div>
 
     <div class="container-fluid px-4 flex-grow-1">
         
-        <div class="alert alert-info">
-            <strong>Instrucciones:</strong> Copia tus 8 líneas completas desde Excel (de Lunes a Domingo <strong>incluyendo tu línea de totales</strong>) y pégalas haciendo clic en el cuadro azul. No hay fórmulas activas.
-        </div>
-        
-        <div class="paste-zone shadow-sm" id="pasteZone" tabindex="0">
-            <h5 class="text-primary mb-0"><i class="bi bi-clipboard-data"></i> Haz clic aquí y presiona Ctrl+V para pegar tus datos</h5>
-        </div>
+        <!-- Pestañas de Navegación para los 3 Módulos -->
+        <ul class="nav nav-pills mb-0" id="modulosTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active shadow-sm" id="tab-050351" data-bs-toggle="tab" data-bs-target="#mod-050351" type="button" role="tab">Módulo 050351</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link shadow-sm" id="tab-050353" data-bs-toggle="tab" data-bs-target="#mod-050353" type="button" role="tab">Módulo 050353</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link shadow-sm" id="tab-050354" data-bs-toggle="tab" data-bs-target="#mod-050354" type="button" role="tab">Módulo 050354</button>
+            </li>
+        </ul>
 
-        <div class="excel-container shadow-sm rounded mb-4">
-            <table class="excel-table table table-hover" id="tablaCaptura">
-                <thead>
-                    <!-- Se generan los 75 encabezados por JS -->
-                </thead>
-                <tbody>
-                    <!-- Se generan 7 días + 1 fila de Totales por JS -->
-                </tbody>
-            </table>
+        <!-- Contenido de las Pestañas -->
+        <div class="tab-content bg-white p-4 border border-top-0 rounded-bottom shadow-sm mb-4" id="modulosTabContent">
+            
+            <!-- MÓDULO 050351 -->
+            <div class="tab-pane fade show active" id="mod-050351" role="tabpanel">
+                <div class="alert alert-primary">
+                    <strong>Módulo 050351:</strong> Copia y pega las 8 líneas de este módulo en el cuadro de abajo.
+                </div>
+                <div class="paste-zone shadow-sm" id="pasteZone_050351" tabindex="0">
+                    <h5 class="text-primary mb-0"><i class="bi bi-clipboard-data"></i> Clic aquí y Ctrl+V para pegar datos del Módulo 050351</h5>
+                </div>
+                <div class="excel-container shadow-sm rounded">
+                    <table class="excel-table table table-hover" id="tablaCaptura_050351">
+                        <thead></thead><tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- MÓDULO 050353 -->
+            <div class="tab-pane fade" id="mod-050353" role="tabpanel">
+                <div class="alert alert-success">
+                    <strong>Módulo 050353:</strong> Copia y pega las 8 líneas de este módulo en el cuadro de abajo.
+                </div>
+                <div class="paste-zone shadow-sm" id="pasteZone_050353" tabindex="0">
+                    <h5 class="text-success mb-0"><i class="bi bi-clipboard-data"></i> Clic aquí y Ctrl+V para pegar datos del Módulo 050353</h5>
+                </div>
+                <div class="excel-container shadow-sm rounded">
+                    <table class="excel-table table table-hover" id="tablaCaptura_050353">
+                        <thead></thead><tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- MÓDULO 050354 -->
+            <div class="tab-pane fade" id="mod-050354" role="tabpanel">
+                <div class="alert alert-danger">
+                    <strong>Módulo 050354:</strong> Copia y pega las 8 líneas de este módulo en el cuadro de abajo.
+                </div>
+                <div class="paste-zone shadow-sm" id="pasteZone_050354" tabindex="0">
+                    <h5 class="text-danger mb-0"><i class="bi bi-clipboard-data"></i> Clic aquí y Ctrl+V para pegar datos del Módulo 050354</h5>
+                </div>
+                <div class="excel-container shadow-sm rounded">
+                    <table class="excel-table table table-hover" id="tablaCaptura_050354">
+                        <thead></thead><tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -84,7 +133,7 @@
         </small>
     </footer>
 
-    <!-- Forzamos la actualización del caché agregando ?v=11.4.0 -->
-    <script type="module" src="app.js?v=11.4.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="app.js?v=11.5.0"></script>
 </body>
 </html>
