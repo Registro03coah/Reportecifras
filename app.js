@@ -1,3 +1,21 @@
+// ==========================================
+// 1. IMPORTACIONES FIREBASE
+// ==========================================
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyA6jvnsXZwF2anOJo3VadfNvn7Fl6Z5efY",
+    authDomain: "sistema-mac-reportes.firebaseapp.com",
+    databaseURL: "https://sistema-mac-reportes-default-rtdb.firebaseio.com",
+    projectId: "sistema-mac-reportes"
+};
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// ==========================================
+// 2. CONFIGURACIÓN DE TABLAS
+// ==========================================
 const TOTAL_COLUMNAS = 75;
 const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo", "LINEA TOTALES"];
 const MODULOS = ["050351", "050353", "050354"];
@@ -31,18 +49,16 @@ function generarEncabezados(selectorTabla, isTotales = false) {
         let thN = document.createElement('th');
         
         let tituloStr = ENCABEZADOS[i-1] || `Columna ${i}`;
-        // Si estamos en la tabla de Totales, la primera columna se llama "MÓDULO"
         if(isTotales && i === 1) tituloStr = "MÓDULO";
         
         thT.innerText = tituloStr;
         
-        // Asignación inteligente de anchos para que las columnas de números sean super angostas
         let anchoCelda = "45px"; 
-        if(i === 1) anchoCelda = "110px"; // Día o Módulo (más ancho)
-        else if(i === 2) anchoCelda = "70px"; // Fecha
-        else if(i === 4) anchoCelda = "85px"; // Sedes visitadas
-        else if(i === 5 || i === 6) anchoCelda = "105px"; // Inicial y Final (13 dígitos)
-        else if(i === 61 || i === 62) anchoCelda = "80px"; // MAC que recibe/entrega
+        if(i === 1) anchoCelda = "110px"; 
+        else if(i === 2) anchoCelda = "70px"; 
+        else if(i === 4) anchoCelda = "85px"; 
+        else if(i === 5 || i === 6) anchoCelda = "105px"; 
+        else if(i === 61 || i === 62) anchoCelda = "80px"; 
         
         thT.style.width = anchoCelda;
         thT.style.minWidth = anchoCelda;
@@ -60,7 +76,6 @@ function generarEncabezados(selectorTabla, isTotales = false) {
         thN.innerText = i;
         thN.className = "table-light";
         
-        // Si estamos en Totales y es col 2, 3 o 4, las ocultamos visualmente
         if(isTotales && i >= 2 && i <= 4) {
             thT.style.display = "none";
             thN.style.display = "none";
@@ -121,7 +136,6 @@ function generarCuerpoTotales() {
                 td.innerHTML = `<input type="text" id="${idCelda}" readonly tabindex="-1" value="0">`;
             }
             
-            // Ocultamos las celdas 2 a 4 visualmente, pero se mantienen para no romper el conteo
             if(c >= 2 && c <= 4) {
                 td.style.display = "none";
             }
@@ -206,6 +220,47 @@ MODULOS.forEach(mod => {
     });
 });
 
-// Inicializar Totales (Mandamos true para que aplique los ocultamientos y cambio de nombre)
 generarEncabezados('#tablaCaptura_totales', true);
 generarCuerpoTotales();
+
+// ==========================================
+// 3. GUARDADO EN FIREBASE
+// ==========================================
+document.getElementById('btnGuardarBD').addEventListener('click', () => {
+    // Definimos las 4 tablas a extraer
+    const tablasNombres = [...MODULOS, "totales"];
+    let datosAGuardar = {};
+    
+    tablasNombres.forEach(mod => {
+        const tbody = document.querySelector(`#tablaCaptura_${mod} tbody`);
+        const filas = tbody.querySelectorAll('tr');
+        let datosTabla = [];
+        
+        filas.forEach(fila => {
+            let filaArray = [];
+            fila.querySelectorAll('td').forEach(td => {
+                const input = td.querySelector('input');
+                if (input) {
+                    filaArray.push(input.value);
+                } else {
+                    filaArray.push("");
+                }
+            });
+            datosTabla.push(filaArray);
+        });
+        
+        // Guardamos el arreglo de filas bajo la llave del módulo
+        datosAGuardar[mod] = datosTabla;
+    });
+
+    // Subimos todo el paquete bajo el nodo 'vaciado_actual'
+    const dbRef = ref(db, 'vaciado_actual');
+    set(dbRef, datosAGuardar)
+        .then(() => {
+            alert("¡Éxito! La información de los 3 Módulos y los Totales se ha guardado en Firebase.");
+        })
+        .catch((error) => {
+            console.error("Error al guardar en Firebase:", error);
+            alert("Hubo un error al guardar los datos.");
+        });
+});

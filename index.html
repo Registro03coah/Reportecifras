@@ -5,45 +5,65 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vaciado de Datos MAC</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
         body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         
         .header-banner { background: linear-gradient(135deg, #e91e63, #9c27b0); color: white; padding: 20px 0; border-bottom: 5px solid #1b396b; margin-bottom: 30px; }
         .avatar-img { max-height: 150px; border-radius: 10px; margin-right: 15px; }
 
-        /* Contenedor de la tabla */
-        .excel-container { width: 100%; max-height: 65vh; overflow: auto; border: 1px solid #ddd; background: white; }
-        .excel-table { margin-bottom: 0; table-layout: fixed; } /* fixed para forzar anchos angostos */
+        .excel-container { width: 100%; max-height: 60vh; overflow: auto; border: 1px solid #ddd; background: white; margin-bottom: 15px; }
+        .excel-table { margin-bottom: 0; table-layout: fixed; }
         
-        /* ENCABEZADOS GRUESOS CON TEXTO EN 2 O MÁS LÍNEAS */
-        .excel-table th { 
+        /* ENCABEZADOS GRUESOS (Solo la primera fila de títulos) */
+        .excel-table thead tr:first-child th { 
             position: sticky; 
             top: 0; 
             z-index: 2; 
-            font-size: 9px; /* Letra más pequeña para que quepa */
+            font-size: 9px; 
             text-transform: uppercase; 
             background-color: #e9ecef; 
-            white-space: normal !important; /* Permite salto de línea */
+            white-space: normal !important; 
             word-wrap: break-word; 
-            height: 140px; /* Encabezado mucho más grueso */
+            height: 140px; /* Aquí está el grosor de los títulos */
             vertical-align: middle;
             line-height: 1.1;
             padding: 2px;
             text-align: center;
         }
         
+        /* ENCABEZADOS DELGADOS (Segunda fila, números 1 al 75) */
+        .excel-table thead tr:nth-child(2) th {
+            position: sticky; 
+            top: 140px; /* Se pega debajo del primer encabezado */
+            z-index: 2; 
+            font-size: 10px;
+            background-color: #f8f9fa;
+            height: 25px !important; /* Más delgado */
+            padding: 2px;
+            text-align: center;
+            vertical-align: middle;
+            border-bottom: 2px solid #ccc;
+        }
+
         /* Congelar las primeras dos columnas */
-        .excel-table th:first-child, .excel-table td:first-child { position: sticky; left: 0; z-index: 3; background-color: #f8f9fa; font-weight: bold; }
-        .excel-table th:nth-child(2), .excel-table td:nth-child(2) { position: sticky; left: 110px; z-index: 3; background-color: #f8f9fa; }
+        .excel-table th:first-child, .excel-table td:first-child { position: sticky; left: 0; z-index: 4; background-color: #f8f9fa; font-weight: bold; }
+        .excel-table th:nth-child(2), .excel-table td:nth-child(2) { position: sticky; left: 110px; z-index: 4; background-color: #f8f9fa; }
         
+        /* Asegurar que las esquinas congeladas queden siempre arriba */
+        .excel-table thead tr:first-child th:first-child, 
+        .excel-table thead tr:first-child th:nth-child(2),
+        .excel-table thead tr:nth-child(2) th:first-child, 
+        .excel-table thead tr:nth-child(2) th:nth-child(2) {
+            z-index: 5;
+        }
+
         .excel-table td { padding: 2px; border: 1px solid #ccc; text-align: center; vertical-align: middle; }
         
-        /* Inputs ajustados a celdas más angostas */
         .excel-table input { width: 100%; padding: 2px 0; font-size: 11px; text-align: center; border: 1px solid transparent; border-radius: 3px; background-color: transparent; }
         .excel-table input:focus { border: 1px solid #0d6efd; outline: none; background-color: #fff; }
         .excel-table input[readonly] { background-color: #f1f3f5; cursor: not-allowed; }
         
-        /* Colores de columnas según la imagen */
         .bg-folios { background-color: #f4b084 !important; }
         .bg-entrevista { background-color: #b4c6e7 !important; }
         .bg-entrega { background-color: #e2efda !important; }
@@ -52,12 +72,10 @@
         .paste-zone { border: 2px dashed #007bff; padding: 15px; text-align: center; background-color: #e9ecef; cursor: pointer; border-radius: 8px; margin-bottom: 15px; transition: 0.3s; }
         .paste-zone:hover { background-color: #d0d5db; }
         
-        /* Estilo para la LÍNEA DE TOTALES */
         .fila-totales input { font-weight: bold !important; }
         .fila-totales td { background-color: #d1e7dd !important; } 
         .fila-totales td:first-child, .fila-totales td:nth-child(2) { background-color: #c3d9d0 !important; }
         
-        /* Pestañas */
         .nav-pills .nav-link { font-weight: bold; font-size: 1.1rem; padding: 10px 30px; border-radius: 8px 8px 0 0; border: 1px solid transparent; }
         .nav-pills .nav-link.active { background-color: #1b396b; color: white; border-color: #1b396b; }
         .nav-pills .nav-link:not(.active) { color: #1b396b; background-color: #e9ecef; border-color: #dee2e6; margin-right: 5px; }
@@ -149,6 +167,12 @@
             </div>
 
         </div>
+
+        <!-- BOTÓN MAESTRO DE GUARDADO EN FIREBASE -->
+        <div class="text-end mb-4">
+            <button id="btnGuardarBD" class="btn btn-success btn-lg px-5 shadow"><i class="bi bi-cloud-arrow-up"></i> Guardar Todo en Base de Datos</button>
+        </div>
+
     </div>
 
     <footer class="text-center py-4 mt-auto text-white" style="background-color: #1b396b;">
@@ -159,6 +183,6 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script type="module" src="app.js?v=11.7.0"></script>
+    <script type="module" src="app.js?v=11.8.0"></script>
 </body>
 </html>
