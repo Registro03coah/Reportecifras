@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reportes de Cifras - MACs</title>
+    <!-- Bootstrap 5 para el diseño -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- PWA Configuración (Asegúrate de tener manifest.json y sw.js) -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1b396b">
+</head>
+<body class="bg-light d-flex flex-column min-vh-100">
+
+<div class="container mt-4 flex-grow-1">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary fw-bold mb-0">Concentrado de Cifras</h2>
+        <span class="badge bg-secondary" id="versionDisplay">Cargando versión...</span>
+    </div>
+
+    <!-- REPORTE SEMANAL -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Reporte Semanal</h5>
+        </div>
+        <div class="card-body table-responsive">
+            <table class="table table-bordered table-hover text-center align-middle" id="tablaSemanal">
+                <thead class="table-light">
+                    <tr>
+                        <th>Concepto / Trámite</th>
+                        <th>Lunes</th>
+                        <th>Martes</th>
+                        <th>Miércoles</th>
+                        <th>Jueves</th>
+                        <th>Viernes</th>
+                        <th>Sábado</th>
+                        <th>Domingo</th>
+                        <th class="table-success">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td colspan="9" class="text-center text-muted">Cargando datos...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- REPORTE CAMPAÑA -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">Reporte de Campaña</h5>
+        </div>
+        <div class="card-body table-responsive">
+            <table class="table table-bordered table-hover text-center align-middle" id="tablaCampana">
+                <thead class="table-light">
+                    <tr>
+                        <th>Concepto / Trámite</th>
+                        <th>Lunes</th>
+                        <th>Martes</th>
+                        <th>Miércoles</th>
+                        <th>Jueves</th>
+                        <th>Viernes</th>
+                        <th>Sábado</th>
+                        <th>Domingo</th>
+                        <th class="table-success">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td colspan="9" class="text-center text-muted">Cargando datos...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- REPORTE ACUMULADO -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">Reporte Acumulado General</h5>
+        </div>
+        <div class="card-body table-responsive">
+            <table class="table table-bordered table-hover text-center align-middle" id="tablaAcumulado">
+                <thead class="table-light">
+                    <tr>
+                        <th>Concepto / Trámite</th>
+                        <th>Lunes</th>
+                        <th>Martes</th>
+                        <th>Miércoles</th>
+                        <th>Jueves</th>
+                        <th>Viernes</th>
+                        <th>Sábado</th>
+                        <th>Domingo</th>
+                        <th class="table-success">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td colspan="9" class="text-center text-muted">Cargando datos...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Pie de página -->
+<footer class="text-center py-4 mt-auto text-muted bg-white border-top">
+    <small>
+        &copy; 2026 Todos los derechos reservados.<br>
+        Desarrollado por <strong>Carrivers Desing</strong> para Módulos MAC.
+    </small>
+</footer>
+
+<!-- Carga de la lógica principal -->
+<script type="module" src="app.js"></script>
+
+<!-- Script de PWA (Opcional, si usas Service Worker) -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch((err) => console.log('SW error', err));
+    });
+  }
+</script>
+</body>
+</html>
