@@ -52,15 +52,12 @@ function generarEncabezados(selectorTabla) {
     thead.appendChild(trNumeros);
 }
 
-function generarCuerpo(selectorTabla) {
+function generarCuerpoCaptura(selectorTabla) {
     const tbody = document.querySelector(`${selectorTabla} tbody`);
     
     DIAS.forEach((dia) => {
         let tr = document.createElement('tr');
-        
-        if (dia === "LINEA TOTALES") {
-            tr.classList.add('fila-totales');
-        }
+        if (dia === "LINEA TOTALES") tr.classList.add('fila-totales');
 
         for(let c = 1; c <= TOTAL_COLUMNAS; c++) {
             let td = document.createElement('td');
@@ -71,30 +68,100 @@ function generarCuerpo(selectorTabla) {
                 if (c === 2 || c === 4) {
                     td.innerHTML = `<input type="text" readonly tabindex="-1">`;
                 } else {
-                    td.innerHTML = `<input type="text" value="">`;
+                    td.innerHTML = `<input type="text" value="" class="input-linea-totales">`;
                 }
             } else {
                 td.innerHTML = `<input type="text" value="">`;
             }
-            
             tr.appendChild(td);
         }
         tbody.appendChild(tr);
     });
 }
 
+function generarCuerpoTotales() {
+    const tbody = document.querySelector(`#tablaCaptura_totales tbody`);
+    const filasConcentrado = ["050351", "050353", "050354", "GRAN TOTAL"];
+    
+    filasConcentrado.forEach((fila) => {
+        let tr = document.createElement('tr');
+        if (fila === "GRAN TOTAL") tr.classList.add('fila-totales');
+
+        for(let c = 1; c <= TOTAL_COLUMNAS; c++) {
+            let td = document.createElement('td');
+            
+            if(c === 1) {
+                let textoFila = (fila === "GRAN TOTAL") ? fila : `Totales MAC ${fila}`;
+                td.innerHTML = `<input type="text" value="${textoFila}" readonly tabindex="-1">`;
+            } else if (c === 2 || c === 4) {
+                td.innerHTML = `<input type="text" readonly tabindex="-1">`;
+            } else {
+                // Asignamos un ID único para poder mandarle los datos desde JS
+                let idCelda = `totales-${fila}-col-${c}`;
+                td.innerHTML = `<input type="text" id="${idCelda}" readonly tabindex="-1" value="0">`;
+            }
+            tr.appendChild(td);
+        }
+        tbody.appendChild(tr);
+    });
+}
+
+// Función maestra para sincronizar los totales hacia la tabla concentradora
+function sincronizarTotales() {
+    // Recorremos desde la columna 3 hasta la 75
+    for(let c = 3; c <= TOTAL_COLUMNAS; c++) {
+        if(c === 4) continue; // Saltamos "Sedes visitadas"
+        
+        let granTotalColumna = 0;
+        
+        MODULOS.forEach(mod => {
+            // Obtenemos la última fila (LINEA TOTALES) del módulo actual
+            const tbodyMod = document.querySelector(`#tablaCaptura_${mod} tbody`);
+            const filaTotalMod = tbodyMod.querySelectorAll('tr')[7]; // Index 7 es LINEA TOTALES
+            const inputMod = filaTotalMod.querySelectorAll('td')[c-1].querySelector('input');
+            
+            // Leemos el valor, lo limpiamos de comas y si está vacío lo tomamos como 0
+            let valorStr = inputMod.value.trim().replace(/,/g, '');
+            let valorNum = isNaN(parseFloat(valorStr)) ? 0 : parseFloat(valorStr);
+            
+            // Escribimos el valor en la tabla Concentradora
+            let inputDestino = document.getElementById(`totales-${mod}-col-${c}`);
+            if (inputDestino) {
+                // Si el valor numérico no es cero, o si era un texto legítimo (como un folio inicial), lo pintamos.
+                // Como indicaste que lo vacío se trata como 0:
+                inputDestino.value = valorNum === 0 && valorStr !== "0" ? valorStr || "0" : valorNum;
+            }
+            
+            // Acumulamos para el gran total solo si es un número válido
+            if(!isNaN(valorNum)) {
+                granTotalColumna += valorNum;
+            }
+        });
+        
+        // Escribimos el GRAN TOTAL general
+        let inputGranTotal = document.getElementById(`totales-GRAN TOTAL-col-${c}`);
+        if(inputGranTotal) {
+            inputGranTotal.value = granTotalColumna;
+        }
+    }
+}
+
 // Inicializar tablas para los 3 módulos
 MODULOS.forEach(mod => {
     generarEncabezados(`#tablaCaptura_${mod}`);
-    generarCuerpo(`#tablaCaptura_${mod}`);
+    generarCuerpoCaptura(`#tablaCaptura_${mod}`);
+    
+    const tbodyMod = document.querySelector(`#tablaCaptura_${mod} tbody`);
+    
+    // Escuchar cambios manuales para actualizar totales
+    tbodyMod.addEventListener('input', sincronizarTotales);
     
     // Configurar el evento de pegado para cada zona
     document.getElementById(`pasteZone_${mod}`).addEventListener('paste', (e) => {
         e.preventDefault();
         const pastedData = (e.clipboardData || window.clipboardData).getData('Text');
         const rows = pastedData.split('\n');
-        const tbody = document.querySelector(`#tablaCaptura_${mod} tbody`);
-        const tableRows = tbody.querySelectorAll('tr');
+        const tableRows = tbodyMod.querySelectorAll('tr');
 
         let rowOffset = 0;
         
@@ -122,5 +189,10 @@ MODULOS.forEach(mod => {
         });
         
         alert(`Datos pegados con éxito en la tabla del Módulo ${mod}.`);
+        sincronizarTotales(); // Actualizar la tabla general de totales tras pegar
     });
 });
+
+// Inicializar tabla concentradora de Totales
+generarEncabezados('#tablaCaptura_totales');
+generarCuerpoTotales();
