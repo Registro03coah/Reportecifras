@@ -33,6 +33,15 @@ function limpiarLlavesParaFirebase(obj) {
     return obj;
 }
 
+// Extraer TODAS las llaves únicas de todos los registros (para asegurar las 75 columnas)
+function extraerTodasLasColumnas(datos) {
+    const setColumnas = new Set();
+    datos.forEach(fila => {
+        Object.keys(fila).forEach(col => setColumnas.add(col));
+    });
+    return Array.from(setColumnas);
+}
+
 // Al cargar la página, traemos los datos de Firebase
 window.addEventListener('DOMContentLoaded', () => {
     cargarDatosFirebase();
@@ -45,7 +54,7 @@ function cargarDatosFirebase() {
         if (data) {
             bdMadre = Array.isArray(data) ? data : Object.values(data);
             if(bdMadre.length > 0) {
-                columnasEstructura = Object.keys(bdMadre[0]);
+                columnasEstructura = extraerTodasLasColumnas(bdMadre);
                 renderizarCabeceras(columnasEstructura);
                 ordenarYRenderizar(bdMadre);
             }
@@ -75,15 +84,12 @@ document.getElementById('fileInput').addEventListener('change', function(e) {
                 nuevosDatos = [nuevosDatos];
             }
             
-            // Consultamos los datos actuales en Firebase para fusionar sin borrar lo viejo
             database.ref('bd_madre').once('value').then((snapshot) => {
                 let datosActuales = snapshot.val();
                 datosActuales = datosActuales ? (Array.isArray(datosActuales) ? datosActuales : Object.values(datosActuales)) : [];
 
-                // FUSIÓN INTELIGENTE: Combinar actualizando los que coincidan (Remesa + Módulo + Día)
                 let mapaRegistros = new Map();
 
-                // 1. Cargar lo que ya tenemos
                 datosActuales.forEach(item => {
                     const rem = String(item['Remesa'] || item['REMESA'] || '');
                     const mod = String(item['MÓDULO'] || item['Módulo'] || item['Modulo'] || '');
@@ -91,22 +97,20 @@ document.getElementById('fileInput').addEventListener('change', function(e) {
                     mapaRegistros.set(`${rem}_${mod}_${dia}`, item);
                 });
 
-                // 2. Sobrescribir o agregar los nuevos
                 nuevosDatos.forEach(item => {
                     const rem = String(item['Remesa'] || item['REMESA'] || '');
                     const mod = String(item['MÓDULO'] || item['Módulo'] || item['Modulo'] || '');
                     const dia = String(item['DÍA'] || item['Día'] || item['Dia'] || '');
-                    mapaRegistros.set(`${rem}_${mod}_${dia}`, item); // Si ya existe, se actualiza; si no, se agrega
+                    mapaRegistros.set(`${rem}_${mod}_${dia}`, item);
                 });
 
                 const bdFusionada = Array.from(mapaRegistros.values());
                 const dataParaFirebase = limpiarLlavesParaFirebase(bdFusionada);
 
                 if(bdFusionada.length > 0) {
-                    columnasEstructura = Object.keys(bdFusionada[0]);
+                    columnasEstructura = extraerTodasLasColumnas(bdFusionada);
                 }
 
-                // Guardar en Firebase
                 database.ref('bd_madre').set(dataParaFirebase).then(() => {
                     bdMadre = bdFusionada;
                     renderizarCabeceras(columnasEstructura);
@@ -137,11 +141,8 @@ window.descargarRespaldoJSON = function() {
         return;
     }
 
-    // Convertir los datos actuales a formato JSON ordenado
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(bdMadre, null, 2));
     const downloadAnchor = document.createElement('a');
-    
-    // Generar nombre de archivo con fecha actual
     const fechaHoy = new Date().toISOString().slice(0, 10);
     downloadAnchor.setAttribute("href", dataStr);
     downloadAnchor.setAttribute("download", `Respaldo_BD_Madre_${fechaHoy}.json`);
@@ -186,15 +187,16 @@ function renderizarCabeceras(columnas) {
     thead.innerHTML = tr;
 }
 
-// 5. RENDERIZAR TABLA
+// 5. RENDERIZAR TABLA (Optimizado para gran cantidad de columnas y filas)
 function renderizarTabla(datos) {
     const tbody = document.getElementById('cuerpoBdMadre');
-    tbody.innerHTML = ''; 
     
     if(datos.length === 0) {
         tbody.innerHTML = `<tr><td colspan="100" class="text-center text-muted py-4">No se encontraron registros. Sube una remesa para comenzar.</td></tr>`;
         return;
     }
+
+    let htmlFilas = '';
 
     datos.forEach((fila, index) => {
         let tr = '<tr>';
@@ -222,8 +224,10 @@ function renderizarTabla(datos) {
             </td>
         </tr>`;
         
-        tbody.innerHTML += tr;
+        htmlFilas += tr;
     });
+
+    tbody.innerHTML = htmlFilas;
 }
 
 // 6. BOTÓN DE PÁNICO: VACIAR BASE DE DATOS Y FIREBASE
