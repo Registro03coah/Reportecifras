@@ -157,24 +157,26 @@
                 <div class="alert alert-warning text-dark border-warning shadow-sm">
                     <strong>Concentrado de Totales:</strong> Las columnas 2 a 4 están ocultas. Se llena automáticamente desde la Línea Totales de los otros módulos.
                 </div>
-                <div class="excel-container shadow-sm rounded border-warning">
+                <div class="excel-container shadow-sm rounded border-warning mb-3">
                     <table class="excel-table table table-hover" id="tablaCaptura_totales">
                         <thead></thead><tbody></tbody>
                     </table>
+                </div>
+                
+                <!-- CONTROLES MOVIDOS A LA PESTAÑA TOTALES -->
+                <div class="d-flex flex-wrap justify-content-end align-items-center gap-3 bg-white p-3 border rounded shadow-sm border-warning">
+                    <div class="input-group" style="width: 280px;">
+                        <span class="input-group-text bg-info text-dark fw-bold border-info">Remesa Actual</span>
+                        <input type="text" id="inputRemesa" class="form-control text-center fw-bold fs-5 text-primary border-info" placeholder="---" readonly title="Se detecta automáticamente de la Columna 39">
+                    </div>
+                    <button id="btnBorrar" class="btn btn-outline-danger btn-lg shadow-sm"><i class="bi bi-trash"></i> Limpiar Tablas</button>
+                    <button id="btnGuardarBD" class="btn btn-success btn-lg px-4 shadow-sm"><i class="bi bi-cloud-arrow-up"></i> Guardar Todo en BD con un Clic</button>
                 </div>
             </div>
 
         </div>
 
-        <!-- CONTROLES INFERIORES: REMESA, BORRAR Y GUARDAR -->
-        <div class="d-flex flex-wrap justify-content-end align-items-center mb-4 gap-3 bg-white p-3 border rounded shadow-sm">
-            <div class="input-group" style="width: 280px;">
-                <span class="input-group-text bg-info text-dark fw-bold border-info">Remesa Actual</span>
-                <input type="text" id="inputRemesa" class="form-control text-center fw-bold fs-5 text-primary border-info" placeholder="---" readonly title="Se detecta automáticamente de la Columna 39">
-            </div>
-            <button id="btnBorrar" class="btn btn-outline-danger btn-lg shadow-sm"><i class="bi bi-trash"></i> Limpiar Tablas</button>
-            <button id="btnGuardarBD" class="btn btn-success btn-lg px-4 shadow-sm"><i class="bi bi-cloud-arrow-up"></i> Guardar Historial en BD</button>
-        </div>
+
 
     </div>
 

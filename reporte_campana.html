@@ -25,24 +25,29 @@
             height: 25px !important; padding: 2px; text-align: center; vertical-align: middle; border-bottom: 2px solid #ccc;
         }
 
-        .excel-table th:first-child, .excel-table td:first-child { position: sticky; left: 0; z-index: 4; background-color: #f8f9fa; font-weight: bold; }
-        .excel-table th:nth-child(2), .excel-table td:nth-child(2) { position: sticky; left: 110px; z-index: 4; background-color: #f8f9fa; }
+        /* Congelar columnas (ahora serán 3 congeladas: 45, 46, 47) */
+        .excel-table th:nth-child(1), .excel-table td:nth-child(1) { position: sticky; left: 0; z-index: 4; background-color: #f8f9fa; font-weight: bold; }
+        .excel-table th:nth-child(2), .excel-table td:nth-child(2) { position: sticky; left: 60px; z-index: 4; background-color: #f8f9fa; font-weight: bold; }
+        .excel-table th:nth-child(3), .excel-table td:nth-child(3) { position: sticky; left: 120px; z-index: 4; background-color: #f8f9fa; font-weight: bold; border-right: 2px solid #333; }
         
-        .excel-table thead tr:first-child th:first-child, .excel-table thead tr:first-child th:nth-child(2),
-        .excel-table thead tr:nth-child(2) th:first-child, .excel-table thead tr:nth-child(2) th:nth-child(2) { z-index: 5; }
+        .excel-table thead tr:first-child th:nth-child(1), .excel-table thead tr:nth-child(2) th:nth-child(1),
+        .excel-table thead tr:first-child th:nth-child(2), .excel-table thead tr:nth-child(2) th:nth-child(2),
+        .excel-table thead tr:first-child th:nth-child(3), .excel-table thead tr:nth-child(2) th:nth-child(3) { z-index: 5; }
 
         .excel-table td { padding: 2px; border: 1px solid #ccc; text-align: center; vertical-align: middle; font-size: 12px;}
         
-        /* Colores de columnas */
+        .excel-table input { width: 100%; padding: 2px 0; font-size: 11px; text-align: center; border: 1px solid transparent; border-radius: 3px; background-color: transparent; }
+        .excel-table input:focus { border: 1px solid #0d6efd; outline: none; background-color: #fff; }
+        .excel-table input[readonly] { background-color: #f1f3f5; cursor: not-allowed; }
+
         .bg-folios { background-color: #f4b084 !important; }
         .bg-retiradas { background-color: #c0a0c0 !important; }
         .fila-totales td { background-color: #d1e7dd !important; font-weight: bold; }
-        .fila-totales td:first-child, .fila-totales td:nth-child(2) { background-color: #c3d9d0 !important; }
+        .fila-totales td:nth-child(1), .fila-totales td:nth-child(2), .fila-totales td:nth-child(3) { background-color: #c3d9d0 !important; }
     </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
 
-    <!-- MENÚ DE NAVEGACIÓN SUPERIOR -->
     <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #1b396b;">
       <div class="container-fluid px-4">
         <a class="navbar-brand fw-bold" href="index.html"><i class="bi bi-hdd-network"></i> SISTEMA MAC</a>
@@ -68,7 +73,7 @@
     <div class="header-banner text-center d-flex justify-content-center align-items-center">
         <div>
             <h1 class="fw-bold mb-0"><i class="bi bi-bar-chart-line"></i> Reporte de Campaña</h1>
-            <p class="lead mb-0">Suma Histórica de Remesas (Columnas 1 a 30)</p>
+            <p class="lead mb-0">Suma Histórica de Remesas (Columnas 45, 46, 47 y 5 al 30)</p>
         </div>
     </div>
 
@@ -76,9 +81,10 @@
         
         <div class="alert alert-info d-flex justify-content-between align-items-center shadow-sm">
             <div>
-                <strong>Vista de Campaña:</strong> Aquí se suman automáticamente todas las remesas guardadas en la base de datos para cada Módulo. Solo se muestran las primeras 30 columnas.
+                <strong>Vista de Campaña:</strong> Aquí se suman automáticamente todas las remesas guardadas. <br>
+                <em>Orden visual: ENT (45), DTTO (46), MÓDULO (47) y luego las columnas 5 hasta la 30.</em>
             </div>
-            <div id="statusCarga" class="badge bg-warning text-dark fs-6"><i class="bi bi-arrow-repeat spin"></i> Cargando datos de Firebase...</div>
+            <div id="statusCarga" class="badge bg-warning text-dark fs-6"><i class="bi bi-arrow-repeat spin"></i> Cargando datos...</div>
         </div>
 
         <div class="excel-container shadow-sm rounded border-info">
@@ -88,6 +94,57 @@
             </table>
         </div>
 
+        <!-- SECCIÓN ADMINISTRADOR DE REMESAS -->
+        <div class="accordion mt-4 shadow-sm mb-4" id="accordionRemesas">
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed bg-light text-dark fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRemesas">
+                        <i class="bi bi-gear-fill me-2 text-primary"></i> Administrador de Remesas Guardadas (Ver, Editar, Borrar)
+                    </button>
+                </h2>
+                <div id="collapseRemesas" class="accordion-collapse collapse" data-bs-parent="#accordionRemesas">
+                    <div class="accordion-body">
+                        <table class="table table-bordered table-hover text-center align-middle" id="tablaListaRemesas">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th># Remesa</th>
+                                    <th>Acciones Disponibles</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- JS fills -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- MODAL DE EDICIÓN -->
+    <div class="modal fade" id="modalEditarRemesa" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="bi bi-pencil-square"></i> Editando Remesa: <span id="lblRemesaEdit" class="fw-bold fs-4 text-warning"></span></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body bg-light">
+                    <div class="alert alert-warning py-2 mb-2"><strong>Nota:</strong> Solo puedes editar los valores de los 3 módulos. El Gran Total se calculará automáticamente al guardar.</div>
+                    <div class="excel-container shadow-sm rounded border-primary">
+                        <table class="excel-table table table-hover" id="tablaEditarRemesa">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar Edición</button>
+                    <button type="button" class="btn btn-success px-5" id="btnGuardarEdicion"><i class="bi bi-save"></i> Guardar Cambios en BD</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <footer class="text-center py-4 mt-auto text-white" style="background-color: #1b396b;">
@@ -98,6 +155,6 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script type="module" src="app_campana.js?v=1.0.0"></script>
+    <script type="module" src="app_campana.js?v=2.0.0"></script>
 </body>
 </html>
