@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte de Días MAC</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        .header-banner { background: linear-gradient(135deg, #4caf50, #009688); color: white; padding: 20px 0; border-bottom: 5px solid #1b396b; margin-bottom: 30px; }
+        
+        .excel-container { width: 100%; max-height: 65vh; overflow: auto; border: 1px solid #ddd; background: white; margin-bottom: 15px; }
+        .excel-table { margin-bottom: 0; table-layout: fixed; }
+        
+        .excel-table thead tr:first-child th { 
+            position: sticky; top: 0; z-index: 2; font-size: 9px; text-transform: uppercase; 
+            background-color: #e9ecef; white-space: normal !important; word-wrap: break-word; 
+            height: 140px; vertical-align: middle; line-height: 1.1; padding: 2px; text-align: center;
+        }
+        
+        .excel-table thead tr:nth-child(2) th {
+            position: sticky; top: 140px; z-index: 2; font-size: 10px; background-color: #f8f9fa;
+            height: 25px !important; padding: 2px; text-align: center; vertical-align: middle; border-bottom: 2px solid #ccc;
+        }
+
+        /* Congelar 3 columnas: MODULO, REMESA, DIA */
+        .excel-table th:nth-child(1), .excel-table td:nth-child(1) { position: sticky; left: 0; z-index: 4; background-color: #f8f9fa; font-weight: bold; }
+        .excel-table th:nth-child(2), .excel-table td:nth-child(2) { position: sticky; left: 70px; z-index: 4; background-color: #f8f9fa; font-weight: bold; }
+        .excel-table th:nth-child(3), .excel-table td:nth-child(3) { position: sticky; left: 140px; z-index: 4; background-color: #f8f9fa; font-weight: bold; border-right: 2px solid #333; }
+        
+        .excel-table thead tr:first-child th:nth-child(1), .excel-table thead tr:nth-child(2) th:nth-child(1),
+        .excel-table thead tr:first-child th:nth-child(2), .excel-table thead tr:nth-child(2) th:nth-child(2),
+        .excel-table thead tr:first-child th:nth-child(3), .excel-table thead tr:nth-child(2) th:nth-child(3) { z-index: 5; }
+
+        .excel-table td { padding: 2px; border: 1px solid #ccc; text-align: center; vertical-align: middle; font-size: 12px;}
+        
+        .excel-table input { width: 100%; padding: 2px 0; font-size: 11px; text-align: center; border: 1px solid transparent; border-radius: 3px; background-color: transparent; }
+        .excel-table input:focus { border: 1px solid #0d6efd; outline: none; background-color: #fff; }
+        .excel-table input[readonly] { background-color: #f1f3f5; cursor: not-allowed; }
+
+        .bg-folios { background-color: #f4b084 !important; }
+        .bg-retiradas { background-color: #c0a0c0 !important; }
+        
+        .nav-tabs .nav-link { font-weight: bold; color: #1b396b; }
+        .nav-tabs .nav-link.active { background-color: #1b396b; color: white; border-color: #1b396b; }
+    </style>
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+    <!-- MENÚ DE NAVEGACIÓN SUPERIOR -->
+    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #1b396b;">
+      <div class="container-fluid px-4">
+        <a class="navbar-brand fw-bold" href="index.html"><i class="bi bi-hdd-network"></i> SISTEMA MAC</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto gap-3">
+            <li class="nav-item">
+              <a class="nav-link text-light px-3" href="index.html"><i class="bi bi-pencil-square"></i> Vaciado de Datos</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link active bg-success rounded px-3 text-white fw-bold" href="reporte_dias.html"><i class="bi bi-calendar3"></i> Reporte Días</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link text-light px-3" href="reporte_campana.html"><i class="bi bi-bar-chart-fill"></i> Reporte Campaña</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link text-secondary px-3" href="#" style="cursor: not-allowed;"><i class="bi bi-archive-fill"></i> Reporte Acumulado</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <div class="header-banner text-center d-flex justify-content-center align-items-center">
+        <div>
+            <h1 class="fw-bold mb-0"><i class="bi bi-calendar-check"></i> Reporte de Días</h1>
+            <p class="lead mb-0">Vista Diaria de Remesas Guardadas (Sin Totales)</p>
+        </div>
+    </div>
+
+    <div class="container-fluid px-4 flex-grow-1">
+        
+        <div class="alert alert-success d-flex justify-content-between align-items-center shadow-sm">
+            <div>
+                <strong>Vista Diaria:</strong> Aquí se muestran los 7 días de cada módulo por remesa.<br>
+                <em>Orden visual: MÓDULO (47), REMESA (39), DÍA (1), FECHA (2), SEDES (4) y del 5 al 75 (ocultando 3).</em>
+            </div>
+            <div id="statusCarga" class="badge bg-warning text-dark fs-6"><i class="bi bi-arrow-repeat spin"></i> Cargando datos...</div>
+        </div>
+
+        <div class="excel-container shadow-sm rounded border-success">
+            <table class="excel-table table table-hover" id="tablaDias">
+                <thead></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- SECCIÓN ADMINISTRADOR DE REMESAS -->
+        <div class="accordion mt-4 shadow-sm mb-4" id="accordionRemesas">
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed bg-light text-dark fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRemesas">
+                        <i class="bi bi-gear-fill me-2 text-success"></i> Administrador de Remesas (Editar Días, Borrar)
+                    </button>
+                </h2>
+                <div id="collapseRemesas" class="accordion-collapse collapse" data-bs-parent="#accordionRemesas">
+                    <div class="accordion-body">
+                        <table class="table table-bordered table-hover text-center align-middle" id="tablaListaRemesas">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th># Remesa</th>
+                                    <th>Acciones Disponibles</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- JS fills -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- MODAL DE EDICIÓN DE DÍAS -->
+    <div class="modal fade" id="modalEditarDias" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title"><i class="bi bi-pencil-square"></i> Editando Días - Remesa: <span id="lblRemesaEdit" class="fw-bold fs-4 text-warning"></span></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body bg-light p-3">
+                    <ul class="nav nav-tabs mb-3" id="editDiasTab" role="tablist">
+                        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#edit-050351">Módulo 050351</button></li>
+                        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#edit-050353">Módulo 050353</button></li>
+                        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#edit-050354">Módulo 050354</button></li>
+                    </ul>
+                    
+                    <div class="tab-content">
+                        <!-- 050351 -->
+                        <div class="tab-pane fade show active" id="edit-050351">
+                            <div class="excel-container border-success"><table class="excel-table table" id="tablaEditar_050351"><thead></thead><tbody></tbody></table></div>
+                        </div>
+                        <!-- 050353 -->
+                        <div class="tab-pane fade" id="edit-050353">
+                            <div class="excel-container border-success"><table class="excel-table table" id="tablaEditar_050353"><thead></thead><tbody></tbody></table></div>
+                        </div>
+                        <!-- 050354 -->
+                        <div class="tab-pane fade" id="edit-050354">
+                            <div class="excel-container border-success"><table class="excel-table table" id="tablaEditar_050354"><thead></thead><tbody></tbody></table></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar Edición</button>
+                    <button type="button" class="btn btn-success px-5" id="btnGuardarEdicion"><i class="bi bi-save"></i> Guardar Cambios en BD</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="text-center py-4 mt-auto text-white" style="background-color: #1b396b;">
+        <small>
+            &copy; 2026 Todos los derechos reservados.<br>
+            Desarrollado por <span class="text-info fw-bold">Carrivers Desing</span> para Módulos MAC.
+        </small>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="app_dias.js?v=1.0.0"></script>
+</body>
+</html>
