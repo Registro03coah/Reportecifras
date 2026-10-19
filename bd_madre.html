@@ -2,16 +2,78 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>BD Madre - MACs APP</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Base de Datos Principal - MACs APP</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    
+    <!-- Firebase SDK (Ajusta las versiones a las que usas en tus otros módulos) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <style>
+        .table-responsive {
+            max-height: 70vh;
+            overflow-y: auto;
+            overflow-x: auto;
+        }
+        thead th {
+            position: sticky;
+            top: 0;
+            background-color: #1b396b !important;
+            color: white;
+            z-index: 1;
+            white-space: nowrap;
+        }
+        tbody td {
+            white-space: nowrap;
+            vertical-align: middle;
+        }
+        .col-acciones {
+            position: sticky;
+            right: 0;
+            background-color: #f8f9fa !important;
+            z-index: 2;
+            border-left: 2px solid #dee2e6;
+        }
+        thead .col-acciones {
+            background-color: #1b396b !important;
+            z-index: 3;
+        }
+        
+        /* Estilos del Overlay de Carga */
+        #loadingOverlay {
+            display: none; 
+            position: fixed; 
+            top: 0; left: 0; 
+            width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.85); 
+            z-index: 9999; 
+            flex-direction: column;
+            justify-content: center; 
+            align-items: center; 
+            color: white;
+        }
+    </style>
 </head>
 <body class="bg-light">
 
-<div class="container mt-4">
+<!-- Pantalla de Carga -->
+<div id="loadingOverlay">
+    <div class="spinner-border text-light mb-3" role="status" style="width: 4rem; height: 4rem;"></div>
+    <h2>Subiendo y procesando archivo...</h2>
+    <p class="text-warning">Por favor no cierres ni recargues la ventana hasta que termine.</p>
+</div>
+
+<div class="container-fluid mt-4 px-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2><i class="bi bi-database-fill"></i> Base de Datos Principal</h2>
-        <button class="btn btn-success"><i class="bi bi-cloud-arrow-up"></i> Subir Nueva Remesa</button>
+        <div>
+            <button class="btn btn-danger me-2" onclick="vaciarBaseDatosGeneral()"><i class="bi bi-exclamation-triangle-fill"></i> Vaciar Base de Datos</button>
+            <input type="file" id="fileInput" accept=".json" style="display: none;">
+            <button class="btn btn-success" id="btnSubir"><i class="bi bi-cloud-arrow-up"></i> Subir Nueva Remesa</button>
+            <a href="index.html" class="btn btn-secondary ms-2"><i class="bi bi-house-door-fill"></i> Volver al Inicio</a>
+        </div>
     </div>
 
     <!-- Buscador -->
@@ -21,7 +83,7 @@
                 <span class="input-group-text bg-primary text-white"><i class="bi bi-search"></i></span>
                 <input type="text" id="buscadorBd" class="form-control form-control-lg" placeholder="Buscar por Remesa (ej. 2026-10) o por Día (ej. 15/10/2026)...">
             </div>
-            <small class="text-muted mt-2 d-block">El filtro mostrará automáticamente los datos de los 3 módulos que coincidan con la búsqueda.</small>
+            <small class="text-muted mt-2 d-block">Los datos se agrupan automáticamente por Módulo para visualizar la remesa completa (lunes a sábado) junta.</small>
         </div>
     </div>
 
@@ -29,20 +91,12 @@
     <div class="card shadow-sm">
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-striped table-hover mb-0" id="tablaBdMadre">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Remesa</th>
-                            <th>Día</th>
-                            <th>Módulo</th>
-                            <th>Trámites</th>
-                            <th>Entregas</th>
-                            <th>Otros</th>
-                            <th class="text-center">Acciones</th>
-                        </tr>
+                <table class="table table-striped table-hover table-bordered mb-0" id="tablaBdMadre">
+                    <thead id="cabeceraBdMadre">
+                        <!-- Las columnas dinámicas se inyectarán aquí -->
                     </thead>
                     <tbody id="cuerpoBdMadre">
-                        <!-- Las filas se inyectarán aquí con JavaScript -->
+                        <!-- Las filas se inyectarán aquí -->
                     </tbody>
                 </table>
             </div>
