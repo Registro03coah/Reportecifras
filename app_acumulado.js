@@ -1,23 +1,22 @@
 // ==========================================
-// 1. IMPORTACIONES FIREBASE
+// 1. CONFIGURACIÓN FIREBASE (BD MADRE)
 // ==========================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyA6jvnsXZwF2anOJo3VadfNvn7Fl6Z5efY",
-    authDomain: "sistema-mac-reportes.firebaseapp.com",
-    databaseURL: "https://sistema-mac-reportes-default-rtdb.firebaseio.com",
-    projectId: "sistema-mac-reportes"
+    apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo",
+    authDomain: "cifrasmac.firebaseapp.com",
+    databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com",
+    projectId: "cifrasmac"
 };
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-const COLUMNAS_ACUMULADO = [
-    45, 46, 47, 5, 6, 7, 'NO_UTILIZADOS', 8, 9, 10, 65, 12, 13, 14, 7, 42, 43, 17, 16, 
-    'CIP-05', 35, 37, 38, 'INICIALES', 21, 22, 63, 64, 23, 25, 48, 49, 24, 29, 
-    'SOBRANTES', 70, 30, 36, 49, 41, 70, 19, 34, 44, 32, 35
-];
+const COLUMNAS_ACUMULADO = [];
+for(let i = 1; i <= 75; i++) {
+    if(i !== 3) COLUMNAS_ACUMULADO.push(i);
+}
 
 const ENCABEZADOS = [
     "DÍA", "DD/MM/AA", "Horas trabajadas", "Sedes visitadas", "INICIAL", "FINAL", "TOTAL DE FOLIOS", 
@@ -38,7 +37,8 @@ const ENCABEZADOS = [
     "MOV.POST.", "ANEXAS A SOLICITUD", "OTRAS BAJAS"
 ];
 
-let valoresIniciales = { "050351": 0, "050353": 0, "050354": 0 };
+let bdMadreGlobal = [];
+let valoresInicialesGlobal = { "050351": 0, "050353": 0, "050354": 0 };
 
 function construirHeaderTabla() {
     const thead = document.querySelector('#tablaAcumulado thead');
@@ -50,25 +50,18 @@ function construirHeaderTabla() {
     COLUMNAS_ACUMULADO.forEach((colOriginal) => {
         let thT = document.createElement('th');
         let thN = document.createElement('th');
-        
-        let headerText = typeof colOriginal === 'string' ? colOriginal.replace('_', ' ') : ENCABEZADOS[colOriginal - 1];
-        thT.innerText = headerText;
-        thN.innerText = typeof colOriginal === 'string' ? "-" : colOriginal;
+        thT.innerText = ENCABEZADOS[colOriginal - 1] || `Col ${colOriginal}`;
         
         let anchoCelda = "50px"; 
-        if(colOriginal === 45 || colOriginal === 46 || colOriginal === 47) anchoCelda = "60px"; 
+        if(colOriginal >= 45 && colOriginal <= 47) anchoCelda = "60px"; 
         else if(colOriginal === 5 || colOriginal === 6) anchoCelda = "105px"; 
-        else if(typeof colOriginal === 'string') anchoCelda = "90px";
         
         thT.style.width = anchoCelda; thT.style.minWidth = anchoCelda; thT.style.maxWidth = anchoCelda;
         
         if(colOriginal >= 5 && colOriginal <= 7) thT.classList.add('bg-folios');
         if(colOriginal >= 19 && colOriginal <= 30) thT.classList.add('bg-retiradas');
-        if(colOriginal === 16) thT.style.backgroundColor = "#92d050"; 
-        if(colOriginal === 17) thT.style.backgroundColor = "red"; 
-        if(typeof colOriginal === 'string') thT.style.backgroundColor = "#ffc107"; 
         
-        thN.className = "table-light";
+        thN.innerText = colOriginal; thN.className = "table-light";
         trTitulos.appendChild(thT); trNumeros.appendChild(thN);
     });
     thead.appendChild(trTitulos); thead.appendChild(trNumeros);
@@ -76,108 +69,121 @@ function construirHeaderTabla() {
 
 construirHeaderTabla();
 
-function cargarInicialesDB() {
-    get(ref(db, 'configuracion/iniciales_acumulado')).then((snapshot) => {
-        if(snapshot.exists()) {
-            valoresIniciales = snapshot.val();
-            document.getElementById('ini_050351').value = valoresIniciales["050351"] || 0;
-            document.getElementById('ini_050353').value = valoresIniciales["050353"] || 0;
-            document.getElementById('ini_050354').value = valoresIniciales["050354"] || 0;
+function cargarDatosAcumulado() {
+    const statusDiv = document.getElementById('statusAcumulado');
+    
+    // Cargar iniciales guardadas en Firebase
+    get(ref(db, 'config_acumulado_iniciales')).then(snap => {
+        if(snap.exists()) {
+            valoresInicialesGlobal = snap.val();
+            document.getElementById('ini_050351').value = valoresInicialesGlobal["050351"] || 0;
+            document.getElementById('ini_050353').value = valoresInicialesGlobal["050353"] || 0;
+            document.getElementById('ini_050354').value = valoresInicialesGlobal["050354"] || 0;
         }
-        cargarAcumuladoGlobal(); 
-    }).catch(err => { console.error(err); cargarAcumuladoGlobal(); });
+    });
+
+    // Cargar la BD Madre
+    get(ref(db, 'bd_madre')).then((snapshot) => {
+        if (snapshot.exists()) {
+            const dataRaw = snapshot.val();
+            bdMadreGlobal = Array.isArray(dataRaw) ? dataRaw : Object.values(dataRaw);
+            renderTablaAcumulado();
+            if(statusDiv) {
+                statusDiv.className = "badge bg-success fs-6";
+                statusDiv.innerHTML = '<i class="bi bi-check-circle"></i> Sincronizado';
+            }
+        } else {
+            bdMadreGlobal = [];
+            if(statusDiv) {
+                statusDiv.className = "badge bg-secondary fs-6";
+                statusDiv.innerHTML = 'Sin datos en BD Principal';
+            }
+        }
+    }).catch(err => console.error("Error al cargar acumulado:", err));
 }
 
+function renderTablaAcumulado() {
+    const tbody = document.querySelector('#tablaAcumulado tbody');
+    if(!tbody) return;
+    tbody.innerHTML = "";
+
+    if(bdMadreGlobal.length === 0) return;
+
+    let modulosMap = {};
+    bdMadreGlobal.forEach(fila => {
+        let mod = fila['Módulo'] || fila['Modulo'] || 'General';
+        if (!modulosMap[mod]) modulosMap[mod] = [];
+        modulosMap[mod].push(fila);
+    });
+
+    let granTotalAcumulado = {};
+
+    Object.keys(modulosMap).sort().forEach(modNombre => {
+        let registrosMod = modulosMap[modNombre];
+        let tr = document.createElement('tr');
+        let numModuloLimpio = modNombre.replace("Módulo ", "").trim();
+
+        COLUMNAS_ACUMULADO.forEach(colOriginal => {
+            let td = document.createElement('td');
+            let nombreColKey = ENCABEZADOS[colOriginal - 1];
+
+            if(colOriginal === 45) {
+                td.innerText = "05";
+            } else if(colOriginal === 46) {
+                td.innerText = "03";
+            } else if(colOriginal === 47) {
+                td.innerText = numModuloLimpio;
+            } else {
+                let sumaCol = 0;
+                registrosMod.forEach(reg => {
+                    let val = parseFloat(reg[nombreColKey] || reg[`Columna ${colOriginal}`] || 0);
+                    if (!isNaN(val)) sumaCol += val;
+                });
+
+                // Si es la columna INICIAL (ej. Columna 5) sumamos el valor inicial configurado
+                if (colOriginal === 5) {
+                    let baseInicial = parseFloat(valoresInicialesGlobal[numModuloLimpio] || 0);
+                    sumaCol += baseInicial;
+                }
+
+                td.innerText = sumaCol;
+
+                if (!granTotalAcumulado[colOriginal]) granTotalAcumulado[colOriginal] = 0;
+                granTotalAcumulado[colOriginal] += sumaCol;
+            }
+            tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+    });
+
+    // Fila de Gran Total Global Acumulado
+    let trGranTotal = document.createElement('tr');
+    trGranTotal.classList.add('fila-totales');
+    COLUMNAS_ACUMULADO.forEach(colOriginal => {
+        let td = document.createElement('td');
+        if(colOriginal === 45) td.innerText = "-";
+        else if(colOriginal === 46) td.innerText = "-";
+        else if(colOriginal === 47) td.innerText = "TOTAL GENERAL";
+        else {
+            td.innerText = granTotalAcumulado[colOriginal] || 0;
+        }
+        trGranTotal.appendChild(td);
+    });
+    tbody.appendChild(trGranTotal);
+}
+
+// Botón Guardar Iniciales
 document.getElementById('btnGuardarIniciales').addEventListener('click', () => {
-    let nuevosValores = {
+    valoresInicialesGlobal = {
         "050351": parseFloat(document.getElementById('ini_050351').value) || 0,
         "050353": parseFloat(document.getElementById('ini_050353').value) || 0,
         "050354": parseFloat(document.getElementById('ini_050354').value) || 0
     };
-    set(ref(db, 'configuracion/iniciales_acumulado'), nuevosValores).then(() => {
-        alert('Valores INICIALES de Acumulado guardados.');
-        valoresIniciales = nuevosValores;
-        cargarAcumuladoGlobal(); 
+
+    set(ref(db, 'config_acumulado_iniciales'), valoresInicialesGlobal).then(() => {
+        alert('Valores iniciales guardados y aplicados correctamente.');
+        renderTablaAcumulado();
     });
 });
 
-function obtenerTotalesRemesa(remesaData) {
-    if (remesaData.totales) return remesaData.totales;
-    let modulos = ["050351", "050353", "050354"];
-    let matrizTotales = [];
-    modulos.forEach(mod => {
-        if (remesaData[mod] && Array.isArray(remesaData[mod])) {
-            let filasMod = remesaData[mod];
-            let filaTot = filasMod[filasMod.length - 1] || Array(75).fill("0");
-            matrizTotales.push(filaTot);
-        } else { matrizTotales.push(Array(75).fill("0")); }
-    });
-    return matrizTotales;
-}
-
-function cargarAcumuladoGlobal() {
-    get(ref(db, 'historial_campanas')).then((snapshot) => {
-        if (snapshot.exists()) {
-            const historialGlobal = snapshot.val();
-            let sumasAcumuladas = { "050351": Array(75).fill(0), "050353": Array(75).fill(0), "050354": Array(75).fill(0) };
-
-            for (const remesa in historialGlobal) {
-                let remesaData = historialGlobal[remesa];
-                if(!remesaData) continue;
-                let tablaTotalesRemesa = obtenerTotalesRemesa(remesaData);
-                
-                [0, 1, 2].forEach(idx => {
-                    let modId = idx === 0 ? "050351" : (idx === 1 ? "050353" : "050354");
-                    for(let c = 0; c < 75; c++) {
-                        let valor = parseFloat(tablaTotalesRemesa[idx][c]);
-                        if(!isNaN(valor)) sumasAcumuladas[modId][c] += valor;
-                    }
-                });
-            }
-
-            const tbody = document.querySelector('#tablaAcumulado tbody');
-            if(!tbody) return;
-            tbody.innerHTML = "";
-            const filasAMostrar = ["050351", "050353", "050354", "GRAN TOTAL"];
-
-            filasAMostrar.forEach(fila => {
-                let tr = document.createElement('tr');
-                if (fila === "GRAN TOTAL") tr.classList.add('fila-totales');
-
-                COLUMNAS_ACUMULADO.forEach(colOriginal => {
-                    let td = document.createElement('td');
-                    if(colOriginal === 45) td.innerText = fila === "GRAN TOTAL" ? "-" : "05";
-                    else if (colOriginal === 46) td.innerText = fila === "GRAN TOTAL" ? "-" : "03";
-                    else if (colOriginal === 47) td.innerText = fila === "GRAN TOTAL" ? "GRAN TOTAL" : fila.substring(4,6);
-                    else if (typeof colOriginal === 'string') {
-                        if(colOriginal === 'INICIALES') {
-                            if(fila === "GRAN TOTAL") {
-                                td.innerText = (parseFloat(valoresIniciales["050351"]) || 0) + (parseFloat(valoresIniciales["050353"]) || 0) + (parseFloat(valoresIniciales["050354"]) || 0);
-                            } else { td.innerText = valoresIniciales[fila] || 0; }
-                            td.classList.add('fw-bold', 'text-primary');
-                        } else {
-                            td.innerText = "0";
-                            td.classList.add('text-muted');
-                        }
-                    } else {
-                        if(fila === "GRAN TOTAL") {
-                            let totalCol = sumasAcumuladas["050351"][colOriginal-1] + sumasAcumuladas["050353"][colOriginal-1] + sumasAcumuladas["050354"][colOriginal-1];
-                            td.innerText = totalCol === 0 ? "0" : totalCol;
-                        } else {
-                            let valorSuma = sumasAcumuladas[fila][colOriginal-1];
-                            td.innerText = valorSuma === 0 ? "0" : valorSuma;
-                        }
-                    }
-                    tr.appendChild(td);
-                });
-                tbody.appendChild(tr);
-            });
-
-        } else {
-            const tb = document.querySelector('#tablaAcumulado tbody');
-            if(tb) tb.innerHTML = '<tr><td colspan="46" class="text-center py-3 text-muted">No hay datos históricos para acumular.</td></tr>';
-        }
-    }).catch(err => console.error(err));
-}
-
-cargarInicialesDB();
+cargarDatosAcumulado();
