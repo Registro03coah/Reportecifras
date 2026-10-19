@@ -18,6 +18,22 @@ const database = firebase.database();
 let bdMadre = [];
 let columnasEstructura = [];
 
+// Función para limpiar caracteres prohibidos por Firebase en las llaves (ej: /, ., #, $, [, ])
+function limpiarLlavesParaFirebase(obj) {
+    if (Array.isArray(obj)) {
+        return obj.map(item => limpiarLlavesParaFirebase(item));
+    } else if (obj !== null && typeof obj === 'object') {
+        let nuevoObj = {};
+        Object.keys(obj).forEach(key => {
+            // Reemplaza . # $ / [ ] por guion bajo _
+            let nuevaKey = key.replace(/[\.#\$\[\]\/]/g, '_');
+            nuevoObj[nuevaKey] = limpiarLlavesParaFirebase(obj[key]);
+        });
+        return nuevoObj;
+    }
+    return obj;
+}
+
 // Al cargar la página, intentamos traer los datos que ya estén guardados en Firebase
 window.addEventListener('DOMContentLoaded', () => {
     database.ref('bd_madre').once('value')
@@ -54,17 +70,20 @@ document.getElementById('fileInput').addEventListener('change', function(e) {
         try {
             let jsonData = JSON.parse(event.target.result);
             
-            // ASEGURAR QUE SEA UN ARREGLO (Por si suben un objeto suelto)
+            // ASEGURAR QUE SEA UN ARREGLO
             if (!Array.isArray(jsonData)) {
                 jsonData = [jsonData];
             }
             
+            // LIMPIAR LLAVES PROHIBIDAS POR FIREBASE (/ . # $ [ ])
+            const dataParaFirebase = limpiarLlavesParaFirebase(jsonData);
+
             if(jsonData.length > 0) {
                 columnasEstructura = Object.keys(jsonData[0]);
             }
 
             // GUARDAR EN FIREBASE DE GOLPE
-            database.ref('bd_madre').set(jsonData).then(() => {
+            database.ref('bd_madre').set(dataParaFirebase).then(() => {
                 bdMadre = jsonData;
                 renderizarCabeceras(columnasEstructura);
                 ordenarYRenderizar(bdMadre);
@@ -91,7 +110,7 @@ function ordenarYRenderizar(datos) {
         const modA = a['MÓDULO'] || a['Módulo'] || a['Modulo'] || '';
         const modB = b['MÓDULO'] || b['Módulo'] || b['Modulo'] || '';
         const diaA = a['DÍA'] || a['Día'] || a['Dia'] || '';
-        const diaB = b['DÍA'] || b['Día'] || b['Dia'] || '';
+        const diaB = a['DÍA'] || a['Día'] || a['Dia'] || '';
         
         if (modA === modB) {
             return String(diaA).localeCompare(String(diaB));
@@ -179,7 +198,7 @@ window.vaciarBaseDatosGeneral = function() {
     }
 }
 
-function limpiarTableroLocal() {
+function limpiarTableroLogal() {
     bdMadre = [];
     columnasEstructura = [];
     document.getElementById('cabeceraBdMadre').innerHTML = '';
