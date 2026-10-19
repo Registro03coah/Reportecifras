@@ -250,3 +250,37 @@ document.getElementById('btnGuardarEdicion').addEventListener('click', () => {
 });
 
 cargarDatosDias();
+
+// ==========================================
+// 6. RESPALDO Y RESTAURACIÓN (JSON)
+// ==========================================
+document.getElementById('btnDescargarJSON').addEventListener('click', () => {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(historialGlobal, null, 2));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `respaldo_mac_remesas_${new Date().toISOString().slice(0,10)}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+});
+
+document.getElementById('inputSubirJSON').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        try {
+            const jsonData = JSON.parse(event.target.result);
+            if(confirm("¿Estás seguro de subir este respaldo? Sobrescribirá las remesas en la base de datos y actualizará todos los reportes (Días, Semanal, Campaña).")) {
+                set(ref(db, 'historial_campanas'), jsonData).then(() => {
+                    alert('Datos subidos y sincronizados con éxito en todos los reportes.');
+                    cargarDatosDias();
+                });
+            }
+        } catch(err) {
+            alert('El archivo JSON no es válido.');
+        }
+    };
+    reader.readAsText(file);
+});

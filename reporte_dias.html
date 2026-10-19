@@ -95,7 +95,13 @@
                 <strong>Vista Diaria:</strong> Aquí se muestran los 7 días de cada módulo por remesa.<br>
                 <em>Orden visual: MÓDULO (47), REMESA (39), DÍA (1), FECHA (2), SEDES (4) y del 5 al 75 (ocultando 3).</em>
             </div>
-            <div id="statusCarga" class="badge bg-warning text-dark fs-6"><i class="bi bi-arrow-repeat spin"></i> Cargando datos...</div>
+            <div class="d-flex align-items-center gap-2">
+                <div id="statusCarga" class="badge bg-warning text-dark fs-6 me-2"><i class="bi bi-arrow-repeat spin"></i> Cargando...</div>
+                <button class="btn btn-sm btn-dark" id="btnDescargarJSON"><i class="bi bi-download"></i> Descargar Respaldo JSON</button>
+                <label class="btn btn-sm btn-success mb-0" style="cursor: pointer;">
+                    <i class="bi bi-upload"></i> Subir Respaldo JSON <input type="file" id="inputSubirJSON" accept=".json" class="d-none">
+                </label>
+            </div>
         </div>
 
         <div class="excel-container shadow-sm rounded border-success">

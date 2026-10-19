@@ -13,13 +13,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// ==========================================
-// 2. CONFIGURACIÓN COLUMNAS DE CAMPAÑA
-// ==========================================
-// Orden solicitado: 45(ENT), 46(DTTO), 47(MÓDULO), y luego del 5 al 30.
 const COLUMNAS_CAMPANA = [45, 46, 47, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30];
 
-// Array maestro de los 75 nombres para extraer el texto
 const ENCABEZADOS = [
     "DÍA", "DD/MM/AA", "Horas trabajadas", "Sedes visitadas", "INICIAL", "FINAL", "TOTAL DE FOLIOS", 
     "INSCRIPCIONES", "CORRECCION DE DATOS PERSONALES", "CAMBIO DE DOMICILIO", "REPOSISION", 
@@ -39,14 +34,10 @@ const ENCABEZADOS = [
     "MOV.POST.", "ANEXAS A SOLICITUD", "OTRAS BAJAS"
 ];
 
-// Variables globales para la edición
 let historialGlobal = {};
 let remesaEnEdicion = "";
-let datosRemesaEnEdicion = {}; // Copia profunda de la remesa seleccionada
+let datosRemesaEnEdicion = {};
 
-// ==========================================
-// 3. GENERADOR DE TABLAS (Vista y Modal)
-// ==========================================
 function construirHeaderTabla(selectorTabla) {
     const thead = document.querySelector(`${selectorTabla} thead`);
     thead.innerHTML = "";
@@ -56,13 +47,11 @@ function construirHeaderTabla(selectorTabla) {
     COLUMNAS_CAMPANA.forEach((colOriginal) => {
         let thT = document.createElement('th');
         let thN = document.createElement('th');
-        
-        // Obtener el nombre correspondiente (índice col-1)
         thT.innerText = ENCABEZADOS[colOriginal - 1];
         
         let anchoCelda = "50px"; 
-        if(colOriginal >= 45 && colOriginal <= 47) anchoCelda = "60px"; // ENT, DTTO, MOD
-        else if(colOriginal === 5 || colOriginal === 6) anchoCelda = "105px"; // Inicial/Final
+        if(colOriginal >= 45 && colOriginal <= 47) anchoCelda = "60px"; 
+        else if(colOriginal === 5 || colOriginal === 6) anchoCelda = "105px"; 
         
         thT.style.width = anchoCelda; thT.style.minWidth = anchoCelda; thT.style.maxWidth = anchoCelda;
         
@@ -73,42 +62,40 @@ function construirHeaderTabla(selectorTabla) {
         if(colOriginal === 18) thT.style.backgroundColor = "yellow"; 
         
         thN.innerText = colOriginal; thN.className = "table-light";
-        
         trTitulos.appendChild(thT); trNumeros.appendChild(thN);
     });
     thead.appendChild(trTitulos); thead.appendChild(trNumeros);
 }
 
-// Inicializar headers
 construirHeaderTabla('#tablaCampana');
 construirHeaderTabla('#tablaEditarRemesa');
 
-// ==========================================
-// 4. LECTURA Y RENDERIZADO
-// ==========================================
 function cargarDatosCampana() {
-    const statusDiv = document.getElementById('statusCarga');
-    statusDiv.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Cargando...';
-    
     get(ref(db, 'historial_campanas')).then((snapshot) => {
         if (snapshot.exists()) {
             historialGlobal = snapshot.val();
+            poblarSelectoresRemesa();
             procesarYMostrarDatos();
             renderListaRemesas();
-            statusDiv.className = "badge bg-success fs-6";
-            statusDiv.innerHTML = '<i class="bi bi-check-circle"></i> Datos Actualizados';
         } else {
             historialGlobal = {};
             document.querySelector('#tablaCampana tbody').innerHTML = "";
-            document.querySelector('#tablaListaRemesas tbody').innerHTML = '<tr><td colspan="2">No hay remesas guardadas</td></tr>';
-            statusDiv.className = "badge bg-secondary fs-6";
-            statusDiv.innerHTML = 'No hay remesas guardadas aún.';
         }
-    }).catch((error) => {
-        console.error(error);
-        statusDiv.className = "badge bg-danger fs-6";
-        statusDiv.innerHTML = '<i class="bi bi-x-circle"></i> Error de conexión';
-    });
+    }).catch(err => console.error(err));
+}
+
+function poblarSelectoresRemesa() {
+    const selectInicio = document.getElementById('filtroRemesaInicio');
+    const selectFin = document.getElementById('filtroRemesaFin');
+    if(!selectInicio || !selectFin) return;
+
+    const remesasKeys = Object.keys(historialGlobal).sort((a,b) => parseInt(a) - parseInt(b));
+    
+    let opts = '<option value="">-- Todas / Inicio --</option>';
+    remesasKeys.forEach(r => opts += `<option value="${r}">Remesa ${r}</option>`);
+    
+    selectInicio.innerHTML = opts;
+    selectFin.innerHTML = opts.replace('-- Todas / Inicio --', '-- Todas / Fin --');
 }
 
 function procesarYMostrarDatos() {
@@ -118,11 +105,18 @@ function procesarYMostrarDatos() {
         "050354": Array(75).fill(0)
     };
 
+    const remesaInicio = document.getElementById('filtroRemesaInicio').value;
+    const remesaFin = document.getElementById('filtroRemesaFin').value;
+
     for (const remesa in historialGlobal) {
+        // Filtrar por rango si está especificado
+        let numR = parseInt(remesa);
+        if(remesaInicio && numR < parseInt(remesaInicio)) continue;
+        if(remesaFin && numR > parseInt(remesaFin)) continue;
+
         let tablaTotalesRemesa = historialGlobal[remesa].totales; 
         if(!tablaTotalesRemesa) continue;
         
-        // Sumar filas de módulos (índices 0, 1, 2 -> 51, 53, 54)
         [0, 1, 2].forEach(idx => {
             let modId = idx === 0 ? "050351" : (idx === 1 ? "050353" : "050354");
             for(let c = 0; c < 75; c++) {
@@ -142,14 +136,10 @@ function procesarYMostrarDatos() {
 
         COLUMNAS_CAMPANA.forEach(colOriginal => {
             let td = document.createElement('td');
-            
-            if(colOriginal === 45) { // ENT
-                td.innerText = fila === "GRAN TOTAL" ? "-" : "05";
-            } else if (colOriginal === 46) { // DTTO
-                td.innerText = fila === "GRAN TOTAL" ? "-" : "03";
-            } else if (colOriginal === 47) { // MÓDULO
-                td.innerText = fila === "GRAN TOTAL" ? "GRAN TOTAL" : fila.substring(4,6);
-            } else {
+            if(colOriginal === 45) td.innerText = fila === "GRAN TOTAL" ? "-" : "05";
+            else if (colOriginal === 46) td.innerText = fila === "GRAN TOTAL" ? "-" : "03";
+            else if (colOriginal === 47) td.innerText = fila === "GRAN TOTAL" ? "GRAN TOTAL" : fila.substring(4,6);
+            else {
                 if(fila === "GRAN TOTAL") {
                     let totalCol = sumas["050351"][colOriginal-1] + sumas["050353"][colOriginal-1] + sumas["050354"][colOriginal-1];
                     td.innerText = totalCol === 0 ? "0" : totalCol;
@@ -164,13 +154,12 @@ function procesarYMostrarDatos() {
     });
 }
 
-// ==========================================
-// 5. GESTOR DE REMESAS (LISTA, BORRAR, EDITAR)
-// ==========================================
+document.getElementById('btnFiltrarCampana').addEventListener('click', procesarYMostrarDatos);
+
 function renderListaRemesas() {
     const tbody = document.querySelector('#tablaListaRemesas tbody');
+    if(!tbody) return;
     tbody.innerHTML = "";
-    
     Object.keys(historialGlobal).forEach(remesaId => {
         let tr = document.createElement('tr');
         tr.innerHTML = `
@@ -183,11 +172,10 @@ function renderListaRemesas() {
         tbody.appendChild(tr);
     });
 
-    // Eventos Borrar
     document.querySelectorAll('.btn-borrar').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const id = e.target.closest('button').getAttribute('data-id');
-            if(confirm(`¿Estás completamente seguro de borrar la Remesa ${id} de la Base de Datos? Esto restará sus cantidades del Reporte de Campaña.`)) {
+            if(confirm(`¿Estás seguro de borrar la Remesa ${id}?`)) {
                 remove(ref(db, `historial_campanas/${id}`)).then(() => {
                     alert('Remesa eliminada.');
                     cargarDatosCampana();
@@ -196,7 +184,6 @@ function renderListaRemesas() {
         });
     });
 
-    // Eventos Editar
     document.querySelectorAll('.btn-editar').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const id = e.target.closest('button').getAttribute('data-id');
@@ -208,26 +195,18 @@ function renderListaRemesas() {
 function abrirModalEdicion(remesaId) {
     remesaEnEdicion = remesaId;
     document.getElementById('lblRemesaEdit').innerText = remesaId;
-    
-    // Hacemos una copia independiente de los datos para editar
     datosRemesaEnEdicion = JSON.parse(JSON.stringify(historialGlobal[remesaId].totales));
-    
     const tbody = document.querySelector('#tablaEditarRemesa tbody');
     tbody.innerHTML = "";
-    
     const filasModulos = ["050351", "050353", "050354"];
-    
     filasModulos.forEach((mod, idx) => {
         let tr = document.createElement('tr');
-        
         COLUMNAS_CAMPANA.forEach(colOriginal => {
             let td = document.createElement('td');
-            
             if(colOriginal === 45) td.innerText = "05";
             else if (colOriginal === 46) td.innerText = "03";
             else if (colOriginal === 47) td.innerText = mod.substring(4,6);
             else {
-                // Aquí metemos un input para poder editar el valor original de esa remesa
                 let valOriginal = datosRemesaEnEdicion[idx][colOriginal-1] || "0";
                 td.innerHTML = `<input type="text" data-modidx="${idx}" data-colidx="${colOriginal-1}" value="${valOriginal}">`;
             }
@@ -235,26 +214,19 @@ function abrirModalEdicion(remesaId) {
         });
         tbody.appendChild(tr);
     });
-
-    // Mostrar modal (requiere Bootstrap JS)
-    const modal = new bootstrap.Modal(document.getElementById('modalEditarRemesa'));
-    modal.show();
+    new bootstrap.Modal(document.getElementById('modalEditarRemesa')).show();
 }
 
 document.getElementById('btnGuardarEdicion').addEventListener('click', () => {
-    // 1. Recoger valores del Modal
     const inputs = document.querySelectorAll('#tablaEditarRemesa input');
     inputs.forEach(inp => {
         const modIdx = inp.getAttribute('data-modidx');
         const colIdx = inp.getAttribute('data-colidx');
-        datosRemesaEnEdicion[modIdx][colIdx] = inp.value.trim();
+        datosRemesaEnEdicion[modIdx][colIdx] = inp.value.trim() || "0";
     });
 
-    // 2. Recalcular el Gran Total (fila 3) de esta remesa en base a los 3 módulos editados
-    let filaGranTotal = Array(75).fill(0);
-    // Para columnas de texto
+    let filaGranTotal = Array(75).fill("0");
     filaGranTotal[0] = "GRAN TOTAL";
-    // Sumar numéricas
     for(let c=1; c<75; c++) {
         let sumaC = 0;
         [0,1,2].forEach(i => {
@@ -263,20 +235,13 @@ document.getElementById('btnGuardarEdicion').addEventListener('click', () => {
         });
         filaGranTotal[c] = sumaC;
     }
-    datosRemesaEnEdicion[3] = filaGranTotal; // Actualizamos el Gran Total de la remesa
+    datosRemesaEnEdicion[3] = filaGranTotal;
 
-    // 3. Guardar en BD
-    // Ojo: En historial guardamos dentro de la propiedad "totales"
-    const dbRef = ref(db, `historial_campanas/${remesaEnEdicion}/totales`);
-    set(dbRef, datosRemesaEnEdicion).then(() => {
+    set(ref(db, `historial_campanas/${remesaEnEdicion}/totales`), datosRemesaEnEdicion).then(() => {
         alert('Edición guardada correctamente.');
         bootstrap.Modal.getInstance(document.getElementById('modalEditarRemesa')).hide();
-        cargarDatosCampana(); // Refrescar vista
-    }).catch(err => {
-        console.error(err);
-        alert('Error al guardar edición.');
+        cargarDatosCampana();
     });
 });
 
-// Iniciar al cargar la página
 cargarDatosCampana();
