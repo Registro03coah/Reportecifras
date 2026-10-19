@@ -33,13 +33,25 @@ function limpiarLlavesParaFirebase(obj) {
     return obj;
 }
 
-// Extraer TODAS las llaves únicas de todos los registros (para asegurar las 75 columnas)
+// Extraer columnas respetando el orden exacto del primer registro
 function extraerTodasLasColumnas(datos) {
-    const setColumnas = new Set();
+    if (!datos || datos.length === 0) return [];
+    
+    // Tomamos las columnas del primer registro como base principal (respeta su orden exacto)
+    const columnasBase = Object.keys(datos[0]);
+    const setColumnas = new Set(columnasBase);
+    
+    // Si algún otro registro tiene columnas adicionales, las agregamos al final
     datos.forEach(fila => {
-        Object.keys(fila).forEach(col => setColumnas.add(col));
+        Object.keys(fila).forEach(col => {
+            if (!setColumnas.has(col)) {
+                setColumnas.add(col);
+                columnasBase.push(col);
+            }
+        });
     });
-    return Array.from(setColumnas);
+    
+    return columnasBase;
 }
 
 // Al cargar la página, traemos los datos de Firebase
@@ -158,7 +170,7 @@ function ordenarYRenderizar(datos) {
         const modA = a['MÓDULO'] || a['Módulo'] || a['Modulo'] || '';
         const modB = b['MÓDULO'] || b['Módulo'] || b['Modulo'] || '';
         const diaA = a['DÍA'] || a['Día'] || a['Dia'] || '';
-        const diaB = b['DÍA'] || b['Día'] || b['Dia'] || '';
+        const diaB = a['DÍA'] || a['Día'] || a['Dia'] || '';
         
         if (modA === modB) {
             return String(diaA).localeCompare(String(diaB));
@@ -187,7 +199,7 @@ function renderizarCabeceras(columnas) {
     thead.innerHTML = tr;
 }
 
-// 5. RENDERIZAR TABLA (Optimizado para gran cantidad de columnas y filas)
+// 5. RENDERIZAR TABLA (Optimizado)
 function renderizarTabla(datos) {
     const tbody = document.getElementById('cuerpoBdMadre');
     
