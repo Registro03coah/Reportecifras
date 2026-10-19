@@ -1,18 +1,23 @@
 // NOTA PARA GITHUB Y FIREBASE:
 // Descomenta y coloca aquí tu configuración real de Firebase
 /*
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "TU_API_KEY",
-  authDomain: "TU_AUTH_DOMAIN",
-  databaseURL: "TU_DATABASE_URL",
-  projectId: "TU_PROJECT_ID",
-  storageBucket: "TU_STORAGE_BUCKET",
-  messagingSenderId: "TU_MESSAGING_SENDER_ID",
-  appId: "TU_APP_ID"
+  apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo",
+  authDomain: "cifrasmac.firebaseapp.com",
+  projectId: "cifrasmac",
+  storageBucket: "cifrasmac.firebasestorage.app",
+  messagingSenderId: "916644687837",
+  appId: "1:916644687837:web:03d346cc48a071af1ed034"
 };
-firebase.initializeApp(firebaseConfig);
-const database = firebase.database();
-*/
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
 
 let bdMadre = [];
 let columnasEstructura = [];
