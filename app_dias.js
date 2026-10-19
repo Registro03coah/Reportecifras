@@ -1,14 +1,14 @@
 // ==========================================
-// 1. IMPORTACIONES FIREBASE
+// 1. IMPORTACIONES Y CONFIGURACIÓN FIREBASE (BD MADRE)
 // ==========================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, get, set, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyA6jvnsXZwF2anOJo3VadfNvn7Fl6Z5efY",
-    authDomain: "sistema-mac-reportes.firebaseapp.com",
-    databaseURL: "https://sistema-mac-reportes-default-rtdb.firebaseio.com",
-    projectId: "sistema-mac-reportes"
+    apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo",
+    authDomain: "cifrasmac.firebaseapp.com",
+    databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com",
+    projectId: "cifrasmac"
 };
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
@@ -23,9 +23,6 @@ for(let i=5; i<=75; i++) {
         COLUMNAS_DIAS.push(i);
     }
 }
-
-const MODULOS = ["050351", "050353", "050354"];
-const DIAS_SEMANA = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
 const ENCABEZADOS = [
     "DÍA", "DD/MM/AA", "Horas trabajadas", "Sedes visitadas", "INICIAL", "FINAL", "TOTAL DE FOLIOS", 
@@ -46,15 +43,14 @@ const ENCABEZADOS = [
     "MOV.POST.", "ANEXAS A SOLICITUD", "OTRAS BAJAS"
 ];
 
-let historialGlobal = {};
-let remesaEnEdicion = "";
-let datosRemesaEnEdicion = {};
+let bdMadreGlobal = [];
 
 // ==========================================
-// 3. GENERADOR DE TABLAS (Vista y Modal)
+// 3. GENERADOR DE TABLAS
 // ==========================================
 function construirHeaderTabla(selectorTabla) {
     const thead = document.querySelector(`${selectorTabla} thead`);
+    if(!thead) return;
     thead.innerHTML = "";
     let trTitulos = document.createElement('tr');
     let trNumeros = document.createElement('tr');
@@ -63,14 +59,14 @@ function construirHeaderTabla(selectorTabla) {
         let thT = document.createElement('th');
         let thN = document.createElement('th');
         
-        thT.innerText = ENCABEZADOS[colOriginal - 1];
+        thT.innerText = ENCABEZADOS[colOriginal - 1] || `Col ${colOriginal}`;
         
         let anchoCelda = "50px"; 
-        if(colOriginal === 47 || colOriginal === 39) anchoCelda = "70px"; // Mod, Remesa
-        else if(colOriginal === 1) anchoCelda = "85px"; // Día
-        else if(colOriginal === 2) anchoCelda = "75px"; // Fecha
-        else if(colOriginal === 4) anchoCelda = "85px"; // Sedes
-        else if(colOriginal === 5 || colOriginal === 6) anchoCelda = "105px"; // Inicial/Final
+        if(colOriginal === 47 || colOriginal === 39) anchoCelda = "70px"; 
+        else if(colOriginal === 1) anchoCelda = "85px"; 
+        else if(colOriginal === 2) anchoCelda = "75px"; 
+        else if(colOriginal === 4) anchoCelda = "85px"; 
+        else if(colOriginal === 5 || colOriginal === 6) anchoCelda = "105px"; 
         else if(colOriginal === 61 || colOriginal === 62) anchoCelda = "80px"; 
         
         thT.style.width = anchoCelda; thT.style.minWidth = anchoCelda; thT.style.maxWidth = anchoCelda;
@@ -85,202 +81,168 @@ function construirHeaderTabla(selectorTabla) {
         if(colOriginal === 63 || colOriginal === 64) thT.style.backgroundColor = "yellow"; 
         
         thN.innerText = colOriginal; thN.className = "table-light";
-        
         trTitulos.appendChild(thT); trNumeros.appendChild(thN);
     });
     thead.appendChild(trTitulos); thead.appendChild(trNumeros);
 }
 
 construirHeaderTabla('#tablaDias');
-MODULOS.forEach(mod => construirHeaderTabla(`#tablaEditar_${mod}`));
 
 // ==========================================
-// 4. LECTURA Y RENDERIZADO
+// 4. LECTURA Y RENDERIZADO DESDE BD MADRE
 // ==========================================
 function cargarDatosDias() {
     const statusDiv = document.getElementById('statusCarga');
-    statusDiv.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Cargando...';
+    if(statusDiv) {
+        statusDiv.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Cargando...';
+    }
     
-    get(ref(db, 'historial_campanas')).then((snapshot) => {
+    get(ref(db, 'bd_madre')).then((snapshot) => {
         if (snapshot.exists()) {
-            historialGlobal = snapshot.val();
+            const dataRaw = snapshot.val();
+            bdMadreGlobal = Array.isArray(dataRaw) ? dataRaw : Object.values(dataRaw);
             procesarYMostrarDatos();
             renderListaRemesas();
-            statusDiv.className = "badge bg-success fs-6";
-            statusDiv.innerHTML = '<i class="bi bi-check-circle"></i> Datos Actualizados';
+            if(statusDiv) {
+                statusDiv.className = "badge bg-success fs-6";
+                statusDiv.innerHTML = '<i class="bi bi-check-circle"></i> Datos Actualizados';
+            }
         } else {
-            historialGlobal = {};
-            document.querySelector('#tablaDias tbody').innerHTML = "";
-            document.querySelector('#tablaListaRemesas tbody').innerHTML = '<tr><td colspan="2">No hay remesas guardadas</td></tr>';
-            statusDiv.className = "badge bg-secondary fs-6";
-            statusDiv.innerHTML = 'No hay remesas guardadas aún.';
+            bdMadreGlobal = [];
+            const tb = document.querySelector('#tablaDias tbody');
+            if(tb) tb.innerHTML = "";
+            const tbRem = document.querySelector('#tablaListaRemesas tbody');
+            if(tbRem) tbRem.innerHTML = '<tr><td colspan="2">No hay remesas guardadas</td></tr>';
+            if(statusDiv) {
+                statusDiv.className = "badge bg-secondary fs-6";
+                statusDiv.innerHTML = 'No hay remesas guardadas aún.';
+            }
         }
     }).catch((error) => {
-        console.error(error);
-        statusDiv.className = "badge bg-danger fs-6";
-        statusDiv.innerHTML = '<i class="bi bi-x-circle"></i> Error de conexión';
+        console.error("Error al leer la BD Madre:", error);
+        if(statusDiv) {
+            statusDiv.className = "badge bg-danger fs-6";
+            statusDiv.innerHTML = '<i class="bi bi-x-circle"></i> Error de conexión';
+        }
     });
 }
 
 function procesarYMostrarDatos() {
     const tbody = document.querySelector('#tablaDias tbody');
+    if(!tbody) return;
     tbody.innerHTML = "";
 
-    // Para cada remesa, mostrar los 7 días de cada módulo
-    for (const remesa in historialGlobal) {
-        MODULOS.forEach(mod => {
-            let datosMod = historialGlobal[remesa][mod];
-            if(!datosMod) return;
+    if (bdMadreGlobal.length === 0) return;
 
-            // Recorrer 7 días (índices 0 al 6)
-            for(let d = 0; d < 7; d++) {
-                let fila = datosMod[d];
-                let tr = document.createElement('tr');
-                
-                COLUMNAS_DIAS.forEach(colOriginal => {
-                    let td = document.createElement('td');
-                    if (colOriginal === 47) td.innerText = mod.substring(4,6); // Módulo
-                    else if (colOriginal === 39) td.innerText = remesa; // Remesa
-                    else if (colOriginal === 1) td.innerText = DIAS_SEMANA[d] || fila[0]; // Día
-                    else td.innerText = fila[colOriginal-1] || "";
-                    
-                    tr.appendChild(td);
-                });
-                tbody.appendChild(tr);
+    // Ordenar por Módulo y Remesa
+    let datosOrdenados = [...bdMadreGlobal].sort((a, b) => {
+        const modA = a['Módulo'] || a['Modulo'] || '';
+        const modB = b['Módulo'] || b['Modulo'] || '';
+        if (modA !== modB) return modA.localeCompare(modB);
+        const remA = a['Remesa'] || a['remesa'] || '';
+        const remB = b['Remesa'] || b['remesa'] || '';
+        if (remA !== remB) return remA.localeCompare(remB);
+        return 0;
+    });
+
+    datosOrdenados.forEach(fila => {
+        let tr = document.createElement('tr');
+        
+        COLUMNAS_DIAS.forEach(colOriginal => {
+            let td = document.createElement('td');
+            let nombreColKey = ENCABEZADOS[colOriginal - 1];
+
+            if (colOriginal === 47) {
+                let modVal = fila['Módulo'] || fila['Modulo'] || '';
+                td.innerText = String(modVal).replace("Módulo ", "").trim();
+            } else if (colOriginal === 39) {
+                td.innerText = fila['Remesa'] || fila['remesa'] || '';
+            } else if (colOriginal === 1) {
+                td.innerText = fila['DÍA'] || fila['Dia'] || '';
+            } else {
+                let val = fila[nombreColKey] ?? fila[`Columna ${colOriginal}`] ?? fila[colOriginal-1] ?? '';
+                td.innerText = val;
             }
+            
+            tr.appendChild(td);
         });
-    }
+        tbody.appendChild(tr);
+    });
 }
 
 // ==========================================
-// 5. GESTOR DE REMESAS (LISTA, BORRAR, EDITAR DÍAS)
+// 5. GESTOR DE REMESAS Y ELIMINACIÓN
 // ==========================================
 function renderListaRemesas() {
     const tbody = document.querySelector('#tablaListaRemesas tbody');
+    if(!tbody) return;
     tbody.innerHTML = "";
     
-    Object.keys(historialGlobal).forEach(remesaId => {
+    let remesasUnicas = [...new Set(bdMadreGlobal.map(f => f['Remesa'] || f['remesa'] || 'S/N'))].sort();
+
+    remesasUnicas.forEach(remesaId => {
         let tr = document.createElement('tr');
         tr.innerHTML = `
             <td class="fw-bold fs-5 text-success">Remesa ${remesaId}</td>
             <td>
-                <button class="btn btn-sm btn-success px-3 me-2 btn-editar" data-id="${remesaId}"><i class="bi bi-pencil-square"></i> Editar Días</button>
                 <button class="btn btn-sm btn-danger px-3 btn-borrar" data-id="${remesaId}"><i class="bi bi-trash"></i> Eliminar Remesa</button>
             </td>
         `;
         tbody.appendChild(tr);
     });
 
-    // Eventos Borrar
     document.querySelectorAll('.btn-borrar').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const id = e.target.closest('button').getAttribute('data-id');
-            if(confirm(`¿Estás completamente seguro de borrar la Remesa ${id}? Se eliminará del Reporte de Días y del Reporte de Campaña.`)) {
-                remove(ref(db, `historial_campanas/${id}`)).then(() => {
-                    alert('Remesa eliminada exitosamente.');
+            if(confirm(`¿Estás completamente seguro de borrar la Remesa ${id} de la Base de Datos Principal?`)) {
+                let nuevoBd = bdMadreGlobal.filter(f => (f['Remesa'] || f['remesa'] || 'S/N') !== id);
+                set(ref(db, 'bd_madre'), nuevoBd).then(() => {
+                    alert('Remesa eliminada exitosamente de la BD Principal.');
                     cargarDatosDias();
                 });
             }
         });
     });
-
-    // Eventos Editar
-    document.querySelectorAll('.btn-editar').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const id = e.target.closest('button').getAttribute('data-id');
-            abrirModalEdicion(id);
-        });
-    });
 }
-
-function abrirModalEdicion(remesaId) {
-    remesaEnEdicion = remesaId;
-    document.getElementById('lblRemesaEdit').innerText = remesaId;
-    
-    // Copia profunda
-    datosRemesaEnEdicion = JSON.parse(JSON.stringify(historialGlobal[remesaId]));
-    
-    MODULOS.forEach(mod => {
-        const tbody = document.querySelector(`#tablaEditar_${mod} tbody`);
-        tbody.innerHTML = "";
-        
-        for(let d = 0; d < 7; d++) {
-            let tr = document.createElement('tr');
-            
-            COLUMNAS_DIAS.forEach(colOriginal => {
-                let td = document.createElement('td');
-                if (colOriginal === 47) td.innerText = mod.substring(4,6);
-                else if (colOriginal === 39) td.innerText = remesaId;
-                else if (colOriginal === 1) td.innerText = DIAS_SEMANA[d];
-                else {
-                    let valOriginal = datosRemesaEnEdicion[mod][d][colOriginal-1] || "";
-                    td.innerHTML = `<input type="text" data-mod="${mod}" data-row="${d}" data-col="${colOriginal-1}" value="${valOriginal}">`;
-                }
-                tr.appendChild(td);
-            });
-            tbody.appendChild(tr);
-        }
-    });
-
-    const modal = new bootstrap.Modal(document.getElementById('modalEditarDias'));
-    modal.show();
-}
-
-document.getElementById('btnGuardarEdicion').addEventListener('click', () => {
-    // Recoger valores de los inputs y actualizar la copia
-    MODULOS.forEach(mod => {
-        const inputs = document.querySelectorAll(`#tablaEditar_${mod} input`);
-        inputs.forEach(inp => {
-            const r = inp.getAttribute('data-row');
-            const c = inp.getAttribute('data-col');
-            datosRemesaEnEdicion[mod][r][c] = inp.value.trim();
-        });
-    });
-
-    // Guardar la remesa editada en la BD
-    const dbRef = ref(db, `historial_campanas/${remesaEnEdicion}`);
-    set(dbRef, datosRemesaEnEdicion).then(() => {
-        alert('Días editados guardados correctamente.');
-        bootstrap.Modal.getInstance(document.getElementById('modalEditarDias')).hide();
-        cargarDatosDias();
-    }).catch(err => {
-        console.error(err);
-        alert('Error al guardar edición.');
-    });
-});
 
 cargarDatosDias();
 
 // ==========================================
 // 6. RESPALDO Y RESTAURACIÓN (JSON)
 // ==========================================
-document.getElementById('btnDescargarJSON').addEventListener('click', () => {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(historialGlobal, null, 2));
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `respaldo_mac_remesas_${new Date().toISOString().slice(0,10)}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
-});
+const btnDescargar = document.getElementById('btnDescargarJSON');
+if(btnDescargar) {
+    btnDescargar.addEventListener('click', () => {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(bdMadreGlobal, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", `respaldo_bd_madre_${new Date().toISOString().slice(0,10)}.json`);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+    });
+}
 
-document.getElementById('inputSubirJSON').addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if(!file) return;
+const inputSubir = document.getElementById('inputSubirJSON');
+if(inputSubir) {
+    inputSubir.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if(!file) return;
 
-    const reader = new FileReader();
-    reader.onload = function(event) {
-        try {
-            const jsonData = JSON.parse(event.target.result);
-            if(confirm("¿Estás seguro de subir este respaldo? Sobrescribirá las remesas en la base de datos y actualizará todos los reportes (Días, Semanal, Campaña).")) {
-                set(ref(db, 'historial_campanas'), jsonData).then(() => {
-                    alert('Datos subidos y sincronizados con éxito en todos los reportes.');
-                    cargarDatosDias();
-                });
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            try {
+                const jsonData = JSON.parse(event.target.result);
+                if(confirm("¿Estás seguro de subir este respaldo? Sobrescribirá la Base de Datos Principal en Firebase.")) {
+                    set(ref(db, 'bd_madre'), jsonData).then(() => {
+                        alert('Base de Datos Principal actualizada con éxito.');
+                        cargarDatosDias();
+                    });
+                }
+            } catch(err) {
+                alert('El archivo JSON no es válido.');
             }
-        } catch(err) {
-            alert('El archivo JSON no es válido.');
-        }
-    };
-    reader.readAsText(file);
-});
+        };
+        reader.readAsText(file);
+    });
+}
