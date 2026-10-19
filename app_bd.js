@@ -25,7 +25,6 @@ function limpiarLlavesParaFirebase(obj) {
     } else if (obj !== null && typeof obj === 'object') {
         let nuevoObj = {};
         Object.keys(obj).forEach(key => {
-            // Reemplaza . # $ / [ ] por guion bajo _
             let nuevaKey = key.replace(/[\.#\$\[\]\/]/g, '_');
             nuevoObj[nuevaKey] = limpiarLlavesParaFirebase(obj[key]);
         });
@@ -34,8 +33,12 @@ function limpiarLlavesParaFirebase(obj) {
     return obj;
 }
 
-// Al cargar la página, intentamos traer los datos que ya estén guardados en Firebase
+// Al cargar la página, traemos los datos de Firebase
 window.addEventListener('DOMContentLoaded', () => {
+    cargarDatosFirebase();
+});
+
+function cargarDatosFirebase() {
     database.ref('bd_madre').once('value')
     .then((snapshot) => {
         const data = snapshot.val();
@@ -51,9 +54,9 @@ window.addEventListener('DOMContentLoaded', () => {
     .catch((error) => {
         console.error("Error al cargar datos de Firebase:", error);
     });
-});
+}
 
-// 1. EVENTO SUBIR ARCHIVO (BOTÓN VERDE)
+// 1. EVENTO SUBIR ARCHIVO (BOTÓN VERDE) - FUSIÓN INTELIGENTE
 document.getElementById('btnSubir').addEventListener('click', () => {
     document.getElementById('fileInput').click();
 });
@@ -62,38 +65,61 @@ document.getElementById('fileInput').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Mostrar pantalla de carga
     document.getElementById('loadingOverlay').style.display = 'flex';
 
     const reader = new FileReader();
     reader.onload = function(event) {
         try {
-            let jsonData = JSON.parse(event.target.result);
-            
-            // ASEGURAR QUE SEA UN ARREGLO
-            if (!Array.isArray(jsonData)) {
-                jsonData = [jsonData];
+            let nuevosDatos = JSON.parse(event.target.result);
+            if (!Array.isArray(nuevosDatos)) {
+                nuevosDatos = [nuevosDatos];
             }
             
-            // LIMPIAR LLAVES PROHIBIDAS POR FIREBASE (/ . # $ [ ])
-            const dataParaFirebase = limpiarLlavesParaFirebase(jsonData);
+            // Consultamos los datos actuales en Firebase para fusionar sin borrar lo viejo
+            database.ref('bd_madre').once('value').then((snapshot) => {
+                let datosActuales = snapshot.val();
+                datosActuales = datosActuales ? (Array.isArray(datosActuales) ? datosActuales : Object.values(datosActuales)) : [];
 
-            if(jsonData.length > 0) {
-                columnasEstructura = Object.keys(jsonData[0]);
-            }
+                // FUSIÓN INTELIGENTE: Combinar actualizando los que coincidan (Remesa + Módulo + Día)
+                let mapaRegistros = new Map();
 
-            // GUARDAR EN FIREBASE DE GOLPE
-            database.ref('bd_madre').set(dataParaFirebase).then(() => {
-                bdMadre = jsonData;
-                renderizarCabeceras(columnasEstructura);
-                ordenarYRenderizar(bdMadre);
-                
-                document.getElementById('loadingOverlay').style.display = 'none';
-                document.getElementById('fileInput').value = ''; 
-                alert('¡Archivo procesado y guardado en Firebase con éxito!');
-            }).catch((error) => {
-                document.getElementById('loadingOverlay').style.display = 'none';
-                alert("Error al subir a Firebase: " + error);
+                // 1. Cargar lo que ya tenemos
+                datosActuales.forEach(item => {
+                    const rem = String(item['Remesa'] || item['REMESA'] || '');
+                    const mod = String(item['MÓDULO'] || item['Módulo'] || item['Modulo'] || '');
+                    const dia = String(item['DÍA'] || item['Día'] || item['Dia'] || '');
+                    mapaRegistros.set(`${rem}_${mod}_${dia}`, item);
+                });
+
+                // 2. Sobrescribir o agregar los nuevos
+                nuevosDatos.forEach(item => {
+                    const rem = String(item['Remesa'] || item['REMESA'] || '');
+                    const mod = String(item['MÓDULO'] || item['Módulo'] || item['Modulo'] || '');
+                    const dia = String(item['DÍA'] || item['Día'] || item['Dia'] || '');
+                    mapaRegistros.set(`${rem}_${mod}_${dia}`, item); // Si ya existe, se actualiza; si no, se agrega
+                });
+
+                const bdFusionada = Array.from(mapaRegistros.values());
+                const dataParaFirebase = limpiarLlavesParaFirebase(bdFusionada);
+
+                if(bdFusionada.length > 0) {
+                    columnasEstructura = Object.keys(bdFusionada[0]);
+                }
+
+                // Guardar en Firebase
+                database.ref('bd_madre').set(dataParaFirebase).then(() => {
+                    bdMadre = bdFusionada;
+                    renderizarCabeceras(columnasEstructura);
+                    ordenarYRenderizar(bdMadre);
+                    
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                    document.getElementById('fileInput').value = ''; 
+                    alert('¡Remesa procesada, fusionada y guardada en Firebase con éxito!');
+                }).catch((error) => {
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                    alert("Error al subir a Firebase: " + error);
+                });
+
             });
 
         } catch (err) {
@@ -104,13 +130,34 @@ document.getElementById('fileInput').addEventListener('change', function(e) {
     reader.readAsText(file);
 });
 
-// 2. ORDENAR DATOS (AGRUPAR POR MÓDULO, LUEGO POR DÍA)
+// 2. DESCARGAR RESPALDO JSON
+window.descargarRespaldoJSON = function() {
+    if (bdMadre.length === 0) {
+        alert("No hay datos en la base de datos para respaldar.");
+        return;
+    }
+
+    // Convertir los datos actuales a formato JSON ordenado
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(bdMadre, null, 2));
+    const downloadAnchor = document.createElement('a');
+    
+    // Generar nombre de archivo con fecha actual
+    const fechaHoy = new Date().toISOString().slice(0, 10);
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `Respaldo_BD_Madre_${fechaHoy}.json`);
+    
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+}
+
+// 3. ORDENAR DATOS (AGRUPAR POR MÓDULO, LUEGO POR DÍA)
 function ordenarYRenderizar(datos) {
     const datosOrdenados = [...datos].sort((a, b) => {
         const modA = a['MÓDULO'] || a['Módulo'] || a['Modulo'] || '';
         const modB = b['MÓDULO'] || b['Módulo'] || b['Modulo'] || '';
         const diaA = a['DÍA'] || a['Día'] || a['Dia'] || '';
-        const diaB = a['DÍA'] || a['Día'] || a['Dia'] || '';
+        const diaB = b['DÍA'] || b['Día'] || b['Dia'] || '';
         
         if (modA === modB) {
             return String(diaA).localeCompare(String(diaB));
@@ -121,7 +168,7 @@ function ordenarYRenderizar(datos) {
     renderizarTabla(datosOrdenados);
 }
 
-// 3. RENDERIZAR CABECERAS DINÁMICAS
+// 4. RENDERIZAR CABECERAS DINÁMICAS
 function renderizarCabeceras(columnas) {
     const thead = document.getElementById('cabeceraBdMadre');
     let tr = '<tr>';
@@ -139,7 +186,7 @@ function renderizarCabeceras(columnas) {
     thead.innerHTML = tr;
 }
 
-// 4. RENDERIZAR TABLA
+// 5. RENDERIZAR TABLA
 function renderizarTabla(datos) {
     const tbody = document.getElementById('cuerpoBdMadre');
     tbody.innerHTML = ''; 
@@ -179,7 +226,7 @@ function renderizarTabla(datos) {
     });
 }
 
-// 5. BOTÓN DE PÁNICO: VACIAR BASE DE DATOS Y FIREBASE
+// 6. BOTÓN DE PÁNICO: VACIAR BASE DE DATOS Y FIREBASE
 window.vaciarBaseDatosGeneral = function() {
     if(confirm("⚠️ ADVERTENCIA: ¿Estás seguro de querer VACIAR TODA la base de datos?")) {
         if(confirm("Se borrarán los datos visuales y de FIREBASE permanentemente. ¿Confirmar borrado total?")) {
@@ -198,7 +245,7 @@ window.vaciarBaseDatosGeneral = function() {
     }
 }
 
-function limpiarTableroLogal() {
+function limpiarTableroLocal() {
     bdMadre = [];
     columnasEstructura = [];
     document.getElementById('cabeceraBdMadre').innerHTML = '';
@@ -208,7 +255,7 @@ function limpiarTableroLogal() {
     alert("Base de datos y Firebase vaciados correctamente.");
 }
 
-// 6. BUSCADOR
+// 7. BUSCADOR
 document.getElementById('buscadorBd').addEventListener('keyup', function(e) {
     const textoBusqueda = e.target.value.toLowerCase();
     
