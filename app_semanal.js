@@ -13,7 +13,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// Columnas para reporte semanal (45, 46, 47 y del 5 al 30)
 const COLUMNAS_SEMANAL = [45, 46, 47, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30];
 
 const ENCABEZADOS = [
@@ -41,6 +40,7 @@ let datosRemesaEnEdicion = {};
 
 function construirHeaderTabla(selectorTabla) {
     const thead = document.querySelector(`${selectorTabla} thead`);
+    if(!thead) return;
     thead.innerHTML = "";
     let trTitulos = document.createElement('tr');
     let trNumeros = document.createElement('tr');
@@ -48,7 +48,6 @@ function construirHeaderTabla(selectorTabla) {
     COLUMNAS_SEMANAL.forEach((colOriginal) => {
         let thT = document.createElement('th');
         let thN = document.createElement('th');
-        
         thT.innerText = ENCABEZADOS[colOriginal - 1];
         
         let anchoCelda = "50px"; 
@@ -64,7 +63,6 @@ function construirHeaderTabla(selectorTabla) {
         if(colOriginal === 18) thT.style.backgroundColor = "yellow"; 
         
         thN.innerText = colOriginal; thN.className = "table-light";
-        
         trTitulos.appendChild(thT); trNumeros.appendChild(thN);
     });
     thead.appendChild(trTitulos); thead.appendChild(trNumeros);
@@ -81,24 +79,58 @@ function cargarDatosSemanal() {
             renderListaRemesas();
         } else {
             historialGlobal = {};
-            document.querySelector('#tablaSemanal tbody').innerHTML = "";
-            document.querySelector('#tablaListaRemesas tbody').innerHTML = '<tr><td colspan="2">No hay remesas guardadas</td></tr>';
+            const tb = document.querySelector('#tablaSemanal tbody');
+            if(tb) tb.innerHTML = '<tr><td colspan="29" class="text-center py-3 text-muted">No hay remesas guardadas aún.</td></tr>';
+            const tbList = document.querySelector('#tablaListaRemesas tbody');
+            if(tbList) tbList.innerHTML = '<tr><td colspan="2">No hay remesas guardadas</td></tr>';
         }
     }).catch(err => console.error(err));
 }
 
+function obtenerTotalesRemesa(remesaData) {
+    if (remesaData.totales) return remesaData.totales;
+    // Si no tiene .totales explícito, intentamos extraer o calcular de los módulos 050351, 050353, 050354 si existen
+    let modulos = ["050351", "050353", "050354"];
+    let matrizTotales = [];
+    
+    modulos.forEach(mod => {
+        if (remesaData[mod] && Array.isArray(remesaData[mod])) {
+            // Suponiendo que el último elemento o la última fila es la de totales del módulo
+            let filasMod = remesaData[mod];
+            let filaTot = filasMod[filasMod.length - 1] || Array(75).fill("0");
+            matrizTotales.push(filaTot);
+        } else {
+            matrizTotales.push(Array(75).fill("0"));
+        }
+    });
+
+    // Fila 4: Gran Total
+    let filaGranTotal = Array(75).fill("0");
+    filaGranTotal[0] = "GRAN TOTAL";
+    for(let c=1; c<75; c++) {
+        let suma = 0;
+        [0,1,2].forEach(i => {
+            let v = parseFloat(matrizTotales[i][c]);
+            if(!isNaN(v)) suma += v;
+        });
+        filaGranTotal[c] = suma;
+    }
+    matrizTotales.push(filaGranTotal);
+    return matrizTotales;
+}
+
 function renderTablaSemanal() {
     const tbody = document.querySelector('#tablaSemanal tbody');
+    if(!tbody) return;
     tbody.innerHTML = "";
 
-    // Ordenar remesas cronológicamente si es posible
     const remesasKeys = Object.keys(historialGlobal).sort((a,b) => parseInt(a) - parseInt(b));
 
     remesasKeys.forEach(remesaId => {
-        let tablaTotalesRemesa = historialGlobal[remesaId].totales;
-        if(!tablaTotalesRemesa) return;
+        let remesaData = historialGlobal[remesaId];
+        if(!remesaData) return;
 
-        // Filas: 050351, 050353, 050354 y GRAN TOTAL
+        let tablaTotalesRemesa = obtenerTotalesRemesa(remesaData);
         const filasModulos = ["050351", "050353", "050354", "GRAN TOTAL"];
 
         filasModulos.forEach((mod, idx) => {
@@ -112,7 +144,7 @@ function renderTablaSemanal() {
                 else if(colOriginal === 46) td.innerText = mod === "GRAN TOTAL" ? "-" : "03";
                 else if(colOriginal === 47) td.innerText = mod === "GRAN TOTAL" ? `REMESA ${remesaId}` : mod.substring(4,6);
                 else {
-                    let val = tablaTotalesRemesa[idx][colOriginal-1] || "0";
+                    let val = tablaTotalesRemesa[idx] ? (tablaTotalesRemesa[idx][colOriginal-1] || "0") : "0";
                     td.innerText = val;
                 }
                 tr.appendChild(td);
@@ -124,6 +156,7 @@ function renderTablaSemanal() {
 
 function renderListaRemesas() {
     const tbody = document.querySelector('#tablaListaRemesas tbody');
+    if(!tbody) return;
     tbody.innerHTML = "";
     
     Object.keys(historialGlobal).forEach(remesaId => {
@@ -161,7 +194,7 @@ function renderListaRemesas() {
 function abrirModalEdicion(remesaId) {
     remesaEnEdicion = remesaId;
     document.getElementById('lblRemesaEdit').innerText = remesaId;
-    datosRemesaEnEdicion = JSON.parse(JSON.stringify(historialGlobal[remesaId].totales));
+    datosRemesaEnEdicion = JSON.parse(JSON.stringify(obtenerTotalesRemesa(historialGlobal[remesaId])));
     
     const tbody = document.querySelector('#tablaEditarRemesa tbody');
     tbody.innerHTML = "";
@@ -176,7 +209,7 @@ function abrirModalEdicion(remesaId) {
             else if(colOriginal === 46) td.innerText = "03";
             else if(colOriginal === 47) td.innerText = mod.substring(4,6);
             else {
-                let val = datosRemesaEnEdicion[idx][colOriginal-1] || "0";
+                let val = datosRemesaEnEdicion[idx] ? (datosRemesaEnEdicion[idx][colOriginal-1] || "0") : "0";
                 td.innerHTML = `<input type="text" data-modidx="${idx}" data-colidx="${colOriginal-1}" value="${val}">`;
             }
             tr.appendChild(td);
@@ -192,17 +225,20 @@ document.getElementById('btnGuardarEdicion').addEventListener('click', () => {
     inputs.forEach(inp => {
         const m = inp.getAttribute('data-modidx');
         const c = inp.getAttribute('data-colidx');
-        datosRemesaEnEdicion[m][c] = inp.value.trim() || "0";
+        if(datosRemesaEnEdicion[m]) {
+            datosRemesaEnEdicion[m][c] = inp.value.trim() || "0";
+        }
     });
 
-    // Recalcular Gran Total de la remesa
     let filaTotal = Array(75).fill("0");
     filaTotal[0] = "GRAN TOTAL";
     for(let c=1; c<75; c++) {
         let suma = 0;
         [0,1,2].forEach(i => {
-            let v = parseFloat(datosRemesaEnEdicion[i][c]);
-            if(!isNaN(v)) suma += v;
+            if(datosRemesaEnEdicion[i]) {
+                let v = parseFloat(datosRemesaEnEdicion[i][c]);
+                if(!isNaN(v)) suma += v;
+            }
         });
         filaTotal[c] = suma;
     }
@@ -215,3 +251,4 @@ document.getElementById('btnGuardarEdicion').addEventListener('click', () => {
     });
 });
 
+cargarDatosSemanal();

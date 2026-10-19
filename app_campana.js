@@ -40,6 +40,7 @@ let datosRemesaEnEdicion = {};
 
 function construirHeaderTabla(selectorTabla) {
     const thead = document.querySelector(`${selectorTabla} thead`);
+    if(!thead) return;
     thead.innerHTML = "";
     let trTitulos = document.createElement('tr');
     let trNumeros = document.createElement('tr');
@@ -79,9 +80,39 @@ function cargarDatosCampana() {
             renderListaRemesas();
         } else {
             historialGlobal = {};
-            document.querySelector('#tablaCampana tbody').innerHTML = "";
+            const tb = document.querySelector('#tablaCampana tbody');
+            if(tb) tb.innerHTML = '<tr><td colspan="29" class="text-center py-3 text-muted">No hay remesas guardadas aún.</td></tr>';
         }
     }).catch(err => console.error(err));
+}
+
+function obtenerTotalesRemesa(remesaData) {
+    if (remesaData.totales) return remesaData.totales;
+    let modulos = ["050351", "050353", "050354"];
+    let matrizTotales = [];
+    
+    modulos.forEach(mod => {
+        if (remesaData[mod] && Array.isArray(remesaData[mod])) {
+            let filasMod = remesaData[mod];
+            let filaTot = filasMod[filasMod.length - 1] || Array(75).fill("0");
+            matrizTotales.push(filaTot);
+        } else {
+            matrizTotales.push(Array(75).fill("0"));
+        }
+    });
+
+    let filaGranTotal = Array(75).fill("0");
+    filaGranTotal[0] = "GRAN TOTAL";
+    for(let c=1; c<75; c++) {
+        let suma = 0;
+        [0,1,2].forEach(i => {
+            let v = parseFloat(matrizTotales[i][c]);
+            if(!isNaN(v)) suma += v;
+        });
+        filaGranTotal[c] = suma;
+    }
+    matrizTotales.push(filaGranTotal);
+    return matrizTotales;
 }
 
 function poblarSelectoresRemesa() {
@@ -109,13 +140,14 @@ function procesarYMostrarDatos() {
     const remesaFin = document.getElementById('filtroRemesaFin').value;
 
     for (const remesa in historialGlobal) {
-        // Filtrar por rango si está especificado
         let numR = parseInt(remesa);
         if(remesaInicio && numR < parseInt(remesaInicio)) continue;
         if(remesaFin && numR > parseInt(remesaFin)) continue;
 
-        let tablaTotalesRemesa = historialGlobal[remesa].totales; 
-        if(!tablaTotalesRemesa) continue;
+        let remesaData = historialGlobal[remesa];
+        if(!remesaData) continue;
+        
+        let tablaTotalesRemesa = obtenerTotalesRemesa(remesaData);
         
         [0, 1, 2].forEach(idx => {
             let modId = idx === 0 ? "050351" : (idx === 1 ? "050353" : "050354");
@@ -127,6 +159,7 @@ function procesarYMostrarDatos() {
     }
 
     const tbody = document.querySelector('#tablaCampana tbody');
+    if(!tbody) return;
     tbody.innerHTML = "";
     const filasAMostrar = ["050351", "050353", "050354", "GRAN TOTAL"];
 
@@ -154,7 +187,10 @@ function procesarYMostrarDatos() {
     });
 }
 
-document.getElementById('btnFiltrarCampana').addEventListener('click', procesarYMostrarDatos);
+const btnFiltro = document.getElementById('btnFiltrarCampana');
+if(btnFiltro) {
+    btnFiltro.addEventListener('click', procesarYMostrarDatos);
+}
 
 function renderListaRemesas() {
     const tbody = document.querySelector('#tablaListaRemesas tbody');
@@ -195,8 +231,9 @@ function renderListaRemesas() {
 function abrirModalEdicion(remesaId) {
     remesaEnEdicion = remesaId;
     document.getElementById('lblRemesaEdit').innerText = remesaId;
-    datosRemesaEnEdicion = JSON.parse(JSON.stringify(historialGlobal[remesaId].totales));
+    datosRemesaEnEdicion = JSON.parse(JSON.stringify(obtenerTotalesRemesa(historialGlobal[remesaId])));
     const tbody = document.querySelector('#tablaEditarRemesa tbody');
+    if(!tbody) return;
     tbody.innerHTML = "";
     const filasModulos = ["050351", "050353", "050354"];
     filasModulos.forEach((mod, idx) => {
@@ -207,7 +244,7 @@ function abrirModalEdicion(remesaId) {
             else if (colOriginal === 46) td.innerText = "03";
             else if (colOriginal === 47) td.innerText = mod.substring(4,6);
             else {
-                let valOriginal = datosRemesaEnEdicion[idx][colOriginal-1] || "0";
+                let valOriginal = datosRemesaEnEdicion[idx] ? (datosRemesaEnEdicion[idx][colOriginal-1] || "0") : "0";
                 td.innerHTML = `<input type="text" data-modidx="${idx}" data-colidx="${colOriginal-1}" value="${valOriginal}">`;
             }
             tr.appendChild(td);
@@ -217,31 +254,38 @@ function abrirModalEdicion(remesaId) {
     new bootstrap.Modal(document.getElementById('modalEditarRemesa')).show();
 }
 
-document.getElementById('btnGuardarEdicion').addEventListener('click', () => {
-    const inputs = document.querySelectorAll('#tablaEditarRemesa input');
-    inputs.forEach(inp => {
-        const modIdx = inp.getAttribute('data-modidx');
-        const colIdx = inp.getAttribute('data-colidx');
-        datosRemesaEnEdicion[modIdx][colIdx] = inp.value.trim() || "0";
-    });
-
-    let filaGranTotal = Array(75).fill("0");
-    filaGranTotal[0] = "GRAN TOTAL";
-    for(let c=1; c<75; c++) {
-        let sumaC = 0;
-        [0,1,2].forEach(i => {
-            let val = parseFloat(datosRemesaEnEdicion[i][c]);
-            if(!isNaN(val)) sumaC += val;
+const btnGuardarEdit = document.getElementById('btnGuardarEdicion');
+if(btnGuardarEdit) {
+    btnGuardarEdit.addEventListener('click', () => {
+        const inputs = document.querySelectorAll('#tablaEditarRemesa input');
+        inputs.forEach(inp => {
+            const modIdx = inp.getAttribute('data-modidx');
+            const colIdx = inp.getAttribute('data-colidx');
+            if(datosRemesaEnEdicion[modIdx]) {
+                datosRemesaEnEdicion[modIdx][colIdx] = inp.value.trim() || "0";
+            }
         });
-        filaGranTotal[c] = sumaC;
-    }
-    datosRemesaEnEdicion[3] = filaGranTotal;
 
-    set(ref(db, `historial_campanas/${remesaEnEdicion}/totales`), datosRemesaEnEdicion).then(() => {
-        alert('Edición guardada correctamente.');
-        bootstrap.Modal.getInstance(document.getElementById('modalEditarRemesa')).hide();
-        cargarDatosCampana();
+        let filaGranTotal = Array(75).fill("0");
+        filaGranTotal[0] = "GRAN TOTAL";
+        for(let c=1; c<75; c++) {
+            let sumaC = 0;
+            [0,1,2].forEach(i => {
+                if(datosRemesaEnEdicion[i]) {
+                    let val = parseFloat(datosRemesaEnEdicion[i][c]);
+                    if(!isNaN(val)) sumaC += val;
+                }
+            });
+            filaGranTotal[c] = sumaC;
+        }
+        datosRemesaEnEdicion[3] = filaGranTotal;
+
+        set(ref(db, `historial_campanas/${remesaEnEdicion}/totales`), datosRemesaEnEdicion).then(() => {
+            alert('Edición guardada correctamente.');
+            bootstrap.Modal.getInstance(document.getElementById('modalEditarRemesa')).hide();
+            cargarDatosCampana();
+        });
     });
-});
+}
 
 cargarDatosCampana();
