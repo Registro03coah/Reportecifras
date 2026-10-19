@@ -2,7 +2,7 @@
 // 1. IMPORTACIONES FIREBASE
 // ==========================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyA6jvnsXZwF2anOJo3VadfNvn7Fl6Z5efY",
@@ -13,7 +13,11 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-const COLUMNAS_ACUMULADO = [45, 46, 47, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30];
+const COLUMNAS_ACUMULADO = [
+    45, 46, 47, 5, 6, 7, 'NO_UTILIZADOS', 8, 9, 10, 65, 12, 13, 14, 7, 42, 43, 17, 16, 
+    'CIP-05', 35, 37, 38, 'INICIALES', 21, 22, 63, 64, 23, 25, 48, 49, 24, 29, 
+    'SOBRANTES', 70, 30, 36, 49, 41, 70, 19, 34, 44, 32, 35
+];
 
 const ENCABEZADOS = [
     "DÍA", "DD/MM/AA", "Horas trabajadas", "Sedes visitadas", "INICIAL", "FINAL", "TOTAL DE FOLIOS", 
@@ -34,6 +38,8 @@ const ENCABEZADOS = [
     "MOV.POST.", "ANEXAS A SOLICITUD", "OTRAS BAJAS"
 ];
 
+let valoresIniciales = { "050351": 0, "050353": 0, "050354": 0 };
+
 function construirHeaderTabla() {
     const thead = document.querySelector('#tablaAcumulado thead');
     if(!thead) return;
@@ -44,11 +50,15 @@ function construirHeaderTabla() {
     COLUMNAS_ACUMULADO.forEach((colOriginal) => {
         let thT = document.createElement('th');
         let thN = document.createElement('th');
-        thT.innerText = ENCABEZADOS[colOriginal - 1];
+        
+        let headerText = typeof colOriginal === 'string' ? colOriginal.replace('_', ' ') : ENCABEZADOS[colOriginal - 1];
+        thT.innerText = headerText;
+        thN.innerText = typeof colOriginal === 'string' ? "-" : colOriginal;
         
         let anchoCelda = "50px"; 
-        if(colOriginal >= 45 && colOriginal <= 47) anchoCelda = "60px"; 
+        if(colOriginal === 45 || colOriginal === 46 || colOriginal === 47) anchoCelda = "60px"; 
         else if(colOriginal === 5 || colOriginal === 6) anchoCelda = "105px"; 
+        else if(typeof colOriginal === 'string') anchoCelda = "90px";
         
         thT.style.width = anchoCelda; thT.style.minWidth = anchoCelda; thT.style.maxWidth = anchoCelda;
         
@@ -56,9 +66,9 @@ function construirHeaderTabla() {
         if(colOriginal >= 19 && colOriginal <= 30) thT.classList.add('bg-retiradas');
         if(colOriginal === 16) thT.style.backgroundColor = "#92d050"; 
         if(colOriginal === 17) thT.style.backgroundColor = "red"; 
-        if(colOriginal === 18) thT.style.backgroundColor = "yellow"; 
+        if(typeof colOriginal === 'string') thT.style.backgroundColor = "#ffc107"; 
         
-        thN.innerText = colOriginal; thN.className = "table-light";
+        thN.className = "table-light";
         trTitulos.appendChild(thT); trNumeros.appendChild(thN);
     });
     thead.appendChild(trTitulos); thead.appendChild(trNumeros);
@@ -66,32 +76,42 @@ function construirHeaderTabla() {
 
 construirHeaderTabla();
 
+function cargarInicialesDB() {
+    get(ref(db, 'configuracion/iniciales_acumulado')).then((snapshot) => {
+        if(snapshot.exists()) {
+            valoresIniciales = snapshot.val();
+            document.getElementById('ini_050351').value = valoresIniciales["050351"] || 0;
+            document.getElementById('ini_050353').value = valoresIniciales["050353"] || 0;
+            document.getElementById('ini_050354').value = valoresIniciales["050354"] || 0;
+        }
+        cargarAcumuladoGlobal(); 
+    }).catch(err => { console.error(err); cargarAcumuladoGlobal(); });
+}
+
+document.getElementById('btnGuardarIniciales').addEventListener('click', () => {
+    let nuevosValores = {
+        "050351": parseFloat(document.getElementById('ini_050351').value) || 0,
+        "050353": parseFloat(document.getElementById('ini_050353').value) || 0,
+        "050354": parseFloat(document.getElementById('ini_050354').value) || 0
+    };
+    set(ref(db, 'configuracion/iniciales_acumulado'), nuevosValores).then(() => {
+        alert('Valores INICIALES de Acumulado guardados.');
+        valoresIniciales = nuevosValores;
+        cargarAcumuladoGlobal(); 
+    });
+});
+
 function obtenerTotalesRemesa(remesaData) {
     if (remesaData.totales) return remesaData.totales;
     let modulos = ["050351", "050353", "050354"];
     let matrizTotales = [];
-    
     modulos.forEach(mod => {
         if (remesaData[mod] && Array.isArray(remesaData[mod])) {
             let filasMod = remesaData[mod];
             let filaTot = filasMod[filasMod.length - 1] || Array(75).fill("0");
             matrizTotales.push(filaTot);
-        } else {
-            matrizTotales.push(Array(75).fill("0"));
-        }
+        } else { matrizTotales.push(Array(75).fill("0")); }
     });
-
-    let filaGranTotal = Array(75).fill("0");
-    filaGranTotal[0] = "GRAN TOTAL";
-    for(let c=1; c<75; c++) {
-        let suma = 0;
-        [0,1,2].forEach(i => {
-            let v = parseFloat(matrizTotales[i][c]);
-            if(!isNaN(v)) suma += v;
-        });
-        filaGranTotal[c] = suma;
-    }
-    matrizTotales.push(filaGranTotal);
     return matrizTotales;
 }
 
@@ -99,12 +119,7 @@ function cargarAcumuladoGlobal() {
     get(ref(db, 'historial_campanas')).then((snapshot) => {
         if (snapshot.exists()) {
             const historialGlobal = snapshot.val();
-            
-            let sumasAcumuladas = {
-                "050351": Array(75).fill(0),
-                "050353": Array(75).fill(0),
-                "050354": Array(75).fill(0)
-            };
+            let sumasAcumuladas = { "050351": Array(75).fill(0), "050353": Array(75).fill(0), "050354": Array(75).fill(0) };
 
             for (const remesa in historialGlobal) {
                 let remesaData = historialGlobal[remesa];
@@ -134,7 +149,17 @@ function cargarAcumuladoGlobal() {
                     if(colOriginal === 45) td.innerText = fila === "GRAN TOTAL" ? "-" : "05";
                     else if (colOriginal === 46) td.innerText = fila === "GRAN TOTAL" ? "-" : "03";
                     else if (colOriginal === 47) td.innerText = fila === "GRAN TOTAL" ? "GRAN TOTAL" : fila.substring(4,6);
-                    else {
+                    else if (typeof colOriginal === 'string') {
+                        if(colOriginal === 'INICIALES') {
+                            if(fila === "GRAN TOTAL") {
+                                td.innerText = (parseFloat(valoresIniciales["050351"]) || 0) + (parseFloat(valoresIniciales["050353"]) || 0) + (parseFloat(valoresIniciales["050354"]) || 0);
+                            } else { td.innerText = valoresIniciales[fila] || 0; }
+                            td.classList.add('fw-bold', 'text-primary');
+                        } else {
+                            td.innerText = "0";
+                            td.classList.add('text-muted');
+                        }
+                    } else {
                         if(fila === "GRAN TOTAL") {
                             let totalCol = sumasAcumuladas["050351"][colOriginal-1] + sumasAcumuladas["050353"][colOriginal-1] + sumasAcumuladas["050354"][colOriginal-1];
                             td.innerText = totalCol === 0 ? "0" : totalCol;
@@ -150,9 +175,9 @@ function cargarAcumuladoGlobal() {
 
         } else {
             const tb = document.querySelector('#tablaAcumulado tbody');
-            if(tb) tb.innerHTML = '<tr><td colspan="29" class="text-center py-3 text-muted">No hay datos históricos para acumular.</td></tr>';
+            if(tb) tb.innerHTML = '<tr><td colspan="46" class="text-center py-3 text-muted">No hay datos históricos para acumular.</td></tr>';
         }
     }).catch(err => console.error(err));
 }
 
-cargarAcumuladoGlobal();
+cargarInicialesDB();

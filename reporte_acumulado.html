@@ -43,7 +43,7 @@
             <li class="nav-item"><a class="nav-link text-light px-3" href="reporte_dias.html"><i class="bi bi-calendar3"></i> Reporte Días</a></li>
             <li class="nav-item"><a class="nav-link text-light px-3" href="reporte_semanal.html"><i class="bi bi-calendar-week"></i> Reporte Semanal</a></li>
             <li class="nav-item"><a class="nav-link text-light px-3" href="reporte_campana.html"><i class="bi bi-bar-chart-fill"></i> Reporte Campaña</a></li>
-            <li class="nav-item"><a class="nav-link active rounded px-3 text-white fw-bold" style="background-color: #673ab7;" href="reporte_acumulado.html"><i class="bi bi-archive-fill"></i> Reporte Acumulado</a></li>
+            <li class="nav-item"><a class="nav-link rounded px-3 text-white fw-bold" style="background-color: #673ab7;" href="reporte_acumulado.html"><i class="bi bi-archive-fill"></i> Reporte Acumulado</a></li>
           </ul>
         </div>
       </div>
@@ -64,6 +64,17 @@
             <div id="statusAcumulado" class="badge bg-success fs-6"><i class="bi bi-check-circle"></i> Sincronizado</div>
         </div>
 
+        <div class="alert alert-secondary d-flex flex-wrap justify-content-between align-items-center shadow-sm gap-3 mb-3 border-secondary">
+            <div>
+                <strong><i class="bi bi-gear-fill"></i> Valores INICIALES (Módulo Acumulado):</strong> Fija los valores base para esta vista.
+            </div>
+            <div class="d-flex align-items-center gap-2 fw-bold">
+                <span class="text-primary">050351:</span> <input type="number" id="ini_050351" class="form-control form-control-sm text-center" style="width: 90px;" value="0">
+                <span class="text-success ms-2">050353:</span> <input type="number" id="ini_050353" class="form-control form-control-sm text-center" style="width: 90px;" value="0">
+                <span class="text-danger ms-2">050354:</span> <input type="number" id="ini_050354" class="form-control form-control-sm text-center" style="width: 90px;" value="0">
+                <button class="btn btn-sm btn-dark ms-2 shadow-sm" id="btnGuardarIniciales"><i class="bi bi-save"></i> Guardar Iniciales</button>
+            </div>
+        </div>
         <div class="excel-container shadow-sm rounded border-primary">
             <table class="excel-table table table-hover" id="tablaAcumulado">
                 <thead></thead>
