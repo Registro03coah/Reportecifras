@@ -1,14 +1,14 @@
 // ==========================================
-// 1. IMPORTACIONES FIREBASE
+// 1. IMPORTACIONES Y CONFIGURACIÓN FIREBASE (BD MADRE)
 // ==========================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, get, set, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyA6jvnsXZwF2anOJo3VadfNvn7Fl6Z5efY",
-    authDomain: "sistema-mac-reportes.firebaseapp.com",
-    databaseURL: "https://sistema-mac-reportes-default-rtdb.firebaseio.com",
-    projectId: "sistema-mac-reportes"
+    apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo",
+    authDomain: "cifrasmac.firebaseapp.com",
+    databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com",
+    projectId: "cifrasmac"
 };
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
@@ -34,9 +34,7 @@ const ENCABEZADOS = [
     "MOV.POST.", "ANEXAS A SOLICITUD", "OTRAS BAJAS"
 ];
 
-let historialGlobal = {};
-let remesaEnEdicion = "";
-let datosRemesaEnEdicion = {};
+let bdMadreGlobal = [];
 
 function construirHeaderTabla(selectorTabla) {
     const thead = document.querySelector(`${selectorTabla} thead`);
@@ -48,7 +46,7 @@ function construirHeaderTabla(selectorTabla) {
     COLUMNAS_SEMANAL.forEach((colOriginal) => {
         let thT = document.createElement('th');
         let thN = document.createElement('th');
-        thT.innerText = ENCABEZADOS[colOriginal - 1];
+        thT.innerText = ENCABEZADOS[colOriginal - 1] || `Col ${colOriginal}`;
         
         let anchoCelda = "50px"; 
         if(colOriginal >= 45 && colOriginal <= 47) anchoCelda = "60px"; 
@@ -69,54 +67,23 @@ function construirHeaderTabla(selectorTabla) {
 }
 
 construirHeaderTabla('#tablaSemanal');
-construirHeaderTabla('#tablaEditarRemesa');
 
 function cargarDatosSemanal() {
-    get(ref(db, 'historial_campanas')).then((snapshot) => {
+    // CONSULTA DIRECTA A LA BD MADRE
+    get(ref(db, 'bd_madre')).then((snapshot) => {
         if (snapshot.exists()) {
-            historialGlobal = snapshot.val();
+            const dataRaw = snapshot.val();
+            bdMadreGlobal = Array.isArray(dataRaw) ? dataRaw : Object.values(dataRaw);
             renderTablaSemanal();
             renderListaRemesas();
         } else {
-            historialGlobal = {};
+            bdMadreGlobal = [];
             const tb = document.querySelector('#tablaSemanal tbody');
-            if(tb) tb.innerHTML = '<tr><td colspan="29" class="text-center py-3 text-muted">No hay remesas guardadas aún.</td></tr>';
+            if(tb) tb.innerHTML = '<tr><td colspan="29" class="text-center py-3 text-muted">No hay registros en la Base de Datos Principal.</td></tr>';
             const tbList = document.querySelector('#tablaListaRemesas tbody');
-            if(tbList) tbList.innerHTML = '<tr><td colspan="2">No hay remesas guardadas</td></tr>';
+            if(tbList) tbList.innerHTML = '<tr><td colspan="2">No hay remesas disponibles</td></tr>';
         }
-    }).catch(err => console.error(err));
-}
-
-function obtenerTotalesRemesa(remesaData) {
-    if (remesaData.totales) return remesaData.totales;
-    // Si no tiene .totales explícito, intentamos extraer o calcular de los módulos 050351, 050353, 050354 si existen
-    let modulos = ["050351", "050353", "050354"];
-    let matrizTotales = [];
-    
-    modulos.forEach(mod => {
-        if (remesaData[mod] && Array.isArray(remesaData[mod])) {
-            // Suponiendo que el último elemento o la última fila es la de totales del módulo
-            let filasMod = remesaData[mod];
-            let filaTot = filasMod[filasMod.length - 1] || Array(75).fill("0");
-            matrizTotales.push(filaTot);
-        } else {
-            matrizTotales.push(Array(75).fill("0"));
-        }
-    });
-
-    // Fila 4: Gran Total
-    let filaGranTotal = Array(75).fill("0");
-    filaGranTotal[0] = "GRAN TOTAL";
-    for(let c=1; c<75; c++) {
-        let suma = 0;
-        [0,1,2].forEach(i => {
-            let v = parseFloat(matrizTotales[i][c]);
-            if(!isNaN(v)) suma += v;
-        });
-        filaGranTotal[c] = suma;
-    }
-    matrizTotales.push(filaGranTotal);
-    return matrizTotales;
+    }).catch(err => console.error("Error al leer la BD Madre:", err));
 }
 
 function renderTablaSemanal() {
@@ -124,33 +91,80 @@ function renderTablaSemanal() {
     if(!tbody) return;
     tbody.innerHTML = "";
 
-    const remesasKeys = Object.keys(historialGlobal).sort((a,b) => parseInt(a) - parseInt(b));
+    if (bdMadreGlobal.length === 0) return;
+
+    // Agrupar los datos por Remesa
+    let remesasMap = {};
+    bdMadreGlobal.forEach(fila => {
+        let rem = fila['Remesa'] || fila['remesa'] || 'S/N';
+        if (!remesasMap[rem]) remesasMap[rem] = [];
+        remesasMap[rem].push(fila);
+    });
+
+    const remesasKeys = Object.keys(remesasMap).sort();
 
     remesasKeys.forEach(remesaId => {
-        let remesaData = historialGlobal[remesaId];
-        if(!remesaData) return;
+        let filasRemesa = remesasMap[remesaId];
+        
+        // Agrupar por Módulo dentro de la remesa
+        let modulosMap = {};
+        filasRemesa.forEach(f => {
+            let mod = f['Módulo'] || f['Modulo'] || 'General';
+            if (!modulosMap[mod]) modulosMap[mod] = [];
+            modulosMap[mod].push(f);
+        });
 
-        let tablaTotalesRemesa = obtenerTotalesRemesa(remesaData);
-        const filasModulos = ["050351", "050353", "050354", "GRAN TOTAL"];
-
-        filasModulos.forEach((mod, idx) => {
+        // Para cada módulo, sumamos los valores numéricos de la semana
+        Object.keys(modulosMap).forEach(modNombre => {
             let tr = document.createElement('tr');
-            if (mod === "GRAN TOTAL") tr.classList.add('fila-totales');
+            let registrosMod = modulosMap[modNombre];
 
             COLUMNAS_SEMANAL.forEach(colOriginal => {
                 let td = document.createElement('td');
-                
-                if(colOriginal === 45) td.innerText = mod === "GRAN TOTAL" ? "-" : "05";
-                else if(colOriginal === 46) td.innerText = mod === "GRAN TOTAL" ? "-" : "03";
-                else if(colOriginal === 47) td.innerText = mod === "GRAN TOTAL" ? `REMESA ${remesaId}` : mod.substring(4,6);
-                else {
-                    let val = tablaTotalesRemesa[idx] ? (tablaTotalesRemesa[idx][colOriginal-1] || "0") : "0";
-                    td.innerText = val;
+                let nombreColKey = ENCABEZADOS[colOriginal - 1];
+
+                if(colOriginal === 45) {
+                    td.innerText = "05";
+                } else if(colOriginal === 46) {
+                    td.innerText = "03";
+                } else if(colOriginal === 47) {
+                    td.innerText = modNombre.replace("Módulo ", "").trim();
+                } else {
+                    // Sumar los valores de los días de ese módulo en la remesa
+                    let sumaCol = 0;
+                    registrosMod.forEach(reg => {
+                        // Buscar la columna por su nombre exacto o índice
+                        let val = parseFloat(reg[nombreColKey] || reg[`Columna ${colOriginal}`] || 0);
+                        if (!isNaN(val)) sumaCol += val;
+                    });
+                    td.innerText = sumaCol;
                 }
                 tr.appendChild(td);
             });
             tbody.appendChild(tr);
         });
+
+        // Fila de Gran Total por Remesa
+        let trGranTotal = document.createElement('tr');
+        trGranTotal.classList.add('fila-totales');
+        COLUMNAS_SEMANAL.forEach(colOriginal => {
+            let td = document.createElement('td');
+            let nombreColKey = ENCABEZADOS[colOriginal - 1];
+
+            if(colOriginal === 45) td.innerText = "-";
+            else if(colOriginal === 46) td.innerText = "-";
+            else if(colOriginal === 47) td.innerText = `REMESA ${remesaId}`;
+            else {
+                let sumaTotalRemesa = 0;
+                filasRemesa.forEach(reg => {
+                    let val = parseFloat(reg[nombreColKey] || reg[`Columna ${colOriginal}`] || 0);
+                    if (!isNaN(val)) sumaTotalRemesa += val;
+                });
+                td.innerText = sumaTotalRemesa;
+            }
+            trGranTotal.appendChild(td);
+        });
+        tbody.appendChild(trGranTotal);
     });
 }
 
@@ -159,96 +173,19 @@ function renderListaRemesas() {
     if(!tbody) return;
     tbody.innerHTML = "";
     
-    Object.keys(historialGlobal).forEach(remesaId => {
+    // Extraer remesas únicas
+    let remesasUnicas = [...new Set(bdMadreGlobal.map(f => f['Remesa'] || f['remesa'] || 'S/N'))].sort();
+
+    remesasUnicas.forEach(remesaId => {
         let tr = document.createElement('tr');
         tr.innerHTML = `
-            <td class="fw-bold fs-5 text-warning text-dark">Remesa ${remesaId}</td>
+            <td class="fw-bold fs-5 text-dark">Remesa ${remesaId}</td>
             <td>
-                <button class="btn btn-sm btn-warning px-3 me-2 fw-bold btn-editar" data-id="${remesaId}"><i class="bi bi-pencil-square"></i> Ver / Editar</button>
-                <button class="btn btn-sm btn-danger px-3 btn-borrar" data-id="${remesaId}"><i class="bi bi-trash"></i> Eliminar</button>
+                <span class="text-muted small">Administrada desde la Base de Datos Principal</span>
             </td>
         `;
         tbody.appendChild(tr);
     });
-
-    document.querySelectorAll('.btn-borrar').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const id = e.target.closest('button').getAttribute('data-id');
-            if(confirm(`¿Borrar la Remesa ${id}? Esto la eliminará de todos los reportes.`)) {
-                remove(ref(db, `historial_campanas/${id}`)).then(() => {
-                    alert('Remesa eliminada.');
-                    cargarDatosSemanal();
-                });
-            }
-        });
-    });
-
-    document.querySelectorAll('.btn-editar').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const id = e.target.closest('button').getAttribute('data-id');
-            abrirModalEdicion(id);
-        });
-    });
 }
-
-function abrirModalEdicion(remesaId) {
-    remesaEnEdicion = remesaId;
-    document.getElementById('lblRemesaEdit').innerText = remesaId;
-    datosRemesaEnEdicion = JSON.parse(JSON.stringify(obtenerTotalesRemesa(historialGlobal[remesaId])));
-    
-    const tbody = document.querySelector('#tablaEditarRemesa tbody');
-    tbody.innerHTML = "";
-    
-    const modulos = ["050351", "050353", "050354"];
-    
-    modulos.forEach((mod, idx) => {
-        let tr = document.createElement('tr');
-        COLUMNAS_SEMANAL.forEach(colOriginal => {
-            let td = document.createElement('td');
-            if(colOriginal === 45) td.innerText = "05";
-            else if(colOriginal === 46) td.innerText = "03";
-            else if(colOriginal === 47) td.innerText = mod.substring(4,6);
-            else {
-                let val = datosRemesaEnEdicion[idx] ? (datosRemesaEnEdicion[idx][colOriginal-1] || "0") : "0";
-                td.innerHTML = `<input type="text" data-modidx="${idx}" data-colidx="${colOriginal-1}" value="${val}">`;
-            }
-            tr.appendChild(td);
-        });
-        tbody.appendChild(tr);
-    });
-
-    new bootstrap.Modal(document.getElementById('modalEditarRemesa')).show();
-}
-
-document.getElementById('btnGuardarEdicion').addEventListener('click', () => {
-    const inputs = document.querySelectorAll('#tablaEditarRemesa input');
-    inputs.forEach(inp => {
-        const m = inp.getAttribute('data-modidx');
-        const c = inp.getAttribute('data-colidx');
-        if(datosRemesaEnEdicion[m]) {
-            datosRemesaEnEdicion[m][c] = inp.value.trim() || "0";
-        }
-    });
-
-    let filaTotal = Array(75).fill("0");
-    filaTotal[0] = "GRAN TOTAL";
-    for(let c=1; c<75; c++) {
-        let suma = 0;
-        [0,1,2].forEach(i => {
-            if(datosRemesaEnEdicion[i]) {
-                let v = parseFloat(datosRemesaEnEdicion[i][c]);
-                if(!isNaN(v)) suma += v;
-            }
-        });
-        filaTotal[c] = suma;
-    }
-    datosRemesaEnEdicion[3] = filaTotal;
-
-    set(ref(db, `historial_campanas/${remesaEnEdicion}/totales`), datosRemesaEnEdicion).then(() => {
-        alert('Remesa actualizada en todos los reportes.');
-        bootstrap.Modal.getInstance(document.getElementById('modalEditarRemesa')).hide();
-        cargarDatosSemanal();
-    });
-});
 
 cargarDatosSemanal();
