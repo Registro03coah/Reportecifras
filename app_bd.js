@@ -1,28 +1,44 @@
-// NOTA PARA GITHUB Y FIREBASE:
-// Descomenta y coloca aquí tu configuración real de Firebase
-/*
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
+// ==========================================
+// CONFIGURACIÓN REAL DE FIREBASE
+// ==========================================
 const firebaseConfig = {
   apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo",
   authDomain: "cifrasmac.firebaseapp.com",
+  databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com",
   projectId: "cifrasmac",
   storageBucket: "cifrasmac.firebasestorage.app",
   messagingSenderId: "916644687837",
   appId: "1:916644687837:web:03d346cc48a071af1ed034"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Inicializar Firebase
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
 
 let bdMadre = [];
 let columnasEstructura = [];
 
-// 1. EVENTO SUBIR ARCHIVO (BÓTON VERDE)
+// Al cargar la página, intentamos traer los datos que ya estén guardados en Firebase
+window.addEventListener('DOMContentLoaded', () => {
+    database.ref('bd_madre').once('value')
+    .then((snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+            // Si Firebase tiene datos, los cargamos a la tabla
+            bdMadre = Array.isArray(data) ? data : Object.values(data);
+            if(bdMadre.length > 0) {
+                columnasEstructura = Object.keys(bdMadre[0]);
+                renderizarCabeceras(columnasEstructura);
+                ordenarYRenderizar(bdMadre);
+            }
+        }
+    })
+    .catch((error) => {
+        console.error("Error al cargar datos de Firebase:", error);
+    });
+});
+
+// 1. EVENTO SUBIR ARCHIVO (BOTÓN VERDE)
 document.getElementById('btnSubir').addEventListener('click', () => {
     document.getElementById('fileInput').click();
 });
@@ -39,33 +55,23 @@ document.getElementById('fileInput').addEventListener('change', function(e) {
         try {
             const jsonData = JSON.parse(event.target.result);
             
-            // Detectar columnas automáticamente del archivo JSON
             if(jsonData.length > 0) {
                 columnasEstructura = Object.keys(jsonData[0]);
             }
 
-            // AQUI ESTÁ EL CÓDIGO FIREBASE (Comentado hasta que pongas tus credenciales arriba)
-            /*
+            // GUARDAR EN FIREBASE DE GOLPE
             database.ref('bd_madre').set(jsonData).then(() => {
-                alert("Datos subidos a Firebase correctamente");
-            }).catch((error) => {
-                alert("Error subiendo a Firebase: " + error);
-            });
-            */
-            
-            // Simulamos un pequeño retraso visual para que veas el "Cargando"
-            setTimeout(() => {
                 bdMadre = jsonData;
                 renderizarCabeceras(columnasEstructura);
                 ordenarYRenderizar(bdMadre);
                 
-                // Ocultar pantalla de carga
                 document.getElementById('loadingOverlay').style.display = 'none';
-                
-                // Limpiamos el input por si quieres volver a subir el mismo archivo
                 document.getElementById('fileInput').value = ''; 
-                alert('Archivo procesado y cargado en la Base de Datos con éxito.');
-            }, 1500);
+                alert('¡Archivo procesado y guardado en Firebase con éxito!');
+            }).catch((error) => {
+                document.getElementById('loadingOverlay').style.display = 'none';
+                alert("Error al subir a Firebase: " + error);
+            });
 
         } catch (err) {
             document.getElementById('loadingOverlay').style.display = 'none';
@@ -83,11 +89,9 @@ function ordenarYRenderizar(datos) {
         const diaA = a['Día'] || a['Dia'] || '';
         const diaB = b['Día'] || b['Dia'] || '';
         
-        // Si es el mismo módulo, ordena por día
         if (modA === modB) {
             return diaA.localeCompare(diaB);
         }
-        // Si no, ordena por módulo
         return modA.localeCompare(modB);
     });
     
@@ -128,7 +132,6 @@ function renderizarTabla(datos) {
         columnasEstructura.forEach(colName => {
             let valor = fila[colName] || '';
             
-            // Colores especiales para columnas clave
             if(colName === 'Remesa') {
                 tr += `<td class="fw-bold text-primary">${valor}</td>`;
             } else if (colName === 'Módulo' || colName === 'Modulo') {
@@ -138,7 +141,6 @@ function renderizarTabla(datos) {
             }
         });
         
-        // Agregar botones de acción
         tr += `
             <td class="text-center col-acciones">
                 <button class="btn btn-sm btn-warning text-dark me-1" onclick="editarRegistro(${index})">
@@ -154,16 +156,14 @@ function renderizarTabla(datos) {
     });
 }
 
-// 5. BOTÓN DE PÁNICO: VACIAR BASE DE DATOS
+// 5. BOTÓN DE PÁNICO: VACIAR BASE DE DATOS Y FIREBASE
 window.vaciarBaseDatosGeneral = function() {
     if(confirm("⚠️ ADVERTENCIA: ¿Estás seguro de querer VACIAR TODA la base de datos?")) {
-        if(confirm("Se borrarán los datos visuales y de FIREBASE. ¿Confirmar borrado total?")) {
+        if(confirm("Se borrarán los datos visuales y de FIREBASE permanentemente. ¿Confirmar borrado total?")) {
             
-            // Mostrar pantalla de carga
             document.getElementById('loadingOverlay').style.display = 'flex';
 
-            // CÓDIGO FIREBASE ACTIVO (Descomentar al poner credenciales)
-            /*
+            // BORRAR EN FIREBASE
             database.ref('bd_madre').remove()
             .then(() => {
                 limpiarTableroLocal();
@@ -172,12 +172,6 @@ window.vaciarBaseDatosGeneral = function() {
                 alert("Error limpiando Firebase: " + error);
                 document.getElementById('loadingOverlay').style.display = 'none';
             });
-            */
-            
-            // Simulación temporal mientras configuras Firebase
-            setTimeout(() => {
-                limpiarTableroLocal();
-            }, 1000);
         }
     }
 }
@@ -217,6 +211,3 @@ window.editarRegistro = function(index) {
 window.borrarRegistro = function(index) {
     alert("Borrado individual en construcción. Índice: " + index);
 }
-
-// Al inicio la tabla arranca limpia
-renderizarTabla([]);
