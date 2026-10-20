@@ -112,3 +112,24 @@ document.getElementById('fileInput').addEventListener('change', function(e) {
     // Leemos el contenido del archivo como texto
     reader.readAsText(file);
 });
+// =========================================================
+// 3. FUNCIÓN PARA VACIAR LA BASE DE DATOS (BOTÓN ROJO)
+// =========================================================
+function vaciarBaseDatosGeneral() {
+    if (confirm("¿ESTÁS COMPLETAMENTE SEGURO? Esto borrará TODOS los registros de la Base Madre de forma permanente.")) {
+        database.ref('bd_madre').remove()
+            .then(() => {
+                alert("La base de datos ha sido vaciada.");
+                window.location.reload(); // Recargamos para limpiar la pantalla
+            })
+            .catch((error) => {
+                console.error("Error al borrar los datos: ", error);
+                alert("Hubo un problema al intentar vaciar la base de datos.");
+            });
+    }
+}
+// Vinculamos el botón rojo si no está usando onclick en el HTML directamente
+const btnVaciar = document.querySelector('.btn-danger');
+if(btnVaciar) {
+    btnVaciar.addEventListener('click', vaciarBaseDatosGeneral);
+}
