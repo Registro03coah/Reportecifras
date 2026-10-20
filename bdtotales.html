@@ -47,15 +47,19 @@
 
 <div id="loadingOverlay">
     <div class="spinner-border text-light mb-3" role="status" style="width: 4rem; height: 4rem;"></div>
-    <h2>Procesando archivo...</h2>
+    <h2>Procesando archivo JSON...</h2>
 </div>
+
+<!-- Input de archivo oculto para subir la BD de Totales -->
+<input type="file" id="fileInputTotales" accept=".json" style="display: none;">
 
 <div class="container-fluid mt-4 px-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2><i class="bi bi-archive-fill"></i> Base de Datos de Totales (bdtotales)</h2>
         <div>
-            <button class="btn btn-danger me-2" onclick="vaciarBaseTotales()"><i class="bi bi-exclamation-triangle-fill"></i> Vaciar BD Totales</button>
+            <button class="btn btn-success me-2" id="btnSubirTotales"><i class="bi bi-upload"></i> Subir JSON</button>
             <button class="btn btn-warning text-dark me-2" onclick="descargarRespaldoTotalesJSON()"><i class="bi bi-cloud-download"></i> Respaldar JSON</button>
+            <button class="btn btn-danger me-2" onclick="vaciarBaseTotales()"><i class="bi bi-exclamation-triangle-fill"></i> Vaciar BD Totales</button>
             <a href="index.html" class="btn btn-secondary ms-2"><i class="bi bi-house-door-fill"></i> Volver al Inicio</a>
         </div>
     </div>
