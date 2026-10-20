@@ -33,6 +33,9 @@ database.ref('bd_madre').on('value', (snapshot) => {
     ejecutarOrdenamiento(datosGlobalesBd);
 });
 
+// =========================================================
+// ORDENAMIENTO INTELIGENTE: REMESA -> MÓDULO -> COLUMNA SELECCIONADA
+// =========================================================
 function ejecutarOrdenamiento(arregloA_Ordenar) {
     if(!arregloA_Ordenar || arregloA_Ordenar.length === 0) {
         dibujarTablaBd([]);
@@ -42,6 +45,21 @@ function ejecutarOrdenamiento(arregloA_Ordenar) {
     let arregloOrdenado = [...arregloA_Ordenar];
 
     arregloOrdenado.sort((a, b) => {
+        // 1. PRIMER NIVEL: ORDENAR POR REMESA
+        let remesaA = String(a['REMESA'] || a['Remesa'] || '').trim();
+        let remesaB = String(b['REMESA'] || b['Remesa'] || '').trim();
+        if (remesaA !== remesaB) {
+            return remesaB.localeCompare(remesaA, undefined, { numeric: true }); // Remesas más recientes primero (o cámbialo si prefieres ascendente)
+        }
+
+        // 2. SEGUNDO NIVEL: ORDENAR POR MÓDULO EN ORDEN ESTRICTO (050351 -> 050353 -> 050354)
+        let moduloA = String(a['MODULO'] || a['MÓDULO'] || a['Módulo'] || a['Modulo'] || '').trim();
+        let moduloB = String(b['MODULO'] || b['MÓDULO'] || b['Módulo'] || b['Modulo'] || '').trim();
+        if (moduloA !== moduloB) {
+            return moduloA.localeCompare(moduloB, undefined, { numeric: true });
+        }
+
+        // 3. TERCER NIVEL: LO QUE EL USUARIO HAYA SELECCIONADO AL HACER CLIC EN LA COLUMNA
         let valA = a[columnaOrdenActual] !== undefined && a[columnaOrdenActual] !== null ? String(a[columnaOrdenActual]).trim() : '';
         let valB = b[columnaOrdenActual] !== undefined && b[columnaOrdenActual] !== null ? String(b[columnaOrdenActual]).trim() : '';
 
@@ -65,7 +83,6 @@ function ejecutarOrdenamiento(arregloA_Ordenar) {
 
     dibujarTablaBd(arregloOrdenado);
 }
-
 window.cambiarOrden = function(columnaClick) {
     if (columnaOrdenActual === columnaClick) {
         ordenAscendente = !ordenAscendente;
