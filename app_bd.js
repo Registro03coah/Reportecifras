@@ -6,9 +6,7 @@ const firebaseConfig = {
   authDomain: "cifrasmac.firebaseapp.com",
   databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com",
   projectId: "cifrasmac",
-  storageBucket: "cifrasmac.firebasestorage.app",
-  messagingSenderId: "916644687837",
-  appId: "1:916644687837:web:03d346cc48a071af1ed034"
+
 };
 // Imprimir la configuración para asegurar que no hay valores 'undefined'
 console.log("1. Parámetros de Firebase Config:", firebaseConfig);
