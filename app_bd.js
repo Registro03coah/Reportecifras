@@ -91,13 +91,15 @@ function dibujarTablaBd(datosArreglo) {
         return remB.localeCompare(remA); // Orden descendente
     });
 
-    // Dibujamos la cabecera (thead)
+   // Dibujamos la cabecera (thead)
     let trHead = '<tr>';
     columnas.forEach(col => {
         // Devolvemos el punto (.) y la diagonal (/) solo de manera visual para la tabla
         let nombreColumnaVisual = col.replace('CORR__DE_DATOS_DIRECCION', 'CORR._DE_DATOS_DIRECCION')
                                      .replace('RECIBO_Y_O_EXTRAVIO', 'RECIBO_Y/O_EXTRAVIO');
-        trHead += `<th>${nombreColumnaVisual}</th>`;
+                                     
+        // AQUÍ AGREGAMOS EL COLOR BLANCO A LA LETRA
+        trHead += `<th class="text-white" style="color: white !important;">${nombreColumnaVisual}</th>`;
     });
     trHead += '</tr>';
     thead.innerHTML = trHead;
