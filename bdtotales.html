@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Base de Datos de Totales - MACs APP</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    
+    <!-- Firebase SDK v8 -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <style>
+        .table-responsive {
+            max-height: 70vh;
+            overflow-y: auto;
+            overflow-x: auto;
+        }
+        thead th {
+            position: sticky;
+            top: 0;
+            background-color: #1b396b !important;
+            color: white;
+            z-index: 1;
+            white-space: nowrap;
+        }
+        tbody td {
+            white-space: nowrap;
+            vertical-align: middle;
+        }
+        #loadingOverlay {
+            display: none; 
+            position: fixed; 
+            top: 0; left: 0; 
+            width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.85); 
+            z-index: 9999; 
+            flex-direction: column;
+            justify-content: center; 
+            align-items: center; 
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-light">
+
+<div id="loadingOverlay">
+    <div class="spinner-border text-light mb-3" role="status" style="width: 4rem; height: 4rem;"></div>
+    <h2>Procesando archivo...</h2>
+</div>
+
+<div class="container-fluid mt-4 px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-archive-fill"></i> Base de Datos de Totales (bdtotales)</h2>
+        <div>
+            <button class="btn btn-danger me-2" onclick="vaciarBaseTotales()"><i class="bi bi-exclamation-triangle-fill"></i> Vaciar BD Totales</button>
+            <button class="btn btn-warning text-dark me-2" onclick="descargarRespaldoTotalesJSON()"><i class="bi bi-cloud-download"></i> Respaldar JSON</button>
+            <a href="index.html" class="btn btn-secondary ms-2"><i class="bi bi-house-door-fill"></i> Volver al Inicio</a>
+        </div>
+    </div>
+
+    <!-- Buscador -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="input-group">
+                <span class="input-group-text bg-primary text-white"><i class="bi bi-search"></i></span>
+                <input type="text" id="buscadorBdTotales" class="form-control form-control-lg" placeholder="Buscar por IDMAC (ej. 35141) o por Remesa...">
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla Maestra de Totales -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover table-bordered mb-0" id="tablaBdTotales">
+                    <thead id="cabeceraBdTotales"></thead>
+                    <tbody id="cuerpoBdTotales"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="app_bdtotales.js"></script>
+</body>
+</html>
