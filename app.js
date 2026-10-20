@@ -515,3 +515,79 @@ document.getElementById('btnGuardarBD').addEventListener('click', () => {
     });
 
 }); 
+// ==========================================
+// 4. ENVÍO AUTOMÁTICO DE FILAS DE MÓDULOS A "BDTOTALES"
+// ==========================================
+document.getElementById('btnGuardarBD').addEventListener('click', () => {
+    const remesaActual = document.getElementById('inputRemesa').value.trim();
+    if (!remesaActual) return; // Si no hay remesa, el flujo principal lo detiene
+
+    let registrosTotalesParaBD = [];
+    const tbodyTotales = document.querySelector('#tablaCaptura_totales tbody');
+    if (!tbodyTotales) return;
+
+    const filas = tbodyTotales.querySelectorAll('tr');
+
+    // Recorremos solo las primeras 3 filas (050351, 050353, 050354), ignorando el GRAN TOTAL (fila 3)
+    for (let i = 0; i < 3; i++) {
+        const filaModulo = filas[i];
+        if (!filaModulo) continue;
+
+        let objFilaTotal = {};
+        let textoModuloCelda = "";
+
+        filaModulo.querySelectorAll('td').forEach((td, colIdx) => {
+            const input = td.querySelector('input');
+            let valorCelda = input ? input.value.trim() : "";
+            
+            // Si es la columna 1 (índice 0), trae texto como "Totales MAC 050351"
+            if (colIdx === 0) {
+                textoModuloCelda = valorCelda;
+            }
+
+            let claveColumna = NOMBRES_ESTANDAR_BD[colIdx] || `Col_${colIdx + 1}`;
+            objFilaTotal[claveColumna] = valorCelda;
+        });
+
+        // Extraemos limpiamente el número de módulo (ej. "050351" de "Totales MAC 050351")
+        let numeroModuloLimйы = textoModuloCelda.replace(/[^0-9]/g, ''); // Extrae solo los dígitos
+        if (!numeroModuloLimйы) {
+            // Respaldo por si acaso siempre usa el orden fijo
+            const modulosFijo = ["050351", "050353", "050354"];
+            numeroModuloLimйы = modulosFijo[i];
+        }
+
+        // Asignamos valores limpios al objeto
+        objFilaTotal["MODULO"] = numeroModuloLimйы;
+        objFilaTotal["REMESA"] = remesaActual;
+
+        // Eliminamos DIA y FECHA por tratarse de un concentrado semanal
+        delete objFilaTotal.DIA;
+        delete objFilaTotal.FECHA;
+
+        // CALCULAMOS EL IDMAC: Últimos 3 dígitos del módulo + Últimos 2 dígitos de la remesa
+        const ultimos3Mod = String(numeroModuloLimйы).slice(-3); // Ej. "351"
+        const ultimos2Rem = String(remesaActual).slice(-2); // Ej. "41"
+        objFilaTotal.IDMAC = `${ultimos3Mod}${ultimos2Rem}`; // Ej. "35141"
+
+        registrosTotalesParaBD.push(objFilaTotal);
+    }
+
+    // Guardamos en el nodo bdtotales de Firebase de forma independiente
+    const dbRefTotales = ref(db, 'bdtotales');
+    
+    get(dbRefTotales).then((snapshot) => {
+        let actualTotales = snapshot.val() || [];
+        actualTotales = Array.isArray(actualTotales) ? actualTotales : Object.values(actualTotales);
+
+        // Filtramos para evitar duplicados si se vuelve a guardar la misma remesa
+        let totalesFiltrados = actualTotales.filter(item => String(item.REMESA) !== String(remesaActual));
+        const fusionFinalTotales = [...totalesFiltrados, ...registrosTotalesParaBD];
+
+        set(dbRefTotales, fusionFinalTotales).then(() => {
+            console.log("✅ BD Totales actualizada exitosamente con los 3 módulos y su IDMAC.");
+        }).catch(err => {
+            console.error("Error al actualizar bdtotales:", err);
+        });
+    });
+});
