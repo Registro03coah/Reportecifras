@@ -3,14 +3,15 @@
 // =========================================================
 
 // Reemplaza esto con los datos reales de tu proyecto MACs APP
+// Tu configuración real de Firebase
 const firebaseConfig = {
-    apiKey: "TU_API_KEY",
-    authDomain: "tu-proyecto.firebaseapp.com",
-    databaseURL: "https://tu-proyecto-default-rtdb.firebaseio.com",
-    projectId: "tu-proyecto",
-    storageBucket: "tu-proyecto.appspot.com",
-    messagingSenderId: "TU_MESSAGING_SENDER_ID",
-    appId: "TU_APP_ID"
+  apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo",
+  authDomain: "cifrasmac.firebaseapp.com",
+  databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com", // Asegúrate de tener tu URL de Realtime Database aquí
+  projectId: "cifrasmac",
+  storageBucket: "cifrasmac.firebasestorage.app",
+  messagingSenderId: "916644687837",
+  appId: "1:916644687837:web:03d346cc48a071af1ed034"
 };
 
 // IMPORTANTE: El orden de estas dos líneas no debe cambiar
