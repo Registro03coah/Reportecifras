@@ -118,6 +118,9 @@ document.getElementById('fileInput').addEventListener('change', function(e) {
                 nuevosDatos = [nuevosDatos];
             }
             
+            // ¡ESTO ES LO NUEVO! Imprimimos el archivo JSON en consola
+            console.log("2. Datos leídos del archivo JSON:", nuevosDatos);
+            
             // Usamos once() solo para leer una vez al momento de fusionar
             database.ref('bd_madre').once('value').then((snapshot) => {
                 let datosActuales = snapshot.val();
