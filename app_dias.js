@@ -8,7 +8,6 @@ const firebaseConfig = {
     projectId: "cifrasmac"
 };
 
-// Inicializamos Firebase v8
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 } else {
@@ -17,9 +16,10 @@ if (!firebase.apps.length) {
 const database = firebase.database();
 
 // ==========================================
-// 2. COLUMNAS ESTANDARIZADAS (El mismo idioma que bd_madre)
+// 2. COLUMNAS ESTANDARIZADAS (ORDEN ESPECÍFICO PARA REPORTE DÍAS)
 // ==========================================
-const COLUMNAS_REPORTE = [
+// Observa el inicio: MODULO, REMESA, DIA, FECHA, SEDES...
+const COLUMNAS_REPORTE_DIAS = [
     "MODULO", "REMESA", "DIA", "FECHA", "SEDES", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
     "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSISION",
     "CORR__DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES",
@@ -40,7 +40,24 @@ const COLUMNAS_REPORTE = [
 let bdMadreGlobal = [];
 
 // ==========================================
-// 3. GENERADOR DE CABECERA DE TABLA
+// 3. SEMÁFORO DE CONEXIÓN FIREBASE
+// ==========================================
+const connectedRef = database.ref(".info/connected");
+connectedRef.on("value", (snap) => {
+    const semaforo = document.getElementById("semaforoConexion");
+    if(!semaforo) return;
+    
+    if (snap.val() === true) {
+        semaforo.className = "badge bg-success text-white fs-6 px-3 py-2 rounded-pill online-glow";
+        semaforo.innerHTML = '<i class="bi bi-wifi"></i> ONLINE';
+    } else {
+        semaforo.className = "badge bg-danger text-white fs-6 px-3 py-2 rounded-pill offline-glow";
+        semaforo.innerHTML = '<i class="bi bi-wifi-off"></i> OFFLINE';
+    }
+});
+
+// ==========================================
+// 4. GENERADOR DE CABECERA DE TABLA
 // ==========================================
 function construirHeaderTabla() {
     const thead = document.getElementById('cabeceraTablaDias');
@@ -50,7 +67,7 @@ function construirHeaderTabla() {
     let trTitulos = document.createElement('tr');
     let trNumeros = document.createElement('tr');
     
-    COLUMNAS_REPORTE.forEach((col, index) => {
+    COLUMNAS_REPORTE_DIAS.forEach((col, index) => {
         let thT = document.createElement('th');
         let thN = document.createElement('th');
         
@@ -60,11 +77,10 @@ function construirHeaderTabla() {
         thT.innerText = nombreVisual;
         thT.style.minWidth = "85px";
         
-        // Ajustes de ancho específicos
-        if(col === "MODULO" || col === "REMESA") thT.style.minWidth = "100px";
+        if(col === "MODULO" || col === "REMESA") thT.style.minWidth = "70px";
+        if(col === "DIA" || col === "FECHA") thT.style.minWidth = "85px";
         if(col === "TOTAL_DE_FOLIOS" || col === "TOTAL_DE_TRAMITES") thT.style.minWidth = "110px";
 
-        // Colores para identificar bloques como en tu diseño original
         if(col === "INICIAL" || col === "FINAL" || col === "TOTAL_DE_FOLIOS") thT.classList.add('bg-folios');
         
         thN.innerText = index + 1; 
@@ -80,39 +96,21 @@ function construirHeaderTabla() {
 construirHeaderTabla();
 
 // ==========================================
-// 4. LECTURA Y RENDERIZADO DESDE BD MADRE
+// 5. LECTURA Y RENDERIZADO DESDE BD MADRE
 // ==========================================
 function cargarDatosDias() {
-    const statusDiv = document.getElementById('statusCarga');
-    if(statusDiv) {
-        statusDiv.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Cargando BD Madre...';
-        statusDiv.className = "badge bg-warning text-dark fs-6 me-2";
-    }
-    
-    // Usamos .on() para que se actualice en tiempo real si cambias algo en bd_madre
     database.ref('bd_madre').on('value', (snapshot) => {
         if (snapshot.exists()) {
             const dataRaw = snapshot.val();
             bdMadreGlobal = Array.isArray(dataRaw) ? dataRaw : Object.values(dataRaw);
-            
             procesarYMostrarDatos();
             renderListaRemesas();
-            
-            if(statusDiv) {
-                statusDiv.className = "badge bg-success fs-6 me-2";
-                statusDiv.innerHTML = '<i class="bi bi-check-circle"></i> Sincronizado';
-            }
         } else {
             bdMadreGlobal = [];
             const tb = document.getElementById('cuerpoTablaDias');
-            if(tb) tb.innerHTML = '<tr><td colspan="100%" class="text-center py-4">No hay remesas guardadas en la Base de Datos.</td></tr>';
+            if(tb) tb.innerHTML = '<tr><td colspan="100%" class="text-center py-4 text-muted"><i class="bi bi-info-circle"></i> No hay datos en la BD.</td></tr>';
             const tbRem = document.getElementById('cuerpoListaRemesas');
             if(tbRem) tbRem.innerHTML = '<tr><td colspan="2">No hay remesas guardadas</td></tr>';
-            
-            if(statusDiv) {
-                statusDiv.className = "badge bg-secondary fs-6 me-2";
-                statusDiv.innerHTML = 'Sin datos';
-            }
         }
     });
 }
@@ -124,7 +122,7 @@ function procesarYMostrarDatos() {
 
     if (bdMadreGlobal.length === 0) return;
 
-    // Ordenar por Módulo y luego por Remesa de forma descendente (las más nuevas primero)
+    // Ordenar por Módulo y luego por Remesa descendente
     let datosOrdenados = [...bdMadreGlobal].sort((a, b) => {
         const modA = String(a.MODULO || '');
         const modB = String(b.MODULO || '');
@@ -138,7 +136,7 @@ function procesarYMostrarDatos() {
     datosOrdenados.forEach(fila => {
         let tr = document.createElement('tr');
         
-        COLUMNAS_REPORTE.forEach(col => {
+        COLUMNAS_REPORTE_DIAS.forEach(col => {
             let td = document.createElement('td');
             let val = fila[col] !== undefined && fila[col] !== null ? fila[col] : '';
             td.innerText = val;
@@ -150,14 +148,13 @@ function procesarYMostrarDatos() {
 }
 
 // ==========================================
-// 5. GESTOR DE REMESAS Y ELIMINACIÓN
+// 6. GESTOR DE REMESAS Y ELIMINACIÓN
 // ==========================================
 function renderListaRemesas() {
     const tbody = document.getElementById('cuerpoListaRemesas');
     if(!tbody) return;
     tbody.innerHTML = "";
     
-    // Extraer remesas únicas
     let remesasUnicas = [...new Set(bdMadreGlobal.map(f => String(f.REMESA || 'S/N')))].sort((a, b) => b.localeCompare(a));
 
     remesasUnicas.forEach(remesaId => {
@@ -175,14 +172,10 @@ function renderListaRemesas() {
 }
 
 window.borrarRemesaCompleta = function(remesaId) {
-    if(confirm(`🚨 ¿Estás completamente seguro de borrar TODO lo relacionado a la Remesa ${remesaId}? Esto lo borrará de BD Madre.`)) {
-        
-        // Filtramos para conservar todos los registros que NO sean de esa remesa
+    if(confirm(`🚨 ¿Estás seguro de borrar TODO lo relacionado a la Remesa ${remesaId}?`)) {
         let nuevoBd = bdMadreGlobal.filter(f => String(f.REMESA || 'S/N') !== String(remesaId));
-        
         database.ref('bd_madre').set(nuevoBd).then(() => {
             alert(`La Remesa ${remesaId} ha sido eliminada exitosamente.`);
-            // No necesitamos recargar porque la función .on() lo hará automáticamente
         }).catch(error => {
             console.error("Error al eliminar:", error);
             alert("Hubo un error al eliminar la remesa de la base de datos.");
@@ -190,56 +183,39 @@ window.borrarRemesaCompleta = function(remesaId) {
     }
 };
 
+// ==========================================
+// 7. FUNCIÓN PARA COPIAR A EXCEL
+// ==========================================
+window.copiarTablaExcel = function(tablaId) {
+    const tabla = document.getElementById(tablaId);
+    if (!tabla) {
+        alert("No se encontró la tabla.");
+        return;
+    }
+
+    // Crea un rango y selecciona la tabla
+    const range = document.createRange();
+    range.selectNode(tabla);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    try {
+        // Ejecuta el comando de copiado
+        const exitoso = document.execCommand('copy');
+        if (exitoso) {
+            alert("¡Tabla copiada! Ve a Excel y presiona Ctrl + V (o clic derecho > Pegar) para pegarla.");
+        } else {
+            alert("No se pudo copiar la tabla. Tu navegador podría no soportar esta función.");
+        }
+    } catch (err) {
+        console.error('Error al intentar copiar:', err);
+        alert("Error al intentar copiar.");
+    }
+
+    // Limpia la selección para que no se quede todo sombreado en azul
+    selection.removeAllRanges();
+};
+
 // Iniciar lectura
 cargarDatosDias();
-
-// ==========================================
-// 6. RESPALDO Y RESTAURACIÓN (JSON)
-// ==========================================
-const btnDescargar = document.getElementById('btnDescargarJSON');
-if(btnDescargar) {
-    btnDescargar.addEventListener('click', () => {
-        if(bdMadreGlobal.length === 0) {
-            alert("No hay datos para respaldar.");
-            return;
-        }
-        const jsonString = JSON.stringify(bdMadreGlobal, null, 2);
-        const blob = new Blob([jsonString], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        
-        let hoy = new Date();
-        let fechaTxt = hoy.getFullYear() + "-" + (hoy.getMonth()+1).toString().padStart(2, '0') + "-" + hoy.getDate().toString().padStart(2, '0');
-        a.download = `bd_madre_respaldo_${fechaTxt}.json`;
-        
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    });
-}
-
-const inputSubir = document.getElementById('inputSubirJSON');
-if(inputSubir) {
-    inputSubir.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if(!file) return;
-
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            try {
-                const jsonData = JSON.parse(event.target.result);
-                if(confirm("¿Estás seguro de subir este respaldo? Sobrescribirá toda la Base de Datos Principal en la nube.")) {
-                    database.ref('bd_madre').set(jsonData).then(() => {
-                        alert('Base de Datos Principal actualizada con éxito desde el respaldo.');
-                        document.getElementById('inputSubirJSON').value = ''; 
-                    });
-                }
-            } catch(err) {
-                alert('El archivo JSON no es válido.');
-            }
-        };
-        reader.readAsText(file);
-    });
-}
