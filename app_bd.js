@@ -1,38 +1,62 @@
-// AGREGA ESTA LÍNEA JUSTO AQUÍ, ANTES DE TUS EVENTOS:
-const database = firebase.database();
+// =========================================================
+// 1. CONFIGURACIÓN E INICIALIZACIÓN DE FIREBASE
+// =========================================================
 
-// 1. EVENTO SUBIR ARCHIVO (BOTÓN VERDE) - FUSIÓN INTELIGENTE
+// Reemplaza esto con los datos reales de tu proyecto MACs APP
+const firebaseConfig = {
+    apiKey: "TU_API_KEY",
+    authDomain: "tu-proyecto.firebaseapp.com",
+    databaseURL: "https://tu-proyecto-default-rtdb.firebaseio.com",
+    projectId: "tu-proyecto",
+    storageBucket: "tu-proyecto.appspot.com",
+    messagingSenderId: "TU_MESSAGING_SENDER_ID",
+    appId: "TU_APP_ID"
+};
+
+// IMPORTANTE: El orden de estas dos líneas no debe cambiar
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database(); // Inicializamos database DESPUÉS de config
+
+
+// =========================================================
+// 2. EVENTOS PARA SUBIR Y PROCESAR EL ARCHIVO JSON
+// =========================================================
+
+// Evento del botón verde para disparar la ventana de archivos
 document.getElementById('btnSubir').addEventListener('click', () => {
     document.getElementById('fileInput').click();
 });
 
-// SOLO DEBE HABER UN EVENTO 'change' PARA fileInput
+// Evento cuando se selecciona el archivo
 document.getElementById('fileInput').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (!file) return;
 
-    document.getElementById('loadingOverlay').style.display = 'flex';
+    // Mostramos la pantalla de carga
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    if (loadingOverlay) loadingOverlay.style.display = 'flex';
 
     const reader = new FileReader();
+    
     reader.onload = function(event) {
         try {
+            // 1. Convertimos el archivo JSON a objeto JavaScript
             let nuevosDatos = JSON.parse(event.target.result);
             if (!Array.isArray(nuevosDatos)) {
                 nuevosDatos = [nuevosDatos];
             }
             
-            // Aquí ya funciona la base de datos
+            // 2. Conectamos con Firebase para traer los datos actuales
             database.ref('bd_madre').once('value').then((snapshot) => {
                 let datosActuales = snapshot.val();
                 datosActuales = datosActuales ? (Array.isArray(datosActuales) ? datosActuales : Object.values(datosActuales)) : [];
 
                 let mapaRegistros = new Map();
 
-                // 1. Procesamos los datos que ya están en Firebase
+                // 3. Procesamos los datos que YA ESTÁN en Firebase
                 datosActuales.forEach(item => {
                     const rem = String(item['Remesa'] || item['REMESA'] || '');
                     const mod = String(item['MÓDULO'] || item['Módulo'] || item['Modulo'] || '');
-                    // Usamos la FECHA exacta como identificador en lugar del día
                     const fecha = String(item['FECHA'] || item['Fecha'] || item['fecha'] || '');
                     
                     if (mod && fecha) {
@@ -40,47 +64,49 @@ document.getElementById('fileInput').addEventListener('change', function(e) {
                     }
                 });
 
-                // 2. Procesamos los datos nuevos del archivo JSON
-                nuevosDatos.forEach(item => {
-                    const rem = String(item['Remesa'] || item['REMESA'] || '');
-                    const mod = String(item['MÓDULO'] || item['Módulo'] || item['Modulo'] || '');
-                    const fecha = String(item['FECHA'] || item['Fecha'] || item['fecha'] || '');
+                // 4. Procesamos y fusionamos los datos NUEVOS del JSON
+                nuevosDatos.forEach(itemNuevo => {
+                    const remNuevo = String(itemNuevo['Remesa'] || itemNuevo['REMESA'] || '');
+                    const modNuevo = String(itemNuevo['MÓDULO'] || itemNuevo['Módulo'] || itemNuevo['Modulo'] || '');
+                    const fechaNueva = String(itemNuevo['FECHA'] || itemNuevo['Fecha'] || itemNuevo['fecha'] || '');
                     
-                    // FILTRO DE BASURA: Si la fila no tiene módulo o no tiene fecha, es una fila vacía o de totales. La ignoramos.
-                    if (!mod || !fecha) {
-                        return;
+                    if (modNuevo && fechaNueva) {
+                        // Si ya existe la combinación Remesa_Módulo_Fecha, se actualiza; si no, se agrega.
+                        mapaRegistros.set(`${remNuevo}_${modNuevo}_${fechaNueva}`, itemNuevo);
                     }
-
-                    // Guardamos usando la llave única con FECHA para que no se empalmen los diferentes jueves
-                    mapaRegistros.set(`${rem}_${mod}_${fecha}`, item);
                 });
 
-                const bdFusionada = Array.from(mapaRegistros.values());
-                const dataParaFirebase = limpiarLlavesParaFirebase(bdFusionada);
+                // 5. Convertimos el mapa fusionado de vuelta a un arreglo normal
+                const datosFusionados = Array.from(mapaRegistros.values());
 
-                if(bdFusionada.length > 0) {
-                    columnasEstructura = extraerTodasLasColumnas(bdFusionada);
-                }
-
-                database.ref('bd_madre').set(dataParaFirebase).then(() => {
-                    bdMadre = bdFusionada;
-                    renderizarCabeceras(columnasEstructura);
-                    ordenarYRenderizar(bdMadre);
+                // 6. Subimos los datos finales actualizados a Firebase
+                database.ref('bd_madre').set(datosFusionados).then(() => {
+                    console.log("¡Datos subidos y fusionados correctamente!");
+                    if (loadingOverlay) loadingOverlay.style.display = 'none';
+                    alert("Base de datos actualizada con éxito.");
                     
-                    document.getElementById('loadingOverlay').style.display = 'none';
+                    // Limpiamos el input para permitir subir el mismo archivo otra vez si se requiere
                     document.getElementById('fileInput').value = ''; 
-                    alert('¡Remesa procesada, fusionada y guardada en Firebase con éxito!');
+                    
                 }).catch((error) => {
-                    document.getElementById('loadingOverlay').style.display = 'none';
-                    alert("Error al subir a Firebase: " + error);
+                    console.error("Error al guardar en Firebase: ", error);
+                    if (loadingOverlay) loadingOverlay.style.display = 'none';
+                    alert("Hubo un error al intentar guardar los datos en la nube.");
                 });
 
+            }).catch((error) => {
+                console.error("Error al consultar Firebase: ", error);
+                if (loadingOverlay) loadingOverlay.style.display = 'none';
+                alert("Error al conectar con la base de datos.");
             });
 
-        } catch (err) {
-            document.getElementById('loadingOverlay').style.display = 'none';
-            alert('Error al leer el archivo JSON. Verifica que el formato sea correcto. Detalles: ' + err.message);
+        } catch (error) {
+            console.error("Error al procesar JSON: ", error);
+            if (loadingOverlay) loadingOverlay.style.display = 'none';
+            alert("Error al leer el archivo JSON. Verifica que su formato sea válido.");
         }
     };
+    
+    // Leemos el contenido del archivo como texto
     reader.readAsText(file);
 });
