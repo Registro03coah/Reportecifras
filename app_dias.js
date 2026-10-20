@@ -30,6 +30,11 @@ const COLUMNAS_REPORTE_DIAS = [
 ];
 
 let bdMadreGlobal = [];
+let anchosGuardados = JSON.parse(localStorage.getItem('anchosColumnasDias')) || {};
+
+// VARIABLES PARA EL ORDENAMIENTO DE LAS FLECHITAS
+let columnaOrdenActual = ''; 
+let ordenAscendente = false; 
 
 // ==========================================
 // 3. SEMÁFORO DE CONEXIÓN FIREBASE
@@ -48,11 +53,8 @@ connectedRef.on("value", (snap) => {
 });
 
 // ==========================================
-// 4. GENERADOR DE CABECERA Y MEMORIA DE ANCHOS
+// 4. GENERADOR DE CABECERA Y FLECHITAS
 // ==========================================
-// Cargar anchos desde la memoria del navegador
-let anchosGuardados = JSON.parse(localStorage.getItem('anchosColumnasDias')) || {};
-
 function construirHeaderTabla() {
     const thead = document.getElementById('cabeceraTablaDias');
     if(!thead) return;
@@ -64,7 +66,7 @@ function construirHeaderTabla() {
     COLUMNAS_REPORTE_DIAS.forEach((col, index) => {
         let thT = document.createElement('th');
         let thN = document.createElement('th');
-        thT.setAttribute('data-col', col); // Identificador para guardar el ancho
+        thT.setAttribute('data-col', col);
         
         let nombreVisual = col.replace('CORR__DE_DATOS_DIRECCION', 'CORR. DE DATOS DIRECCION')
                               .replace('RECIBO_Y_O_EXTRAVIO', 'RECIBO Y/O EXTRAVIO')
@@ -76,7 +78,6 @@ function construirHeaderTabla() {
 
         thT.innerText = nombreVisual;
         
-        // Asignar el ancho si existe en memoria, si no, uno por defecto
         if (anchosGuardados[col]) {
             thT.style.width = anchosGuardados[col];
             thT.style.minWidth = anchosGuardados[col];
@@ -89,8 +90,25 @@ function construirHeaderTabla() {
 
         if(col === "INICIAL" || col === "FINAL" || col === "TOTAL_DE_FOLIOS") thT.classList.add('bg-folios');
         
-        thN.innerText = index + 1; 
-        thN.className = "table-light text-muted";
+        // CONFIGURACIÓN DE LOS NÚMEROS Y LAS FLECHITAS
+        thN.className = "table-light text-dark text-center fw-bold";
+        thN.style.cursor = "pointer";
+        thN.title = "Clic para ordenar por esta columna";
+        thN.onclick = () => window.cambiarOrdenDias(col);
+        
+        // Colocamos el número
+        let contenidoHtml = `${index + 1} `;
+        
+        // Agregamos el ícono de las flechitas si está seleccionada
+        if (columnaOrdenActual === col) {
+            contenidoHtml += ordenAscendente 
+                             ? '<i class="bi bi-caret-up-fill text-primary ms-1"></i>' 
+                             : '<i class="bi bi-caret-down-fill text-primary ms-1"></i>';
+        } else {
+            contenidoHtml += '<i class="bi bi-arrow-down-up text-secondary opacity-25 ms-1" style="font-size: 0.8em;"></i>';
+        }
+        
+        thN.innerHTML = contenidoHtml;
         
         trTitulos.appendChild(thT); 
         trNumeros.appendChild(thN);
@@ -99,7 +117,6 @@ function construirHeaderTabla() {
     thead.appendChild(trTitulos); 
     thead.appendChild(trNumeros);
 
-    // Observador para guardar el grosor de la columna automáticamente si lo arrastras
     const observer = new ResizeObserver(entries => {
         let cambiados = false;
         for (let entry of entries) {
@@ -112,16 +129,14 @@ function construirHeaderTabla() {
         }
         if(cambiados) {
             localStorage.setItem('anchosColumnasDias', JSON.stringify(anchosGuardados));
-            actualizarStickyLeft(); // Recalcula las columnas congeladas
+            actualizarStickyLeft();
         }
     });
 
-    // Activar observador en los títulos
     const ths = trTitulos.querySelectorAll('th');
     ths.forEach(th => observer.observe(th));
 }
 
-// Lógica matemática para deslizar las columnas 2, 3 y 4 cuando se cambia el grosor
 function actualizarStickyLeft() {
     const table = document.getElementById('tablaDias');
     if(!table) return;
@@ -137,14 +152,12 @@ function actualizarStickyLeft() {
     let left2 = w0 + w1;
     let left3 = w0 + w1 + w2;
 
-    // Aplica a la cabecera
     const headTrs = document.querySelectorAll('#cabeceraTablaDias tr');
     headTrs.forEach(tr => {
         const h = tr.querySelectorAll('th');
         if(h.length >= 4) { h[1].style.left = left1+'px'; h[2].style.left = left2+'px'; h[3].style.left = left3+'px'; }
     });
 
-    // Aplica a las filas del cuerpo
     const trs = document.querySelectorAll('#cuerpoTablaDias tr');
     trs.forEach(tr => {
         const tds = tr.querySelectorAll('td');
@@ -155,7 +168,6 @@ function actualizarStickyLeft() {
 // ==========================================
 // 5. INTELIGENCIA DE BÚSQUEDA Y LECTURA
 // ==========================================
-// Esta función revisa si el dato viene con acentos o sin ellos, resolviendo el problema de blancos
 function obtenerValorFila(fila, col) {
     if (col === "MODULO") return fila["MÓDULO"] || fila["Módulo"] || fila["Modulo"] || fila["MODULO"] || '';
     if (col === "DIA") return fila["DÍA"] || fila["Día"] || fila["Dia"] || fila["DIA"] || '';
@@ -165,6 +177,18 @@ function obtenerValorFila(fila, col) {
     
     return fila[col] !== undefined && fila[col] !== null ? fila[col] : '';
 }
+
+// FUNCIÓN PARA CAMBIAR EL ORDEN AL DAR CLIC AL NÚMERO
+window.cambiarOrdenDias = function(colClick) {
+    if (columnaOrdenActual === colClick) {
+        ordenAscendente = !ordenAscendente;
+    } else {
+        columnaOrdenActual = colClick;
+        ordenAscendente = false; // Empezamos ordenando de mayor a menor
+    }
+    construirHeaderTabla(); // Para actualizar las flechitas visualmente
+    procesarYMostrarDatos(); // Para actualizar los datos en la tabla
+};
 
 function cargarDatosDias() {
     database.ref('bd_madre').on('value', (snapshot) => {
@@ -187,8 +211,28 @@ function procesarYMostrarDatos() {
 
     if (bdMadreGlobal.length === 0) return;
 
-    // Ordenamos inteligentemente usando nuestra función recolectora de acentos
+    // Ordenamos usando la columna seleccionada por el usuario
     let datosOrdenados = [...bdMadreGlobal].sort((a, b) => {
+        // 1. Si el usuario seleccionó una columna, ordenamos por ella primero
+        if (columnaOrdenActual !== '') {
+            let valA = String(obtenerValorFila(a, columnaOrdenActual)).trim();
+            let valB = String(obtenerValorFila(b, columnaOrdenActual)).trim();
+            
+            // Verificamos si son números matemáticos (ej. totales)
+            let numA = parseFloat(valA);
+            let numB = parseFloat(valB);
+            
+            if (!isNaN(numA) && !isNaN(numB) && valA !== '' && valB !== '') {
+                if (numA < numB) return ordenAscendente ? -1 : 1;
+                if (numA > numB) return ordenAscendente ? 1 : -1;
+            } else {
+                // Si no, ordenamos alfabéticamente
+                let comp = valA.toUpperCase().localeCompare(valB.toUpperCase());
+                if (comp !== 0) return ordenAscendente ? comp : -comp;
+            }
+        }
+        
+        // 2. Si no hay selección, o hay empates, ordenamos por defecto (Modulo y luego Remesa)
         const modA = String(obtenerValorFila(a, "MODULO"));
         const modB = String(obtenerValorFila(b, "MODULO"));
         if (modA !== modB) return modA.localeCompare(modB);
@@ -203,7 +247,6 @@ function procesarYMostrarDatos() {
         
         COLUMNAS_REPORTE_DIAS.forEach(col => {
             let td = document.createElement('td');
-            // Sacamos el valor con la función inteligente que brinca los acentos
             td.innerText = obtenerValorFila(fila, col);
             tr.appendChild(td);
         });
@@ -211,7 +254,6 @@ function procesarYMostrarDatos() {
         tbody.appendChild(tr);
     });
 
-    // Actualizamos las distancias congeladas tras dibujar la tabla
     setTimeout(actualizarStickyLeft, 100);
 }
 
