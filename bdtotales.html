@@ -89,37 +89,33 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="app_bdtotales.js"></script>
-    <!-- Modal para Editar Registro de BD Totales -->
-<div class="modal fade" id="modalEditarRegistro" tabindex="-1" aria-labelledby="modalEditarRegistroLabel" aria-hidden="true">
+   <!-- Modal para Editar Registro de BD Totales -->
+<div class="modal fade" id="modalEditarTotales" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header bg-primary text-white">
-        <h5 class="modal-title" id="modalEditarRegistroLabel"><i class="bi bi-pencil-square"></i> Editar Registro</h5>
+        <h5 class="modal-title"><i class="bi bi-pencil-square"></i> Editar BD Totales</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <form id="formEditarRegistro">
-          <!-- Campo Oculto para la Llave/ID -->
-          <input type="hidden" id="editKey">
-          
+        <form>
+          <div class="mb-3">
+            <label class="form-label text-muted small">IDMAC (Clave Única - No editable)</label>
+            <input type="text" class="form-control" id="editTotalesIDMAC" readonly>
+          </div>
           <div class="mb-3">
             <label class="form-label">Remesa</label>
-            <input type="text" class="form-control" id="editRemesa" required>
+            <input type="text" class="form-control" id="editTotalesRemesa">
           </div>
           <div class="mb-3">
             <label class="form-label">Módulo</label>
-            <input type="text" class="form-control" id="editModulo" required>
+            <input type="text" class="form-control" id="editTotalesModulo">
           </div>
-          <div class="mb-3">
-            <label class="form-label">Fecha</label>
-            <input type="date" class="form-control" id="editFecha" required>
-          </div>
-          <!-- Agrega aquí más campos según los que quieras permitir editar (Trámites, Entregas, etc.) -->
         </form>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" class="btn btn-primary" onclick="guardarEdicion()"><i class="bi bi-save"></i> Guardar Cambios</button>
+        <button type="button" class="btn btn-primary" onclick="guardarEdicionTotales()">Guardar Cambios</button>
       </div>
     </div>
   </div>
