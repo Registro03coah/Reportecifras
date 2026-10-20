@@ -1,4 +1,10 @@
-// ==========================================
+import pandas as pd
+
+# The user wants to update the ENCABEZADOS and NOMBRES_ESTANDAR_BD arrays in app.js
+# to exactly match the columns shown in their image.
+
+# Let's write the updated app.js code
+app_js_code = """// ==========================================
 // 1. IMPORTACIONES FIREBASE
 // ==========================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -20,42 +26,44 @@ const TOTAL_COLUMNAS = 75;
 const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo", "LINEA TOTALES"];
 const MODULOS = ["050351", "050353", "050354"];
 
+// Arreglo de encabezados exactos para alinear el Vaciado con la Base de Datos
 const ENCABEZADOS = [
-    "DÍA", "DD/MM/AA", "Horas trabajadas", "Sedes visitadas", "INICIAL", "FINAL", "TOTAL DE FOLIOS", 
-    "INSCRIPCIONES", "CORRECCION DE DATOS PERSONALES", "CAMBIO DE DOMICILIO", "REPOSISION", 
-    "CORR. DE DATOS DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL DE TRAMITES", 
-    "CANCELADOS", "TOTAL DE ANEXO DE RECHAZO", "CPV devuelta entrega", "DISPONIBLES AL DIA ANTERIOR", 
-    "RECIBIDAS", "RECIBIDAS DE OTROS TIPOS", "ENTREGADAS", "RECIBO Y/O EXTRAVIO", "ANEXAS A FUAR", 
-    "DATOS ERRONEOS", "FOTO MAL IMPRESA", "REIMPRESION", "'RETIRADAS POR CAUSA", "DISPONIBLES", 
-    "credenciales x canje", "fichas Entregadas", "fichas atendidas", "Dias trabajados", 
-    "SOLICITUD EXPEDICIÓN REPATRIADOS", "SOLICITUD EXPEDICIÓN ORDINARIA", "SOLICITU DE RECTIFICACIÓN", 
-    "DEMANDA DE JUICIO", "REMESA", "Total de movimientos", "DEVUELTAS POR TERCEROS:", 
-    "34 Imagen inconsistente", "35 Movimiento posterior", "CONFIGURACION", "ENT", "DTTO", 
-    "MÓDULO", "RESGUARDO", "SOLICITUD DE REIMPRESION", "CPV devuelta entrega", "ript ejecutad", 
-    "FOLIO NEC", "cartografia", "lotes de credenciales", "registradas por dia", "faltantes", "observaciones",
-    "sin nombre1", "sin nombre2", "sin nombre3", "MAC QUE RECIBE", "MAC QUE ENTREGA", 
-    "IMPORTADAS", "EXPORTADAS", "REPOSISION + REIMPRESIONES", "MAL IMPRESA", "ERROR EN CARTOGRAFIA", 
-    "DEFUNCION", "SUSPENSION", "DUPLICADO", "ERROR EN NUM. DE EMISION", "PERDIDA DE VIGENCIA", 
-    "MOV.POST.", "ANEXAS A SOLICITUD", "OTRAS BAJAS"
+    "DIA", "FECHA", "Horas_trabajadas", "SEDES", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
+    "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSISION",
+    "CORR_DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES",
+    "CANCELADOS", "TOTAL_DE_ANEXO_DE_RECHAZO", "CPV_devuelta_entrega", "DISPONIBLES_AL_DIA_ANTERIOR",
+    "RECIBIDAS", "RECIBIDAS_DE_OTROS_TIPOS", "ENTREGADAS", "RECIBO_YO_EXTRAVIO", "ANEXAS_A_FUAR",
+    "DATOS_ERRONEOS", "FOTO_MAL_IMPRESA", "REIMPRESION_2", "RETIRADAS_POR_CAUSA", "DISPONIBLES",
+    "credenciales_x_canje", "fichas_Entregadas", "fichas_atendidas", "Dias_trabajados",
+    "SOLICITUD_EXPEDICION_REPATRIADOS", "SOLICITUD_EXPEDICION_ORDINARIA", "SOLICITU_DE_RECTIFICACION",
+    "DEMANDA_DE_JUICIO", "REMESA", "Total_de_movimientos", "DEVUELTAS_POR_TERCEROS",
+    "34_Imagen_inconsistente", "35_Movimiento_posterior", "CONFIGURACION", "ENT", "DTTO",
+    "MODULO", "RESGUARDO", "SOLICITUD_DE_REIMPRESION", "CPV_devuelta_entrega_2", "script_ejecutado",
+    "FOLIO_NEC", "cartografia", "lotes_de_credenciales", "registradas_por_dia", "faltantes", "observaciones",
+    "sin_nombre1", "sin_nombre2", "sin_nombre3", "MAC_QUE_RECIBE", "MAC_QUE_ENTREGA",
+    "IMPORTADAS", "EXPORTADAS", "REPOSISION_REIMPRESIONES", "MAL_IMPRESA", "ERROR_EN_CARTOGRAFIA",
+    "DEFUNCION", "SUSPENSION", "DUPLICADO", "ERROR_EN_NUM_DE_EMISION", "PERDIDA_DE_VIGENCIA",
+    "MOV_POST", "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS"
 ];
 
 // Nombres estandarizados de columnas idénticos para BD Madre y BD Totales
 const NOMBRES_ESTANDAR_BD = [
-    "MODULO", "REMESA", "FECHA", "DIA", "SEDES", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
+    "DIA", "FECHA", "Horas_trabajadas", "SEDES", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
     "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSISION",
-    "CORR__DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES",
-    "CANCELADOS", "TOTAL_DE_ANEXOS_POR_RECHAZO", "CPV_devuelta_entrega", "DISPONIBLES_AL_DIA_ANTERIOR",
-    "RECIBIDAS", "RECIBIDAS_DE_OTROS_TIPOS", "ENTREGADAS", "RECIBO_Y_O_EXTRAVIO", "ANEXAS_A_FUAR",
-    "DATOS_ERRONEOS", "FOTO_MAL_IMPRESA", "LIBRE2", "RETIRADAS_POR_OTRA_CAUSA", "DISPONIBLES",
+    "CORR_DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES",
+    "CANCELADOS", "TOTAL_DE_ANEXO_DE_RECHAZO", "CPV_devuelta_entrega", "DISPONIBLES_AL_DIA_ANTERIOR",
+    "RECIBIDAS", "RECIBIDAS_DE_OTROS_TIPOS", "ENTREGADAS", "RECIBO_YO_EXTRAVIO", "ANEXAS_A_FUAR",
+    "DATOS_ERRONEOS", "FOTO_MAL_IMPRESA", "REIMPRESION_2", "RETIRADAS_POR_CAUSA", "DISPONIBLES",
     "credenciales_x_canje", "fichas_Entregadas", "fichas_atendidas", "Dias_trabajados",
-    "SOLICITUD_EXPEDICION_O_RECTIFICACION", "SOLICITUD_EXPEDICION_REPATRIADOS", "SOLICITU_DE_REIMPRESION",
-    "DEMANDA_DE_JUICIO", "Total_de_movimientos", "DEVUELTAS_POR_TERCEROS", "34_Imagen_inconsistente",
-    "35_Movimiento_posterior", "CONFIGURACION", "ENT", "DTTO", "RESGUARDO", "SOLICITUD_DE_NUM_DE_EMISION",
-    "LIBRE1", "Sript_ejecutado_VIGENCIA", "FOLIO_NEC_POST", "cartografia_SOLICITUD", "lotes_de_credenciales",
-    "registradas_por_dia", "faltantes", "observaciones", "sin_nombre1", "sin_nombre2", "sin_nombre3",
-    "MAC_QUE_RECIBE", "MAC_QUE_ENTREGA", "IMPORTADAS", "EXPORTADAS", "REPOSISION_+_REIMPRESIONES",
-    "MAL_IMPRESAS", "ERROR_EN_CARTOGRAFIA", "DEFUNCION", "SUSPENSION", "DUPLICADO", "ERROR_EN_NUM_DE_EMISION",
-    "PERDIDA_DE_VIGENCIA", "MOY_POST", "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS"
+    "SOLICITUD_EXPEDICION_REPATRIADOS", "SOLICITUD_EXPEDICION_ORDINARIA", "SOLICITU_DE_RECTIFICACION",
+    "DEMANDA_DE_JUICIO", "REMESA", "Total_de_movimientos", "DEVUELTAS_POR_TERCEROS",
+    "34_Imagen_inconsistente", "35_Movimiento_posterior", "CONFIGURACION", "ENT", "DTTO",
+    "MODULO", "RESGUARDO", "SOLICITUD_DE_REIMPRESION", "CPV_devuelta_entrega_2", "script_ejecutado",
+    "FOLIO_NEC", "cartografia", "lotes_de_credenciales", "registradas_por_dia", "faltantes", "observaciones",
+    "sin_nombre1", "sin_nombre2", "sin_nombre3", "MAC_QUE_RECIBE", "MAC_QUE_ENTREGA",
+    "IMPORTADAS", "EXPORTADAS", "REPOSISION_REIMPRESIONES", "MAL_IMPRESA", "ERROR_EN_CARTOGRAFIA",
+    "DEFUNCION", "SUSPENSION", "DUPLICADO", "ERROR_EN_NUM_DE_EMISION", "PERDIDA_DE_VIGENCIA",
+    "MOV_POST", "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS"
 ];
 
 function generarEncabezados(selectorTabla, isTotales = false) {
@@ -68,7 +76,7 @@ function generarEncabezados(selectorTabla, isTotales = false) {
         let thN = document.createElement('th');
         
         let tituloStr = ENCABEZADOS[i-1] || `Columna ${i}`;
-        if(isTotales && i === 1) tituloStr = "MÓDULO";
+        if(isTotales && i === 1) tituloStr = "MODULO";
         
         thT.innerText = tituloStr;
         
@@ -150,6 +158,7 @@ function detectarRemesa() {
         const tbody = document.querySelector(`#tablaCaptura_${mod} tbody`);
         const filas = tbody.querySelectorAll('tr');
         for(let i=0; i<7; i++) {
+            // Columna 39 es índice 38
             let inp = filas[i].querySelectorAll('td')[38].querySelector('input');
             if(inp && inp.value.trim() !== "" && inp.value.trim() !== "0") {
                 remesaDetectada = inp.value.trim();
@@ -193,14 +202,14 @@ MODULOS.forEach(mod => {
     
     document.getElementById(`pasteZone_${mod}`).addEventListener('paste', (e) => {
         e.preventDefault();
-        const rows = (e.clipboardData || window.clipboardData).getData('Text').split('\n');
+        const rows = (e.clipboardData || window.clipboardData).getData('Text').split('\\n');
         const tableRows = tbodyMod.querySelectorAll('tr');
         let rowOffset = 0;
         
         rows.forEach((row, rowIndex) => {
             if (row.trim() === '') return;
-            const columns = row.split('\t');
-            if(rowIndex === 0 && (columns[0].toUpperCase().includes("DÍA") || columns[0] == "1")) { rowOffset++; return; }
+            const columns = row.split('\\t');
+            if(rowIndex === 0 && (columns[0].toUpperCase().includes("DIA") || columns[0] == "1" || columns[0].toUpperCase().includes("DÍA"))) { rowOffset++; return; }
             const targetRow = tableRows[rowIndex - rowOffset];
             if (targetRow) {
                 targetRow.querySelectorAll('input').forEach((input, colIndex) => {
@@ -301,10 +310,18 @@ document.getElementById('btnGuardarBD').addEventListener('click', () => {
             delete objFilaTotal.DIA;
             delete objFilaTotal.FECHA;
 
-            // Calcular IDMAC: Últimos 3 dígitos del módulo + Últimos 2 de la remesa
+            // Calcular IDMAC: Últimos 3 dígitos del módulo + Últimos 2 de la remesa (Manejando -bis)
             const ultimos3Mod = String(numeroModuloLimpio).slice(-3);
-            const ultimos2Rem = String(remesaActual).slice(-2);
-            objFilaTotal.IDMAC = `${ultimos3Mod}${ultimos2Rem}`;
+            let remStr = String(remesaActual).trim();
+            let r = remStr;
+            
+            if (/^\d{4}/.test(remStr)) {
+                r = remStr.substring(4); 
+            } else if (!remStr.includes('-')) {
+                r = remStr.slice(-2);
+            }
+            
+            objFilaTotal.IDMAC = `${ultimos3Mod}${r}`;
 
             registrosTotalesParaBD.push(objFilaTotal);
         }
@@ -335,3 +352,6 @@ document.getElementById('btnGuardarBD').addEventListener('click', () => {
         alert("Hubo un error al guardar los datos en la nube.");
     });
 });
+"""
+
+print(app_js_code)
