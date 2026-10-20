@@ -41,21 +41,18 @@ function ejecutarOrdenamientoTotales(arreglo) {
     }
 
     arreglo.sort((a, b) => {
-        // 1. Nivel: Remesa
         let remesaA = String(a['REMESA'] || '').trim();
         let remesaB = String(b['REMESA'] || '').trim();
         if (remesaA !== remesaB) {
             return remesaB.localeCompare(remesaA, undefined, { numeric: true });
         }
 
-        // 2. Nivel: Módulo (050351 -> 050353 -> 050354)
         let moduloA = String(a['MODULO'] || '').trim();
         let moduloB = String(b['MODULO'] || '').trim();
         if (moduloA !== moduloB) {
             return moduloA.localeCompare(moduloB, undefined, { numeric: true });
         }
 
-        // 3. Nivel: Columna seleccionada
         let valA = a[columnaOrdenActual] !== undefined && a[columnaOrdenActual] !== null ? String(a[columnaOrdenActual]).toUpperCase() : '';
         let valB = b[columnaOrdenActual] !== undefined && b[columnaOrdenActual] !== null ? String(b[columnaOrdenActual]).toUpperCase() : '';
 
@@ -97,7 +94,6 @@ function dibujarTablaTotales(datosArreglo) {
 
     let columnas = Object.keys(datosArreglo[0]);
 
-    // Orden estricto con IDMAC al frente
     const ordenDeseado = [
         "IDMAC", "MODULO", "REMESA", "SEDES", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
         "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSISION",
@@ -125,7 +121,7 @@ function dibujarTablaTotales(datosArreglo) {
     });
 
     let trHead = '<tr>';
-    trHead += `<th class="text-white text-center" style="color: white !important; min-width: 80px;">ACCIONES</th>`;
+    trHead += `<th class="text-white text-center" style="color: white !important; min-width: 110px;">ACCIONES</th>`;
 
     columnas.forEach(col => {
         let nombreVisual = col.replace('CORR__DE_DATOS_DIRECCION', 'CORR._DE_DATOS_DIRECCION')
@@ -147,8 +143,13 @@ function dibujarTablaTotales(datosArreglo) {
     datosArreglo.forEach(fila => {
         const idMacVal = fila.IDMAC || '';
         htmlCuerpo += '<tr>';
-        htmlCuerpo += `<td class="text-center align-middle">
-                            <button class="btn btn-sm btn-danger" onclick="borrarRegistroTotales('${idMacVal}')" title="Eliminar total">
+        
+        // AQUI ESTÁN LOS BOTONES EDITAR Y ELIMINAR JUNTOS
+        htmlCuerpo += `<td class="text-center align-middle" style="min-width: 110px;">
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="abrirModalEdicionTotales('${idMacVal}')" title="Editar total">
+                                <i class="bi bi-pencil-square"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="borrarRegistroTotales('${idMacVal}')" title="Eliminar total">
                                 <i class="bi bi-trash"></i>
                             </button>
                        </td>`;
@@ -210,15 +211,12 @@ if (btnSubirTotales && fileInputTotales) {
 
                     let mapaTotales = new Map();
 
-                    // Cargar existentes con clave única IDMAC
                     datosActuales.forEach(item => {
                         const idmac = String(item.IDMAC || '');
                         if (idmac) mapaTotales.set(idmac, item);
                     });
 
-                    // Fusionar / Agregar los nuevos
                     nuevosDatos.forEach(itemNuevo => {
-                        // Asegurar IDMAC si no lo trae
                         if (!itemNuevo.IDMAC && itemNuevo.MODULO && itemNuevo.REMESA) {
                             const m = String(itemNuevo.MODULO).trim().slice(-3);
                             const r = String(itemNuevo.REMESA).trim().slice(-2);
@@ -253,7 +251,9 @@ if (btnSubirTotales && fileInputTotales) {
     });
 }
 
-// ACCIONES DE GESTIÓN
+// =========================================================
+// ACCIONES DE GESTIÓN (ELIMINAR Y EDITAR)
+// =========================================================
 window.vaciarBaseTotales = function() {
     if(confirm("🚨 ¿Seguro que deseas vaciar toda la BD Totales?")) {
         database.ref('bdtotales').remove().then(() => alert("BD Totales vaciada."));
@@ -275,5 +275,48 @@ window.borrarRegistroTotales = function(idmac) {
     if(confirm(`¿Eliminar el registro con IDMAC ${idmac}?`)) {
         const resto = datosGlobalesTotales.filter(item => String(item.IDMAC) !== String(idmac));
         database.ref('bdtotales').set(resto);
+    }
+};
+
+// NUEVAS FUNCIONES DE EDICIÓN
+window.abrirModalEdicionTotales = function(idmac) {
+    // Buscar el registro específico en la variable global usando su IDMAC
+    const registro = datosGlobalesTotales.find(item => String(item.IDMAC) === String(idmac));
+    if (!registro) return;
+
+    // Rellenar los campos del modal
+    document.getElementById('editTotalesIDMAC').value = registro.IDMAC || '';
+    document.getElementById('editTotalesRemesa').value = registro.REMESA || '';
+    document.getElementById('editTotalesModulo').value = registro.MODULO || '';
+    // NOTA: Puedes agregar más campos de edición aquí si lo deseas (Ej. INICIAL, FINAL, etc.)
+    
+    // Abrir el modal
+    var myModal = new bootstrap.Modal(document.getElementById('modalEditarTotales'));
+    myModal.show();
+};
+
+window.guardarEdicionTotales = function() {
+    const idmac = document.getElementById('editTotalesIDMAC').value;
+    const nuevaRemesa = document.getElementById('editTotalesRemesa').value;
+    const nuevoModulo = document.getElementById('editTotalesModulo').value;
+
+    // Actualizar el objeto en el arreglo local
+    let indice = datosGlobalesTotales.findIndex(item => String(item.IDMAC) === String(idmac));
+    if(indice !== -1) {
+        datosGlobalesTotales[indice]['REMESA'] = nuevaRemesa;
+        datosGlobalesTotales[indice]['MODULO'] = nuevoModulo;
+
+        // Subir los cambios a Firebase
+        database.ref('bdtotales').set(datosGlobalesTotales).then(() => {
+            // Cerrar el modal
+            var myModalEl = document.getElementById('modalEditarTotales');
+            var modal = bootstrap.Modal.getInstance(myModalEl);
+            modal.hide();
+            
+            alert("Registro de BD Totales actualizado con éxito.");
+        }).catch(error => {
+            console.error("Error al actualizar:", error);
+            alert("Hubo un error al actualizar el registro.");
+        });
     }
 };
