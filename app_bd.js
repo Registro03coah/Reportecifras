@@ -92,8 +92,13 @@ function dibujarTablaBd(datosArreglo) {
 
     let columnas = Object.keys(datosArreglo[0]);
 
+    // ORDEN VISIBLE PRIORIZANDO ACCIONES, REMESA, MÓDULO, FECHA Y DÍA AL FRENTE
     const ordenDeseado = [
-        "MODULO", "REMESA", "FECHA", "DIA", "SEDES", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
+        "MODULO", "MÓDULO", "Módulo", "Modulo", 
+        "REMESA", "Remesa", "remesa", 
+        "FECHA", "Fecha", "fecha", 
+        "DIA", "DÍA", "Dia", "Día", 
+        "SEDES", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
         "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSISION",
         "CORR__DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES",
         "CANCELADOS", "TOTAL_DE_ANEXOS_POR_RECHAZO", "CPV_devuelta_entrega", "DISPONIBLES_AL_DIA_ANTERIOR",
@@ -138,13 +143,13 @@ function dibujarTablaBd(datosArreglo) {
     thead.innerHTML = trHead;
 
     let htmlCuerpo = '';
-    datosArreglo.forEach((fila, index) => {
+    datosArreglo.forEach((fila) => {
         const remFila = fila.REMESA || fila.Remesa || '';
         const modFila = fila.MODULO || fila.MÓDULO || fila.Módulo || '';
         const fechaFila = fila.FECHA || fila.Fecha || '';
 
         htmlCuerpo += '<tr>';
-        // BOTONES DE ACCIÓN PEQUEÑOS (Editar y Borrar)
+        // BOTONES DE ACCIÓN (Editar y Borrar pequeños)
         htmlCuerpo += `<td class="text-center align-middle" style="white-space: nowrap;">
                             <button class="btn btn-sm btn-warning text-dark py-0 px-1 me-1" onclick="editarRegistroLinea('${remFila}', '${modFila}', '${fechaFila}')" title="Editar registro">
                                 <i class="bi bi-pencil-square" style="font-size: 0.85rem;"></i>
@@ -186,7 +191,7 @@ if (buscadorInput) {
 }
 
 // =========================================================
-// 4. FUNCIONES GLOBALES (Vaciar, Respaldar, Borrar y Editar)
+// 4. FUNCIONES GLOBALES
 // =========================================================
 window.vaciarBaseDatosGeneral = function() {
     if (confirm("🚨 ¿ESTÁS COMPLETAMENTE SEGURO?\n\nEsto borrará TODOS los registros de BD Madre en la nube.")) {
@@ -235,7 +240,6 @@ window.borrarRegistroLinea = function(remesa, modulo, fecha) {
 };
 
 window.editarRegistroLinea = function(remesa, modulo, fecha) {
-    // Buscamos el registro exacto
     const registroIndex = datosGlobalesBd.findIndex(item => {
         const r = String(item.REMESA || item.Remesa || '');
         const m = String(item.MODULO || item.MÓDULO || item.Módulo || '');
@@ -249,9 +253,6 @@ window.editarRegistroLinea = function(remesa, modulo, fecha) {
     }
 
     let registro = datosGlobalesBd[registroIndex];
-    
-    // Pedimos al usuario el nuevo valor de alguna columna clave o el total de folios a modo rápido,
-    // o podemos abrir un cuadro de diálogo para actualizar los folios/trámites principales.
     let campoEditar = prompt("Escribe el nombre de la columna que deseas modificar (ej. TOTAL_DE_FOLIOS, SEDES, INSCRIPCIONES):");
     if (!campoEditar) return;
     
@@ -264,13 +265,11 @@ window.editarRegistroLinea = function(remesa, modulo, fecha) {
     let valorActual = registro[campoEditar];
     let nuevoValor = prompt(`Modificando "${campoEditar}"\nValor actual: ${valorActual}\nEscribe el nuevo valor:`, valorActual);
     
-    if (nuevoValor === null) return; // Cancelado
+    if (nuevoValor === null) return;
 
-    // Actualizamos el campo
     registro[campoEditar] = nuevoValor;
     datosGlobalesBd[registroIndex] = registro;
 
-    // Guardamos la base completa actualizada en Firebase
     database.ref('bd_madre').set(datosGlobalesBd)
         .then(() => alert("¡Registro actualizado con éxito!"))
         .catch(() => alert("Error al guardar la modificación en la nube."));
