@@ -11,9 +11,6 @@ const firebaseConfig = {
     appId: "1:916644687837:web:03d346cc48a071af1ed034"
 };
 
-console.log("1. Parámetros de Firebase Config:", firebaseConfig);
-
-// ERROR CORREGIDO: Inicializamos Firebase SOLO UNA VEZ
 // Si no hay ninguna app de Firebase iniciada, entonces inicialízala
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
@@ -23,23 +20,63 @@ if (!firebase.apps.length) {
 
 const database = firebase.database();
 
-// Variable global para guardar los datos y que el buscador funcione rápido
+// Variables globales para los datos, buscador y ordenamiento
 let datosGlobalesBd = [];
+let datosEnPantalla = [];
+let columnaOrdenActual = 'REMESA';
+let ordenAscendente = false; // Falso = de mayor a menor
 
 // =========================================================
 // 2. DESCARGAR Y DIBUJAR DATOS EN LA TABLA (TIEMPO REAL)
 // =========================================================
 database.ref('bd_madre').on('value', (snapshot) => {
     let datos = snapshot.val();
-    
-    // ESTO TE DIRÁ QUÉ ESTÁ LLEGANDO REALMENTE (Revisa F12)
-    console.log("Datos recibidos de bd_madre:", datos); 
-    
     datosGlobalesBd = datos ? (Array.isArray(datos) ? datos : Object.values(datos)) : [];
-    dibujarTablaBd(datosGlobalesBd);
+    
+    // Al descargar, ordenamos por REMESA (de más nueva a más vieja) por defecto
+    columnaOrdenActual = 'REMESA';
+    ordenAscendente = false;
+    ejecutarOrdenamiento(datosGlobalesBd); 
 });
 
+// Función que ordena los datos
+function ejecutarOrdenamiento(arregloA_Ordenar) {
+    if(!arregloA_Ordenar || arregloA_Ordenar.length === 0) {
+        dibujarTablaBd([]);
+        return;
+    }
+
+    arregloA_Ordenar.sort((a, b) => {
+        let valA = a[columnaOrdenActual] !== undefined && a[columnaOrdenActual] !== null ? String(a[columnaOrdenActual]).toUpperCase() : '';
+        let valB = b[columnaOrdenActual] !== undefined && b[columnaOrdenActual] !== null ? String(b[columnaOrdenActual]).toUpperCase() : '';
+
+        // Si son números, los ordenamos matemáticamente
+        if (!isNaN(valA) && !isNaN(valB) && valA.trim() !== '' && valB.trim() !== '') {
+            valA = Number(valA);
+            valB = Number(valB);
+        }
+
+        if (valA < valB) return ordenAscendente ? -1 : 1;
+        if (valA > valB) return ordenAscendente ? 1 : -1;
+        return 0;
+    });
+
+    dibujarTablaBd(arregloA_Ordenar);
+}
+
+// Función activada por clic en cabecera
+function cambiarOrden(columnaClick) {
+    if (columnaOrdenActual === columnaClick) {
+        ordenAscendente = !ordenAscendente;
+    } else {
+        columnaOrdenActual = columnaClick;
+        ordenAscendente = false;
+    }
+    ejecutarOrdenamiento(datosEnPantalla);
+}
+
 function dibujarTablaBd(datosArreglo) {
+    datosEnPantalla = datosArreglo; 
     const thead = document.getElementById('cabeceraBdMadre');
     const tbody = document.getElementById('cuerpoBdMadre');
     thead.innerHTML = '';
@@ -50,10 +87,9 @@ function dibujarTablaBd(datosArreglo) {
         return;
     }
 
-    // 1. Extraemos las columnas que llegaron de Firebase
     let columnas = Object.keys(datosArreglo[0]);
 
-    // 2. ESTE ES EL ORDEN ESTRICTO BASADO EN TU IMAGEN
+    // Orden estricto deseado
     const ordenDeseado = [
         "MODULO", "REMESA", "FECHA", "DIA", "SEDES", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
         "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSISION",
@@ -72,44 +108,58 @@ function dibujarTablaBd(datosArreglo) {
         "PERDIDA_DE_VIGENCIA", "MOY_POST", "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS"
     ];
 
-    // 3. Forzamos a las columnas a formarse en el orden de la lista
     columnas.sort((a, b) => {
         let indiceA = ordenDeseado.indexOf(a);
         let indiceB = ordenDeseado.indexOf(b);
-        
-        // Si hay una columna nueva que no está en la lista, la manda hasta el final
         if (indiceA === -1) indiceA = 999;
         if (indiceB === -1) indiceB = 999;
-        
         return indiceA - indiceB;
     });
 
-    // 4. ORDENAMOS LAS FILAS: De la REMESA más nueva a la más vieja
-    datosArreglo.sort((a, b) => {
-        const remA = String(a.REMESA || a.Remesa || '').toUpperCase();
-        const remB = String(b.REMESA || b.Remesa || '').toUpperCase();
-        return remB.localeCompare(remA); // Orden descendente
-    });
-
-   // Dibujamos la cabecera (thead)
+    // --- DIBUJAMOS CABECERA ---
     let trHead = '<tr>';
+    
+    // Columna de acciones al principio o al final (la ponemos al inicio para acceso rápido)
+    trHead += `<th class="text-white text-center" style="color: white !important; min-width: 80px; vertical-align: top;">ACCIONES</th>`;
+
     columnas.forEach(col => {
-        // Devolvemos el punto (.) y la diagonal (/) solo de manera visual para la tabla
         let nombreColumnaVisual = col.replace('CORR__DE_DATOS_DIRECCION', 'CORR._DE_DATOS_DIRECCION')
                                      .replace('RECIBO_Y_O_EXTRAVIO', 'RECIBO_Y/O_EXTRAVIO');
-                                     
-        // AQUÍ AGREGAMOS EL COLOR BLANCO A LA LETRA
-        trHead += `<th class="text-white" style="color: white !important;">${nombreColumnaVisual}</th>`;
+        
+        let iconoFlechita = '<i class="bi bi-arrow-down-up ms-1" style="font-size: 0.8em; color: rgba(255,255,255,0.4);"></i>';
+        if (columnaOrdenActual === col) {
+            iconoFlechita = ordenAscendente 
+                            ? '<i class="bi bi-caret-up-fill text-warning ms-1"></i>' 
+                            : '<i class="bi bi-caret-down-fill text-warning ms-1"></i>';
+        }
+
+        // Estilos añadidos: white-space: normal (baja de línea), resize: horizontal (permite cambiar ancho manual)
+        trHead += `<th class="text-white" style="color: white !important; cursor: pointer; user-select: none; white-space: normal; word-wrap: break-word; min-width: 120px; resize: horizontal; overflow: hidden; vertical-align: top;" onclick="cambiarOrden('${col}')" title="Clic para ordenar o arrastra el borde derecho para cambiar ancho">
+                        ${nombreColumnaVisual} ${iconoFlechita}
+                   </th>`;
     });
     trHead += '</tr>';
     thead.innerHTML = trHead;
 
-    // Dibujamos el cuerpo (tbody) con los datos
+    // --- DIBUJAMOS CUERPO ---
     let htmlCuerpo = '';
     datosArreglo.forEach(fila => {
+        // Variables clave para poder borrar esta fila
+        const remFila = fila.REMESA || fila.Remesa || '';
+        const modFila = fila.MODULO || fila.MÓDULO || fila.Módulo || '';
+        const fechaFila = fila.FECHA || fila.Fecha || '';
+
         htmlCuerpo += '<tr>';
+        
+        // Botón de eliminar por línea
+        htmlCuerpo += `<td class="text-center align-middle">
+                            <button class="btn btn-sm btn-danger" onclick="borrarRegistroLinea('${remFila}', '${modFila}', '${fechaFila}')" title="Eliminar registro">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                       </td>`;
+
         columnas.forEach(col => {
-            htmlCuerpo += `<td>${fila[col] !== undefined && fila[col] !== null ? fila[col] : ''}</td>`;
+            htmlCuerpo += `<td class="align-middle">${fila[col] !== undefined && fila[col] !== null ? fila[col] : ''}</td>`;
         });
         htmlCuerpo += '</tr>';
     });
@@ -121,21 +171,19 @@ function dibujarTablaBd(datosArreglo) {
 // =========================================================
 document.getElementById('buscadorBd').addEventListener('input', function(e) {
     const termino = e.target.value.toLowerCase();
-    
     if(termino.trim() === '') {
-        dibujarTablaBd(datosGlobalesBd);
+        ejecutarOrdenamiento(datosGlobalesBd);
         return;
     }
 
     const datosFiltrados = datosGlobalesBd.filter(item => {
-        const remesa = String(item['Remesa'] || item['REMESA'] || '').toLowerCase();
-        const fecha = String(item['FECHA'] || item['Fecha'] || item['fecha'] || '').toLowerCase();
-        const modulo = String(item['MÓDULO'] || item['Módulo'] || item['Modulo'] || '').toLowerCase();
-        
+        const remesa = String(item['REMESA'] || item['Remesa'] || '').toLowerCase();
+        const fecha = String(item['FECHA'] || item['Fecha'] || '').toLowerCase();
+        const modulo = String(item['MODULO'] || item['MÓDULO'] || item['Módulo'] || '').toLowerCase();
         return remesa.includes(termino) || fecha.includes(termino) || modulo.includes(termino);
     });
 
-    dibujarTablaBd(datosFiltrados);
+    ejecutarOrdenamiento(datosFiltrados);
 });
 
 // =========================================================
@@ -153,65 +201,63 @@ document.getElementById('fileInput').addEventListener('change', function(e) {
     if (loadingOverlay) loadingOverlay.style.display = 'flex';
 
     const reader = new FileReader();
-    
     reader.onload = function(event) {
         try {
             let nuevosDatos = JSON.parse(event.target.result);
-            if (!Array.isArray(nuevosDatos)) {
-                nuevosDatos = [nuevosDatos];
-            }
-            
-            // ¡ESTO ES LO NUEVO! Imprimimos el archivo JSON en consola
-            console.log("2. Datos leídos del archivo JSON:", nuevosDatos);
-            
-            // Usamos once() solo para leer una vez al momento de fusionar
+            if (!Array.isArray(nuevosDatos)) nuevosDatos = [nuevosDatos];
+
             database.ref('bd_madre').once('value').then((snapshot) => {
                 let datosActuales = snapshot.val();
                 datosActuales = datosActuales ? (Array.isArray(datosActuales) ? datosActuales : Object.values(datosActuales)) : [];
 
                 let mapaRegistros = new Map();
 
-// Procesamos los datos actuales
+                // Limpiador de símbolos prohibidos por Firebase (. # $ / [ ])
+                function limpiarObjetoParaFirebase(obj) {
+                    let nuevoObj = {};
+                    for (let key in obj) {
+                        let cleanKey = key.replace(/[.#$/\[\]]/g, '_');
+                        nuevoObj[cleanKey] = obj[key];
+                    }
+                    return nuevoObj;
+                }
+
+                // Procesamos actuales
                 datosActuales.forEach(item => {
                     const rem = String(item['REMESA'] || item['Remesa'] || '');
-                    // ¡AQUÍ ESTÁ LA MAGIA! Agregamos 'MODULO' en mayúsculas
                     const mod = String(item['MODULO'] || item['MÓDULO'] || item['Módulo'] || item['Modulo'] || '');
                     const fecha = String(item['FECHA'] || item['Fecha'] || item['fecha'] || '');
-                    if (mod && fecha) mapaRegistros.set(`${rem}_${mod}_${fecha}`, item);
+                    if (mod && fecha) mapaRegistros.set(`${rem}_${mod}_${fecha}`, limpiarObjetoParaFirebase(item));
                 });
 
-                // Procesamos los nuevos datos
+                // Procesamos nuevos
                 nuevosDatos.forEach(itemNuevo => {
                     const remNuevo = String(itemNuevo['REMESA'] || itemNuevo['Remesa'] || '');
-                    // Agregamos 'MODULO' también aquí
                     const modNuevo = String(itemNuevo['MODULO'] || itemNuevo['MÓDULO'] || itemNuevo['Módulo'] || itemNuevo['Modulo'] || '');
                     const fechaNueva = String(itemNuevo['FECHA'] || itemNuevo['Fecha'] || itemNuevo['fecha'] || '');
-                    if (modNuevo && fechaNueva) mapaRegistros.set(`${remNuevo}_${modNuevo}_${fechaNueva}`, itemNuevo);
+                    if (modNuevo && fechaNueva) mapaRegistros.set(`${remNuevo}_${modNuevo}_${fechaNueva}`, limpiarObjetoParaFirebase(itemNuevo));
                 });
 
                 const datosFusionados = Array.from(mapaRegistros.values());
 
-                // Guardamos en Firebase (esto disparará el .on() de arriba automáticamente)
                 database.ref('bd_madre').set(datosFusionados).then(() => {
                     if (loadingOverlay) loadingOverlay.style.display = 'none';
-                    alert("Base de datos actualizada y fusionada con éxito.");
+                    alert("Base de datos actualizada con éxito.");
                     document.getElementById('fileInput').value = ''; 
                 }).catch((error) => {
                     console.error("Error al guardar: ", error);
                     if (loadingOverlay) loadingOverlay.style.display = 'none';
-                    alert("Hubo un error al intentar guardar los datos en la nube.");
+                    alert("Error al guardar los datos en la nube.");
                 });
 
             }).catch((error) => {
-                console.error("Error al consultar Firebase: ", error);
                 if (loadingOverlay) loadingOverlay.style.display = 'none';
                 alert("Error al conectar con la base de datos.");
             });
 
         } catch (error) {
-            console.error("Error al procesar JSON: ", error);
             if (loadingOverlay) loadingOverlay.style.display = 'none';
-            alert("Error al leer el archivo JSON. Verifica que su formato sea válido.");
+            alert("Error al leer el archivo JSON.");
         }
     };
     reader.readAsText(file);
@@ -221,16 +267,73 @@ document.getElementById('fileInput').addEventListener('change', function(e) {
 // 5. FUNCIÓN PARA VACIAR LA BASE DE DATOS (BOTÓN ROJO)
 // =========================================================
 function vaciarBaseDatosGeneral() {
-    // Alerta de confirmación
-    if (confirm("🚨 ¿ESTÁS COMPLETAMENTE SEGURO?\n\nEsto borrará TODOS los registros de la Base Madre en la nube de forma permanente.")) {
+    if (confirm("🚨 ¿ESTÁS COMPLETAMENTE SEGURO?\n\nEsto borrará TODOS los registros de la Base Madre en la nube.")) {
         database.ref('bd_madre').remove()
+            .then(() => alert("La base de datos ha sido vaciada."))
+            .catch((error) => alert("Hubo un problema al vaciar."));
+    }
+}
+
+// =========================================================
+// 6. NUEVA FUNCIÓN: RESPALDAR DATOS A JSON
+// =========================================================
+function descargarRespaldoJSON() {
+    if (datosGlobalesBd.length === 0) {
+        alert("No hay datos en la base para respaldar.");
+        return;
+    }
+    
+    // Convertir a texto JSON formateado
+    const jsonString = JSON.stringify(datosGlobalesBd, null, 2);
+    
+    // Crear el archivo virtual
+    const blob = new Blob([jsonString], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    
+    // Crear enlace oculto y hacer clic automático
+    const a = document.createElement('a');
+    a.href = url;
+    
+    // Nombre del archivo con fecha
+    let hoy = new Date();
+    let fechaTxt = hoy.getFullYear() + "-" + (hoy.getMonth()+1).toString().padStart(2, '0') + "-" + hoy.getDate().toString().padStart(2, '0');
+    a.download = `bd_madre_respaldo_${fechaTxt}.json`;
+    
+    document.body.appendChild(a);
+    a.click();
+    
+    // Limpieza
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// =========================================================
+// 7. NUEVA FUNCIÓN: BORRAR REGISTRO POR LÍNEA
+// =========================================================
+function borrarRegistroLinea(remesa, modulo, fecha) {
+    if(confirm(`¿Estás seguro de eliminar el registro del Módulo ${modulo}, Remesa ${remesa}, Fecha ${fecha}?`)) {
+        
+        // Filtramos para quedarnos con todos EXCEPTO el que coincida con estos 3 datos
+        const datosRestantes = datosGlobalesBd.filter(item => {
+            const r = String(item.REMESA || item.Remesa || '');
+            const m = String(item.MODULO || item.MÓDULO || item.Módulo || '');
+            const f = String(item.FECHA || item.Fecha || '');
+            
+            return !(r === String(remesa) && m === String(modulo) && f === String(fecha));
+        });
+
+        // Actualizamos Firebase con el arreglo sin ese registro
+        database.ref('bd_madre').set(datosRestantes)
             .then(() => {
-                alert("La base de datos ha sido vaciada.");
-                // No necesitamos recargar porque la función .on('value') limpiará la tabla sola
+                // No necesitamos alert porque la tabla se recarga sola con .on('value')
+                console.log("Registro eliminado correctamente.");
             })
             .catch((error) => {
-                console.error("Error al borrar los datos: ", error);
-                alert("Hubo un problema al intentar vaciar la base de datos.");
+                console.error("Error al eliminar registro:", error);
+                alert("Hubo un error al intentar eliminar la fila.");
+            });
+    }
+}
             });
     }
 }
