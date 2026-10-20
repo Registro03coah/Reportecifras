@@ -1,92 +1,83 @@
 // ==========================================
-// 1. IMPORTACIONES Y CONFIGURACIÓN FIREBASE (BD MADRE)
+// 1. CONFIGURACIÓN E INICIALIZACIÓN DE FIREBASE
 // ==========================================
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, get, set, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
 const firebaseConfig = {
     apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo",
     authDomain: "cifrasmac.firebaseapp.com",
     databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com",
     projectId: "cifrasmac"
 };
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
 
-// ==========================================
-// 2. CONFIGURACIÓN COLUMNAS DE DÍAS
-// ==========================================
-// Orden: 47, 39, 1, 2, 4, 5...75 (omitiendo 3)
-const COLUMNAS_DIAS = [47, 39, 1, 2, 4];
-for(let i=5; i<=75; i++) {
-    if(i !== 39 && i !== 47) {
-        COLUMNAS_DIAS.push(i);
-    }
+// Inicializamos Firebase v8
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+} else {
+    firebase.app();
 }
+const database = firebase.database();
 
-const ENCABEZADOS = [
-    "DÍA", "DD/MM/AA", "Horas trabajadas", "Sedes visitadas", "INICIAL", "FINAL", "TOTAL DE FOLIOS", 
-    "INSCRIPCIONES", "CORRECCION DE DATOS PERSONALES", "CAMBIO DE DOMICILIO", "REPOSISION", 
-    "CORR. DE DATOS DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL DE TRAMITES", 
-    "CANCELADOS", "TOTAL DE ANEXO DE RECHAZO", "CPV devuelta entrega", "DISPONIBLES AL DIA ANTERIOR", 
-    "RECIBIDAS", "RECIBIDAS DE OTROS TIPOS", "ENTREGADAS", "RECIBO Y/O EXTRAVIO", "ANEXAS A FUAR", 
-    "DATOS ERRONEOS", "FOTO MAL IMPRESA", "REIMPRESION", "'RETIRADAS POR CAUSA", "DISPONIBLES", 
-    "credenciales x canje", "fichas Entregadas", "fichas atendidas", "Dias trabajados", 
-    "SOLICITUD EXPEDICIÓN REPATRIADOS", "SOLICITUD EXPEDICIÓN ORDINARIA", "SOLICITU DE RECTIFICACIÓN", 
-    "DEMANDA DE JUICIO", "REMESA", "Total de movimientos", "DEVUELTAS POR TERCEROS:", 
-    "34 Imagen inconsistente", "35 Movimiento posterior", "CONFIGURACION", "ENT", "DTTO", 
-    "MÓDULO", "RESGUARDO", "SOLICITUD DE REIMPRESION", "CPV devuelta entrega", "ript ejecutad", 
-    "FOLIO NEC", "cartografia", "lotes de credenciales", "registradas por dia", "faltantes", "observaciones",
-    "sin nombre1", "sin nombre2", "sin nombre3", "MAC QUE RECIBE", "MAC QUE ENTREGA", 
-    "IMPORTADAS", "EXPORTADAS", "REPOSISION + REIMPRESIONES", "MAL IMPRESA", "ERROR EN CARTOGRAFIA", 
-    "DEFUNCION", "SUSPENSION", "DUPLICADO", "ERROR EN NUM. DE EMISION", "PERDIDA DE VIGENCIA", 
-    "MOV.POST.", "ANEXAS A SOLICITUD", "OTRAS BAJAS"
+// ==========================================
+// 2. COLUMNAS ESTANDARIZADAS (El mismo idioma que bd_madre)
+// ==========================================
+const COLUMNAS_REPORTE = [
+    "MODULO", "REMESA", "DIA", "FECHA", "SEDES", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
+    "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSISION",
+    "CORR__DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES",
+    "CANCELADOS", "TOTAL_DE_ANEXOS_POR_RECHAZO", "CPV_devuelta_entrega", "DISPONIBLES_AL_DIA_ANTERIOR",
+    "RECIBIDAS", "RECIBIDAS_DE_OTROS_TIPOS", "ENTREGADAS", "RECIBO_Y_O_EXTRAVIO", "ANEXAS_A_FUAR",
+    "DATOS_ERRONEOS", "FOTO_MAL_IMPRESA", "LIBRE2", "RETIRADAS_POR_OTRA_CAUSA", "DISPONIBLES",
+    "credenciales_x_canje", "fichas_Entregadas", "fichas_atendidas", "Dias_trabajados",
+    "SOLICITUD_EXPEDICION_O_RECTIFICACION", "SOLICITUD_EXPEDICION_REPATRIADOS", "SOLICITU_DE_REIMPRESION",
+    "DEMANDA_DE_JUICIO", "Total_de_movimientos", "DEVUELTAS_POR_TERCEROS", "34_Imagen_inconsistente",
+    "35_Movimiento_posterior", "CONFIGURACION", "ENT", "DTTO", "RESGUARDO", "SOLICITUD_DE_NUM_DE_EMISION",
+    "LIBRE1", "Sript_ejecutado_VIGENCIA", "FOLIO_NEC_POST", "cartografia_SOLICITUD", "lotes_de_credenciales",
+    "registradas_por_dia", "faltantes", "observaciones", "sin_nombre1", "sin_nombre2", "sin_nombre3",
+    "MAC_QUE_RECIBE", "MAC_QUE_ENTREGA", "IMPORTADAS", "EXPORTADAS", "REPOSISION_+_REIMPRESIONES",
+    "MAL_IMPRESAS", "ERROR_EN_CARTOGRAFIA", "DEFUNCION", "SUSPENSION", "DUPLICADO", "ERROR_EN_NUM_DE_EMISION",
+    "PERDIDA_DE_VIGENCIA", "MOY_POST", "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS"
 ];
 
 let bdMadreGlobal = [];
 
 // ==========================================
-// 3. GENERADOR DE TABLAS
+// 3. GENERADOR DE CABECERA DE TABLA
 // ==========================================
-function construirHeaderTabla(selectorTabla) {
-    const thead = document.querySelector(`${selectorTabla} thead`);
+function construirHeaderTabla() {
+    const thead = document.getElementById('cabeceraTablaDias');
     if(!thead) return;
     thead.innerHTML = "";
+    
     let trTitulos = document.createElement('tr');
     let trNumeros = document.createElement('tr');
     
-    COLUMNAS_DIAS.forEach((colOriginal) => {
+    COLUMNAS_REPORTE.forEach((col, index) => {
         let thT = document.createElement('th');
         let thN = document.createElement('th');
         
-        thT.innerText = ENCABEZADOS[colOriginal - 1] || `Col ${colOriginal}`;
+        let nombreVisual = col.replace('CORR__DE_DATOS_DIRECCION', 'CORR._DE_DATOS_DIRECCION')
+                              .replace('RECIBO_Y_O_EXTRAVIO', 'RECIBO_Y/O_EXTRAVIO');
         
-        let anchoCelda = "50px"; 
-        if(colOriginal === 47 || colOriginal === 39) anchoCelda = "70px"; 
-        else if(colOriginal === 1) anchoCelda = "85px"; 
-        else if(colOriginal === 2) anchoCelda = "75px"; 
-        else if(colOriginal === 4) anchoCelda = "85px"; 
-        else if(colOriginal === 5 || colOriginal === 6) anchoCelda = "105px"; 
-        else if(colOriginal === 61 || colOriginal === 62) anchoCelda = "80px"; 
+        thT.innerText = nombreVisual;
+        thT.style.minWidth = "85px";
         
-        thT.style.width = anchoCelda; thT.style.minWidth = anchoCelda; thT.style.maxWidth = anchoCelda;
-        
-        if(colOriginal >= 5 && colOriginal <= 7) thT.classList.add('bg-folios');
-        if(colOriginal >= 19 && colOriginal <= 30) thT.classList.add('bg-retiradas');
-        if(colOriginal === 16) thT.style.backgroundColor = "#92d050"; 
-        if(colOriginal === 17) thT.style.backgroundColor = "red"; 
-        if(colOriginal === 18) thT.style.backgroundColor = "yellow"; 
-        if(colOriginal >= 58 && colOriginal <= 60) thT.style.backgroundColor = "#e8e8f4"; 
-        if(colOriginal === 61 || colOriginal === 62) thT.style.backgroundColor = "#9b9649"; 
-        if(colOriginal === 63 || colOriginal === 64) thT.style.backgroundColor = "yellow"; 
-        
-        thN.innerText = colOriginal; thN.className = "table-light";
-        trTitulos.appendChild(thT); trNumeros.appendChild(thN);
-    });
-    thead.appendChild(trTitulos); thead.appendChild(trNumeros);
-}
+        // Ajustes de ancho específicos
+        if(col === "MODULO" || col === "REMESA") thT.style.minWidth = "100px";
+        if(col === "TOTAL_DE_FOLIOS" || col === "TOTAL_DE_TRAMITES") thT.style.minWidth = "110px";
 
-construirHeaderTabla('#tablaDias');
+        // Colores para identificar bloques como en tu diseño original
+        if(col === "INICIAL" || col === "FINAL" || col === "TOTAL_DE_FOLIOS") thT.classList.add('bg-folios');
+        
+        thN.innerText = index + 1; 
+        thN.className = "table-light text-muted";
+        
+        trTitulos.appendChild(thT); 
+        trNumeros.appendChild(thN);
+    });
+    
+    thead.appendChild(trTitulos); 
+    thead.appendChild(trNumeros);
+}
+construirHeaderTabla();
 
 // ==========================================
 // 4. LECTURA Y RENDERIZADO DESDE BD MADRE
@@ -94,78 +85,66 @@ construirHeaderTabla('#tablaDias');
 function cargarDatosDias() {
     const statusDiv = document.getElementById('statusCarga');
     if(statusDiv) {
-        statusDiv.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Cargando...';
+        statusDiv.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Cargando BD Madre...';
+        statusDiv.className = "badge bg-warning text-dark fs-6 me-2";
     }
     
-    get(ref(db, 'bd_madre')).then((snapshot) => {
+    // Usamos .on() para que se actualice en tiempo real si cambias algo en bd_madre
+    database.ref('bd_madre').on('value', (snapshot) => {
         if (snapshot.exists()) {
             const dataRaw = snapshot.val();
             bdMadreGlobal = Array.isArray(dataRaw) ? dataRaw : Object.values(dataRaw);
+            
             procesarYMostrarDatos();
             renderListaRemesas();
+            
             if(statusDiv) {
-                statusDiv.className = "badge bg-success fs-6";
-                statusDiv.innerHTML = '<i class="bi bi-check-circle"></i> Datos Actualizados';
+                statusDiv.className = "badge bg-success fs-6 me-2";
+                statusDiv.innerHTML = '<i class="bi bi-check-circle"></i> Sincronizado';
             }
         } else {
             bdMadreGlobal = [];
-            const tb = document.querySelector('#tablaDias tbody');
-            if(tb) tb.innerHTML = "";
-            const tbRem = document.querySelector('#tablaListaRemesas tbody');
+            const tb = document.getElementById('cuerpoTablaDias');
+            if(tb) tb.innerHTML = '<tr><td colspan="100%" class="text-center py-4">No hay remesas guardadas en la Base de Datos.</td></tr>';
+            const tbRem = document.getElementById('cuerpoListaRemesas');
             if(tbRem) tbRem.innerHTML = '<tr><td colspan="2">No hay remesas guardadas</td></tr>';
+            
             if(statusDiv) {
-                statusDiv.className = "badge bg-secondary fs-6";
-                statusDiv.innerHTML = 'No hay remesas guardadas aún.';
+                statusDiv.className = "badge bg-secondary fs-6 me-2";
+                statusDiv.innerHTML = 'Sin datos';
             }
-        }
-    }).catch((error) => {
-        console.error("Error al leer la BD Madre:", error);
-        if(statusDiv) {
-            statusDiv.className = "badge bg-danger fs-6";
-            statusDiv.innerHTML = '<i class="bi bi-x-circle"></i> Error de conexión';
         }
     });
 }
 
 function procesarYMostrarDatos() {
-    const tbody = document.querySelector('#tablaDias tbody');
+    const tbody = document.getElementById('cuerpoTablaDias');
     if(!tbody) return;
     tbody.innerHTML = "";
 
     if (bdMadreGlobal.length === 0) return;
 
-    // Ordenar por Módulo y Remesa
+    // Ordenar por Módulo y luego por Remesa de forma descendente (las más nuevas primero)
     let datosOrdenados = [...bdMadreGlobal].sort((a, b) => {
-        const modA = a['Módulo'] || a['Modulo'] || '';
-        const modB = b['Módulo'] || b['Modulo'] || '';
+        const modA = String(a.MODULO || '');
+        const modB = String(b.MODULO || '');
         if (modA !== modB) return modA.localeCompare(modB);
-        const remA = a['Remesa'] || a['remesa'] || '';
-        const remB = b['Remesa'] || b['remesa'] || '';
-        if (remA !== remB) return remA.localeCompare(remB);
-        return 0;
+        
+        const remA = String(a.REMESA || '').toUpperCase();
+        const remB = String(b.REMESA || '').toUpperCase();
+        return remB.localeCompare(remA);
     });
 
     datosOrdenados.forEach(fila => {
         let tr = document.createElement('tr');
         
-        COLUMNAS_DIAS.forEach(colOriginal => {
+        COLUMNAS_REPORTE.forEach(col => {
             let td = document.createElement('td');
-            let nombreColKey = ENCABEZADOS[colOriginal - 1];
-
-            if (colOriginal === 47) {
-                let modVal = fila['Módulo'] || fila['Modulo'] || '';
-                td.innerText = String(modVal).replace("Módulo ", "").trim();
-            } else if (colOriginal === 39) {
-                td.innerText = fila['Remesa'] || fila['remesa'] || '';
-            } else if (colOriginal === 1) {
-                td.innerText = fila['DÍA'] || fila['Dia'] || '';
-            } else {
-                let val = fila[nombreColKey] ?? fila[`Columna ${colOriginal}`] ?? fila[colOriginal-1] ?? '';
-                td.innerText = val;
-            }
-            
+            let val = fila[col] !== undefined && fila[col] !== null ? fila[col] : '';
+            td.innerText = val;
             tr.appendChild(td);
         });
+        
         tbody.appendChild(tr);
     });
 }
@@ -174,37 +153,44 @@ function procesarYMostrarDatos() {
 // 5. GESTOR DE REMESAS Y ELIMINACIÓN
 // ==========================================
 function renderListaRemesas() {
-    const tbody = document.querySelector('#tablaListaRemesas tbody');
+    const tbody = document.getElementById('cuerpoListaRemesas');
     if(!tbody) return;
     tbody.innerHTML = "";
     
-    let remesasUnicas = [...new Set(bdMadreGlobal.map(f => f['Remesa'] || f['remesa'] || 'S/N'))].sort();
+    // Extraer remesas únicas
+    let remesasUnicas = [...new Set(bdMadreGlobal.map(f => String(f.REMESA || 'S/N')))].sort((a, b) => b.localeCompare(a));
 
     remesasUnicas.forEach(remesaId => {
         let tr = document.createElement('tr');
         tr.innerHTML = `
-            <td class="fw-bold fs-5 text-success">Remesa ${remesaId}</td>
-            <td>
-                <button class="btn btn-sm btn-danger px-3 btn-borrar" data-id="${remesaId}"><i class="bi bi-trash"></i> Eliminar Remesa</button>
+            <td class="fw-bold fs-5 text-success align-middle">Remesa ${remesaId}</td>
+            <td class="align-middle">
+                <button class="btn btn-sm btn-danger px-3" onclick="borrarRemesaCompleta('${remesaId}')">
+                    <i class="bi bi-trash"></i> Eliminar Remesa Completa
+                </button>
             </td>
         `;
         tbody.appendChild(tr);
     });
-
-    document.querySelectorAll('.btn-borrar').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const id = e.target.closest('button').getAttribute('data-id');
-            if(confirm(`¿Estás completamente seguro de borrar la Remesa ${id} de la Base de Datos Principal?`)) {
-                let nuevoBd = bdMadreGlobal.filter(f => (f['Remesa'] || f['remesa'] || 'S/N') !== id);
-                set(ref(db, 'bd_madre'), nuevoBd).then(() => {
-                    alert('Remesa eliminada exitosamente de la BD Principal.');
-                    cargarDatosDias();
-                });
-            }
-        });
-    });
 }
 
+window.borrarRemesaCompleta = function(remesaId) {
+    if(confirm(`🚨 ¿Estás completamente seguro de borrar TODO lo relacionado a la Remesa ${remesaId}? Esto lo borrará de BD Madre.`)) {
+        
+        // Filtramos para conservar todos los registros que NO sean de esa remesa
+        let nuevoBd = bdMadreGlobal.filter(f => String(f.REMESA || 'S/N') !== String(remesaId));
+        
+        database.ref('bd_madre').set(nuevoBd).then(() => {
+            alert(`La Remesa ${remesaId} ha sido eliminada exitosamente.`);
+            // No necesitamos recargar porque la función .on() lo hará automáticamente
+        }).catch(error => {
+            console.error("Error al eliminar:", error);
+            alert("Hubo un error al eliminar la remesa de la base de datos.");
+        });
+    }
+};
+
+// Iniciar lectura
 cargarDatosDias();
 
 // ==========================================
@@ -213,13 +199,24 @@ cargarDatosDias();
 const btnDescargar = document.getElementById('btnDescargarJSON');
 if(btnDescargar) {
     btnDescargar.addEventListener('click', () => {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(bdMadreGlobal, null, 2));
-        const downloadAnchor = document.createElement('a');
-        downloadAnchor.setAttribute("href", dataStr);
-        downloadAnchor.setAttribute("download", `respaldo_bd_madre_${new Date().toISOString().slice(0,10)}.json`);
-        document.body.appendChild(downloadAnchor);
-        downloadAnchor.click();
-        downloadAnchor.remove();
+        if(bdMadreGlobal.length === 0) {
+            alert("No hay datos para respaldar.");
+            return;
+        }
+        const jsonString = JSON.stringify(bdMadreGlobal, null, 2);
+        const blob = new Blob([jsonString], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        
+        let hoy = new Date();
+        let fechaTxt = hoy.getFullYear() + "-" + (hoy.getMonth()+1).toString().padStart(2, '0') + "-" + hoy.getDate().toString().padStart(2, '0');
+        a.download = `bd_madre_respaldo_${fechaTxt}.json`;
+        
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     });
 }
 
@@ -233,10 +230,10 @@ if(inputSubir) {
         reader.onload = function(event) {
             try {
                 const jsonData = JSON.parse(event.target.result);
-                if(confirm("¿Estás seguro de subir este respaldo? Sobrescribirá la Base de Datos Principal en Firebase.")) {
-                    set(ref(db, 'bd_madre'), jsonData).then(() => {
-                        alert('Base de Datos Principal actualizada con éxito.');
-                        cargarDatosDias();
+                if(confirm("¿Estás seguro de subir este respaldo? Sobrescribirá toda la Base de Datos Principal en la nube.")) {
+                    database.ref('bd_madre').set(jsonData).then(() => {
+                        alert('Base de Datos Principal actualizada con éxito desde el respaldo.');
+                        document.getElementById('inputSubirJSON').value = ''; 
                     });
                 }
             } catch(err) {
