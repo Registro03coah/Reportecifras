@@ -1,0 +1,190 @@
+// =========================================================
+// CONFIGURACIÓN FIREBASE
+// =========================================================
+const firebaseConfig = {
+    apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo",
+    authDomain: "cifrasmac.firebaseapp.com",
+    databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com",
+    projectId: "cifrasmac",
+    storageBucket: "cifrasmac.firebasestorage.app",
+    messagingSenderId: "916644687837",
+    appId: "1:916644687837:web:03d346cc48a071af1ed034"
+};
+
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+} else {
+    firebase.app();
+}
+
+const database = firebase.database();
+
+let datosGlobalesTotales = [];
+let datosEnPantallaTotales = [];
+let columnaOrdenActual = 'REMESA';
+let ordenAscendente = false;
+
+// =========================================================
+// LECTURA EN TIEMPO REAL DESDE BDTOTALES
+// =========================================================
+database.ref('bdtotales').on('value', (snapshot) => {
+    let datos = snapshot.val();
+    datosGlobalesTotales = datos ? (Array.isArray(datos) ? datos : Object.values(datos)) : [];
+    ejecutarOrdenamientoTotales(datosGlobalesTotales);
+});
+
+function ejecutarOrdenamientoTotales(arreglo) {
+    if(!arreglo || arreglo.length === 0) {
+        dibujarTablaTotales([]);
+        return;
+    }
+
+    arreglo.sort((a, b) => {
+        let valA = a[columnaOrdenActual] !== undefined && a[columnaOrdenActual] !== null ? String(a[columnaOrdenActual]).toUpperCase() : '';
+        let valB = b[columnaOrdenActual] !== undefined && b[columnaOrdenActual] !== null ? String(b[columnaOrdenActual]).toUpperCase() : '';
+
+        if (!isNaN(valA) && !isNaN(valB) && valA.trim() !== '' && valB.trim() !== '') {
+            valA = Number(valA);
+            valB = Number(valB);
+        }
+
+        if (valA < valB) return ordenAscendente ? -1 : 1;
+        if (valA > valB) return ordenAscendente ? 1 : -1;
+        return 0;
+    });
+
+    dibujarTablaTotales(arreglo);
+}
+
+window.cambiarOrdenTotales = function(columnaClick) {
+    if (columnaOrdenActual === columnaClick) {
+        ordenAscendente = !ordenAscendente;
+    } else {
+        columnaOrdenActual = columnaClick;
+        ordenAscendente = false;
+    }
+    ejecutarOrdenamientoTotales(datosEnPantallaTotales);
+};
+
+function dibujarTablaTotales(datosArreglo) {
+    datosEnPantallaTotales = datosArreglo;
+    const thead = document.getElementById('cabeceraBdTotales');
+    const tbody = document.getElementById('cuerpoBdTotales');
+    if(!thead || !tbody) return;
+    thead.innerHTML = '';
+    tbody.innerHTML = '';
+
+    if (!datosArreglo || datosArreglo.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="100%" class="text-center py-4 text-muted"><i class="bi bi-info-circle"></i> No hay datos en BD Totales.</td></tr>';
+        return;
+    }
+
+    let columnas = Object.keys(datosArreglo[0]);
+
+    // Orden estricto con IDMAC al frente
+    const ordenDeseado = [
+        "IDMAC", "MODULO", "REMESA", "SEDES", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
+        "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSISION",
+        "CORR__DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES",
+        "CANCELADOS", "TOTAL_DE_ANEXOS_POR_RECHAZO", "CPV_devuelta_entrega", "DISPONIBLES_AL_DIA_ANTERIOR",
+        "RECIBIDAS", "RECIBIDAS_DE_OTROS_TIPOS", "ENTREGADAS", "RECIBO_Y_O_EXTRAVIO", "ANEXAS_A_FUAR",
+        "DATOS_ERRONEOS", "FOTO_MAL_IMPRESA", "LIBRE2", "RETIRADAS_POR_OTRA_CAUSA", "DISPONIBLES",
+        "credenciales_x_canje", "fichas_Entregadas", "fichas_atendidas", "Dias_trabajados",
+        "SOLICITUD_EXPEDICION_O_RECTIFICACION", "SOLICITUD_EXPEDICION_REPATRIADOS", "SOLICITU_DE_REIMPRESION",
+        "DEMANDA_DE_JUICIO", "Total_de_movimientos", "DEVUELTAS_POR_TERCEROS", "34_Imagen_inconsistente",
+        "35_Movimiento_posterior", "CONFIGURACION", "ENT", "DTTO", "RESGUARDO", "SOLICITUD_DE_NUM_DE_EMISION",
+        "LIBRE1", "Sript_ejecutado_VIGENCIA", "FOLIO_NEC_POST", "cartografia_SOLICITUD", "lotes_de_credenciales",
+        "registradas_por_dia", "faltantes", "observaciones", "sin_nombre1", "sin_nombre2", "sin_nombre3",
+        "MAC_QUE_RECIBE", "MAC_QUE_ENTREGA", "IMPORTADAS", "EXPORTADAS", "REPOSISION_+_REIMPRESIONES",
+        "MAL_IMPRESAS", "ERROR_EN_CARTOGRAFIA", "DEFUNCION", "SUSPENSION", "DUPLICADO", "ERROR_EN_NUM_DE_EMISION",
+        "PERDIDA_DE_VIGENCIA", "MOY_POST", "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS"
+    ];
+
+    columnas.sort((a, b) => {
+        let indiceA = ordenDeseado.indexOf(a);
+        let indiceB = ordenDeseado.indexOf(b);
+        if (indiceA === -1) indiceA = 999;
+        if (indiceB === -1) indiceB = 999;
+        return indiceA - indiceB;
+    });
+
+    let trHead = '<tr>';
+    trHead += `<th class="text-white text-center" style="color: white !important; min-width: 80px;">ACCIONES</th>`;
+
+    columnas.forEach(col => {
+        let nombreVisual = col.replace('CORR__DE_DATOS_DIRECCION', 'CORR._DE_DATOS_DIRECCION')
+                              .replace('RECIBO_Y_O_EXTRAVIO', 'RECIBO_Y/O_EXTRAVIO');
+        
+        let iconoFlechita = '<i class="bi bi-arrow-down-up ms-1" style="font-size: 0.8em; color: rgba(255,255,255,0.4);"></i>';
+        if (columnaOrdenActual === col) {
+            iconoFlechita = ordenAscendente ? '<i class="bi bi-caret-up-fill text-warning ms-1"></i>' : '<i class="bi bi-caret-down-fill text-warning ms-1"></i>';
+        }
+
+        trHead += `<th class="text-white" style="color: white !important; cursor: pointer; white-space: normal; min-width: 110px; resize: horizontal; overflow: hidden;" onclick="cambiarOrdenTotales('${col}')">
+                        ${nombreVisual} ${iconoFlechita}
+                   </th>`;
+    });
+    trHead += '</tr>';
+    thead.innerHTML = trHead;
+
+    let htmlCuerpo = '';
+    datosArreglo.forEach(fila => {
+        const idMacVal = fila.IDMAC || '';
+        htmlCuerpo += '<tr>';
+        htmlCuerpo += `<td class="text-center align-middle">
+                            <button class="btn btn-sm btn-danger" onclick="borrarRegistroTotales('${idMacVal}')" title="Eliminar total">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                       </td>`;
+
+        columnas.forEach(col => {
+            htmlCuerpo += `<td class="align-middle">${fila[col] !== undefined && fila[col] !== null ? fila[col] : ''}</td>`;
+        });
+        htmlCuerpo += '</tr>';
+    });
+    tbody.innerHTML = htmlCuerpo;
+}
+
+// BUSCADOR
+const buscadorTotales = document.getElementById('buscadorBdTotales');
+if (buscadorTotales) {
+    buscadorTotales.addEventListener('input', function(e) {
+        const termino = e.target.value.toLowerCase();
+        if(termino.trim() === '') {
+            ejecutarOrdenamientoTotales(datosGlobalesTotales);
+            return;
+        }
+        const filtrados = datosGlobalesTotales.filter(item => {
+            const idmac = String(item.IDMAC || '').toLowerCase();
+            const remesa = String(item.REMESA || '').toLowerCase();
+            const modulo = String(item.MODULO || '').toLowerCase();
+            return idmac.includes(termino) || remesa.includes(termino) || modulo.includes(termino);
+        });
+        ejecutarOrdenamientoTotales(filtrados);
+    });
+}
+
+// ACCIONES
+window.vaciarBaseTotales = function() {
+    if(confirm("🚨 ¿Seguro que deseas vaciar toda la BD Totales?")) {
+        database.ref('bdtotales').remove().then(() => alert("BD Totales vaciada."));
+    }
+};
+
+window.descargarRespaldoTotalesJSON = function() {
+    if(datosGlobalesTotales.length === 0) { alert("No hay datos."); return; }
+    const blob = new Blob([JSON.stringify(datosGlobalesTotales, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `bdtotales_respaldo_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+};
+
+window.borrarRegistroTotales = function(idmac) {
+    if(confirm(`¿Eliminar el registro con IDMAC ${idmac}?`)) {
+        const resto = datosGlobalesTotales.filter(item => String(item.IDMAC) !== String(idmac));
+        database.ref('bdtotales').set(resto);
+    }
+};
