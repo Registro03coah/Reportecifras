@@ -50,23 +50,64 @@ function dibujarTablaBd(datosArreglo) {
         return;
     }
 
-    // Extraer las columnas dinámicamente del primer registro
+    // 1. Extraemos las columnas que llegaron de Firebase
     let columnas = Object.keys(datosArreglo[0]);
-    
-    // Dibujar la cabecera (thead)
+
+    // 2. ESTE ES EL ORDEN ESTRICTO BASADO EN TU IMAGEN
+    const ordenDeseado = [
+        "MODULO", "REMESA", "FECHA", "DIA", "SEDES", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
+        "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSISION",
+        "CORR__DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES",
+        "CANCELADOS", "TOTAL_DE_ANEXOS_POR_RECHAZO", "CPV_devuelta_entrega", "DISPONIBLES_AL_DIA_ANTERIOR",
+        "RECIBIDAS", "RECIBIDAS_DE_OTROS_TIPOS", "ENTREGADAS", "RECIBO_Y_O_EXTRAVIO", "ANEXAS_A_FUAR",
+        "DATOS_ERRONEOS", "FOTO_MAL_IMPRESA", "LIBRE2", "RETIRADAS_POR_OTRA_CAUSA", "DISPONIBLES",
+        "credenciales_x_canje", "fichas_Entregadas", "fichas_atendidas", "Dias_trabajados",
+        "SOLICITUD_EXPEDICION_O_RECTIFICACION", "SOLICITUD_EXPEDICION_REPATRIADOS", "SOLICITU_DE_REIMPRESION",
+        "DEMANDA_DE_JUICIO", "Total_de_movimientos", "DEVUELTAS_POR_TERCEROS", "34_Imagen_inconsistente",
+        "35_Movimiento_posterior", "CONFIGURACION", "ENT", "DTTO", "RESGUARDO", "SOLICITUD_DE_NUM_DE_EMISION",
+        "LIBRE1", "Sript_ejecutado_VIGENCIA", "FOLIO_NEC_POST", "cartografia_SOLICITUD", "lotes_de_credenciales",
+        "registradas_por_dia", "faltantes", "observaciones", "sin_nombre1", "sin_nombre2", "sin_nombre3",
+        "MAC_QUE_RECIBE", "MAC_QUE_ENTREGA", "IMPORTADAS", "EXPORTADAS", "REPOSISION_+_REIMPRESIONES",
+        "MAL_IMPRESAS", "ERROR_EN_CARTOGRAFIA", "DEFUNCION", "SUSPENSION", "DUPLICADO", "ERROR_EN_NUM_DE_EMISION",
+        "PERDIDA_DE_VIGENCIA", "MOY_POST", "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS"
+    ];
+
+    // 3. Forzamos a las columnas a formarse en el orden de la lista
+    columnas.sort((a, b) => {
+        let indiceA = ordenDeseado.indexOf(a);
+        let indiceB = ordenDeseado.indexOf(b);
+        
+        // Si hay una columna nueva que no está en la lista, la manda hasta el final
+        if (indiceA === -1) indiceA = 999;
+        if (indiceB === -1) indiceB = 999;
+        
+        return indiceA - indiceB;
+    });
+
+    // 4. ORDENAMOS LAS FILAS: De la REMESA más nueva a la más vieja
+    datosArreglo.sort((a, b) => {
+        const remA = String(a.REMESA || a.Remesa || '').toUpperCase();
+        const remB = String(b.REMESA || b.Remesa || '').toUpperCase();
+        return remB.localeCompare(remA); // Orden descendente
+    });
+
+    // Dibujamos la cabecera (thead)
     let trHead = '<tr>';
     columnas.forEach(col => {
-        trHead += `<th>${col}</th>`;
+        // Devolvemos el punto (.) y la diagonal (/) solo de manera visual para la tabla
+        let nombreColumnaVisual = col.replace('CORR__DE_DATOS_DIRECCION', 'CORR._DE_DATOS_DIRECCION')
+                                     .replace('RECIBO_Y_O_EXTRAVIO', 'RECIBO_Y/O_EXTRAVIO');
+        trHead += `<th>${nombreColumnaVisual}</th>`;
     });
     trHead += '</tr>';
     thead.innerHTML = trHead;
 
-    // Dibujar el cuerpo (tbody)
+    // Dibujamos el cuerpo (tbody) con los datos
     let htmlCuerpo = '';
     datosArreglo.forEach(fila => {
         htmlCuerpo += '<tr>';
         columnas.forEach(col => {
-            htmlCuerpo += `<td>${fila[col] !== undefined ? fila[col] : ''}</td>`;
+            htmlCuerpo += `<td>${fila[col] !== undefined && fila[col] !== null ? fila[col] : ''}</td>`;
         });
         htmlCuerpo += '</tr>';
     });
