@@ -181,7 +181,7 @@ if (buscadorTotales) {
 }
 
 // =========================================================
-// SUBIR Y FUSIONAR ARCHIVO JSON EN BDTOTALES (CON ARREGLO -bis)
+// SUBIR Y FUSIONAR ARCHIVO JSON EN BDTOTALES (RECALCULA IDMAC SIEMPRE)
 // =========================================================
 const btnSubirTotales = document.getElementById('btnSubirTotales');
 const fileInputTotales = document.getElementById('fileInputTotales');
@@ -210,37 +210,40 @@ if (btnSubirTotales && fileInputTotales) {
 
                     let mapaTotales = new Map();
 
+                    // Cargar los existentes
                     datosActuales.forEach(item => {
                         const idmac = String(item.IDMAC || '');
                         if (idmac) mapaTotales.set(idmac, item);
                     });
 
+                    // Procesar los nuevos (Forzando la corrección del IDMAC)
                     nuevosDatos.forEach(itemNuevo => {
-                        // AQUÍ ESTÁ LA CORRECCIÓN PARA REMESAS CON "-bis"
-                        if (!itemNuevo.IDMAC && itemNuevo.MODULO && itemNuevo.REMESA) {
+                        if (itemNuevo.MODULO && itemNuevo.REMESA) {
                             const m = String(itemNuevo.MODULO).trim().slice(-3);
                             let remStr = String(itemNuevo.REMESA).trim();
                             let r = remStr;
                             
-                            // Si la remesa empieza con el año (ej. 202621-bis), removemos los primeros 4 dígitos.
                             if (/^\d{4}/.test(remStr)) {
                                 r = remStr.substring(4); 
                             } else if (!remStr.includes('-')) {
-                                // Por seguridad, si no tiene formato de año ni guiones, tomamos los últimos 2
                                 r = remStr.slice(-2);
                             }
-                            
+                            // Sobrescribimos el IDMAC con el valor correcto calculado
                             itemNuevo.IDMAC = `${m}${r}`;
                         }
+                        
                         const idmacNuevo = String(itemNuevo.IDMAC || '');
-                        if (idmacNuevo) mapaTotales.set(idmacNuevo, itemNuevo);
+                        if (idmacNuevo) {
+                            // Al ponerlo en el mapa, si ya existía uno malo, aquí lo actualiza en su llave correcta
+                            mapaTotales.set(idmacNuevo, itemNuevo);
+                        }
                     });
 
                     const datosFusionados = Array.from(mapaTotales.values());
 
                     database.ref('bdtotales').set(datosFusionados).then(() => {
                         if (loadingOverlay) loadingOverlay.style.display = 'none';
-                        alert("¡BD Totales actualizada e integrada con éxito desde el JSON!");
+                        alert("¡BD Totales actualizada y los IDMAC fueron corregidos con éxito!");
                         fileInputTotales.value = '';
                     }).catch(() => {
                         if (loadingOverlay) loadingOverlay.style.display = 'none';
