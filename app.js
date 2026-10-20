@@ -1,10 +1,4 @@
-import pandas as pd
-
-# The user wants to update the ENCABEZADOS and NOMBRES_ESTANDAR_BD arrays in app.js
-# to exactly match the columns shown in their image.
-
-# Let's write the updated app.js code
-app_js_code = """// ==========================================
+// ==========================================
 // 1. IMPORTACIONES FIREBASE
 // ==========================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -202,13 +196,13 @@ MODULOS.forEach(mod => {
     
     document.getElementById(`pasteZone_${mod}`).addEventListener('paste', (e) => {
         e.preventDefault();
-        const rows = (e.clipboardData || window.clipboardData).getData('Text').split('\\n');
+        const rows = (e.clipboardData || window.clipboardData).getData('Text').split('\n');
         const tableRows = tbodyMod.querySelectorAll('tr');
         let rowOffset = 0;
         
         rows.forEach((row, rowIndex) => {
             if (row.trim() === '') return;
-            const columns = row.split('\\t');
+            const columns = row.split('\t');
             if(rowIndex === 0 && (columns[0].toUpperCase().includes("DIA") || columns[0] == "1" || columns[0].toUpperCase().includes("DÍA"))) { rowOffset++; return; }
             const targetRow = tableRows[rowIndex - rowOffset];
             if (targetRow) {
@@ -276,7 +270,6 @@ document.getElementById('btnGuardarBD').addEventListener('click', () => {
     
     if (tbodyTotales) {
         const filasTotales = tbodyTotales.querySelectorAll('tr');
-        // Iteramos solo las primeras 3 filas (050351, 050353, 050354), ignorando el Gran Total
         for (let i = 0; i < 3; i++) {
             const filaModulo = filasTotales[i];
             if (!filaModulo) continue;
@@ -296,7 +289,6 @@ document.getElementById('btnGuardarBD').addEventListener('click', () => {
                 objFilaTotal[claveColumna] = valorCelda;
             });
 
-            // Extraer limpiamente el número de módulo
             let numeroModuloLimpio = textoModuloCelda.replace(/[^0-9]/g, '');
             if (!numeroModuloLimpio) {
                 const modulosFijo = ["050351", "050353", "050354"];
@@ -306,11 +298,9 @@ document.getElementById('btnGuardarBD').addEventListener('click', () => {
             objFilaTotal["MODULO"] = numeroModuloLimpio;
             objFilaTotal["REMESA"] = remesaActual;
 
-            // Quitar día y fecha por ser concentrado semanal
             delete objFilaTotal.DIA;
             delete objFilaTotal.FECHA;
 
-            // Calcular IDMAC: Últimos 3 dígitos del módulo + Últimos 2 de la remesa (Manejando -bis)
             const ultimos3Mod = String(numeroModuloLimpio).slice(-3);
             let remStr = String(remesaActual).trim();
             let r = remStr;
@@ -322,17 +312,14 @@ document.getElementById('btnGuardarBD').addEventListener('click', () => {
             }
             
             objFilaTotal.IDMAC = `${ultimos3Mod}${r}`;
-
             registrosTotalesParaBD.push(objFilaTotal);
         }
     }
 
-    // C. Preparar referencias en Firebase
     const dbRefActual = ref(db, 'vaciado_actual');
     const dbRefHistorial = ref(db, `historial_campanas/${remesaActual}`);
     const dbRefTotales = ref(db, 'bdtotales');
 
-    // D. Guardar todo de forma sincronizada
     Promise.all([
         set(dbRefActual, datosAGuardar),
         set(dbRefHistorial, datosAGuardar),
@@ -340,7 +327,6 @@ document.getElementById('btnGuardarBD').addEventListener('click', () => {
             let actualTotales = snapshot.val() || [];
             actualTotales = Array.isArray(actualTotales) ? actualTotales : Object.values(actualTotales);
 
-            // Filtrar duplicados de la misma remesa en bdtotales
             let totalesFiltrados = actualTotales.filter(item => String(item.REMESA) !== String(remesaActual));
             const fusionFinalTotales = [...totalesFiltrados, ...registrosTotalesParaBD];
             return set(dbRefTotales, fusionFinalTotales);
@@ -352,6 +338,3 @@ document.getElementById('btnGuardarBD').addEventListener('click', () => {
         alert("Hubo un error al guardar los datos en la nube.");
     });
 });
-"""
-
-print(app_js_code)
