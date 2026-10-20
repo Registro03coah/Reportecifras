@@ -1,39 +1,99 @@
 // =========================================================
-// 1. CONFIGURACIÓN E INICIALIZACIÓN DE FIREBASE
+// 1. CONFIGURACIÓN E INICIALIZACIÓN DE FIREBASE (cifrasmac)
 // =========================================================
-
-// Reemplaza esto con los datos reales de tu proyecto MACs APP
-// Tu configuración real de Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo",
   authDomain: "cifrasmac.firebaseapp.com",
-  databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com", // Asegúrate de tener tu URL de Realtime Database aquí
+  databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com",
   projectId: "cifrasmac",
   storageBucket: "cifrasmac.firebasestorage.app",
   messagingSenderId: "916644687837",
   appId: "1:916644687837:web:03d346cc48a071af1ed034"
 };
 
-// IMPORTANTE: El orden de estas dos líneas no debe cambiar
+// Inicializamos Firebase
 firebase.initializeApp(firebaseConfig);
-const database = firebase.database(); // Inicializamos database DESPUÉS de config
+const database = firebase.database(); 
 
+// Variable global para guardar los datos y que el buscador funcione rápido
+let datosGlobalesBd = [];
 
 // =========================================================
-// 2. EVENTOS PARA SUBIR Y PROCESAR EL ARCHIVO JSON
+// 2. DESCARGAR Y DIBUJAR DATOS EN LA TABLA (TIEMPO REAL)
 // =========================================================
+database.ref('bd_madre').on('value', (snapshot) => {
+    let datos = snapshot.val();
+    datosGlobalesBd = datos ? (Array.isArray(datos) ? datos : Object.values(datos)) : [];
+    dibujarTablaBd(datosGlobalesBd);
+});
 
-// Evento del botón verde para disparar la ventana de archivos
+function dibujarTablaBd(datosArreglo) {
+    const thead = document.getElementById('cabeceraBdMadre');
+    const tbody = document.getElementById('cuerpoBdMadre');
+    thead.innerHTML = '';
+    tbody.innerHTML = '';
+
+    if (!datosArreglo || datosArreglo.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="100%" class="text-center py-4 text-muted"><i class="bi bi-info-circle"></i> No hay datos en la Base Madre. Sube una nueva remesa.</td></tr>';
+        return;
+    }
+
+    // Extraer las columnas dinámicamente del primer registro
+    let columnas = Object.keys(datosArreglo[0]);
+    
+    // Dibujar la cabecera (thead)
+    let trHead = '<tr>';
+    columnas.forEach(col => {
+        trHead += `<th>${col}</th>`;
+    });
+    trHead += '</tr>';
+    thead.innerHTML = trHead;
+
+    // Dibujar el cuerpo (tbody)
+    let htmlCuerpo = '';
+    datosArreglo.forEach(fila => {
+        htmlCuerpo += '<tr>';
+        columnas.forEach(col => {
+            htmlCuerpo += `<td>${fila[col] !== undefined ? fila[col] : ''}</td>`;
+        });
+        htmlCuerpo += '</tr>';
+    });
+    tbody.innerHTML = htmlCuerpo;
+}
+
+// =========================================================
+// 3. BUSCADOR EN TIEMPO REAL
+// =========================================================
+document.getElementById('buscadorBd').addEventListener('input', function(e) {
+    const termino = e.target.value.toLowerCase();
+    
+    if(termino.trim() === '') {
+        dibujarTablaBd(datosGlobalesBd);
+        return;
+    }
+
+    const datosFiltrados = datosGlobalesBd.filter(item => {
+        const remesa = String(item['Remesa'] || item['REMESA'] || '').toLowerCase();
+        const fecha = String(item['FECHA'] || item['Fecha'] || item['fecha'] || '').toLowerCase();
+        const modulo = String(item['MÓDULO'] || item['Módulo'] || item['Modulo'] || '').toLowerCase();
+        
+        return remesa.includes(termino) || fecha.includes(termino) || modulo.includes(termino);
+    });
+
+    dibujarTablaBd(datosFiltrados);
+});
+
+// =========================================================
+// 4. EVENTOS PARA SUBIR Y PROCESAR EL ARCHIVO JSON
+// =========================================================
 document.getElementById('btnSubir').addEventListener('click', () => {
     document.getElementById('fileInput').click();
 });
 
-// Evento cuando se selecciona el archivo
 document.getElementById('fileInput').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Mostramos la pantalla de carga
     const loadingOverlay = document.getElementById('loadingOverlay');
     if (loadingOverlay) loadingOverlay.style.display = 'flex';
 
@@ -41,57 +101,43 @@ document.getElementById('fileInput').addEventListener('change', function(e) {
     
     reader.onload = function(event) {
         try {
-            // 1. Convertimos el archivo JSON a objeto JavaScript
             let nuevosDatos = JSON.parse(event.target.result);
             if (!Array.isArray(nuevosDatos)) {
                 nuevosDatos = [nuevosDatos];
             }
             
-            // 2. Conectamos con Firebase para traer los datos actuales
+            // Usamos once() solo para leer una vez al momento de fusionar
             database.ref('bd_madre').once('value').then((snapshot) => {
                 let datosActuales = snapshot.val();
                 datosActuales = datosActuales ? (Array.isArray(datosActuales) ? datosActuales : Object.values(datosActuales)) : [];
 
                 let mapaRegistros = new Map();
 
-                // 3. Procesamos los datos que YA ESTÁN en Firebase
+                // Procesamos los datos actuales
                 datosActuales.forEach(item => {
                     const rem = String(item['Remesa'] || item['REMESA'] || '');
                     const mod = String(item['MÓDULO'] || item['Módulo'] || item['Modulo'] || '');
                     const fecha = String(item['FECHA'] || item['Fecha'] || item['fecha'] || '');
-                    
-                    if (mod && fecha) {
-                        mapaRegistros.set(`${rem}_${mod}_${fecha}`, item);
-                    }
+                    if (mod && fecha) mapaRegistros.set(`${rem}_${mod}_${fecha}`, item);
                 });
 
-                // 4. Procesamos y fusionamos los datos NUEVOS del JSON
+                // Procesamos los nuevos datos
                 nuevosDatos.forEach(itemNuevo => {
                     const remNuevo = String(itemNuevo['Remesa'] || itemNuevo['REMESA'] || '');
                     const modNuevo = String(itemNuevo['MÓDULO'] || itemNuevo['Módulo'] || itemNuevo['Modulo'] || '');
                     const fechaNueva = String(itemNuevo['FECHA'] || itemNuevo['Fecha'] || itemNuevo['fecha'] || '');
-                    
-                    if (modNuevo && fechaNueva) {
-                        // Si ya existe la combinación Remesa_Módulo_Fecha, se actualiza; si no, se agrega.
-                        mapaRegistros.set(`${remNuevo}_${modNuevo}_${fechaNueva}`, itemNuevo);
-                    }
+                    if (modNuevo && fechaNueva) mapaRegistros.set(`${remNuevo}_${modNuevo}_${fechaNueva}`, itemNuevo);
                 });
 
-                // 5. Convertimos el mapa fusionado de vuelta a un arreglo normal
                 const datosFusionados = Array.from(mapaRegistros.values());
 
-                // 6. Subimos los datos finales actualizados a Firebase
+                // Guardamos en Firebase (esto disparará el .on() de arriba automáticamente)
                 database.ref('bd_madre').set(datosFusionados).then(() => {
-                    console.log("¡Datos subidos y fusionados correctamente!");
                     if (loadingOverlay) loadingOverlay.style.display = 'none';
-                    alert("Base de datos actualizada con éxito.");
-                    
-                    // Limpiamos el input para permitir subir el mismo archivo otra vez si se requiere
+                    alert("Base de datos actualizada y fusionada con éxito.");
                     document.getElementById('fileInput').value = ''; 
-                    // AGREGA ESTA LÍNEA PARA QUE LA TABLA SE ACTUALICE:
-                     window.location.reload();
                 }).catch((error) => {
-                    console.error("Error al guardar en Firebase: ", error);
+                    console.error("Error al guardar: ", error);
                     if (loadingOverlay) loadingOverlay.style.display = 'none';
                     alert("Hubo un error al intentar guardar los datos en la nube.");
                 });
@@ -108,28 +154,23 @@ document.getElementById('fileInput').addEventListener('change', function(e) {
             alert("Error al leer el archivo JSON. Verifica que su formato sea válido.");
         }
     };
-    
-    // Leemos el contenido del archivo como texto
     reader.readAsText(file);
 });
+
 // =========================================================
-// 3. FUNCIÓN PARA VACIAR LA BASE DE DATOS (BOTÓN ROJO)
+// 5. FUNCIÓN PARA VACIAR LA BASE DE DATOS (BOTÓN ROJO)
 // =========================================================
 function vaciarBaseDatosGeneral() {
-    if (confirm("¿ESTÁS COMPLETAMENTE SEGURO? Esto borrará TODOS los registros de la Base Madre de forma permanente.")) {
+    // Alerta de confirmación
+    if (confirm("🚨 ¿ESTÁS COMPLETAMENTE SEGURO?\n\nEsto borrará TODOS los registros de la Base Madre en la nube de forma permanente.")) {
         database.ref('bd_madre').remove()
             .then(() => {
                 alert("La base de datos ha sido vaciada.");
-                window.location.reload(); // Recargamos para limpiar la pantalla
+                // No necesitamos recargar porque la función .on('value') limpiará la tabla sola
             })
             .catch((error) => {
                 console.error("Error al borrar los datos: ", error);
                 alert("Hubo un problema al intentar vaciar la base de datos.");
             });
     }
-}
-// Vinculamos el botón rojo si no está usando onclick en el HTML directamente
-const btnVaciar = document.querySelector('.btn-danger');
-if(btnVaciar) {
-    btnVaciar.addEventListener('click', vaciarBaseDatosGeneral);
 }
