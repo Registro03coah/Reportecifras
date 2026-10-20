@@ -128,18 +128,20 @@ document.getElementById('fileInput').addEventListener('change', function(e) {
 
                 let mapaRegistros = new Map();
 
-                // Procesamos los datos actuales
+// Procesamos los datos actuales
                 datosActuales.forEach(item => {
-                    const rem = String(item['Remesa'] || item['REMESA'] || '');
-                    const mod = String(item['MÓDULO'] || item['Módulo'] || item['Modulo'] || '');
+                    const rem = String(item['REMESA'] || item['Remesa'] || '');
+                    // ¡AQUÍ ESTÁ LA MAGIA! Agregamos 'MODULO' en mayúsculas
+                    const mod = String(item['MODULO'] || item['MÓDULO'] || item['Módulo'] || item['Modulo'] || '');
                     const fecha = String(item['FECHA'] || item['Fecha'] || item['fecha'] || '');
                     if (mod && fecha) mapaRegistros.set(`${rem}_${mod}_${fecha}`, item);
                 });
 
                 // Procesamos los nuevos datos
                 nuevosDatos.forEach(itemNuevo => {
-                    const remNuevo = String(itemNuevo['Remesa'] || itemNuevo['REMESA'] || '');
-                    const modNuevo = String(itemNuevo['MÓDULO'] || itemNuevo['Módulo'] || itemNuevo['Modulo'] || '');
+                    const remNuevo = String(itemNuevo['REMESA'] || itemNuevo['Remesa'] || '');
+                    // Agregamos 'MODULO' también aquí
+                    const modNuevo = String(itemNuevo['MODULO'] || itemNuevo['MÓDULO'] || itemNuevo['Módulo'] || itemNuevo['Modulo'] || '');
                     const fechaNueva = String(itemNuevo['FECHA'] || itemNuevo['Fecha'] || itemNuevo['fecha'] || '');
                     if (modNuevo && fechaNueva) mapaRegistros.set(`${remNuevo}_${modNuevo}_${fechaNueva}`, itemNuevo);
                 });
