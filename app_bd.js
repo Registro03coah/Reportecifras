@@ -1,8 +1,12 @@
+// AGREGA ESTA LÍNEA JUSTO AQUÍ, ANTES DE TUS EVENTOS:
+const database = firebase.database();
+
 // 1. EVENTO SUBIR ARCHIVO (BOTÓN VERDE) - FUSIÓN INTELIGENTE
 document.getElementById('btnSubir').addEventListener('click', () => {
     document.getElementById('fileInput').click();
 });
 
+// SOLO DEBE HABER UN EVENTO 'change' PARA fileInput
 document.getElementById('fileInput').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -17,6 +21,7 @@ document.getElementById('fileInput').addEventListener('change', function(e) {
                 nuevosDatos = [nuevosDatos];
             }
             
+            // Aquí ya funciona la base de datos
             database.ref('bd_madre').once('value').then((snapshot) => {
                 let datosActuales = snapshot.val();
                 datosActuales = datosActuales ? (Array.isArray(datosActuales) ? datosActuales : Object.values(datosActuales)) : [];
