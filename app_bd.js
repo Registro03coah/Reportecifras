@@ -14,8 +14,14 @@ const firebaseConfig = {
 console.log("1. Parámetros de Firebase Config:", firebaseConfig);
 
 // ERROR CORREGIDO: Inicializamos Firebase SOLO UNA VEZ
-firebase.initializeApp(firebaseConfig);
-const database = firebase.database(); 
+// Si no hay ninguna app de Firebase iniciada, entonces inicialízala
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+} else {
+    firebase.app(); // Si ya existe, simplemente úsala
+}
+
+const database = firebase.database();
 
 // Variable global para guardar los datos y que el buscador funcione rápido
 let datosGlobalesBd = [];
