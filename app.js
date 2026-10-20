@@ -2,7 +2,7 @@
 // 1. IMPORTACIONES FIREBASE
 // ==========================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyA6jvnsXZwF2anOJo3VadfNvn7Fl6Z5efY",
@@ -39,6 +39,25 @@ const ENCABEZADOS = [
     "MOV.POST.", "ANEXAS A SOLICITUD", "OTRAS BAJAS"
 ];
 
+// Nombres estandarizados de columnas idénticos a bd_madre
+const NOMBRES_ESTANDAR_BD = [
+    "MODULO", "REMESA", "FECHA", "DIA", "SEDES", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
+    "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSISION",
+    "CORR__DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES",
+    "CANCELADOS", "TOTAL_DE_ANEXOS_POR_RECHAZO", "CPV_devuelta_entrega", "DISPONIBLES_AL_DIA_ANTERIOR",
+    "RECIBIDAS", "RECIBIDAS_DE_OTROS_TIPOS", "ENTREGADAS", "RECIBO_Y_O_EXTRAVIO", "ANEXAS_A_FUAR",
+    "DATOS_ERRONEOS", "FOTO_MAL_IMPRESA", "LIBRE2", "RETIRADAS_POR_OTRA_CAUSA", "DISPONIBLES",
+    "credenciales_x_canje", "fichas_Entregadas", "fichas_atendidas", "Dias_trabajados",
+    "SOLICITUD_EXPEDICION_O_RECTIFICACION", "SOLICITUD_EXPEDICION_REPATRIADOS", "SOLICITU_DE_REIMPRESION",
+    "DEMANDA_DE_JUICIO", "Total_de_movimientos", "DEVUELTAS_POR_TERCEROS", "34_Imagen_inconsistente",
+    "35_Movimiento_posterior", "CONFIGURACION", "ENT", "DTTO", "RESGUARDO", "SOLICITUD_DE_NUM_DE_EMISION",
+    "LIBRE1", "Sript_ejecutado_VIGENCIA", "FOLIO_NEC_POST", "cartografia_SOLICITUD", "lotes_de_credenciales",
+    "registradas_por_dia", "faltantes", "observaciones", "sin_nombre1", "sin_nombre2", "sin_nombre3",
+    "MAC_QUE_RECIBE", "MAC_QUE_ENTREGA", "IMPORTADAS", "EXPORTADAS", "REPOSISION_+_REIMPRESIONES",
+    "MAL_IMPRESAS", "ERROR_EN_CARTOGRAFIA", "DEFUNCION", "SUSPENSION", "DUPLICADO", "ERROR_EN_NUM_DE_EMISION",
+    "PERDIDA_DE_VIGENCIA", "MOY_POST", "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS"
+];
+
 function generarEncabezados(selectorTabla, isTotales = false) {
     const thead = document.querySelector(`${selectorTabla} thead`);
     let trTitulos = document.createElement('tr');
@@ -64,12 +83,6 @@ function generarEncabezados(selectorTabla, isTotales = false) {
         
         if(i >= 5 && i <= 7) thT.classList.add('bg-folios');
         if(i >= 19 && i <= 30) thT.classList.add('bg-retiradas');
-        if(i === 16) thT.style.backgroundColor = "#92d050"; 
-        if(i === 17) thT.style.backgroundColor = "red"; 
-        if(i === 18) thT.style.backgroundColor = "yellow"; 
-        if(i >= 58 && i <= 60) thT.style.backgroundColor = "#e8e8f4"; 
-        if(i === 61 || i === 62) thT.style.backgroundColor = "#9b9649"; 
-        if(i === 63 || i === 64) thT.style.backgroundColor = "yellow"; 
         
         thN.innerText = i; thN.className = "table-light";
         
@@ -125,13 +138,12 @@ function generarCuerpoTotales() {
     });
 }
 
-// EXTRAER REMESA (Columna 39 = Index 38)
 function detectarRemesa() {
     let remesaDetectada = "";
     for(let mod of MODULOS) {
         const tbody = document.querySelector(`#tablaCaptura_${mod} tbody`);
         const filas = tbody.querySelectorAll('tr');
-        for(let i=0; i<7; i++) { // Buscamos en los días normales
+        for(let i=0; i<7; i++) {
             let inp = filas[i].querySelectorAll('td')[38].querySelector('input');
             if(inp && inp.value.trim() !== "" && inp.value.trim() !== "0") {
                 remesaDetectada = inp.value.trim();
@@ -144,7 +156,6 @@ function detectarRemesa() {
     if(inputRemesa) inputRemesa.value = remesaDetectada;
 }
 
-// SINCRONIZAR Y ACTUALIZAR REMESA
 function sincronizarTotales() {
     for(let c = 3; c <= TOTAL_COLUMNAS; c++) {
         if(c === 4) continue; 
@@ -202,58 +213,135 @@ generarEncabezados('#tablaCaptura_totales', true);
 generarCuerpoTotales();
 
 // ==========================================
-// 3. LIMPIAR Y GUARDAR HISTORIAL FIREBASE
+// 3. LIMPIAR Y GUARDAR EN BD_MADRE Y BDTOTALES
 // ==========================================
 
-// BOTÓN BORRAR
 document.getElementById('btnBorrar').addEventListener('click', () => {
-    if(confirm("¿Estás seguro de que deseas limpiar todas las tablas? (Se borrarán los datos en pantalla, no en la BD)")) {
+    if(confirm("¿Estás seguro de que deseas limpiar todas las tablas?")) {
         MODULOS.forEach(mod => {
             const tbody = document.querySelector(`#tablaCaptura_${mod} tbody`);
             tbody.querySelectorAll('input:not([readonly])').forEach(inp => inp.value = "");
         });
-        sincronizarTotales(); // Reset a 0
+        sincronizarTotales();
         document.getElementById('inputRemesa').value = "";
     }
 });
 
-// BOTÓN GUARDAR
-document.getElementById('btnGuardarBD').addEventListener('click', () => {
+// BOTÓN GUARDAR MAESTRO (VALIDA 3 MÓDULOS Y ALIMENTA BD_MADRE Y BDTOTALES)
+document.getElementById('btnGuardarBD').addEventListener('click', async () => {
     const remesaActual = document.getElementById('inputRemesa').value.trim();
     
     if(!remesaActual) {
-        alert("Atención: No se ha detectado el número de Remesa en la columna 39. Por favor, asegúrate de que al menos un día capturado tenga el número de remesa para poder guardar el historial de la campaña de forma correcta.");
-        return; // Evita el guardado si no hay remesa, para no dañar el historial
+        alert("⚠️ Atención: No se ha detectado el número de Remesa en la columna 39.");
+        return;
     }
 
-    const tablasNombres = [...MODULOS, "totales"];
-    let datosAGuardar = {};
-    
-    tablasNombres.forEach(mod => {
-        const filas = document.querySelector(`#tablaCaptura_${mod} tbody`).querySelectorAll('tr');
-        let datosTabla = [];
-        filas.forEach(fila => {
-            let filaArray = [];
-            fila.querySelectorAll('td').forEach(td => {
-                const input = td.querySelector('input');
-                filaArray.push(input ? input.value : "");
-            });
-            datosTabla.push(filaArray);
+    // 1. VALIDAR QUE LOS 3 MÓDULOS TENGAN DATOS EN SU LÍNEA DE TOTALES
+    let datosModulosCompletos = {};
+    let filasTotalesObjetos = [];
+
+    for(let mod of MODULOS) {
+        const filas = document.querySelectorAll(`#tablaCaptura_${mod} tbody tr`);
+        const filaTotalHtml = filas[7]; // La fila 8 es la LINEA TOTALES
+        
+        let valoresFilaTotal = [];
+        let estaVacia = true;
+
+        filaTotalHtml.querySelectorAll('td').forEach((td, idx) => {
+            const input = td.querySelector('input');
+            let val = input ? input.value.trim() : "";
+            if(idx > 0 && val !== "" && val !== "0") estaVacia = false;
+            valoresFilaTotal.push(val);
         });
-        datosAGuardar[mod] = datosTabla;
+
+        if (estaVacia) {
+            alert(`🚨 Faltan datos: La línea de totales del Módulo ${mod} está vacía. Debes llenar los 3 módulos antes de guardar.`);
+            return;
+        }
+        datosModulosCompletos[mod] = filas;
+
+        // Convertir la línea de totales a un objeto con las llaves estandarizadas
+        let objTotal = {};
+        valoresFilaTotal.forEach((val, idx) => {
+            let key = NOMBRES_ESTANDAR_BD[idx] || `Col_${idx+1}`;
+            objTotal[key] = val;
+        });
+        // Asegurar Módulo y Remesa
+        objTotal["MODULO"] = mod;
+        objTotal["REMESA"] = remesaActual;
+        
+        filasTotalesObjetos.push(objTotal);
+    }
+
+    // 2. RECOLECTAR TODOS LOS DÍAS DE LOS 3 MÓDULOS PARA BD_MADRE
+    let todosLosDiasNuevos = [];
+    MODULOS.forEach(mod => {
+        const filas = document.querySelectorAll(`#tablaCaptura_${mod} tbody tr`);
+        // Recorremos del 0 al 6 (los 7 días de la semana)
+        for(let i = 0; i < 7; i++) {
+            let valoresFilaDia = [];
+            filas[i].querySelectorAll('td').forEach(td => {
+                const input = td.querySelector('input');
+                valoresFilaDia.push(input ? input.value.trim() : "");
+            });
+
+            let objDia = {};
+            valoresFilaDia.forEach((val, idx) => {
+                let key = NOMBRES_ESTANDAR_BD[idx] || `Col_${idx+1}`;
+                objDia[key] = val;
+            });
+            objDia["MODULO"] = mod;
+            objDia["REMESA"] = remesaActual;
+
+            // Solo guardamos si el día tiene algún movimiento
+            todosLosDiasNuevos.push(objDia);
+        }
     });
 
-    // Guardar en vaciado_actual (el de la semana vigente) y en historial_campanas/[Remesa]
-    const dbRefActual = ref(db, 'vaciado_actual');
-    const dbRefHistorial = ref(db, `historial_campanas/${remesaActual}`);
-    
-    Promise.all([
-        set(dbRefActual, datosAGuardar),
-        set(dbRefHistorial, datosAGuardar)
-    ]).then(() => {
-        alert(`¡Éxito! La información ha sido guardada y respaldada en la Campaña para la Remesa: ${remesaActual}.\nYa puedes limpiar la tabla para capturar la siguiente remesa.`);
-    }).catch((error) => {
-        console.error("Error al guardar en Firebase:", error);
-        alert("Hubo un error al guardar los datos.");
+    // 3. GENERAR REGISTROS PARA BDTOTALES CON EL IDMAC
+    let registrosBdTotales = [];
+    filasTotalesObjetos.forEach(totalesObj => {
+        let nuevoTotal = { ...totalesObj };
+        
+        // No llevan día ni fecha en totales
+        delete nuevoTotal.DIA;
+        delete nuevoTotal.FECHA;
+
+        // IDMAC = Últimos 3 dígitos del módulo + Últimos 2 dígitos de la remesa
+        const modStr = String(nuevoTotal.MODULO).trim();
+        const remStr = String(nuevoTotal.REMESA).trim();
+        const ultimos3Mod = modStr.slice(-3);
+        const ultimos2Rem = remStr.slice(-2);
+        
+        nuevoTotal.IDMAC = `${ultimos3Mod}${ultimos2Rem}`;
+
+        registrosBdTotales.push(nuevoTotal);
     });
+
+    try {
+        // A. Actualizar BD_MADRE (fusionando y evitando duplicados exactos)
+        const snapMadre = await get(ref(db, 'bd_madre'));
+        let actualMadre = snapMadre.val() || [];
+        actualMadre = Array.isArray(actualMadre) ? actualMadre : Object.values(actualMadre);
+        
+        // Filtramos fuera la remesa actual si ya existía para sobreescribirla limpia
+        let madreFiltrada = actualMadre.filter(item => String(item.REMESA) !== String(remesaActual));
+        const fusionMadre = [...madreFiltrada, ...todosLosDiasNuevos];
+        await set(ref(db, 'bd_madre'), fusionMadre);
+
+        // B. Actualizar BDTOTALES
+        const snapTotales = await get(ref(db, 'bdtotales'));
+        let actualTotales = snapTotales.val() || [];
+        actualTotales = Array.isArray(actualTotales) ? actualTotales : Object.values(actualTotales);
+
+        let totalesFiltrados = actualTotales.filter(item => String(item.REMESA) !== String(remesaActual));
+        const fusionTotales = [...totalesFiltrados, ...registrosBdTotales];
+        await set(ref(db, 'bdtotales'), fusionTotales);
+
+        alert(`✅ ¡Vaciado exitoso!\n- Los días se guardaron en la BD Principal.\n- Los totales semanales se consolidaron en BD Totales con IDMAC.`);
+        
+    } catch (error) {
+        console.error("Error al guardar en Firebase:", error);
+        alert("❌ Hubo un error al guardar los datos en la nube.");
+    }
 });
