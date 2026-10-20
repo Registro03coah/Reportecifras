@@ -6,6 +6,11 @@
     <title>Reporte de Días MAC</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <!-- LIBRERÍAS DE FIREBASE AGREGADAS -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
     <style>
         body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         
@@ -16,8 +21,10 @@
         
         .excel-table thead tr:first-child th { 
             position: sticky; top: 0; z-index: 2; font-size: 9px; text-transform: uppercase; 
-            background-color: #e9ecef; white-space: normal !important; word-wrap: break-word; 
+            background-color: #1b396b; color: white !important; /* Ajustado a azul/blanco */
+            white-space: normal !important; word-wrap: break-word; 
             height: 140px; vertical-align: middle; line-height: 1.1; padding: 2px; text-align: center;
+            resize: horizontal; overflow: hidden; /* Permite redimensionar columnas */
         }
         
         .excel-table thead tr:nth-child(2) th {
@@ -32,9 +39,9 @@
         
         .excel-table thead tr:first-child th:nth-child(1), .excel-table thead tr:nth-child(2) th:nth-child(1),
         .excel-table thead tr:first-child th:nth-child(2), .excel-table thead tr:nth-child(2) th:nth-child(2),
-        .excel-table thead tr:first-child th:nth-child(3), .excel-table thead tr:nth-child(2) th:nth-child(3) { z-index: 5; }
+        .excel-table thead tr:first-child th:nth-child(3), .excel-table thead tr:nth-child(2) th:nth-child(3) { z-index: 5; background-color: #1b396b; color: white; }
 
-        .excel-table td { padding: 2px; border: 1px solid #ccc; text-align: center; vertical-align: middle; font-size: 12px;}
+        .excel-table td { padding: 2px; border: 1px solid #ccc; text-align: center; vertical-align: middle; font-size: 12px; white-space: nowrap;}
         
         .excel-table input { width: 100%; padding: 2px 0; font-size: 11px; text-align: center; border: 1px solid transparent; border-radius: 3px; background-color: transparent; }
         .excel-table input:focus { border: 1px solid #0d6efd; outline: none; background-color: #fff; }
@@ -45,6 +52,10 @@
         
         .nav-tabs .nav-link { font-weight: bold; color: #1b396b; }
         .nav-tabs .nav-link.active { background-color: #1b396b; color: white; border-color: #1b396b; }
+        
+        /* Spin para icono cargando */
+        .spin { animation: spin 2s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
@@ -81,22 +92,18 @@
         
         <div class="alert alert-success d-flex justify-content-between align-items-center shadow-sm">
             <div>
-                <strong>Vista Diaria:</strong> Aquí se muestran los 7 días de cada módulo por remesa.<br>
-                <em>Orden visual: MÓDULO (47), REMESA (39), DÍA (1), FECHA (2), SEDES (4) y del 5 al 75 (ocultando 3).</em>
+                <strong>Vista Diaria:</strong> Aquí se muestran los días capturados por remesa.<br>
+                <em>Orden visual sincronizado con BD Principal.</em>
             </div>
             <div class="d-flex align-items-center gap-2">
-                <div id="statusCarga" class="badge bg-warning text-dark fs-6 me-2"><i class="bi bi-arrow-repeat spin"></i> Cargando...</div>
-                <button class="btn btn-sm btn-dark" id="btnDescargarJSON"><i class="bi bi-download"></i> Descargar Respaldo JSON</button>
-                <label class="btn btn-sm btn-success mb-0" style="cursor: pointer;">
-                    <i class="bi bi-upload"></i> Subir Respaldo JSON <input type="file" id="inputSubirJSON" accept=".json" class="d-none">
-                </label>
+                <div id="statusCarga" class="badge bg-warning text-dark fs-6 me-2"><i class="bi bi-arrow-repeat spin"></i> Conectando...</div>
             </div>
         </div>
 
         <div class="excel-container shadow-sm rounded border-success">
             <table class="excel-table table table-hover" id="tablaDias">
-                <thead></thead>
-                <tbody></tbody>
+                <thead id="cabeceraTablaDias"></thead>
+                <tbody id="cuerpoTablaDias"></tbody>
             </table>
         </div>
 
@@ -117,7 +124,7 @@
                                     <th>Acciones Disponibles</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="cuerpoListaRemesas">
                                 <!-- JS fills -->
                             </tbody>
                         </table>
@@ -146,15 +153,15 @@
                     <div class="tab-content">
                         <!-- 050351 -->
                         <div class="tab-pane fade show active" id="edit-050351">
-                            <div class="excel-container border-success"><table class="excel-table table" id="tablaEditar_050351"><thead></thead><tbody></tbody></table></div>
+                            <div class="excel-container border-success"><table class="excel-table table" id="tablaEditar_050351"><thead id="head_050351"></thead><tbody id="body_050351"></tbody></table></div>
                         </div>
                         <!-- 050353 -->
                         <div class="tab-pane fade" id="edit-050353">
-                            <div class="excel-container border-success"><table class="excel-table table" id="tablaEditar_050353"><thead></thead><tbody></tbody></table></div>
+                            <div class="excel-container border-success"><table class="excel-table table" id="tablaEditar_050353"><thead id="head_050353"></thead><tbody id="body_050353"></tbody></table></div>
                         </div>
                         <!-- 050354 -->
                         <div class="tab-pane fade" id="edit-050354">
-                            <div class="excel-container border-success"><table class="excel-table table" id="tablaEditar_050354"><thead></thead><tbody></tbody></table></div>
+                            <div class="excel-container border-success"><table class="excel-table table" id="tablaEditar_050354"><thead id="head_050354"></thead><tbody id="body_050354"></tbody></table></div>
                         </div>
                     </div>
                 </div>
@@ -174,6 +181,6 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script type="module" src="app_dias.js?v=1.0.0"></script>
+    <script src="app_dias.js"></script>
 </body>
 </html>
