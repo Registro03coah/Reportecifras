@@ -6,8 +6,10 @@ const firebaseConfig = {
   authDomain: "cifrasmac.firebaseapp.com",
   databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com",
   projectId: "cifrasmac",
-
 };
+};
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 // Imprimir la configuración para asegurar que no hay valores 'undefined'
 console.log("1. Parámetros de Firebase Config:", firebaseConfig);
 
