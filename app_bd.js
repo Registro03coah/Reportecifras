@@ -119,7 +119,7 @@ function dibujarTablaBd(datosArreglo) {
     });
 
     let trHead = '<tr>';
-    trHead += `<th class="text-white text-center" style="color: white !important; min-width: 80px; vertical-align: top;">ACCIONES</th>`;
+    trHead += `<th class="text-white text-center" style="color: white !important; min-width: 100px; vertical-align: top;">ACCIONES</th>`;
 
     columnas.forEach(col => {
         let nombreColumnaVisual = col.replace('CORR__DE_DATOS_DIRECCION', 'CORR._DE_DATOS_DIRECCION')
@@ -138,15 +138,19 @@ function dibujarTablaBd(datosArreglo) {
     thead.innerHTML = trHead;
 
     let htmlCuerpo = '';
-    datosArreglo.forEach(fila => {
+    datosArreglo.forEach((fila, index) => {
         const remFila = fila.REMESA || fila.Remesa || '';
         const modFila = fila.MODULO || fila.MÓDULO || fila.Módulo || '';
         const fechaFila = fila.FECHA || fila.Fecha || '';
 
         htmlCuerpo += '<tr>';
-        htmlCuerpo += `<td class="text-center align-middle">
-                            <button class="btn btn-sm btn-danger" onclick="borrarRegistroLinea('${remFila}', '${modFila}', '${fechaFila}')" title="Eliminar registro">
-                                <i class="bi bi-trash"></i>
+        // BOTONES DE ACCIÓN PEQUEÑOS (Editar y Borrar)
+        htmlCuerpo += `<td class="text-center align-middle" style="white-space: nowrap;">
+                            <button class="btn btn-sm btn-warning text-dark py-0 px-1 me-1" onclick="editarRegistroLinea('${remFila}', '${modFila}', '${fechaFila}')" title="Editar registro">
+                                <i class="bi bi-pencil-square" style="font-size: 0.85rem;"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger py-0 px-1" onclick="borrarRegistroLinea('${remFila}', '${modFila}', '${fechaFila}')" title="Eliminar registro">
+                                <i class="bi bi-trash" style="font-size: 0.85rem;"></i>
                             </button>
                        </td>`;
 
@@ -182,7 +186,7 @@ if (buscadorInput) {
 }
 
 // =========================================================
-// 4. FUNCIONES GLOBALES (Vaciar, Respaldar, Borrar Fila)
+// 4. FUNCIONES GLOBALES (Vaciar, Respaldar, Borrar y Editar)
 // =========================================================
 window.vaciarBaseDatosGeneral = function() {
     if (confirm("🚨 ¿ESTÁS COMPLETAMENTE SEGURO?\n\nEsto borrará TODOS los registros de BD Madre en la nube.")) {
@@ -228,4 +232,46 @@ window.borrarRegistroLinea = function(remesa, modulo, fecha) {
             .then(() => console.log("Registro eliminado correctamente de BD Madre."))
             .catch(() => alert("Hubo un error al intentar eliminar la fila."));
     }
+};
+
+window.editarRegistroLinea = function(remesa, modulo, fecha) {
+    // Buscamos el registro exacto
+    const registroIndex = datosGlobalesBd.findIndex(item => {
+        const r = String(item.REMESA || item.Remesa || '');
+        const m = String(item.MODULO || item.MÓDULO || item.Módulo || '');
+        const f = String(item.FECHA || item.Fecha || '');
+        return r === String(remesa) && m === String(modulo) && f === String(fecha);
+    });
+
+    if (registroIndex === -1) {
+        alert("No se encontró el registro para editar.");
+        return;
+    }
+
+    let registro = datosGlobalesBd[registroIndex];
+    
+    // Pedimos al usuario el nuevo valor de alguna columna clave o el total de folios a modo rápido,
+    // o podemos abrir un cuadro de diálogo para actualizar los folios/trámites principales.
+    let campoEditar = prompt("Escribe el nombre de la columna que deseas modificar (ej. TOTAL_DE_FOLIOS, SEDES, INSCRIPCIONES):");
+    if (!campoEditar) return;
+    
+    campoEditar = campoEditar.trim();
+    if (registro[campoEditar] === undefined) {
+        alert(`El campo "${campoEditar}" no existe en este registro.`);
+        return;
+    }
+
+    let valorActual = registro[campoEditar];
+    let nuevoValor = prompt(`Modificando "${campoEditar}"\nValor actual: ${valorActual}\nEscribe el nuevo valor:`, valorActual);
+    
+    if (nuevoValor === null) return; // Cancelado
+
+    // Actualizamos el campo
+    registro[campoEditar] = nuevoValor;
+    datosGlobalesBd[registroIndex] = registro;
+
+    // Guardamos la base completa actualizada en Firebase
+    database.ref('bd_madre').set(datosGlobalesBd)
+        .then(() => alert("¡Registro actualizado con éxito!"))
+        .catch(() => alert("Error al guardar la modificación en la nube."));
 };
