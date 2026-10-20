@@ -1,593 +1,314 @@
-// ==========================================
-
-// 1. IMPORTACIONES FIREBASE
-
-// ==========================================
-
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-
-import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
-
-
+// =========================================================
+// 1. CONFIGURACIÓN E INICIALIZACIÓN DE FIREBASE (cifrasmac)
+// =========================================================
 const firebaseConfig = {
-
-    apiKey: "AIzaSyA6jvnsXZwF2anOJo3VadfNvn7Fl6Z5efY",
-
-    authDomain: "sistema-mac-reportes.firebaseapp.com",
-
-    databaseURL: "https://sistema-mac-reportes-default-rtdb.firebaseio.com",
-
-    projectId: "sistema-mac-reportes"
-
+    apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo",
+    authDomain: "cifrasmac.firebaseapp.com",
+    databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com",
+    projectId: "cifrasmac",
+    storageBucket: "cifrasmac.firebasestorage.app",
+    messagingSenderId: "916644687837",
+    appId: "1:916644687837:web:03d346cc48a071af1ed034"
 };
 
-const app = initializeApp(firebaseConfig);
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+} else {
+    firebase.app();
+}
 
-const db = getDatabase(app);
+const database = firebase.database();
 
+let datosGlobalesBd = [];
+let datosEnPantalla = [];
+let columnaOrdenActual = 'REMESA';
+let ordenAscendente = false; 
 
-
-// ==========================================
-
-// 2. CONFIGURACIÓN DE TABLAS
-
-// ==========================================
-
-const TOTAL_COLUMNAS = 75;
-
-const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo", "LINEA TOTALES"];
-
-const MODULOS = ["050351", "050353", "050354"];
-
-
-
-const ENCABEZADOS = [
-
-    "DÍA", "DD/MM/AA", "Horas trabajadas", "Sedes visitadas", "INICIAL", "FINAL", "TOTAL DE FOLIOS", 
-
-    "INSCRIPCIONES", "CORRECCION DE DATOS PERSONALES", "CAMBIO DE DOMICILIO", "REPOSISION", 
-
-    "CORR. DE DATOS DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL DE TRAMITES", 
-
-    "CANCELADOS", "TOTAL DE ANEXO DE RECHAZO", "CPV devuelta entrega", "DISPONIBLES AL DIA ANTERIOR", 
-
-    "RECIBIDAS", "RECIBIDAS DE OTROS TIPOS", "ENTREGADAS", "RECIBO Y/O EXTRAVIO", "ANEXAS A FUAR", 
-
-    "DATOS ERRONEOS", "FOTO MAL IMPRESA", "REIMPRESION", "'RETIRADAS POR CAUSA", "DISPONIBLES", 
-
-    "credenciales x canje", "fichas Entregadas", "fichas atendidas", "Dias trabajados", 
-
-    "SOLICITUD EXPEDICIÓN REPATRIADOS", "SOLICITUD EXPEDICIÓN ORDINARIA", "SOLICITU DE RECTIFICACIÓN", 
-
-    "DEMANDA DE JUICIO", "REMESA", "Total de movimientos", "DEVUELTAS POR TERCEROS:", 
-
-    "34 Imagen inconsistente", "35 Movimiento posterior", "CONFIGURACION", "ENT", "DTTO", 
-
-    "MÓDULO", "RESGUARDO", "SOLICITUD DE REIMPRESION", "CPV devuelta entrega", "ript ejecutad", 
-
-    "FOLIO NEC", "cartografia", "lotes de credenciales", "registradas por dia", "faltantes", "observaciones",
-
-    "sin nombre1", "sin nombre2", "sin nombre3", "MAC QUE RECIBE", "MAC QUE ENTREGA", 
-
-    "IMPORTADAS", "EXPORTADAS", "REPOSISION + REIMPRESIONES", "MAL IMPRESA", "ERROR EN CARTOGRAFIA", 
-
-    "DEFUNCION", "SUSPENSION", "DUPLICADO", "ERROR EN NUM. DE EMISION", "PERDIDA DE VIGENCIA", 
-
-    "MOV.POST.", "ANEXAS A SOLICITUD", "OTRAS BAJAS"
-
-];
-
-
-
-function generarEncabezados(selectorTabla, isTotales = false) {
-
-    const thead = document.querySelector(`${selectorTabla} thead`);
-
-    let trTitulos = document.createElement('tr');
-
-    let trNumeros = document.createElement('tr');
-
+// =========================================================
+// 2. DESCARGAR Y DIBUJAR DATOS EN LA TABLA
+// =========================================================
+database.ref('bd_madre').on('value', (snapshot) => {
+    let datos = snapshot.val();
+    datosGlobalesBd = datos ? (Array.isArray(datos) ? datos : Object.values(datos)) : [];
     
+    columnaOrdenActual = 'REMESA';
+    ordenAscendente = false;
+    ejecutarOrdenamiento(datosGlobalesBd); 
+});
 
-    for(let i = 1; i <= TOTAL_COLUMNAS; i++) {
-
-        let thT = document.createElement('th');
-
-        let thN = document.createElement('th');
-
-        
-
-        let tituloStr = ENCABEZADOS[i-1] || `Columna ${i}`;
-
-        if(isTotales && i === 1) tituloStr = "MÓDULO";
-
-        
-
-        thT.innerText = tituloStr;
-
-        
-
-        let anchoCelda = "45px"; 
-
-        if(i === 1) anchoCelda = "110px"; 
-
-        else if(i === 2) anchoCelda = "70px"; 
-
-        else if(i === 4) anchoCelda = "85px"; 
-
-        else if(i === 5 || i === 6) anchoCelda = "105px"; 
-
-        else if(i === 61 || i === 62) anchoCelda = "80px"; 
-
-        
-
-        thT.style.width = anchoCelda; thT.style.minWidth = anchoCelda; thT.style.maxWidth = anchoCelda;
-
-        
-
-        if(i >= 5 && i <= 7) thT.classList.add('bg-folios');
-
-        if(i >= 19 && i <= 30) thT.classList.add('bg-retiradas');
-
-        if(i === 16) thT.style.backgroundColor = "#92d050"; 
-
-        if(i === 17) thT.style.backgroundColor = "red"; 
-
-        if(i === 18) thT.style.backgroundColor = "yellow"; 
-
-        if(i >= 58 && i <= 60) thT.style.backgroundColor = "#e8e8f4"; 
-
-        if(i === 61 || i === 62) thT.style.backgroundColor = "#9b9649"; 
-
-        if(i === 63 || i === 64) thT.style.backgroundColor = "yellow"; 
-
-        
-
-        thN.innerText = i; thN.className = "table-light";
-
-        
-
-        if(isTotales && i >= 2 && i <= 4) {
-
-            thT.style.display = "none"; thN.style.display = "none";
-
-        }
-
-        
-
-        trTitulos.appendChild(thT); trNumeros.appendChild(thN);
-
+function ejecutarOrdenamiento(arregloA_Ordenar) {
+    if(!arregloA_Ordenar || arregloA_Ordenar.length === 0) {
+        dibujarTablaBd([]);
+        return;
     }
 
-    thead.appendChild(trTitulos); thead.appendChild(trNumeros);
+    let arregloOrdenado = [...arregloA_Ordenar];
 
-}
+    arregloOrdenado.sort((a, b) => {
+        let valA = a[columnaOrdenActual] !== undefined && a[columnaOrdenActual] !== null ? String(a[columnaOrdenActual]).trim() : '';
+        let valB = b[columnaOrdenActual] !== undefined && b[columnaOrdenActual] !== null ? String(b[columnaOrdenActual]).trim() : '';
 
+        let numA = parseFloat(valA);
+        let numB = parseFloat(valB);
+        let esNumA = !isNaN(numA) && valA !== '';
+        let esNumB = !isNaN(numB) && valB !== '';
 
-
-function generarCuerpoCaptura(selectorTabla) {
-
-    const tbody = document.querySelector(`${selectorTabla} tbody`);
-
-    DIAS.forEach((dia) => {
-
-        let tr = document.createElement('tr');
-
-        if (dia === "LINEA TOTALES") tr.classList.add('fila-totales');
-
-        for(let c = 1; c <= TOTAL_COLUMNAS; c++) {
-
-            let td = document.createElement('td');
-
-            if(c === 1) {
-
-                td.innerHTML = `<input type="text" value="${dia}" readonly tabindex="-1">`;
-
-            } else if (dia === "LINEA TOTALES" && (c === 2 || c === 4)) {
-
-                td.innerHTML = `<input type="text" readonly tabindex="-1">`;
-
-            } else {
-
-                td.innerHTML = `<input type="text" value="">`;
-
-            }
-
-            tr.appendChild(td);
-
+        if (esNumA && esNumB) {
+            if (numA < numB) return ordenAscendente ? -1 : 1;
+            if (numA > numB) return ordenAscendente ? 1 : -1;
+            return 0;
+        } else {
+            valA = valA.toUpperCase();
+            valB = valB.toUpperCase();
+            if (valA < valB) return ordenAscendente ? -1 : 1;
+            if (valA > valB) return ordenAscendente ? 1 : -1;
+            return 0;
         }
-
-        tbody.appendChild(tr);
-
     });
 
+    dibujarTablaBd(arregloOrdenado);
 }
 
+window.cambiarOrden = function(columnaClick) {
+    if (columnaOrdenActual === columnaClick) {
+        ordenAscendente = !ordenAscendente;
+    } else {
+        columnaOrdenActual = columnaClick;
+        ordenAscendente = false;
+    }
+    ejecutarOrdenamiento(datosEnPantalla);
+};
 
+function dibujarTablaBd(datosArreglo) {
+    datosEnPantalla = datosArreglo; 
+    const thead = document.getElementById('cabeceraBdMadre');
+    const tbody = document.getElementById('cuerpoBdMadre');
+    if(!thead || !tbody) return;
 
-function generarCuerpoTotales() {
+    thead.innerHTML = '';
+    tbody.innerHTML = '';
 
-    const tbody = document.querySelector(`#tablaCaptura_totales tbody`);
-
-    const filasConcentrado = ["050351", "050353", "050354", "GRAN TOTAL"];
-
-    filasConcentrado.forEach((fila) => {
-
-        let tr = document.createElement('tr');
-
-        if (fila === "GRAN TOTAL") tr.classList.add('fila-totales');
-
-        for(let c = 1; c <= TOTAL_COLUMNAS; c++) {
-
-            let td = document.createElement('td');
-
-            if(c === 1) {
-
-                let textoFila = (fila === "GRAN TOTAL") ? fila : `Totales MAC ${fila}`;
-
-                td.innerHTML = `<input type="text" value="${textoFila}" readonly tabindex="-1">`;
-
-            } else if (c === 2 || c === 4) {
-
-                td.innerHTML = `<input type="text" readonly tabindex="-1">`;
-
-            } else {
-
-                td.innerHTML = `<input type="text" id="totales-${fila}-col-${c}" readonly tabindex="-1" value="0">`;
-
-            }
-
-            if(c >= 2 && c <= 4) td.style.display = "none";
-
-            tr.appendChild(td);
-
-        }
-
-        tbody.appendChild(tr);
-
-    });
-
-}
-
-
-
-// EXTRAER REMESA (Columna 39 = Index 38)
-
-function detectarRemesa() {
-
-    let remesaDetectada = "";
-
-    for(let mod of MODULOS) {
-
-        const tbody = document.querySelector(`#tablaCaptura_${mod} tbody`);
-
-        const filas = tbody.querySelectorAll('tr');
-
-        for(let i=0; i<7; i++) { // Buscamos en los días normales
-
-            let inp = filas[i].querySelectorAll('td')[38].querySelector('input');
-
-            if(inp && inp.value.trim() !== "" && inp.value.trim() !== "0") {
-
-                remesaDetectada = inp.value.trim();
-
-                break;
-
-            }
-
-        }
-
-        if(remesaDetectada) break;
-
+    if (!datosArreglo || datosArreglo.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="100%" class="text-center py-4 text-muted"><i class="bi bi-info-circle"></i> No hay datos en la Base Madre. Sube una nueva remesa.</td></tr>';
+        return;
     }
 
-    const inputRemesa = document.getElementById('inputRemesa');
+    let columnas = Object.keys(datosArreglo[0]);
 
-    if(inputRemesa) inputRemesa.value = remesaDetectada;
+    const ordenDeseado = [
+        "MODULO", "REMESA", "FECHA", "DIA", "SEDES", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
+        "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSISION",
+        "CORR__DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES",
+        "CANCELADOS", "TOTAL_DE_ANEXOS_POR_RECHAZO", "CPV_devuelta_entrega", "DISPONIBLES_AL_DIA_ANTERIOR",
+        "RECIBIDAS", "RECIBIDAS_DE_OTROS_TIPOS", "ENTREGADAS", "RECIBO_Y_O_EXTRAVIO", "ANEXAS_A_FUAR",
+        "DATOS_ERRONEOS", "FOTO_MAL_IMPRESA", "LIBRE2", "RETIRADAS_POR_OTRA_CAUSA", "DISPONIBLES",
+        "credenciales_x_canje", "fichas_Entregadas", "fichas_atendidas", "Dias_trabajados",
+        "SOLICITUD_EXPEDICION_O_RECTIFICACION", "SOLICITUD_EXPEDICION_REPATRIADOS", "SOLICITU_DE_REIMPRESION",
+        "DEMANDA_DE_JUICIO", "Total_de_movimientos", "DEVUELTAS_POR_TERCEROS", "34_Imagen_inconsistente",
+        "35_Movimiento_posterior", "CONFIGURACION", "ENT", "DTTO", "RESGUARDO", "SOLICITUD_DE_NUM_DE_EMISION",
+        "LIBRE1", "Sript_ejecutado_VIGENCIA", "FOLIO_NEC_POST", "cartografia_SOLICITUD", "lotes_de_credenciales",
+        "registradas_por_dia", "faltantes", "observaciones", "sin_nombre1", "sin_nombre2", "sin_nombre3",
+        "MAC_QUE_RECIBE", "MAC_QUE_ENTREGA", "IMPORTADAS", "EXPORTADAS", "REPOSISION_+_REIMPRESIONES",
+        "MAL_IMPRESAS", "ERROR_EN_CARTOGRAFIA", "DEFUNCION", "SUSPENSION", "DUPLICADO", "ERROR_EN_NUM_DE_EMISION",
+        "PERDIDA_DE_VIGENCIA", "MOY_POST", "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS"
+    ];
 
+    columnas.sort((a, b) => {
+        let indiceA = ordenDeseado.indexOf(a);
+        let indiceB = ordenDeseado.indexOf(b);
+        if (indiceA === -1) indiceA = 999;
+        if (indiceB === -1) indiceB = 999;
+        return indiceA - indiceB;
+    });
+
+    let trHead = '<tr>';
+    trHead += `<th class="text-white text-center" style="color: white !important; min-width: 80px; vertical-align: top;">ACCIONES</th>`;
+
+    columnas.forEach(col => {
+        let nombreColumnaVisual = col.replace('CORR__DE_DATOS_DIRECCION', 'CORR._DE_DATOS_DIRECCION')
+                                     .replace('RECIBO_Y_O_EXTRAVIO', 'RECIBO_Y/O_EXTRAVIO');
+        
+        let iconoFlechita = '<i class="bi bi-arrow-down-up ms-1" style="font-size: 0.8em; color: rgba(255,255,255,0.4);"></i>';
+        if (columnaOrdenActual === col) {
+            iconoFlechita = ordenAscendente ? '<i class="bi bi-caret-up-fill text-warning ms-1"></i>' : '<i class="bi bi-caret-down-fill text-warning ms-1"></i>';
+        }
+
+        trHead += `<th class="text-white" style="color: white !important; cursor: pointer; user-select: none; white-space: normal; word-wrap: break-word; min-width: 120px; resize: horizontal; overflow: hidden; vertical-align: top;" onclick="cambiarOrden('${col}')" title="Clic para ordenar">
+                        ${nombreColumnaVisual} ${iconoFlechita}
+                   </th>`;
+    });
+    trHead += '</tr>';
+    thead.innerHTML = trHead;
+
+    let htmlCuerpo = '';
+    datosArreglo.forEach(fila => {
+        const remFila = fila.REMESA || fila.Remesa || '';
+        const modFila = fila.MODULO || fila.MÓDULO || fila.Módulo || '';
+        const fechaFila = fila.FECHA || fila.Fecha || '';
+
+        htmlCuerpo += '<tr>';
+        htmlCuerpo += `<td class="text-center align-middle">
+                            <button class="btn btn-sm btn-danger" onclick="borrarRegistroLinea('${remFila}', '${modFila}', '${fechaFila}')" title="Eliminar registro">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                       </td>`;
+
+        columnas.forEach(col => {
+            htmlCuerpo += `<td class="align-middle">${fila[col] !== undefined && fila[col] !== null ? fila[col] : ''}</td>`;
+        });
+        htmlCuerpo += '</tr>';
+    });
+    tbody.innerHTML = htmlCuerpo;
 }
 
+// =========================================================
+// 3. BUSCADOR EN TIEMPO REAL (Seguro si no existe el input)
+// =========================================================
+const buscadorInput = document.getElementById('buscadorBd');
+if (buscadorInput) {
+    buscadorInput.addEventListener('input', function(e) {
+        const termino = e.target.value.toLowerCase();
+        if(termino.trim() === '') {
+            ejecutarOrdenamiento(datosGlobalesBd);
+            return;
+        }
 
-
-// SINCRONIZAR Y ACTUALIZAR REMESA
-
-function sincronizarTotales() {
-
-    for(let c = 3; c <= TOTAL_COLUMNAS; c++) {
-
-        if(c === 4) continue; 
-
-        let granTotalColumna = 0;
-
-        
-
-        MODULOS.forEach(mod => {
-
-            const filaTotalMod = document.querySelector(`#tablaCaptura_${mod} tbody`).querySelectorAll('tr')[7]; 
-
-            const inputMod = filaTotalMod.querySelectorAll('td')[c-1].querySelector('input');
-
-            let valorStr = inputMod.value.trim().replace(/,/g, '');
-
-            let valorNum = isNaN(parseFloat(valorStr)) ? 0 : parseFloat(valorStr);
-
-            
-
-            let inputDestino = document.getElementById(`totales-${mod}-col-${c}`);
-
-            if (inputDestino) inputDestino.value = valorNum === 0 && valorStr !== "0" ? valorStr || "0" : valorNum;
-
-            if(!isNaN(valorNum)) granTotalColumna += valorNum;
-
+        const datosFiltrados = datosGlobalesBd.filter(item => {
+            const remesa = String(item['REMESA'] || item['Remesa'] || '').toLowerCase();
+            const fecha = String(item['FECHA'] || item['Fecha'] || '').toLowerCase();
+            const modulo = String(item['MODULO'] || item['MÓDULO'] || item['Módulo'] || '').toLowerCase();
+            return remesa.includes(termino) || fecha.includes(termino) || modulo.includes(termino);
         });
 
-        
-
-        let inputGranTotal = document.getElementById(`totales-GRAN TOTAL-col-${c}`);
-
-        if(inputGranTotal) inputGranTotal.value = granTotalColumna;
-
-    }
-
-    detectarRemesa();
-
+        ejecutarOrdenamiento(datosFiltrados);
+    });
 }
 
+// =========================================================
+// 4. EVENTOS PARA SUBIR Y PROCESAR EL ARCHIVO JSON
+// =========================================================
+const btnSubir = document.getElementById('btnSubir');
+if (btnSubir) {
+    btnSubir.addEventListener('click', () => {
+        const fileInput = document.getElementById('fileInput');
+        if(fileInput) fileInput.click();
+    });
+}
 
+const fileInputElem = document.getElementById('fileInput');
+if (fileInputElem) {
+    fileInputElem.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
 
-MODULOS.forEach(mod => {
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        if (loadingOverlay) loadingOverlay.style.display = 'flex';
 
-    generarEncabezados(`#tablaCaptura_${mod}`, false);
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            try {
+                let nuevosDatos = JSON.parse(event.target.result);
+                if (!Array.isArray(nuevosDatos)) nuevosDatos = [nuevosDatos];
 
-    generarCuerpoCaptura(`#tablaCaptura_${mod}`);
+                database.ref('bd_madre').once('value').then((snapshot) => {
+                    let datosActuales = snapshot.val();
+                    datosActuales = datosActuales ? (Array.isArray(datosActuales) ? datosActuales : Object.values(datosActuales)) : [];
 
-    
+                    let mapaRegistros = new Map();
 
-    const tbodyMod = document.querySelector(`#tablaCaptura_${mod} tbody`);
-
-    tbodyMod.addEventListener('input', sincronizarTotales);
-
-    
-
-    document.getElementById(`pasteZone_${mod}`).addEventListener('paste', (e) => {
-
-        e.preventDefault();
-
-        const rows = (e.clipboardData || window.clipboardData).getData('Text').split('\n');
-
-        const tableRows = tbodyMod.querySelectorAll('tr');
-
-        let rowOffset = 0;
-
-        
-
-        rows.forEach((row, rowIndex) => {
-
-            if (row.trim() === '') return;
-
-            const columns = row.split('\t');
-
-            if(rowIndex === 0 && (columns[0].toUpperCase().includes("DÍA") || columns[0] == "1")) { rowOffset++; return; }
-
-            const targetRow = tableRows[rowIndex - rowOffset];
-
-            if (targetRow) {
-
-                targetRow.querySelectorAll('input').forEach((input, colIndex) => {
-
-                    if (columns[colIndex] !== undefined && !input.hasAttribute('readonly')) {
-
-                        input.value = columns[colIndex].trim();
-
+                    function limpiarObjetoParaFirebase(obj) {
+                        let nuevoObj = {};
+                        for (let key in obj) {
+                            let cleanKey = key.replace(/[.#$/\[\]]/g, '_');
+                            nuevoObj[cleanKey] = obj[key];
+                        }
+                        return nuevoObj;
                     }
 
+                    datosActuales.forEach(item => {
+                        const rem = String(item['REMESA'] || item['Remesa'] || '');
+                        const mod = String(item['MODULO'] || item['MÓDULO'] || item['Módulo'] || item['Modulo'] || '');
+                        const fecha = String(item['FECHA'] || item['Fecha'] || item['fecha'] || '');
+                        if (mod && fecha) mapaRegistros.set(`${rem}_${mod}_${fecha}`, limpiarObjetoParaFirebase(item));
+                    });
+
+                    nuevosDatos.forEach(itemNuevo => {
+                        const remNuevo = String(itemNuevo['REMESA'] || itemNuevo['Remesa'] || '');
+                        const modNuevo = String(itemNuevo['MODULO'] || itemNuevo['MÓDULO'] || itemNuevo['Módulo'] || itemNuevo['Modulo'] || '');
+                        const fechaNueva = String(itemNuevo['FECHA'] || itemNuevo['Fecha'] || itemNuevo['fecha'] || '');
+                        if (modNuevo && fechaNueva) mapaRegistros.set(`${remNuevo}_${modNuevo}_${fechaNueva}`, limpiarObjetoParaFirebase(itemNuevo));
+                    });
+
+                    const datosFusionados = Array.from(mapaRegistros.values());
+
+                    database.ref('bd_madre').set(datosFusionados).then(() => {
+                        if (loadingOverlay) loadingOverlay.style.display = 'none';
+                        alert("Base de datos actualizada con éxito.");
+                        fileInputElem.value = ''; 
+                    }).catch(() => {
+                        if (loadingOverlay) loadingOverlay.style.display = 'none';
+                        alert("Error al guardar los datos en la nube.");
+                    });
+
+                }).catch(() => {
+                    if (loadingOverlay) loadingOverlay.style.display = 'none';
+                    alert("Error al conectar con la base de datos.");
                 });
 
+            } catch (error) {
+                if (loadingOverlay) loadingOverlay.style.display = 'none';
+                alert("Error al leer el archivo JSON.");
             }
-
-        });
-
-        alert(`Datos pegados con éxito en la tabla del Módulo ${mod}.`);
-
-        sincronizarTotales(); 
-
+        };
+        reader.readAsText(file);
     });
+}
 
-});
-
-
-
-generarEncabezados('#tablaCaptura_totales', true);
-
-generarCuerpoTotales();
-
-
-
-// ==========================================
-
-// 3. LIMPIAR Y GUARDAR HISTORIAL FIREBASE
-
-// ==========================================
-
-
-
-// BOTÓN BORRAR
-
-document.getElementById('btnBorrar').addEventListener('click', () => {
-
-    if(confirm("¿Estás seguro de que deseas limpiar todas las tablas? (Se borrarán los datos en pantalla, no en la BD)")) {
-
-        MODULOS.forEach(mod => {
-
-            const tbody = document.querySelector(`#tablaCaptura_${mod} tbody`);
-
-            tbody.querySelectorAll('input:not([readonly])').forEach(inp => inp.value = "");
-
-        });
-
-        sincronizarTotales(); // Reset a 0
-
-        document.getElementById('inputRemesa').value = "";
-
+// =========================================================
+// 5. FUNCIONES GLOBALES
+// =========================================================
+window.vaciarBaseDatosGeneral = function() {
+    if (confirm("🚨 ¿ESTÁS COMPLETAMENTE SEGURO?\n\nEsto borrará TODOS los registros de la Base Madre en la nube.")) {
+        database.ref('bd_madre').remove()
+            .then(() => alert("La base de datos ha sido vaciada."))
+            .catch(() => alert("Hubo un problema al vaciar."));
     }
+};
 
-});
-
-
-
-// BOTÓN GUARDAR
-
-document.getElementById('btnGuardarBD').addEventListener('click', () => {
-
-    const remesaActual = document.getElementById('inputRemesa').value.trim();
-
-    
-
-    if(!remesaActual) {
-
-        alert("Atención: No se ha detectado el número de Remesa en la columna 39. Por favor, asegúrate de que al menos un día capturado tenga el número de remesa para poder guardar el historial de la campaña de forma correcta.");
-
-        return; // Evita el guardado si no hay remesa, para no dañar el historial
-
+window.descargarRespaldoJSON = function() {
+    if (datosGlobalesBd.length === 0) {
+        alert("No hay datos en la base para respaldar.");
+        return;
     }
-
-
-
-    const tablasNombres = [...MODULOS, "totales"];
-
-    let datosAGuardar = {};
-
     
-
-    tablasNombres.forEach(mod => {
-
-        const filas = document.querySelector(`#tablaCaptura_${mod} tbody`).querySelectorAll('tr');
-
-        let datosTabla = [];
-
-        filas.forEach(fila => {
-
-            let filaArray = [];
-
-            fila.querySelectorAll('td').forEach(td => {
-
-                const input = td.querySelector('input');
-
-                filaArray.push(input ? input.value : "");
-
-            });
-
-            datosTabla.push(filaArray);
-
-        });
-
-        datosAGuardar[mod] = datosTabla;
-
-    });
-
-
-
-    // Guardar en vaciado_actual (el de la semana vigente) y en historial_campanas/[Remesa]
-
-    const dbRefActual = ref(db, 'vaciado_actual');
-
-    const dbRefHistorial = ref(db, `historial_campanas/${remesaActual}`);
-
+    const jsonString = JSON.stringify(datosGlobalesBd, null, 2);
+    const blob = new Blob([jsonString], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
     
+    let hoy = new Date();
+    let fechaTxt = hoy.getFullYear() + "-" + (hoy.getMonth()+1).toString().padStart(2, '0') + "-" + hoy.getDate().toString().padStart(2, '0');
+    a.download = `bd_madre_respaldo_${fechaTxt}.json`;
+    
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+};
 
-    Promise.all([
-
-        set(dbRefActual, datosAGuardar),
-
-        set(dbRefHistorial, datosAGuardar)
-
-    ]).then(() => {
-
-        alert(`¡Éxito! La información ha sido guardada y respaldada en la Campaña para la Remesa: ${remesaActual}.\nYa puedes limpiar la tabla para capturar la siguiente remesa.`);
-
-    }).catch((error) => {
-
-        console.error("Error al guardar en Firebase:", error);
-
-        alert("Hubo un error al guardar los datos.");
-
-    });
-
-}); 
-// ==========================================
-// 4. ENVÍO AUTOMÁTICO DE FILAS DE MÓDULOS A "BDTOTALES"
-// ==========================================
-document.getElementById('btnGuardarBD').addEventListener('click', () => {
-    const remesaActual = document.getElementById('inputRemesa').value.trim();
-    if (!remesaActual) return; // Si no hay remesa, el flujo principal lo detiene
-
-    let registrosTotalesParaBD = [];
-    const tbodyTotales = document.querySelector('#tablaCaptura_totales tbody');
-    if (!tbodyTotales) return;
-
-    const filas = tbodyTotales.querySelectorAll('tr');
-
-    // Recorremos solo las primeras 3 filas (050351, 050353, 050354), ignorando el GRAN TOTAL (fila 3)
-    for (let i = 0; i < 3; i++) {
-        const filaModulo = filas[i];
-        if (!filaModulo) continue;
-
-        let objFilaTotal = {};
-        let textoModuloCelda = "";
-
-        filaModulo.querySelectorAll('td').forEach((td, colIdx) => {
-            const input = td.querySelector('input');
-            let valorCelda = input ? input.value.trim() : "";
+window.borrarRegistroLinea = function(remesa, modulo, fecha) {
+    if(confirm(`¿Estás seguro de eliminar el registro del Módulo ${modulo}, Remesa ${remesa}, Fecha ${fecha}?`)) {
+        const datosRestantes = datosGlobalesBd.filter(item => {
+            const r = String(item.REMESA || item.Remesa || '');
+            const m = String(item.MODULO || item.MÓDULO || item.Módulo || '');
+            const f = String(item.FECHA || item.Fecha || '');
             
-            // Si es la columna 1 (índice 0), trae texto como "Totales MAC 050351"
-            if (colIdx === 0) {
-                textoModuloCelda = valorCelda;
-            }
-
-            let claveColumna = NOMBRES_ESTANDAR_BD[colIdx] || `Col_${colIdx + 1}`;
-            objFilaTotal[claveColumna] = valorCelda;
+            return !(r === String(remesa) && m === String(modulo) && f === String(fecha));
         });
 
-        // Extraemos limpiamente el número de módulo (ej. "050351" de "Totales MAC 050351")
-        let numeroModuloLimйы = textoModuloCelda.replace(/[^0-9]/g, ''); // Extrae solo los dígitos
-        if (!numeroModuloLimйы) {
-            // Respaldo por si acaso siempre usa el orden fijo
-            const modulosFijo = ["050351", "050353", "050354"];
-            numeroModuloLimйы = modulosFijo[i];
-        }
-
-        // Asignamos valores limpios al objeto
-        objFilaTotal["MODULO"] = numeroModuloLimйы;
-        objFilaTotal["REMESA"] = remesaActual;
-
-        // Eliminamos DIA y FECHA por tratarse de un concentrado semanal
-        delete objFilaTotal.DIA;
-        delete objFilaTotal.FECHA;
-
-        // CALCULAMOS EL IDMAC: Últimos 3 dígitos del módulo + Últimos 2 dígitos de la remesa
-        const ultimos3Mod = String(numeroModuloLimйы).slice(-3); // Ej. "351"
-        const ultimos2Rem = String(remesaActual).slice(-2); // Ej. "41"
-        objFilaTotal.IDMAC = `${ultimos3Mod}${ultimos2Rem}`; // Ej. "35141"
-
-        registrosTotalesParaBD.push(objFilaTotal);
+        database.ref('bd_madre').set(datosRestantes)
+            .then(() => console.log("Registro eliminado correctamente."))
+            .catch(() => alert("Hubo un error al intentar eliminar la fila."));
     }
-
-    // Guardamos en el nodo bdtotales de Firebase de forma independiente
-    const dbRefTotales = ref(db, 'bdtotales');
-    
-    get(dbRefTotales).then((snapshot) => {
-        let actualTotales = snapshot.val() || [];
-        actualTotales = Array.isArray(actualTotales) ? actualTotales : Object.values(actualTotales);
-
-        // Filtramos para evitar duplicados si se vuelve a guardar la misma remesa
-        let totalesFiltrados = actualTotales.filter(item => String(item.REMESA) !== String(remesaActual));
-        const fusionFinalTotales = [...totalesFiltrados, ...registrosTotalesParaBD];
-
-        set(dbRefTotales, fusionFinalTotales).then(() => {
-            console.log("✅ BD Totales actualizada exitosamente con los 3 módulos y su IDMAC.");
-        }).catch(err => {
-            console.error("Error al actualizar bdtotales:", err);
-        });
-    });
-});
+};
