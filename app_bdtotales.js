@@ -144,7 +144,6 @@ function dibujarTablaTotales(datosArreglo) {
         const idMacVal = fila.IDMAC || '';
         htmlCuerpo += '<tr>';
         
-        // AQUI ESTÁN LOS BOTONES EDITAR Y ELIMINAR JUNTOS
         htmlCuerpo += `<td class="text-center align-middle" style="min-width: 110px;">
                             <button class="btn btn-sm btn-outline-primary me-1" onclick="abrirModalEdicionTotales('${idMacVal}')" title="Editar total">
                                 <i class="bi bi-pencil-square"></i>
@@ -182,7 +181,7 @@ if (buscadorTotales) {
 }
 
 // =========================================================
-// SUBIR Y FUSIONAR ARCHIVO JSON EN BDTOTALES
+// SUBIR Y FUSIONAR ARCHIVO JSON EN BDTOTALES (CON ARREGLO -bis)
 // =========================================================
 const btnSubirTotales = document.getElementById('btnSubirTotales');
 const fileInputTotales = document.getElementById('fileInputTotales');
@@ -217,9 +216,20 @@ if (btnSubirTotales && fileInputTotales) {
                     });
 
                     nuevosDatos.forEach(itemNuevo => {
+                        // AQUÍ ESTÁ LA CORRECCIÓN PARA REMESAS CON "-bis"
                         if (!itemNuevo.IDMAC && itemNuevo.MODULO && itemNuevo.REMESA) {
                             const m = String(itemNuevo.MODULO).trim().slice(-3);
-                            const r = String(itemNuevo.REMESA).trim().slice(-2);
+                            let remStr = String(itemNuevo.REMESA).trim();
+                            let r = remStr;
+                            
+                            // Si la remesa empieza con el año (ej. 202621-bis), removemos los primeros 4 dígitos.
+                            if (/^\d{4}/.test(remStr)) {
+                                r = remStr.substring(4); 
+                            } else if (!remStr.includes('-')) {
+                                // Por seguridad, si no tiene formato de año ni guiones, tomamos los últimos 2
+                                r = remStr.slice(-2);
+                            }
+                            
                             itemNuevo.IDMAC = `${m}${r}`;
                         }
                         const idmacNuevo = String(itemNuevo.IDMAC || '');
@@ -278,17 +288,44 @@ window.borrarRegistroTotales = function(idmac) {
     }
 };
 
-// NUEVAS FUNCIONES DE EDICIÓN
+// =========================================================
+// FUNCIONES DE EDICIÓN DINÁMICA (TODAS LAS COLUMNAS)
+// =========================================================
 window.abrirModalEdicionTotales = function(idmac) {
-    // Buscar el registro específico en la variable global usando su IDMAC
     const registro = datosGlobalesTotales.find(item => String(item.IDMAC) === String(idmac));
     if (!registro) return;
 
-    // Rellenar los campos del modal
-    document.getElementById('editTotalesIDMAC').value = registro.IDMAC || '';
-    document.getElementById('editTotalesRemesa').value = registro.REMESA || '';
-    document.getElementById('editTotalesModulo').value = registro.MODULO || '';
-    // NOTA: Puedes agregar más campos de edición aquí si lo deseas (Ej. INICIAL, FINAL, etc.)
+    // Obtener el contenedor HTML y limpiarlo
+    const contenedor = document.getElementById('contenedorCamposDinamicos');
+    contenedor.innerHTML = ''; 
+
+    // Obtener todas las columnas (nombres) del registro
+    let columnas = Object.keys(registro);
+    
+    // Asegurarnos de que IDMAC, REMESA y MODULO salgan hasta arriba siempre
+    const principales = ["IDMAC", "REMESA", "MODULO"];
+    columnas = columnas.sort((a, b) => {
+        let ia = principales.indexOf(a) !== -1 ? principales.indexOf(a) : 999;
+        let ib = principales.indexOf(b) !== -1 ? principales.indexOf(b) : 999;
+        return ia - ib;
+    });
+
+    // Crear una casilla por cada columna que exista
+    columnas.forEach(col => {
+        const valorActual = registro[col] !== undefined && registro[col] !== null ? registro[col] : '';
+        const esReadOnly = (col === 'IDMAC') ? 'readonly' : ''; // Bloquear solo IDMAC
+        const claseFondo = (col === 'IDMAC') ? 'bg-light' : '';
+
+        // Crear una celda que ocupa 1/3 del espacio (col-md-4)
+        const divCol = document.createElement('div');
+        divCol.className = 'col-md-4 mb-3';
+        
+        divCol.innerHTML = `
+            <label class="form-label small fw-bold text-muted mb-1">${col}</label>
+            <input type="text" class="form-control form-control-sm ${claseFondo}" data-columna="${col}" value="${valorActual}" ${esReadOnly}>
+        `;
+        contenedor.appendChild(divCol);
+    });
     
     // Abrir el modal
     var myModal = new bootstrap.Modal(document.getElementById('modalEditarTotales'));
@@ -296,27 +333,44 @@ window.abrirModalEdicionTotales = function(idmac) {
 };
 
 window.guardarEdicionTotales = function() {
-    const idmac = document.getElementById('editTotalesIDMAC').value;
-    const nuevaRemesa = document.getElementById('editTotalesRemesa').value;
-    const nuevoModulo = document.getElementById('editTotalesModulo').value;
+    // Buscar el IDMAC desde los campos generados
+    const idmacInput = document.querySelector('#contenedorCamposDinamicos input[data-columna="IDMAC"]');
+    if(!idmacInput) return;
+    const idmac = idmacInput.value;
 
-    // Actualizar el objeto en el arreglo local
     let indice = datosGlobalesTotales.findIndex(item => String(item.IDMAC) === String(idmac));
+    
     if(indice !== -1) {
-        datosGlobalesTotales[indice]['REMESA'] = nuevaRemesa;
-        datosGlobalesTotales[indice]['MODULO'] = nuevoModulo;
+        // Leer TODOS los inputs del modal
+        const inputs = document.querySelectorAll('#contenedorCamposDinamicos input');
+        
+        inputs.forEach(input => {
+            const col = input.getAttribute('data-columna');
+            // Guardamos todo excepto IDMAC (porque es la llave)
+            if(col !== 'IDMAC') {
+                datosGlobalesTotales[indice][col] = input.value;
+            }
+        });
 
-        // Subir los cambios a Firebase
+        // Subir a Firebase
+        const btnGuardar = document.querySelector('#modalEditarTotales .btn-primary');
+        btnGuardar.innerHTML = "Guardando...";
+        btnGuardar.disabled = true;
+
         database.ref('bdtotales').set(datosGlobalesTotales).then(() => {
-            // Cerrar el modal
             var myModalEl = document.getElementById('modalEditarTotales');
             var modal = bootstrap.Modal.getInstance(myModalEl);
             modal.hide();
             
-            alert("Registro de BD Totales actualizado con éxito.");
+            btnGuardar.innerHTML = '<i class="bi bi-save"></i> Guardar Cambios';
+            btnGuardar.disabled = false;
+            
+            alert("¡Todos los datos del registro se actualizaron correctamente!");
         }).catch(error => {
             console.error("Error al actualizar:", error);
-            alert("Hubo un error al actualizar el registro.");
+            btnGuardar.innerHTML = '<i class="bi bi-save"></i> Guardar Cambios';
+            btnGuardar.disabled = false;
+            alert("Hubo un error al guardar.");
         });
     }
 };
