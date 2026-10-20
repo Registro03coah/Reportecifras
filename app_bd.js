@@ -88,7 +88,8 @@ document.getElementById('fileInput').addEventListener('change', function(e) {
                     
                     // Limpiamos el input para permitir subir el mismo archivo otra vez si se requiere
                     document.getElementById('fileInput').value = ''; 
-                    
+                    // AGREGA ESTA LÍNEA PARA QUE LA TABLA SE ACTUALICE:
+                     window.location.reload();
                 }).catch((error) => {
                     console.error("Error al guardar en Firebase: ", error);
                     if (loadingOverlay) loadingOverlay.style.display = 'none';
