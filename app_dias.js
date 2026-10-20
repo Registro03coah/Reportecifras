@@ -16,25 +16,18 @@ if (!firebase.apps.length) {
 const database = firebase.database();
 
 // ==========================================
-// 2. COLUMNAS ESTANDARIZADAS (ORDEN ESPECÍFICO PARA REPORTE DÍAS)
+// 2. COLUMNAS DE MONITOREO (REPORTE DÍAS)
 // ==========================================
-// Observa el inicio: MODULO, REMESA, DIA, FECHA, SEDES...
+// Aquí definimos estrictamente la sección de la base de datos que queremos vigilar
 const COLUMNAS_REPORTE_DIAS = [
-    "MODULO", "REMESA", "DIA", "FECHA", "SEDES", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
-    "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSISION",
-    "CORR__DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES",
-    "CANCELADOS", "TOTAL_DE_ANEXOS_POR_RECHAZO", "CPV_devuelta_entrega", "DISPONIBLES_AL_DIA_ANTERIOR",
-    "RECIBIDAS", "RECIBIDAS_DE_OTROS_TIPOS", "ENTREGADAS", "RECIBO_Y_O_EXTRAVIO", "ANEXAS_A_FUAR",
-    "DATOS_ERRONEOS", "FOTO_MAL_IMPRESA", "LIBRE2", "RETIRADAS_POR_OTRA_CAUSA", "DISPONIBLES",
-    "credenciales_x_canje", "fichas_Entregadas", "fichas_atendidas", "Dias_trabajados",
-    "SOLICITUD_EXPEDICION_O_RECTIFICACION", "SOLICITUD_EXPEDICION_REPATRIADOS", "SOLICITU_DE_REIMPRESION",
-    "DEMANDA_DE_JUICIO", "Total_de_movimientos", "DEVUELTAS_POR_TERCEROS", "34_Imagen_inconsistente",
-    "35_Movimiento_posterior", "CONFIGURACION", "ENT", "DTTO", "RESGUARDO", "SOLICITUD_DE_NUM_DE_EMISION",
-    "LIBRE1", "Sript_ejecutado_VIGENCIA", "FOLIO_NEC_POST", "cartografia_SOLICITUD", "lotes_de_credenciales",
-    "registradas_por_dia", "faltantes", "observaciones", "sin_nombre1", "sin_nombre2", "sin_nombre3",
-    "MAC_QUE_RECIBE", "MAC_QUE_ENTREGA", "IMPORTADAS", "EXPORTADAS", "REPOSISION_+_REIMPRESIONES",
-    "MAL_IMPRESAS", "ERROR_EN_CARTOGRAFIA", "DEFUNCION", "SUSPENSION", "DUPLICADO", "ERROR_EN_NUM_DE_EMISION",
-    "PERDIDA_DE_VIGENCIA", "MOY_POST", "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS"
+    "MODULO", "DIA", "FECHA", "REMESA", "SEDES", 
+    "INICIAL", "FINAL", "TOTAL_DE_FOLIOS", "INSCRIPCIONES", 
+    "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSISION",
+    "CORR__DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", 
+    "TOTAL_DE_TRAMITES", "CANCELADOS", "TOTAL_DE_ANEXOS_POR_RECHAZO", 
+    "CPV_devuelta_entrega", "DISPONIBLES_AL_DIA_ANTERIOR", "RECIBIDAS", 
+    "ENTREGADAS", "RECIBO_Y_O_EXTRAVIO", "ANEXAS_A_FUAR", "DATOS_ERRONEOS", 
+    "FOTO_MAL_IMPRESA", "RETIRADAS_POR_OTRA_CAUSA", "DISPONIBLES"
 ];
 
 let bdMadreGlobal = [];
@@ -71,16 +64,25 @@ function construirHeaderTabla() {
         let thT = document.createElement('th');
         let thN = document.createElement('th');
         
-        let nombreVisual = col.replace('CORR__DE_DATOS_DIRECCION', 'CORR._DE_DATOS_DIRECCION')
-                              .replace('RECIBO_Y_O_EXTRAVIO', 'RECIBO_Y/O_EXTRAVIO');
+        // Ajustamos los nombres visuales para que sean amigables
+        let nombreVisual = col.replace('CORR__DE_DATOS_DIRECCION', 'CORR. DE DATOS DIRECCION')
+                              .replace('RECIBO_Y_O_EXTRAVIO', 'RECIBO Y/O EXTRAVIO')
+                              .replace('TOTAL_DE_ANEXOS_POR_RECHAZO', 'TOTAL DE ANEXO DE RECHAZO')
+                              .replace('RETIRADAS_POR_OTRA_CAUSA', 'RETIRADAS POR CAUSA')
+                              .replace(/_/g, ' '); // Quita los guiones bajos visualmente
         
-        thT.innerText = nombreVisual;
-        thT.style.minWidth = "85px";
-        
-        if(col === "MODULO" || col === "REMESA") thT.style.minWidth = "70px";
-        if(col === "DIA" || col === "FECHA") thT.style.minWidth = "85px";
-        if(col === "TOTAL_DE_FOLIOS" || col === "TOTAL_DE_TRAMITES") thT.style.minWidth = "110px";
+        // Nombres personalizados exactos que pediste
+        if (col === "SEDES") nombreVisual = "SEDE DE OPERACIÓN DE MÓDULO";
 
+        thT.innerText = nombreVisual;
+        thT.style.minWidth = "90px";
+        
+        // Anchuras personalizadas para que se vea bien
+        if(col === "MODULO" || col === "REMESA" || col === "DIA" || col === "FECHA") thT.style.minWidth = "85px";
+        if(col === "TOTAL_DE_FOLIOS" || col === "TOTAL_DE_TRAMITES") thT.style.minWidth = "120px";
+        if(col === "SEDES") thT.style.minWidth = "140px";
+
+        // Colores para identificar bloques rápidos
         if(col === "INICIAL" || col === "FINAL" || col === "TOTAL_DE_FOLIOS") thT.classList.add('bg-folios');
         
         thN.innerText = index + 1; 
@@ -108,7 +110,7 @@ function cargarDatosDias() {
         } else {
             bdMadreGlobal = [];
             const tb = document.getElementById('cuerpoTablaDias');
-            if(tb) tb.innerHTML = '<tr><td colspan="100%" class="text-center py-4 text-muted"><i class="bi bi-info-circle"></i> No hay datos en la BD.</td></tr>';
+            if(tb) tb.innerHTML = '<tr><td colspan="100%" class="text-center py-4 text-muted"><i class="bi bi-info-circle"></i> No hay datos en la BD Madre.</td></tr>';
             const tbRem = document.getElementById('cuerpoListaRemesas');
             if(tbRem) tbRem.innerHTML = '<tr><td colspan="2">No hay remesas guardadas</td></tr>';
         }
@@ -138,6 +140,7 @@ function procesarYMostrarDatos() {
         
         COLUMNAS_REPORTE_DIAS.forEach(col => {
             let td = document.createElement('td');
+            // Busca el valor en la BD, si no existe o es nulo, lo deja en blanco
             let val = fila[col] !== undefined && fila[col] !== null ? fila[col] : '';
             td.innerText = val;
             tr.appendChild(td);
@@ -172,7 +175,7 @@ function renderListaRemesas() {
 }
 
 window.borrarRemesaCompleta = function(remesaId) {
-    if(confirm(`🚨 ¿Estás seguro de borrar TODO lo relacionado a la Remesa ${remesaId}?`)) {
+    if(confirm(`🚨 ¿Estás seguro de borrar TODO lo relacionado a la Remesa ${remesaId} de BD Madre?`)) {
         let nuevoBd = bdMadreGlobal.filter(f => String(f.REMESA || 'S/N') !== String(remesaId));
         database.ref('bd_madre').set(nuevoBd).then(() => {
             alert(`La Remesa ${remesaId} ha sido eliminada exitosamente.`);
@@ -188,12 +191,8 @@ window.borrarRemesaCompleta = function(remesaId) {
 // ==========================================
 window.copiarTablaExcel = function(tablaId) {
     const tabla = document.getElementById(tablaId);
-    if (!tabla) {
-        alert("No se encontró la tabla.");
-        return;
-    }
+    if (!tabla) return;
 
-    // Crea un rango y selecciona la tabla
     const range = document.createRange();
     range.selectNode(tabla);
     const selection = window.getSelection();
@@ -201,19 +200,15 @@ window.copiarTablaExcel = function(tablaId) {
     selection.addRange(range);
 
     try {
-        // Ejecuta el comando de copiado
         const exitoso = document.execCommand('copy');
         if (exitoso) {
-            alert("¡Tabla copiada! Ve a Excel y presiona Ctrl + V (o clic derecho > Pegar) para pegarla.");
+            alert("¡Tabla copiada! Ve a Excel y presiona Ctrl + V para pegarla.");
         } else {
-            alert("No se pudo copiar la tabla. Tu navegador podría no soportar esta función.");
+            alert("Tu navegador bloqueó la copia al portapapeles.");
         }
     } catch (err) {
-        console.error('Error al intentar copiar:', err);
         alert("Error al intentar copiar.");
     }
-
-    // Limpia la selección para que no se quede todo sombreado en azul
     selection.removeAllRanges();
 };
 
