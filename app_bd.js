@@ -1,7 +1,7 @@
 // =========================================================
 // 1. CONFIGURACIÓN E INICIALIZACIÓN DE FIREBASE (cifrasmac)
 // =========================================================
-  const firebaseConfig = {
+const firebaseConfig = {
     apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo",
     authDomain: "cifrasmac.firebaseapp.com",
     databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com",
@@ -9,13 +9,11 @@
     storageBucket: "cifrasmac.firebasestorage.app",
     messagingSenderId: "916644687837",
     appId: "1:916644687837:web:03d346cc48a071af1ed034"
-  };
+};
 
-// Imprimir la configuración para asegurar que no hay valores 'undefined'
 console.log("1. Parámetros de Firebase Config:", firebaseConfig);
 
-firebase.initializeApp(firebaseConfig);
-// Inicializamos Firebase
+// ERROR CORREGIDO: Inicializamos Firebase SOLO UNA VEZ
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database(); 
 
@@ -27,6 +25,10 @@ let datosGlobalesBd = [];
 // =========================================================
 database.ref('bd_madre').on('value', (snapshot) => {
     let datos = snapshot.val();
+    
+    // ESTO TE DIRÁ QUÉ ESTÁ LLEGANDO REALMENTE (Revisa F12)
+    console.log("Datos recibidos de bd_madre:", datos); 
+    
     datosGlobalesBd = datos ? (Array.isArray(datos) ? datos : Object.values(datos)) : [];
     dibujarTablaBd(datosGlobalesBd);
 });
