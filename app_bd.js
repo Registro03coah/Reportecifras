@@ -11,9 +11,6 @@
     appId: "1:916644687837:web:03d346cc48a071af1ed034"
   };
 
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-</script>
 // Imprimir la configuración para asegurar que no hay valores 'undefined'
 console.log("1. Parámetros de Firebase Config:", firebaseConfig);
 
