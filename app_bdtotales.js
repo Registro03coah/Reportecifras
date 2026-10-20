@@ -33,6 +33,7 @@ database.ref('bdtotales').on('value', (snapshot) => {
     ejecutarOrdenamientoTotales(datosGlobalesTotales);
 });
 
+// ORDENAMIENTO MULTI-CRITERIO: REMESA -> MÓDULO
 function ejecutarOrdenamientoTotales(arreglo) {
     if(!arreglo || arreglo.length === 0) {
         dibujarTablaTotales([]);
@@ -40,6 +41,21 @@ function ejecutarOrdenamientoTotales(arreglo) {
     }
 
     arreglo.sort((a, b) => {
+        // 1. Nivel: Remesa
+        let remesaA = String(a['REMESA'] || '').trim();
+        let remesaB = String(b['REMESA'] || '').trim();
+        if (remesaA !== remesaB) {
+            return remesaB.localeCompare(remesaA, undefined, { numeric: true });
+        }
+
+        // 2. Nivel: Módulo (050351 -> 050353 -> 050354)
+        let moduloA = String(a['MODULO'] || '').trim();
+        let moduloB = String(b['MODULO'] || '').trim();
+        if (moduloA !== moduloB) {
+            return moduloA.localeCompare(moduloB, undefined, { numeric: true });
+        }
+
+        // 3. Nivel: Columna seleccionada
         let valA = a[columnaOrdenActual] !== undefined && a[columnaOrdenActual] !== null ? String(a[columnaOrdenActual]).toUpperCase() : '';
         let valB = b[columnaOrdenActual] !== undefined && b[columnaOrdenActual] !== null ? String(b[columnaOrdenActual]).toUpperCase() : '';
 
@@ -75,7 +91,7 @@ function dibujarTablaTotales(datosArreglo) {
     tbody.innerHTML = '';
 
     if (!datosArreglo || datosArreglo.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="100%" class="text-center py-4 text-muted"><i class="bi bi-info-circle"></i> No hay datos en BD Totales.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="100%" class="text-center py-4 text-muted"><i class="bi bi-info-circle"></i> No hay datos en BD Totales. Sube un archivo JSON.</td></tr>';
         return;
     }
 
@@ -164,7 +180,80 @@ if (buscadorTotales) {
     });
 }
 
-// ACCIONES
+// =========================================================
+// SUBIR Y FUSIONAR ARCHIVO JSON EN BDTOTALES
+// =========================================================
+const btnSubirTotales = document.getElementById('btnSubirTotales');
+const fileInputTotales = document.getElementById('fileInputTotales');
+
+if (btnSubirTotales && fileInputTotales) {
+    btnSubirTotales.addEventListener('click', () => {
+        fileInputTotales.click();
+    });
+
+    fileInputTotales.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        if (loadingOverlay) loadingOverlay.style.display = 'flex';
+
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            try {
+                let nuevosDatos = JSON.parse(event.target.result);
+                if (!Array.isArray(nuevosDatos)) nuevosDatos = [nuevosDatos];
+
+                database.ref('bdtotales').once('value').then((snapshot) => {
+                    let datosActuales = snapshot.val();
+                    datosActuales = datosActuales ? (Array.isArray(datosActuales) ? datosActuales : Object.values(datosActuales)) : [];
+
+                    let mapaTotales = new Map();
+
+                    // Cargar existentes con clave única IDMAC
+                    datosActuales.forEach(item => {
+                        const idmac = String(item.IDMAC || '');
+                        if (idmac) mapaTotales.set(idmac, item);
+                    });
+
+                    // Fusionar / Agregar los nuevos
+                    nuevosDatos.forEach(itemNuevo => {
+                        // Asegurar IDMAC si no lo trae
+                        if (!itemNuevo.IDMAC && itemNuevo.MODULO && itemNuevo.REMESA) {
+                            const m = String(itemNuevo.MODULO).trim().slice(-3);
+                            const r = String(itemNuevo.REMESA).trim().slice(-2);
+                            itemNuevo.IDMAC = `${m}${r}`;
+                        }
+                        const idmacNuevo = String(itemNuevo.IDMAC || '');
+                        if (idmacNuevo) mapaTotales.set(idmacNuevo, itemNuevo);
+                    });
+
+                    const datosFusionados = Array.from(mapaTotales.values());
+
+                    database.ref('bdtotales').set(datosFusionados).then(() => {
+                        if (loadingOverlay) loadingOverlay.style.display = 'none';
+                        alert("¡BD Totales actualizada e integrada con éxito desde el JSON!");
+                        fileInputTotales.value = '';
+                    }).catch(() => {
+                        if (loadingOverlay) loadingOverlay.style.display = 'none';
+                        alert("Error al guardar los datos en Firebase.");
+                    });
+
+                }).catch(() => {
+                    if (loadingOverlay) loadingOverlay.style.display = 'none';
+                    alert("Error al conectar con la base de datos.");
+                });
+
+            } catch (error) {
+                if (loadingOverlay) loadingOverlay.style.display = 'none';
+                alert("Error al leer y parsear el archivo JSON.");
+            }
+        };
+        reader.readAsText(file);
+    });
+}
+
+// ACCIONES DE GESTIÓN
 window.vaciarBaseTotales = function() {
     if(confirm("🚨 ¿Seguro que deseas vaciar toda la BD Totales?")) {
         database.ref('bdtotales').remove().then(() => alert("BD Totales vaciada."));
