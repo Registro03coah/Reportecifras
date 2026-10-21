@@ -47,15 +47,15 @@ function ejecutarOrdenamiento(arregloA_Ordenar) {
 
     // Mapeo cronológico de los días de la semana
     const ordenDias = {
-        "Lunes": 1,
-        "Martes": 2,
-        "Miércoles": 3,
-        "Miercoles": 3, 
-        "Jueves": 4,
-        "Viernes": 5,
-        "Sábado": 6,
-        "Sabado": 6,    
-        "Domingo": 7,
+        "lunes": 1,
+        "martes": 2,
+        "miércoles": 3,
+        "miercoles": 3, 
+        "jueves": 4,
+        "viernes": 5,
+        "sábado": 6,
+        "sabado": 6,    
+        "domingo": 7,
         "linea totales": 8 
     };
 
