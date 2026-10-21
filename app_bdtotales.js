@@ -95,27 +95,27 @@ function dibujarTablaTotales(datosArreglo) {
     let columnas = Object.keys(datosArreglo[0]);
 
     const ordenDeseado = [
-       "IDMAC", "MODULO", "REMESA", "SEDES", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
-    "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSISION",
-    "CORR__DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES",
-    "CANCELADOS", "TOTAL_DE_ANEXOS_POR_RECHAZO", "CPV_devuelta_entrega", "DISPONIBLES_AL_DIA_ANTERIOR",
-    "RECIBIDAS", "RECIBIDAS_DE_OTROS_TIPOS", "ENTREGADAS", "RECIBO_Y_O_EXTRAVIO", "ANEXAS_A_FUAR",
-    "DATOS_ERRONEOS", "FOTO_MAL_IMPRESA", "LIBRE2", "RETIRADAS_POR_OTRA_CAUSA", "DISPONIBLES",
-    "credenciales_x_canje", "fichas_Entregadas", "fichas_atendidas", "Dias_trabajados",
-    "SOLICITUD_EXPEDICION_O_RECTIFICACION", "SOLICITUD_EXPEDICION_REPATRIADOS", "SOLICITU_DE_REIMPRESION",
-    "DEMANDA_DE_JUICIO", "Total_de_movimientos", "DEVUELTAS_POR_TERCEROS", "34_Imagen_inconsistente",
-    "35_Movimiento_posterior", "CONFIGURACION", "ENT", "DTTO", "RESGUARDO", "SOLICITUD_DE_NUM_DE_EMISION",
-    "LIBRE1", "Sript_ejecutado_VIGENCIA", "FOLIO_NEC_POST", "cartografia_SOLICITUD", "lotes_de_credenciales",
-    "registradas_por_dia", "faltantes", "observaciones", "no_utilizados",
-    "MAC_QUE_RECIBE", "MAC_QUE_ENTREGA", "IMPORTADAS", "EXPORTADAS", "REPOSISION_REIMPRESIONES",
-    "MAL_IMPRESAS", "ERROR_EN_CARTOGRAFIA", "DEFUNCION", "SUSPENSION", "DUPLICADO", "ERROR_EN_NUM_DE_EMISION",
-    "PERDIDA_DE_VIGENCIA", "MOY_POST", "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS",
-    // Campos restantes (con iniciales A, S, C juntas al inicio de estos rezagados)
-    "INICIALES_A", "INICIALES_S", "INICIALES_C",
-    "RECHAZOS_DE_MAC_34", "RECHAZOS_DE_MAC_35", "CRED_PROD_CANJE_POR_NUEVA", "ACTUALIZACIÓN",
-    "SOLICITUD_EXPEDICION", "SOLICITUD_RECTIFICACION", "SIN_NOMBRE3", "SOBRANTES", "DUPLICADOS",
-    "DISPONIBLES_DE_SOL_DE_EXP", "REIMPRE_FUERA_DEL_SISTEMA", "CREDEN_DEVUELTAS_POR_TERCEROS",
-    "CRED_PRODUCTO_DE_REGISTRO_DUPLICADO", "CIF-05", "SOLICITUDE_RECTIFICACIÒN"        "PERDIDA_DE_VIGENCIA", "MOY_POST", "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS"
+        "IDMAC", "MODULO", "REMESA", "SEDES", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
+        "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSISION",
+        "CORR__DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES",
+        "CANCELADOS", "TOTAL_DE_ANEXOS_POR_RECHAZO", "CPV_devuelta_entrega", "DISPONIBLES_AL_DIA_ANTERIOR",
+        "RECIBIDAS", "RECIBIDAS_DE_OTROS_TIPOS", "ENTREGADAS", "RECIBO_Y_O_EXTRAVIO", "ANEXAS_A_FUAR",
+        "DATOS_ERRONEOS", "FOTO_MAL_IMPRESA", "LIBRE2", "RETIRADAS_POR_OTRA_CAUSA", "DISPONIBLES",
+        "credenciales_x_canje", "fichas_Entregadas", "fichas_atendidas", "Dias_trabajados",
+        "SOLICITUD_EXPEDICION_O_RECTIFICACION", "SOLICITUD_EXPEDICION_REPATRIADOS", "SOLICITU_DE_REIMPRESION",
+        "DEMANDA_DE_JUICIO", "Total_de_movimientos", "DEVUELTAS_POR_TERCEROS", "34_Imagen_inconsistente",
+        "35_Movimiento_posterior", "CONFIGURACION", "ENT", "DTTO", "RESGUARDO", "SOLICITUD_DE_NUM_DE_EMISION",
+        "LIBRE1", "Sript_ejecutado_VIGENCIA", "FOLIO_NEC_POST", "cartografia_SOLICITUD", "lotes_de_credenciales",
+        "registradas_por_dia", "faltantes", "observaciones", "no_utilizados",
+        "MAC_QUE_RECIBE", "MAC_QUE_ENTREGA", "IMPORTADAS", "EXPORTADAS", "REPOSISION_REIMPRESIONES",
+        "MAL_IMPRESAS", "ERROR_EN_CARTOGRAFIA", "DEFUNCION", "SUSPENSION", "DUPLICADO", "ERROR_EN_NUM_DE_EMISION",
+        "PERDIDA_DE_VIGENCIA", "MOY_POST", "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS",
+        // Campos restantes (con iniciales A, S, C juntas al inicio de estos rezagados)
+        "INICIALES_A", "INICIALES_S", "INICIALES_C",
+        "RECHAZOS_DE_MAC_34", "RECHAZOS_DE_MAC_35", "CRED_PROD_CANJE_POR_NUEVA", "ACTUALIZACIÓN",
+        "SOLICITUD_EXPEDICION", "SOLICITUD_RECTIFICACION", "SIN_NOMBRE3", "SOBRANTES", "DUPLICADOS",
+        "DISPONIBLES_DE_SOL_DE_EXP", "REIMPRE_FUERA_DEL_SISTEMA", "CREDEN_DEVUELTAS_POR_TERCEROS",
+        "CRED_PRODUCTO_DE_REGISTRO_DUPLICADO", "CIF-05", "SOLICITUDE_RECTIFICACIÒN"
     ];
 
     columnas.sort((a, b) => {
@@ -240,7 +240,6 @@ if (btnSubirTotales && fileInputTotales) {
                         
                         const idmacNuevo = String(itemNuevo.IDMAC || '');
                         if (idmacNuevo) {
-                            // Al ponerlo en el mapa, si ya existía uno malo, aquí lo actualiza en su llave correcta
                             mapaTotales.set(idmacNuevo, itemNuevo);
                         }
                     });
@@ -304,14 +303,11 @@ window.abrirModalEdicionTotales = function(idmac) {
     const registro = datosGlobalesTotales.find(item => String(item.IDMAC) === String(idmac));
     if (!registro) return;
 
-    // Obtener el contenedor HTML y limpiarlo
     const contenedor = document.getElementById('contenedorCamposDinamicos');
     contenedor.innerHTML = ''; 
 
-    // Obtener todas las columnas (nombres) del registro
     let columnas = Object.keys(registro);
     
-    // Asegurarnos de que IDMAC, REMESA y MODULO salgan hasta arriba siempre
     const principales = ["IDMAC", "REMESA", "MODULO"];
     columnas = columnas.sort((a, b) => {
         let ia = principales.indexOf(a) !== -1 ? principales.indexOf(a) : 999;
@@ -319,13 +315,11 @@ window.abrirModalEdicionTotales = function(idmac) {
         return ia - ib;
     });
 
-    // Crear una casilla por cada columna que exista
     columnas.forEach(col => {
         const valorActual = registro[col] !== undefined && registro[col] !== null ? registro[col] : '';
-        const esReadOnly = (col === 'IDMAC') ? 'readonly' : ''; // Bloquear solo IDMAC
+        const esReadOnly = (col === 'IDMAC') ? 'readonly' : '';
         const claseFondo = (col === 'IDMAC') ? 'bg-light' : '';
 
-        // Crear una celda que ocupa 1/3 del espacio (col-md-4)
         const divCol = document.createElement('div');
         divCol.className = 'col-md-4 mb-3';
         
@@ -336,13 +330,11 @@ window.abrirModalEdicionTotales = function(idmac) {
         contenedor.appendChild(divCol);
     });
     
-    // Abrir el modal
     var myModal = new bootstrap.Modal(document.getElementById('modalEditarTotales'));
     myModal.show();
 };
 
 window.guardarEdicionTotales = function() {
-    // Buscar el IDMAC desde los campos generados
     const idmacInput = document.querySelector('#contenedorCamposDinamicos input[data-columna="IDMAC"]');
     if(!idmacInput) return;
     const idmac = idmacInput.value;
@@ -350,18 +342,15 @@ window.guardarEdicionTotales = function() {
     let indice = datosGlobalesTotales.findIndex(item => String(item.IDMAC) === String(idmac));
     
     if(indice !== -1) {
-        // Leer TODOS los inputs del modal
         const inputs = document.querySelectorAll('#contenedorCamposDinamicos input');
         
         inputs.forEach(input => {
             const col = input.getAttribute('data-columna');
-            // Guardamos todo excepto IDMAC (porque es la llave)
             if(col !== 'IDMAC') {
                 datosGlobalesTotales[indice][col] = input.value;
             }
         });
 
-        // Subir a Firebase
         const btnGuardar = document.querySelector('#modalEditarTotales .btn-primary');
         btnGuardar.innerHTML = "Guardando...";
         btnGuardar.disabled = true;
