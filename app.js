@@ -162,64 +162,13 @@ function detectarRemesa() {
     if(inputRemesa) inputRemesa.value = remesaDetectada;
 }
 
-// NUEVA FUNCIÓN: Calcula la línea de totales por cada módulo 
-function calcularTotalesDiarios(mod) {
-    const tbody = document.querySelector(`#tablaCaptura_${mod} tbody`);
-    const filas = tbody.querySelectorAll('tr');
-    const filaTotales = filas[7]; 
-
-    for (let c = 1; c <= TOTAL_COLUMNAS; c++) {
-        if (c === 1 || c === 2 || c === 4) continue;
-
-        if (c === 5) {
-            let primerInicial = "";
-            for (let d = 0; d < 7; d++) {
-                let val = filas[d].querySelectorAll('td')[c-1].querySelector('input').value;
-                if (val.trim() !== "" && val.trim() !== "0") {
-                    primerInicial = val;
-                    break;
-                }
-            }
-            filaTotales.querySelectorAll('td')[c-1].querySelector('input').value = primerInicial;
-            continue;
-        }
-
-        if (c === 6) {
-            let ultimoFinal = "";
-            for (let d = 6; d >= 0; d--) {
-                let val = filas[d].querySelectorAll('td')[c-1].querySelector('input').value;
-                if (val.trim() !== "" && val.trim() !== "0") {
-                    ultimoFinal = val;
-                    break;
-                }
-            }
-            filaTotales.querySelectorAll('td')[c-1].querySelector('input').value = ultimoFinal;
-            continue;
-        }
-
-        let sumaColumna = 0;
-        let tieneDatos = false;
-        
-        for (let d = 0; d < 7; d++) { 
-            let inputCelda = filas[d].querySelectorAll('td')[c-1].querySelector('input');
-            let valStr = inputCelda.value.replace(/,/g, '');
-            if (valStr.trim() !== "") {
-                let valor = parseFloat(valStr) || 0;
-                sumaColumna += valor;
-                tieneDatos = true;
-            }
-        }
-        
-        filaTotales.querySelectorAll('td')[c-1].querySelector('input').value = tieneDatos ? sumaColumna : "";
-    }
-}
-
 function sincronizarTotales() {
     for(let c = 3; c <= TOTAL_COLUMNAS; c++) {
         if(c === 4) continue; 
         let granTotalColumna = 0;
         
         MODULOS.forEach(mod => {
+            // Toma la fila 8 (índice 7) que es la que acabas de pegar desde Excel con los totales correctos
             const filaTotalMod = document.querySelector(`#tablaCaptura_${mod} tbody`).querySelectorAll('tr')[7]; 
             const inputMod = filaTotalMod.querySelectorAll('td')[c-1].querySelector('input');
             let valorStr = inputMod.value.trim().replace(/,/g, '');
@@ -243,7 +192,6 @@ MODULOS.forEach(mod => {
     const tbodyMod = document.querySelector(`#tablaCaptura_${mod} tbody`);
     
     tbodyMod.addEventListener('input', () => {
-        calcularTotalesDiarios(mod);
         sincronizarTotales();
     });
     
@@ -260,6 +208,7 @@ MODULOS.forEach(mod => {
             const targetRow = tableRows[rowIndex - rowOffset];
             if (targetRow) {
                 targetRow.querySelectorAll('input').forEach((input, colIndex) => {
+                    // Ahora permite que la columna pegue su valor incluso en la línea de totales
                     if (columns[colIndex] !== undefined && !input.hasAttribute('readonly')) {
                         input.value = columns[colIndex].trim();
                     }
@@ -267,7 +216,6 @@ MODULOS.forEach(mod => {
             }
         });
         alert(`Datos pegados con éxito en la tabla del Módulo ${mod}.`);
-        calcularTotalesDiarios(mod);
         sincronizarTotales(); 
     });
 });
