@@ -1,15 +1,19 @@
 // ==========================================
-// 1. IMPORTACIONES Y CONFIGURACIÓN FIREBASE (BD MADRE)
+// 1. IMPORTACIONES Y CONFIGURACIÓN FIREBASE (BD MADRE Y BD TOTALES)
 // ==========================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, get, set, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getDatabase, ref, get, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo",
     authDomain: "cifrasmac.firebaseapp.com",
     databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com",
-    projectId: "cifrasmac"
+    projectId: "cifrasmac",
+    storageBucket: "cifrasmac.firebasestorage.app",
+    messagingSenderId: "916644687837",
+    appId: "1:916644687837:web:03d346cc48a071af1ed034"
 };
+
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
@@ -35,6 +39,23 @@ const ENCABEZADOS = [
 ];
 
 let bdMadreGlobal = [];
+let bdtotalesGlobal = [];
+
+// ==========================================
+// 2. SEMÁFORO DE CONEXIÓN FIREBASE
+// ==========================================
+const connectedRef = ref(db, ".info/connected");
+onValue(connectedRef, (snap) => {
+    const semaforo = document.getElementById("semaforoConexion");
+    if(!semaforo) return;
+    if (snap.val() === true) {
+        semaforo.className = "badge bg-success text-white fs-6 px-3 py-2 rounded-pill online-glow";
+        semaforo.innerHTML = '<i class="bi bi-wifi"></i> ONLINE';
+    } else {
+        semaforo.className = "badge bg-danger text-white fs-6 px-3 py-2 rounded-pill offline-glow";
+        semaforo.innerHTML = '<i class="bi bi-wifi-off"></i> OFFLINE';
+    }
+});
 
 function construirHeaderTabla(selectorTabla) {
     const thead = document.querySelector(`${selectorTabla} thead`);
@@ -47,6 +68,8 @@ function construirHeaderTabla(selectorTabla) {
         let thT = document.createElement('th');
         let thN = document.createElement('th');
         thT.innerText = ENCABEZADOS[colOriginal - 1] || `Col ${colOriginal}`;
+        thT.style.height = "50px";
+        thT.style.verticalAlignment = "middle";
         
         let anchoCelda = "50px"; 
         if(colOriginal >= 45 && colOriginal <= 47) anchoCelda = "60px"; 
@@ -60,7 +83,7 @@ function construirHeaderTabla(selectorTabla) {
         if(colOriginal === 17) thT.style.backgroundColor = "red"; 
         if(colOriginal === 18) thT.style.backgroundColor = "yellow"; 
         
-        thN.innerText = colOriginal; thN.className = "table-light";
+        thN.innerText = colOriginal; thN.className = "table-light text-center";
         trTitulos.appendChild(thT); trNumeros.appendChild(thN);
     });
     thead.appendChild(trTitulos); thead.appendChild(trNumeros);
@@ -68,22 +91,66 @@ function construirHeaderTabla(selectorTabla) {
 
 construirHeaderTabla('#tablaSemanal');
 
+// ==========================================
+// 3. CARGA DE DATOS Y GESTIÓN DE REMESA
+// ==========================================
 function cargarDatosSemanal() {
-    // CONSULTA DIRECTA A LA BD MADRE
-    get(ref(db, 'bd_madre')).then((snapshot) => {
-        if (snapshot.exists()) {
-            const dataRaw = snapshot.val();
+    Promise.all([
+        get(ref(db, 'bd_madre')),
+        get(ref(db, 'bdtotales'))
+    ]).then(([snapMadre, snapTotales]) => {
+        if (snapMadre.exists()) {
+            const dataRaw = snapMadre.val();
             bdMadreGlobal = Array.isArray(dataRaw) ? dataRaw : Object.values(dataRaw);
-            renderTablaSemanal();
-            renderListaRemesas();
         } else {
             bdMadreGlobal = [];
-            const tb = document.querySelector('#tablaSemanal tbody');
-            if(tb) tb.innerHTML = '<tr><td colspan="29" class="text-center py-3 text-muted">No hay registros en la Base de Datos Principal.</td></tr>';
-            const tbList = document.querySelector('#tablaListaRemesas tbody');
-            if(tbList) tbList.innerHTML = '<tr><td colspan="2">No hay remesas disponibles</td></tr>';
         }
-    }).catch(err => console.error("Error al leer la BD Madre:", err));
+
+        if (snapTotales.exists()) {
+            const dataTotalesRaw = snapTotales.val();
+            bdtotalesGlobal = Array.isArray(dataTotalesRaw) ? dataTotalesRaw : Object.values(dataTotalesRaw);
+        } else {
+            bdtotalesGlobal = [];
+        }
+
+        inicializarFiltroRemesa();
+        renderTablaSemanal();
+    }).catch(err => console.error("Error al leer la base de datos:", err));
+}
+
+function inicializarFiltroRemesa() {
+    const inputRemesa = document.getElementById('inputRemesaFiltro');
+    if (inputRemesa) {
+        inputRemesa.removeEventListener('input', renderTablaSemanal);
+        inputRemesa.addEventListener('input', renderTablaSemanal);
+    }
+}
+
+function obtenerRemesaSeleccionada() {
+    const inputRemesa = document.getElementById('inputRemesaFiltro');
+    let remesaEscrita = inputRemesa ? inputRemesa.value.trim() : "";
+
+    if (remesaEscrita !== "") {
+        return remesaEscrita;
+    }
+
+    // Si no escribe nada, obtenemos la remesa más alta / última registrada
+    let remesasDisponibles = new Set();
+    bdMadreGlobal.forEach(f => {
+        let r = String(f['REMESA'] || f['Remesa'] || f['remesa'] || '').trim();
+        if(r) remesasDisponibles.add(r);
+    });
+    bdtotalesGlobal.forEach(f => {
+        let r = String(f['REMESA'] || f['Remesa'] || f['remesa'] || '').trim();
+        if(r) remesasDisponibles.add(r);
+    });
+
+    if (remesasDisponibles.size > 0) {
+        let listaRemesas = Array.from(remesasDisponibles).sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
+        return listaRemesas[0]; // La última remesa registrada
+    }
+
+    return "";
 }
 
 function renderTablaSemanal() {
@@ -91,33 +158,26 @@ function renderTablaSemanal() {
     if(!tbody) return;
     tbody.innerHTML = "";
 
-    if (bdMadreGlobal.length === 0) return;
+    let remesaActiva = obtenerRemesaSeleccionada();
+    const lblRemesaActual = document.getElementById('lblRemesaActiva');
+    if(lblRemesaActual) {
+        lblRemesaActual.innerText = remesaActiva ? `Remesa en vista: ${remesaActiva}` : "Sin remesa detectada";
+    }
 
-    // Agrupar los datos por Remesa
-    let remesasMap = {};
-    bdMadreGlobal.forEach(fila => {
-        let rem = fila['Remesa'] || fila['remesa'] || 'S/N';
-        if (!remesasMap[rem]) remesasMap[rem] = [];
-        remesasMap[rem].push(fila);
-    });
+    if (!remesaActiva) {
+        tbody.innerHTML = '<tr><td colspan="29" class="text-center py-4 text-muted">No se encontró ninguna remesa registrada o escrita.</td></tr>';
+        return;
+    }
 
-    const remesasKeys = Object.keys(remesasMap).sort();
+    // Intentamos cargar primero desde bdtotales si existe para esa remesa exacta
+    let registrosTotalesRemesa = bdtotalesGlobal.filter(item => String(item.REMESA || item.Remesa || '').trim() === String(remesaActiva));
 
-    remesasKeys.forEach(remesaId => {
-        let filasRemesa = remesasMap[remesaId];
-        
-        // Agrupar por Módulo dentro de la remesa
-        let modulosMap = {};
-        filasRemesa.forEach(f => {
-            let mod = f['Módulo'] || f['Modulo'] || 'General';
-            if (!modulosMap[mod]) modulosMap[mod] = [];
-            modulosMap[mod].push(f);
-        });
-
-        // Para cada módulo, sumamos los valores numéricos de la semana
-        Object.keys(modulosMap).forEach(modNombre => {
+    if (registrosTotalesRemesa.length > 0) {
+        // Renderizamos directo desde la BD Totales por cada módulo
+        registrosTotalesRemesa.forEach(reg => {
             let tr = document.createElement('tr');
-            let registrosMod = modulosMap[modNombre];
+            let modNum = String(reg['MODULO'] || reg['Módulo'] || reg['Modulo'] || '').replace(/[^0-9]/g, '');
+            let modUltimos3 = modNum.slice(-3);
 
             COLUMNAS_SEMANAL.forEach(colOriginal => {
                 let td = document.createElement('td');
@@ -128,12 +188,53 @@ function renderTablaSemanal() {
                 } else if(colOriginal === 46) {
                     td.innerText = "03";
                 } else if(colOriginal === 47) {
-                    td.innerText = modNombre.replace("Módulo ", "").trim();
+                    td.innerText = modUltimos3 || modNum;
                 } else {
-                    // Sumar los valores de los días de ese módulo en la remesa
+                    td.innerText = reg[nombreColKey] || reg[`Columna ${colOriginal}`] || "0";
+                }
+                tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+        });
+
+        // Fila de Gran Total sumando los módulos de bdtotales
+        renderGranTotalDesdeRegistros(tbody, registrosTotalesRemesa, remesaActiva);
+
+    } else {
+        // Si no está en bdtotales, agrupamos y sumamos desde la BD Madre
+        let filasRemesa = bdMadreGlobal.filter(item => String(item.REMESA || item.Remesa || '').trim() === String(remesaActiva));
+
+        if (filasRemesa.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="29" class="text-center py-4 text-muted">No hay registros para la remesa: ${remesaActiva}</td></tr>`;
+            return;
+        }
+
+        let modulosMap = {};
+        filasRemesa.forEach(f => {
+            let mod = String(f['MÓDULO'] || f['Módulo'] || f['Modulo'] || f['MODULO'] || 'General').trim();
+            if (!modulosMap[mod]) modulosMap[mod] = [];
+            modulosMap[mod].push(f);
+        });
+
+        Object.keys(modulosMap).sort().forEach(modNombre => {
+            let tr = document.createElement('tr');
+            let registrosMod = modulosMap[modNombre];
+            let modLim = modNombre.replace(/[^0-9]/g, '');
+            let mod3 = modLim.slice(-3);
+
+            COLUMNAS_SEMANAL.forEach(colOriginal => {
+                let td = document.createElement('td');
+                let nombreColKey = ENCABEZADOS[colOriginal - 1];
+
+                if(colOriginal === 45) {
+                    td.innerText = "05";
+                } else if(colOriginal === 46) {
+                    td.innerText = "03";
+                } else if(colOriginal === 47) {
+                    td.innerText = mod3 || modNombre;
+                } else {
                     let sumaCol = 0;
                     registrosMod.forEach(reg => {
-                        // Buscar la columna por su nombre exacto o índice
                         let val = parseFloat(reg[nombreColKey] || reg[`Columna ${colOriginal}`] || 0);
                         if (!isNaN(val)) sumaCol += val;
                     });
@@ -144,48 +245,51 @@ function renderTablaSemanal() {
             tbody.appendChild(tr);
         });
 
-        // Fila de Gran Total por Remesa
-        let trGranTotal = document.createElement('tr');
-        trGranTotal.classList.add('fila-totales');
-        COLUMNAS_SEMANAL.forEach(colOriginal => {
-            let td = document.createElement('td');
-            let nombreColKey = ENCABEZADOS[colOriginal - 1];
-
-            if(colOriginal === 45) td.innerText = "-";
-            else if(colOriginal === 46) td.innerText = "-";
-            else if(colOriginal === 47) td.innerText = `REMESA ${remesaId}`;
-            else {
-                let sumaTotalRemesa = 0;
-                filasRemesa.forEach(reg => {
-                    let val = parseFloat(reg[nombreColKey] || reg[`Columna ${colOriginal}`] || 0);
-                    if (!isNaN(val)) sumaTotalRemesa += val;
-                });
-                td.innerText = sumaTotalRemesa;
-            }
-            trGranTotal.appendChild(td);
-        });
-        tbody.appendChild(trGranTotal);
-    });
+        renderGranTotalDesdeRegistros(tbody, filasRemesa, remesaActiva);
+    }
 }
 
-function renderListaRemesas() {
-    const tbody = document.querySelector('#tablaListaRemesas tbody');
-    if(!tbody) return;
-    tbody.innerHTML = "";
+function renderGranTotalDesdeRegistros(tbody, listaRegistros, remesaId) {
+    let trGranTotal = document.createElement('tr');
+    trGranTotal.classList.add('fila-totales');
     
-    // Extraer remesas únicas
-    let remesasUnicas = [...new Set(bdMadreGlobal.map(f => f['Remesa'] || f['remesa'] || 'S/N'))].sort();
+    COLUMNAS_SEMANAL.forEach(colOriginal => {
+        let td = document.createElement('td');
+        let nombreColKey = ENCABEZADOS[colOriginal - 1];
 
-    remesasUnicas.forEach(remesaId => {
-        let tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td class="fw-bold fs-5 text-dark">Remesa ${remesaId}</td>
-            <td>
-                <span class="text-muted small">Administrada desde la Base de Datos Principal</span>
-            </td>
-        `;
-        tbody.appendChild(tr);
+        if(colOriginal === 45) td.innerText = "-";
+        else if(colOriginal === 46) td.innerText = "-";
+        else if(colOriginal === 47) td.innerText = `REMESA ${remesaId}`;
+        else {
+            let sumaTotalRemesa = 0;
+            listaRegistros.forEach(reg => {
+                let val = parseFloat(reg[nombreColKey] || reg[`Columna ${colOriginal}`] || 0);
+                if (!isNaN(val)) sumaTotalRemesa += val;
+            });
+            td.innerText = sumaTotalRemesa;
+        }
+        trGranTotal.appendChild(td);
     });
+    tbody.appendChild(trGranTotal);
 }
 
+// Iniciar carga de datos
 cargarDatosSemanal();
+```
+
+### Paso para tu archivo HTML (`reporte_semanal.html` o similar):
+Asegúrate de agregar un campo de texto (input) con el identificador `inputRemesaFiltro` y un espacio para el semáforo de conexión arriba de tu tabla:
+
+```html
+<div class="row align-items-center mb-3">
+    <div class="col-md-4">
+        <label for="inputRemesaFiltro" class="form-label fw-bold">Escribe o filtra por Remesa:</label>
+        <input type="text" id="inputRemesaFiltro" class="form-control" placeholder="Ej. 202643 (Déjalo vacío para ver la última)">
+    </div>
+    <div class="col-md-4">
+        <span id="lblRemesaActiva" class="badge bg-secondary fs-6">Cargando remesa...</span>
+    </div>
+    <div class="col-md-4 text-end">
+        <div id="semaforoConexion" class="badge bg-secondary">Conectando...</div>
+    </div>
+</div>
