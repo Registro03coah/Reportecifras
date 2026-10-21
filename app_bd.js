@@ -88,7 +88,7 @@ function ejecutarOrdenamiento(arreglo) { // *Nota: Si tu función se llama difer
     // AQUÍ ESTABA EL ERROR: Debe llamar a tu función real "dibujarTablaBd"
     dibujarTablaBd(arregloOrdenado);
 }
-}
+
 window.cambiarOrden = function(columnaClick) {
     if (columnaOrdenActual === columnaClick) {
         ordenAscendente = !ordenAscendente;
