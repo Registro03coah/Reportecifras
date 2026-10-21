@@ -95,32 +95,29 @@ function dibujarTablaTotales(datosArreglo) {
     let columnas = Object.keys(datosArreglo[0]);
 
     const ordenDeseado = [
-        "IDMAC", "MODULO", "REMESA", "SEDES", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
+        "IDMAC", "MODULO", "REMESA", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
         "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSISION",
         "CORR__DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES",
         "CANCELADOS", "TOTAL_DE_ANEXOS_POR_RECHAZO", "CPV_devuelta_entrega", "DISPONIBLES_AL_DIA_ANTERIOR",
         "RECIBIDAS", "RECIBIDAS_DE_OTROS_TIPOS", "ENTREGADAS", "RECIBO_Y_O_EXTRAVIO", "ANEXAS_A_FUAR",
         "DATOS_ERRONEOS", "FOTO_MAL_IMPRESA", "LIBRE2", "RETIRADAS_POR_OTRA_CAUSA", "DISPONIBLES",
-        "credenciales_x_canje", "fichas_Entregadas", "fichas_atendidas", "Dias_trabajados",
-        "SOLICITUD_EXPEDICION_O_RECTIFICACION", "SOLICITUD_EXPEDICION_REPATRIADOS", "SOLICITU_DE_REIMPRESION",
-        "DEMANDA_DE_JUICIO", "Total_de_movimientos", "DEVUELTAS_POR_TERCEROS", "34_Imagen_inconsistente",
-        "35_Movimiento_posterior", "CONFIGURACION", "ENT", "DTTO", "RESGUARDO", "SOLICITUD_DE_NUM_DE_EMISION",
-        "LIBRE1", "Sript_ejecutado_VIGENCIA", "FOLIO_NEC_POST", "cartografia_SOLICITUD", "lotes_de_credenciales",
-        "registradas_por_dia", "faltantes", "observaciones", "no_utilizados",
-        "MAC_QUE_RECIBE", "MAC_QUE_ENTREGA", "IMPORTADAS", "EXPORTADAS", "REPOSISION_REIMPRESIONES",
-        "MAL_IMPRESAS", "ERROR_EN_CARTOGRAFIA", "DEFUNCION", "SUSPENSION", "DUPLICADO", "ERROR_EN_NUM_DE_EMISION",
-        "PERDIDA_DE_VIGENCIA", "MOY_POST", "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS",
-        // Campos restantes (con iniciales A, S, C juntas al inicio de estos rezagados)
-        "INICIALES_A", "INICIALES_S", "INICIALES_C",
-        "RECHAZOS_DE_MAC_34", "RECHAZOS_DE_MAC_35", "CRED_PROD_CANJE_POR_NUEVA", "ACTUALIZACIÓN",
-        "SOLICITUD_EXPEDICION", "SOLICITUD_RECTIFICACION", "SIN_NOMBRE3", "SOBRANTES", "DUPLICADOS",
-        "DISPONIBLES_DE_SOL_DE_EXP", "REIMPRE_FUERA_DEL_SISTEMA", "CREDEN_DEVUELTAS_POR_TERCEROS",
-        "CRED_PRODUCTO_DE_REGISTRO_DUPLICADO", "CIF-05", "SOLICITUDE_RECTIFICACIÒN"
+        // Resto de columnas de la BD
+        "RECHAZOS_DE_MAC_34", "RECHAZOS_DE_MAC_35", "CRED_PROD_CANJE_POR_NUEVA", "INICIALES_A", "INICIALES_S", "INICIALES_C",
+        "ACTUALIZACIÓN", "FICHAS_ENTREGADAS", "FICHAS_ATENDIDAS", "DIAS_TRABAJADOS", "SOLICITUD_EXPEDICION_REPATRIADOS",
+        "SOLICITUD_EXPEDICION", "SOLICITUD_RECTIFICACION", "DEMANDA_DE_JUICIO", "TOTAL_DE_MOVIMIENTOS",
+        "DEVUELTAS_POR_TERCEROS", "34_IMAGEN_INCONSISTENTE", "35_MOVIMIENTO_POSTERIOR", "CONFIGURACION",
+        "ENT", "DTTO", "RESGUARDO", "SOLICITU_DE_REIMPRESION", "SRIPT_EJECUTADO_VIGENCIA", "FOLIO_NEC_POST",
+        "CARTOGRAFIA_SOLICITUD", "LOTES_DE_CREDENCIALES", "REGISTRADAS_POR_DIA", "FALTANTES", "OBSERVACIONES",
+        "NO_UTILIZADOS", "SIN_NOMBRE3", "MAC_QUE_RECIBE", "MAC_QUE_ENTREGA", "IMPORTADAS", "EXPORTADAS",
+        "REPOSISION_REIMPRESIONES", "MAL_IMPRESAS", "ERROR_EN_CARTOGRAFIA", "DEFUNCION", "SUSPENSION",
+        "DUPLICADO", "ERROR_EN_NUM_DE_EMISION", "PERDIDA_DE_VIGENCIA", "MOY_POST", "ANEXAS_A_SOLICITUD",
+        "OTRAS_BAJAS", "SOBRANTES", "DUPLICADOS", "DISPONIBLES_DE_SOL_DE_EXP", "REIMPRE_FUERA_DEL_SISTEMA",
+        "CREDEN_DEVUELTAS_POR_TERCEROS", "CRED_PRODUCTO_DE_REGISTRO_DUPLICADO", "CIF-05", "SOLICITUDE_RECTIFICACIÒN"
     ];
 
     columnas.sort((a, b) => {
-        let indiceA = ordenDeseado.indexOf(a);
-        let indiceB = ordenDeseado.indexOf(b);
+        let indiceA = ordenDeseado.indexOf(a.toUpperCase());
+        let indiceB = ordenDeseado.indexOf(b.toUpperCase());
         if (indiceA === -1) indiceA = 999;
         if (indiceB === -1) indiceB = 999;
         return indiceA - indiceB;
@@ -234,7 +231,6 @@ if (btnSubirTotales && fileInputTotales) {
                             } else if (!remStr.includes('-')) {
                                 r = remStr.slice(-2);
                             }
-                            // Sobrescribimos el IDMAC con el valor correcto calculado
                             itemNuevo.IDMAC = `${m}${r}`;
                         }
                         
