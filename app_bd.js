@@ -33,49 +33,51 @@ database.ref('bd_madre').on('value', (snapshot) => {
     ejecutarOrdenamiento(datosGlobalesBd);
 });
 
-// ORDENAMIENTO MULTI-CRITERIO: Remesa (Descendente) -> Módulo (Ascendente) -> Día (Lunes a Domingo)
-function ejecutarOrdenamiento(arreglo) { // *Nota: Si tu función se llama diferente, solo cámbiale el nombre aquí
-    if(!arreglo || arreglo.length === 0) {
-        dibujarTabla([]); // *Nota: Asegúrate de que esta sea tu función que dibuja la tabla
+// =========================================================
+// ORDENAMIENTO INTELIGENTE: REMESA -> MÓDULO -> DÍA DE LA SEMANA
+// =========================================================
+function ejecutarOrdenamiento(arregloA_Ordenar) {
+    if(!arregloA_Ordenar || arregloA_Ordenar.length === 0) {
+        dibujarTablaBd([]);
         return;
     }
 
-    // 1. Le enseñamos a JS el valor numérico de cada día de la semana
+    let arregloOrdenado = [...arregloA_Ordenar];
+
+    // Mapeo exacto de los días (con mayúscula y acentos gracias a .toLowerCase())
     const ordenDias = {
         "Lunes": 1,
         "Martes": 2,
         "Miércoles": 3,
-        "miercoles": 3, // Por si acaso se guarda sin acento
+        "Miercoles": 3, 
         "Jueves": 4,
         "Viernes": 5,
         "Sábado": 6,
-        "sabado": 6,    // Por si acaso se guarda sin acento
+        "Sabado": 6,    
         "Domingo": 7,
-        "linea totales": 8 // Deja los totales al final de cada bloque si los hubiera
+        "linea totales": 8 
     };
 
-    arreglo.sort((a, b) => {
-        // REGLA 1: REMESA (De Mayor a Menor)
-        let remesaA = String(a.REMESA || '').trim();
-        let remesaB = String(b.REMESA || '').trim();
+    arregloOrdenado.sort((a, b) => {
+        // 1. REGLA 1: REMESA (De Mayor a Menor)
+        let remesaA = String(a['REMESA'] || a['Remesa'] || '').trim();
+        let remesaB = String(b['REMESA'] || b['Remesa'] || '').trim();
         if (remesaA !== remesaB) {
-            // Al poner B comparado con A, lo hace de mayor a menor (Descendente)
             return remesaB.localeCompare(remesaA, undefined, { numeric: true });
         }
 
-        // REGLA 2: MÓDULO (De Menor a Mayor)
-        let moduloA = String(a.MODULO || '').trim();
-        let moduloB = String(b.MODULO || '').trim();
+        // 2. REGLA 2: MÓDULO (De Menor a Mayor: 50351, 50353, 50354)
+        let moduloA = String(a['MODULO'] || a['MÓDULO'] || a['Módulo'] || a['Modulo'] || '').trim();
+        let moduloB = String(b['MODULO'] || b['MÓDULO'] || b['Módulo'] || b['Modulo'] || '').trim();
         if (moduloA !== moduloB) {
-            // Al poner A comparado con B, lo hace de menor a mayor (Ascendente)
             return moduloA.localeCompare(moduloB, undefined, { numeric: true });
         }
 
-        // REGLA 3: DÍA (Lunes a Domingo)
-        let diaA = String(a.DIA || '').trim().toLowerCase();
-        let diaB = String(b.DIA || '').trim().toLowerCase();
+        // 3. REGLA 3: DÍA (Lunes a Domingo cronológico)
+        let diaA = String(a['DIA'] || a['Dia'] || '').trim().toLowerCase();
+        let diaB = String(b['DIA'] || b['Dia'] || '').trim().toLowerCase();
         
-        let valorDiaA = ordenDias[diaA] || 99; // Si no es un día válido, lo manda al final
+        let valorDiaA = ordenDias[diaA] || 99; 
         let valorDiaB = ordenDias[diaB] || 99;
 
         if (valorDiaA !== valorDiaB) {
@@ -85,10 +87,8 @@ function ejecutarOrdenamiento(arreglo) { // *Nota: Si tu función se llama difer
         return 0;
     });
 
-    // AQUÍ ESTABA EL ERROR: Debe llamar a tu función real "dibujarTablaBd"
     dibujarTablaBd(arregloOrdenado);
 }
-
 window.cambiarOrden = function(columnaClick) {
     if (columnaOrdenActual === columnaClick) {
         ordenAscendente = !ordenAscendente;
