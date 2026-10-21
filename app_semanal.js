@@ -17,26 +17,27 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-const COLUMNAS_SEMANAL = [45, 46, 47, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30];
-
-const ENCABEZADOS = [
-    "DÍA", "DD/MM/AA", "Horas trabajadas", "Sedes visitadas", "INICIAL", "FINAL", "TOTAL DE FOLIOS", 
-    "INSCRIPCIONES", "CORRECCION DE DATOS PERSONALES", "CAMBIO DE DOMICILIO", "REPOSISION", 
-    "CORR. DE DATOS DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL DE TRAMITES", 
-    "CANCELADOS", "TOTAL DE ANEXO DE RECHAZO", "CPV devuelta entrega", "DISPONIBLES AL DIA ANTERIOR", 
-    "RECIBIDAS", "RECIBIDAS DE OTROS TIPOS", "ENTREGADAS", "RECIBO Y/O EXTRAVIO", "ANEXAS A FUAR", 
-    "DATOS ERRONEOS", "FOTO MAL IMPRESA", "REIMPRESION", "'RETIRADAS POR CAUSA", "DISPONIBLES", 
-    "credenciales x canje", "fichas Entregadas", "fichas atendidas", "Dias trabajados", 
-    "SOLICITUD EXPEDICIÓN REPATRIADOS", "SOLICITUD EXPEDICIÓN ORDINARIA", "SOLICITU DE RECTIFICACIÓN", 
-    "DEMANDA DE JUICIO", "REMESA", "Total de movimientos", "DEVUELTAS POR TERCEROS:", 
-    "34 Imagen inconsistente", "35 Movimiento posterior", "CONFIGURACION", "ENT", "DTTO", 
-    "MÓDULO", "RESGUARDO", "SOLICITUD DE REIMPRESION", "CPV devuelta entrega", "ript ejecutad", 
-    "FOLIO NEC", "cartografia", "lotes de credenciales", "registradas por dia", "faltantes", "observaciones",
-    "sin nombre1", "sin nombre2", "sin nombre3", "MAC QUE RECIBE", "MAC QUE ENTREGA", 
-    "IMPORTADAS", "EXPORTADAS", "REPOSISION + REIMPRESIONES", "MAL IMPRESA", "ERROR EN CARTOGRAFIA", 
-    "DEFUNCION", "SUSPENSION", "DUPLICADO", "ERROR EN NUM. DE EMISION", "PERDIDA DE VIGENCIA", 
-    "MOV.POST.", "ANEXAS A SOLICITUD", "OTRAS BAJAS"
+// Tus nuevos 70 encabezados oficiales estandarizados (Índice 0 a 69)
+const ENCABEZADOS_OFICIALES = [
+    "IDMAC", "MODULO", "REMESA", "SEDES", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
+    "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSISION",
+    "CORR__DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES",
+    "CANCELADOS", "TOTAL_DE_ANEXOS_POR_RECHAZO", "CPV_devuelta_entrega", "DISPONIBLES_AL_DIA_ANTERIOR",
+    "RECIBIDAS", "RECIBIDAS_DE_OTROS_TIPOS", "ENTREGADAS", "RECIBO_Y_O_EXTRAVIO", "ANEXAS_A_FUAR",
+    "DATOS_ERRONEOS", "FOTO_MAL_IMPRESA", "LIBRE2", "RETIRADAS_POR_OTRA_CAUSA", "DISPONIBLES",
+    "credenciales_x_canje", "fichas_Entregadas", "fichas_atendidas", "Dias_trabajados",
+    "SOLICITUD_EXPEDICION_O_RECTIFICACION", "SOLICITUD_EXPEDICION_REPATRIADOS", "SOLICITU_DE_REIMPRESION",
+    "DEMANDA_DE_JUICIO", "Total_de_movimientos", "DEVUELTAS_POR_TERCEROS", "34_Imagen_inconsistente",
+    "35_Movimiento_posterior", "CONFIGURACION", "ENT", "DTTO", "RESGUARDO", "SOLICITUD_DE_NUM_DE_EMISION",
+    "LIBRE1", "Sript_ejecutado_VIGENCIA", "FOLIO_NEC_POST", "cartografia_SOLICITUD", "lotes_de_credenciales",
+    "registradas_por_dia", "faltantes", "observaciones", "sin_nombre1", "sin_nombre2", "sin_nombre3",
+    "MAC_QUE_RECIBE", "MAC_QUE_ENTREGA", "IMPORTADAS", "EXPORTADAS", "REPOSISION_+_REIMPRESIONES",
+    "MAL_IMPRESAS", "ERROR_EN_CARTOGRAFIA", "DEFUNCION", "SUSPENSION", "DUPLICADO", "ERROR_EN_NUM_DE_EMISION",
+    "PERDIDA_DE_VIGENCIA", "MOY_POST", "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS"
 ];
+
+// Columnas que deseas mostrar en el reporte semanal (basadas en los índices o puedes agregar/quitar)
+let COLUMNAS_SEMANAL = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30];
 
 let bdMadreGlobal = [];
 let bdtotalesGlobal = [];
@@ -62,31 +63,29 @@ function construirHeaderTabla(selectorTabla) {
     if(!thead) return;
     thead.innerHTML = "";
     let trTitulos = document.createElement('tr');
-    let trNumeros = document.createElement('tr');
     
-    COLUMNAS_SEMANAL.forEach((colOriginal) => {
+    COLUMNAS_SEMANAL.forEach((colIdx) => {
         let thT = document.createElement('th');
-        let thN = document.createElement('th');
-        thT.innerText = ENCABEZADOS[colOriginal - 1] || `Col ${colOriginal}`;
+        let nombreCol = ENCABEZADOS_OFICIALES[colIdx] || `Col_${colIdx}`;
+        
+        let nombreVisual = nombreCol.replace(/_/g, ' ');
+        thT.innerText = nombreVisual;
         thT.style.height = "50px";
         thT.style.verticalAlignment = "middle";
+        thT.style.fontSize = "11px";
         
-        let anchoCelda = "50px"; 
-        if(colOriginal >= 45 && colOriginal <= 47) anchoCelda = "60px"; 
-        else if(colOriginal === 5 || colOriginal === 6) anchoCelda = "105px"; 
+        let anchoCelda = "90px"; 
+        if(colIdx === 1 || colIdx === 2 || colIdx === 3) anchoCelda = "85px"; 
+        else if(colIdx === 4) anchoCelda = "130px"; // SEDES
+        else if(colIdx === 5 || colIdx === 6) anchoCelda = "110px"; // INICIAL / FINAL
         
-        thT.style.width = anchoCelda; thT.style.minWidth = anchoCelda; thT.style.maxWidth = anchoCelda;
+        thT.style.width = anchoCelda; thT.style.minWidth = anchoCelda;
         
-        if(colOriginal >= 5 && colOriginal <= 7) thT.classList.add('bg-folios');
-        if(colOriginal >= 19 && colOriginal <= 30) thT.classList.add('bg-retiradas');
-        if(colOriginal === 16) thT.style.backgroundColor = "#92d050"; 
-        if(colOriginal === 17) thT.style.backgroundColor = "red"; 
-        if(colOriginal === 18) thT.style.backgroundColor = "yellow"; 
+        if(colIdx >= 5 && colIdx <= 7) thT.classList.add('bg-folios');
         
-        thN.innerText = colOriginal; thN.className = "table-light text-center";
-        trTitulos.appendChild(thT); trNumeros.appendChild(thN);
+        trTitulos.appendChild(thT);
     });
-    thead.appendChild(trTitulos); thead.appendChild(trNumeros);
+    thead.appendChild(trTitulos);
 }
 
 construirHeaderTabla('#tablaSemanal');
@@ -134,7 +133,6 @@ function obtenerRemesaSeleccionada() {
         return remesaEscrita;
     }
 
-    // Si no escribe nada, obtenemos la remesa más alta / última registrada
     let remesasDisponibles = new Set();
     bdMadreGlobal.forEach(f => {
         let r = String(f['REMESA'] || f['Remesa'] || f['remesa'] || '').trim();
@@ -147,7 +145,7 @@ function obtenerRemesaSeleccionada() {
 
     if (remesasDisponibles.size > 0) {
         let listaRemesas = Array.from(remesasDisponibles).sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
-        return listaRemesas[0]; // La última remesa registrada
+        return listaRemesas[0]; 
     }
 
     return "";
@@ -165,53 +163,39 @@ function renderTablaSemanal() {
     }
 
     if (!remesaActiva) {
-        tbody.innerHTML = '<tr><td colspan="29" class="text-center py-4 text-muted">No se encontró ninguna remesa registrada o escrita.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="30" class="text-center py-4 text-muted">No se encontró ninguna remesa registrada o escrita.</td></tr>';
         return;
     }
 
-    // Intentamos cargar primero desde bdtotales si existe para esa remesa exacta
     let registrosTotalesRemesa = bdtotalesGlobal.filter(item => String(item.REMESA || item.Remesa || '').trim() === String(remesaActiva));
 
     if (registrosTotalesRemesa.length > 0) {
-        // Renderizamos directo desde la BD Totales por cada módulo
         registrosTotalesRemesa.forEach(reg => {
             let tr = document.createElement('tr');
-            let modNum = String(reg['MODULO'] || reg['Módulo'] || reg['Modulo'] || '').replace(/[^0-9]/g, '');
-            let modUltimos3 = modNum.slice(-3);
 
-            COLUMNAS_SEMANAL.forEach(colOriginal => {
+            COLUMNAS_SEMANAL.forEach(colIdx => {
                 let td = document.createElement('td');
-                let nombreColKey = ENCABEZADOS[colOriginal - 1];
+                let nombreColKey = ENCABEZADOS_OFICIALES[colIdx];
 
-                if(colOriginal === 45) {
-                    td.innerText = "05";
-                } else if(colOriginal === 46) {
-                    td.innerText = "03";
-                } else if(colOriginal === 47) {
-                    td.innerText = modUltimos3 || modNum;
-                } else {
-                    td.innerText = reg[nombreColKey] || reg[`Columna ${colOriginal}`] || "0";
-                }
+                td.innerText = reg[nombreColKey] || reg[`Columna ${colIdx + 1}`] || "0";
                 tr.appendChild(td);
             });
             tbody.appendChild(tr);
         });
 
-        // Fila de Gran Total sumando los módulos de bdtotales
         renderGranTotalDesdeRegistros(tbody, registrosTotalesRemesa, remesaActiva);
 
     } else {
-        // Si no está en bdtotales, agrupamos y sumamos desde la BD Madre
         let filasRemesa = bdMadreGlobal.filter(item => String(item.REMESA || item.Remesa || '').trim() === String(remesaActiva));
 
         if (filasRemesa.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="29" class="text-center py-4 text-muted">No hay registros para la remesa: ${remesaActiva}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="30" class="text-center py-4 text-muted">No hay registros para la remesa: ${remesaActiva}</td></tr>`;
             return;
         }
 
         let modulosMap = {};
         filasRemesa.forEach(f => {
-            let mod = String(f['MÓDULO'] || f['Módulo'] || f['Modulo'] || f['MODULO'] || 'General').trim();
+            let mod = String(f['MODULO'] || f['MÓDULO'] || f['Módulo'] || f['Modulo'] || 'General').trim();
             if (!modulosMap[mod]) modulosMap[mod] = [];
             modulosMap[mod].push(f);
         });
@@ -219,23 +203,19 @@ function renderTablaSemanal() {
         Object.keys(modulosMap).sort().forEach(modNombre => {
             let tr = document.createElement('tr');
             let registrosMod = modulosMap[modNombre];
-            let modLim = modNombre.replace(/[^0-9]/g, '');
-            let mod3 = modLim.slice(-3);
 
-            COLUMNAS_SEMANAL.forEach(colOriginal => {
+            COLUMNAS_SEMANAL.forEach(colIdx => {
                 let td = document.createElement('td');
-                let nombreColKey = ENCABEZADOS[colOriginal - 1];
+                let nombreColKey = ENCABEZADOS_OFICIALES[colIdx];
 
-                if(colOriginal === 45) {
-                    td.innerText = "05";
-                } else if(colOriginal === 46) {
-                    td.innerText = "03";
-                } else if(colOriginal === 47) {
-                    td.innerText = mod3 || modNombre;
+                if (nombreColKey === "MODULO") {
+                    td.innerText = modNombre;
+                } else if (nombreColKey === "REMESA") {
+                    td.innerText = remesaActiva;
                 } else {
                     let sumaCol = 0;
                     registrosMod.forEach(reg => {
-                        let val = parseFloat(reg[nombreColKey] || reg[`Columna ${colOriginal}`] || 0);
+                        let val = parseFloat(reg[nombreColKey] || 0);
                         if (!isNaN(val)) sumaCol += val;
                     });
                     td.innerText = sumaCol;
@@ -253,17 +233,18 @@ function renderGranTotalDesdeRegistros(tbody, listaRegistros, remesaId) {
     let trGranTotal = document.createElement('tr');
     trGranTotal.classList.add('fila-totales');
     
-    COLUMNAS_SEMANAL.forEach(colOriginal => {
+    COLUMNAS_SEMANAL.forEach(colIdx => {
         let td = document.createElement('td');
-        let nombreColKey = ENCABEZADOS[colOriginal - 1];
+        let nombreColKey = ENCABEZADOS_OFICIALES[colIdx];
 
-        if(colOriginal === 45) td.innerText = "-";
-        else if(colOriginal === 46) td.innerText = "-";
-        else if(colOriginal === 47) td.innerText = `REMESA ${remesaId}`;
-        else {
+        if (nombreColKey === "MODULO") {
+            td.innerText = "GRAN TOTAL";
+        } else if (nombreColKey === "REMESA") {
+            td.innerText = remesaId;
+        } else {
             let sumaTotalRemesa = 0;
             listaRegistros.forEach(reg => {
-                let val = parseFloat(reg[nombreColKey] || reg[`Columna ${colOriginal}`] || 0);
+                let val = parseFloat(reg[nombreColKey] || 0);
                 if (!isNaN(val)) sumaTotalRemesa += val;
             });
             td.innerText = sumaTotalRemesa;
@@ -273,23 +254,5 @@ function renderGranTotalDesdeRegistros(tbody, listaRegistros, remesaId) {
     tbody.appendChild(trGranTotal);
 }
 
-// Iniciar carga de datos
+// Iniciar carga
 cargarDatosSemanal();
-```
-
-### Paso para tu archivo HTML (`reporte_semanal.html` o similar):
-Asegúrate de agregar un campo de texto (input) con el identificador `inputRemesaFiltro` y un espacio para el semáforo de conexión arriba de tu tabla:
-
-```html
-<div class="row align-items-center mb-3">
-    <div class="col-md-4">
-        <label for="inputRemesaFiltro" class="form-label fw-bold">Escribe o filtra por Remesa:</label>
-        <input type="text" id="inputRemesaFiltro" class="form-control" placeholder="Ej. 202643 (Déjalo vacío para ver la última)">
-    </div>
-    <div class="col-md-4">
-        <span id="lblRemesaActiva" class="badge bg-secondary fs-6">Cargando remesa...</span>
-    </div>
-    <div class="col-md-4 text-end">
-        <div id="semaforoConexion" class="badge bg-secondary">Conectando...</div>
-    </div>
-</div>
