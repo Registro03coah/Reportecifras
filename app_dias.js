@@ -1,22 +1,24 @@
+/ ==========================================
+// 1. IMPORTACIONES FIREBASE (Modular V10)
 // ==========================================
-// 1. CONFIGURACIÓN E INICIALIZACIÓN DE FIREBASE
-// ==========================================
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
 const firebaseConfig = {
     apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo",
     authDomain: "cifrasmac.firebaseapp.com",
     databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com",
-    projectId: "cifrasmac"
+    projectId: "cifrasmac",
+    storageBucket: "cifrasmac.firebasestorage.app",
+    messagingSenderId: "916644687837",
+    appId: "1:916644687837:web:03d346cc48a071af1ed034"
 };
 
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-} else {
-    firebase.app();
-}
-const database = firebase.database();
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
 // ==========================================
-// 2. COLUMNAS DE MONITOREO
+// 2. CONFIGURACIÓN Y VARIABLES
 // ==========================================
 const COLUMNAS_REPORTE_DIAS = [
     "MODULO", "DIA", "FECHA", "REMESA", "SEDES", 
@@ -32,15 +34,14 @@ const COLUMNAS_REPORTE_DIAS = [
 let bdMadreGlobal = [];
 let anchosGuardados = JSON.parse(localStorage.getItem('anchosColumnasDias')) || {};
 
-// VARIABLES PARA EL ORDENAMIENTO DE LAS FLECHITAS
 let columnaOrdenActual = ''; 
 let ordenAscendente = false; 
 
 // ==========================================
 // 3. SEMÁFORO DE CONEXIÓN FIREBASE
 // ==========================================
-const connectedRef = database.ref(".info/connected");
-connectedRef.on("value", (snap) => {
+const connectedRef = ref(db, ".info/connected");
+onValue(connectedRef, (snap) => {
     const semaforo = document.getElementById("semaforoConexion");
     if(!semaforo) return;
     if (snap.val() === true) {
@@ -90,20 +91,17 @@ function construirHeaderTabla() {
 
         if(col === "INICIAL" || col === "FINAL" || col === "TOTAL_DE_FOLIOS") thT.classList.add('bg-folios');
         
-        // CONFIGURACIÓN DE LOS NÚMEROS Y LAS FLECHITAS
         thN.className = "table-light text-dark text-center fw-bold";
         thN.style.cursor = "pointer";
         thN.title = "Clic para ordenar por esta columna";
         thN.onclick = () => window.cambiarOrdenDias(col);
         
-        // Colocamos el número
         let contenidoHtml = `${index + 1} `;
         
-        // Agregamos el ícono de las flechitas si está seleccionada
         if (columnaOrdenActual === col) {
             contenidoHtml += ordenAscendente 
-                             ? '<i class="bi bi-caret-up-fill text-primary ms-1"></i>' 
-                             : '<i class="bi bi-caret-down-fill text-primary ms-1"></i>';
+                           ? '<i class="bi bi-caret-up-fill text-primary ms-1"></i>' 
+                           : '<i class="bi bi-caret-down-fill text-primary ms-1"></i>';
         } else {
             contenidoHtml += '<i class="bi bi-arrow-down-up text-secondary opacity-25 ms-1" style="font-size: 0.8em;"></i>';
         }
@@ -166,7 +164,7 @@ function actualizarStickyLeft() {
 }
 
 // ==========================================
-// 5. INTELIGENCIA DE BÚSQUEDA Y LECTURA
+// 5. LECTURA Y ORDENAMIENTO INTELIGENTE
 // ==========================================
 function obtenerValorFila(fila, col) {
     if (col === "MODULO") return fila["MÓDULO"] || fila["Módulo"] || fila["Modulo"] || fila["MODULO"] || '';
@@ -178,20 +176,20 @@ function obtenerValorFila(fila, col) {
     return fila[col] !== undefined && fila[col] !== null ? fila[col] : '';
 }
 
-// FUNCIÓN PARA CAMBIAR EL ORDEN AL DAR CLIC AL NÚMERO
 window.cambiarOrdenDias = function(colClick) {
     if (columnaOrdenActual === colClick) {
         ordenAscendente = !ordenAscendente;
     } else {
         columnaOrdenActual = colClick;
-        ordenAscendente = false; // Empezamos ordenando de mayor a menor
+        ordenAscendente = false; 
     }
-    construirHeaderTabla(); // Para actualizar las flechitas visualmente
-    procesarYMostrarDatos(); // Para actualizar los datos en la tabla
+    construirHeaderTabla(); 
+    procesarYMostrarDatos(); 
 };
 
 function cargarDatosDias() {
-    database.ref('bd_madre').on('value', (snapshot) => {
+    const dbRef = ref(db, 'bd_madre');
+    onValue(dbRef, (snapshot) => {
         if (snapshot.exists()) {
             const dataRaw = snapshot.val();
             bdMadreGlobal = Array.isArray(dataRaw) ? dataRaw : Object.values(dataRaw);
@@ -211,14 +209,18 @@ function procesarYMostrarDatos() {
 
     if (bdMadreGlobal.length === 0) return;
 
-    // Ordenamos usando la columna seleccionada por el usuario
+    // Diccionario cronológico de días para ordenarlos perfecto de Lunes a Domingo
+    const ordenDias = {
+        "lunes": 1, "martes": 2, "miércoles": 3, "miercoles": 3, 
+        "jueves": 4, "viernes": 5, "sábado": 6, "sabado": 6, "domingo": 7
+    };
+
     let datosOrdenados = [...bdMadreGlobal].sort((a, b) => {
-        // 1. Si el usuario seleccionó una columna, ordenamos por ella primero
+        // 1. Si el usuario dio clic en una columna para ordenar por ella específicamente
         if (columnaOrdenActual !== '') {
             let valA = String(obtenerValorFila(a, columnaOrdenActual)).trim();
             let valB = String(obtenerValorFila(b, columnaOrdenActual)).trim();
             
-            // Verificamos si son números matemáticos (ej. totales)
             let numA = parseFloat(valA);
             let numB = parseFloat(valB);
             
@@ -226,20 +228,30 @@ function procesarYMostrarDatos() {
                 if (numA < numB) return ordenAscendente ? -1 : 1;
                 if (numA > numB) return ordenAscendente ? 1 : -1;
             } else {
-                // Si no, ordenamos alfabéticamente
                 let comp = valA.toUpperCase().localeCompare(valB.toUpperCase());
                 if (comp !== 0) return ordenAscendente ? comp : -comp;
             }
         }
         
-        // 2. Si no hay selección, o hay empates, ordenamos por defecto (Modulo y luego Remesa)
-        const modA = String(obtenerValorFila(a, "MODULO"));
-        const modB = String(obtenerValorFila(b, "MODULO"));
-        if (modA !== modB) return modA.localeCompare(modB);
+        // 2. ORDEN POR DEFECTO: Remesa (Mayor a Menor) -> Módulo (Ascendente) -> Día (Lunes a Domingo)
+        let remA = String(obtenerValorFila(a, "REMESA")).trim();
+        let remB = String(obtenerValorFila(b, "REMESA")).trim();
+        if (remA !== remB) {
+            return remB.localeCompare(remA, undefined, { numeric: true }); // Mayor a menor
+        }
         
-        const remA = String(obtenerValorFila(a, "REMESA")).toUpperCase();
-        const remB = String(obtenerValorFila(b, "REMESA")).toUpperCase();
-        return remB.localeCompare(remA);
+        let modA = String(obtenerValorFila(a, "MODULO")).trim();
+        let modB = String(obtenerValorFila(b, "MODULO")).trim();
+        if (modA !== modB) {
+            return modA.localeCompare(modB, undefined, { numeric: true }); // Menor a mayor
+        }
+
+        let diaA = String(obtenerValorFila(a, "DIA")).trim().toLowerCase();
+        let diaB = String(obtenerValorFila(b, "DIA")).trim().toLowerCase();
+        let valDiaA = ordenDias[diaA] !== undefined ? ordenDias[diaA] : 99;
+        let valDiaB = ordenDias[diaB] !== undefined ? ordenDias[diaB] : 99;
+
+        return valDiaA - valDiaB; // Lunes a Domingo
     });
 
     datosOrdenados.forEach(fila => {
