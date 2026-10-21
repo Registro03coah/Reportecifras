@@ -4,12 +4,17 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+// ¡AQUÍ ESTÁ LA CORRECCIÓN! Usando las credenciales de 'cifrasmac'
 const firebaseConfig = {
-    apiKey: "AIzaSyA6jvnsXZwF2anOJo3VadfNvn7Fl6Z5efY",
-    authDomain: "sistema-mac-reportes.firebaseapp.com",
-    databaseURL: "https://sistema-mac-reportes-default-rtdb.firebaseio.com",
-    projectId: "sistema-mac-reportes"
+    apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo",
+    authDomain: "cifrasmac.firebaseapp.com",
+    databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com",
+    projectId: "cifrasmac",
+    storageBucket: "cifrasmac.firebasestorage.app",
+    messagingSenderId: "916644687837",
+    appId: "1:916644687837:web:03d346cc48a071af1ed034"
 };
+
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
