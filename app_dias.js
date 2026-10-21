@@ -78,6 +78,9 @@ function construirHeaderTabla() {
         if (col === "SEDES") nombreVisual = "SEDE DE OPERACIÓN DE MÓDULO";
 
         thT.innerText = nombreVisual;
+        thT.style.height = "55px"; // Cabecera compacta para ahorrar espacio vertical
+        thT.style.verticalAlignment = "middle";
+        thT.style.fontSize = "11px";
         
         if (anchosGuardados[col]) {
             thT.style.width = anchosGuardados[col];
@@ -93,6 +96,7 @@ function construirHeaderTabla() {
         
         thN.className = "table-light text-dark text-center fw-bold";
         thN.style.cursor = "pointer";
+        thN.style.height = "25px";
         thN.title = "Clic para ordenar por esta columna";
         thN.onclick = () => window.cambiarOrdenDias(col);
         
@@ -209,14 +213,12 @@ function procesarYMostrarDatos() {
 
     if (bdMadreGlobal.length === 0) return;
 
-    // Diccionario cronológico de días para ordenarlos perfecto de Lunes a Domingo
     const ordenDias = {
         "lunes": 1, "martes": 2, "miércoles": 3, "miercoles": 3, 
         "jueves": 4, "viernes": 5, "sábado": 6, "sabado": 6, "domingo": 7
     };
 
     let datosOrdenados = [...bdMadreGlobal].sort((a, b) => {
-        // 1. Si el usuario dio clic en una columna para ordenar por ella específicamente
         if (columnaOrdenActual !== '') {
             let valA = String(obtenerValorFila(a, columnaOrdenActual)).trim();
             let valB = String(obtenerValorFila(b, columnaOrdenActual)).trim();
@@ -233,17 +235,17 @@ function procesarYMostrarDatos() {
             }
         }
         
-        // 2. ORDEN POR DEFECTO: Remesa (Mayor a Menor) -> Módulo (Ascendente) -> Día (Lunes a Domingo)
+        // ORDEN POR DEFECTO: Remesa (Mayor a Menor) -> Módulo (Ascendente) -> Día (Lunes a Domingo)
         let remA = String(obtenerValorFila(a, "REMESA")).trim();
         let remB = String(obtenerValorFila(b, "REMESA")).trim();
         if (remA !== remB) {
-            return remB.localeCompare(remA, undefined, { numeric: true }); // Mayor a menor
+            return remB.localeCompare(remA, undefined, { numeric: true });
         }
         
         let modA = String(obtenerValorFila(a, "MODULO")).trim();
         let modB = String(obtenerValorFila(b, "MODULO")).trim();
         if (modA !== modB) {
-            return modA.localeCompare(modB, undefined, { numeric: true }); // Menor a mayor
+            return modA.localeCompare(modB, undefined, { numeric: true });
         }
 
         let diaA = String(obtenerValorFila(a, "DIA")).trim().toLowerCase();
@@ -251,7 +253,7 @@ function procesarYMostrarDatos() {
         let valDiaA = ordenDias[diaA] !== undefined ? ordenDias[diaA] : 99;
         let valDiaB = ordenDias[diaB] !== undefined ? ordenDias[diaB] : 99;
 
-        return valDiaA - valDiaB; // Lunes a Domingo
+        return valDiaA - valDiaB;
     });
 
     datosOrdenados.forEach(fila => {
