@@ -1,246 +1,224 @@
 // ==========================================
-// 1. IMPORTACIONES FIREBASE
+// 1. IMPORTACIONES Y CONFIGURACIÓN FIREBASE (REPORTE CAMPAÑA)
 // ==========================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, get, set, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getDatabase, ref, get, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyA6jvnsXZwF2anOJo3VadfNvn7Fl6Z5efY",
-    authDomain: "sistema-mac-reportes.firebaseapp.com",
-    databaseURL: "https://sistema-mac-reportes-default-rtdb.firebaseio.com",
-    projectId: "sistema-mac-reportes"
+    apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo",
+    authDomain: "cifrasmac.firebaseapp.com",
+    databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com",
+    projectId: "cifrasmac",
+    storageBucket: "cifrasmac.firebasestorage.app",
+    messagingSenderId: "916644687837",
+    appId: "1:916644687837:web:03d346cc48a071af1ed034"
 };
+
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// NUEVO ORDEN DE COLUMNAS SEGÚN IMAGEN:
-const COLUMNAS_CAMPANA = [
-    45, 46, 47, 5, 6, 7, 'NO_UTILIZADOS', 8, 9, 10, 65, 12, 13, 14, 7, 42, 43, 17, 16, 
-    'CIP-05', 35, 37, 38, 'INICIALES', 21, 22, 63, 64, 23, 25, 48, 49, 24, 29, 
-    'SOBRANTES', 70, 30, 36, 49, 41, 70, 19, 34, 44, 32, 35
+// Mismo orden validado que en el Semanal
+const COLUMNAS_CAMPANA_KEYS = [
+    "ENT", "DTTO", "MODULO", "REMESA", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS", 
+    "NO_UTILIZADOS", "INSCRIPCIONES", "ANEXAS_A_FUAR", "RESGUARDO", "SOLICITU_DE_REIMPRESION", 
+    "RECIBO_Y_O_EXTRAVIO", "RETIRADAS_POR_OTRA_CAUSA", "SOBRANTES", "DUPLICADO", 
+    "DISPONIBLES", "DISPONIBLES_DE_SOL_DE_EXP", "REIMPRE_FUERA_DEL_SISTEMA", 
+    "CREDEN_DEVUELTAS_POR_TERCEROS", "CRED_PRODUCTO_DE_REGISTRO_DUPLICADO", 
+    "CRED_PROD_CANJE_POR_NUEVA", "DIAS_TRABAJADOS", "CONFIGURACION", 
+    "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSISION", 
+    "CORR__DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", 
+    "TOTAL_DE_TRAMITES", "RECHAZOS_DE_MAC_34", "RECHAZOS_DE_MAC_35", "CANCELADOS", 
+    "TOTAL_DE_MOVIMIENTOS", "CIF-05", "SOLICITUD_EXPEDICION", "SOLICITUD_RECTIFICACION", 
+    "DEMANDA_DE_JUICIO", "INICIALES_A", "INICIALES_S", "INICIALES_C", "ACTUALIZACIÓN", 
+    "RECIBIDAS_DE_OTROS_TIPOS", "IMPORTADAS", "EXPORTADAS", "ENTREGADAS"
 ];
 
-const ENCABEZADOS = [
-    "DÍA", "DD/MM/AA", "Horas trabajadas", "Sedes visitadas", "INICIAL", "FINAL", "TOTAL DE FOLIOS", 
-    "INSCRIPCIONES", "CORRECCION DE DATOS PERSONALES", "CAMBIO DE DOMICILIO", "REPOSISION", 
-    "CORR. DE DATOS DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL DE TRAMITES", 
-    "CANCELADOS", "TOTAL DE ANEXO DE RECHAZO", "CPV devuelta entrega", "DISPONIBLES AL DIA ANTERIOR", 
-    "RECIBIDAS", "RECIBIDAS DE OTROS TIPOS", "ENTREGADAS", "RECIBO Y/O EXTRAVIO", "ANEXAS A FUAR", 
-    "DATOS ERRONEOS", "FOTO MAL IMPRESA", "REIMPRESION", "'RETIRADAS POR CAUSA", "DISPONIBLES", 
-    "credenciales x canje", "fichas Entregadas", "fichas atendidas", "Dias trabajados", 
-    "SOLICITUD EXPEDICIÓN REPATRIADOS", "SOLICITUD EXPEDICIÓN ORDINARIA", "SOLICITU DE RECTIFICACIÓN", 
-    "DEMANDA DE JUICIO", "REMESA", "Total de movimientos", "DEVUELTAS POR TERCEROS:", 
-    "34 Imagen inconsistente", "35 Movimiento posterior", "CONFIGURACION", "ENT", "DTTO", 
-    "MÓDULO", "RESGUARDO", "SOLICITUD DE REIMPRESION", "CPV devuelta entrega", "ript ejecutad", 
-    "FOLIO NEC", "cartografia", "lotes de credenciales", "registradas por dia", "faltantes", "observaciones",
-    "sin nombre1", "sin nombre2", "sin nombre3", "MAC QUE RECIBE", "MAC QUE ENTREGA", 
-    "IMPORTADAS", "EXPORTADAS", "REPOSISION + REIMPRESIONES", "MAL IMPRESA", "ERROR EN CARTOGRAFIA", 
-    "DEFUNCION", "SUSPENSION", "DUPLICADO", "ERROR EN NUM. DE EMISION", "PERDIDA DE VIGENCIA", 
-    "MOV.POST.", "ANEXAS A SOLICITUD", "OTRAS BAJAS"
-];
+let bdtotalesGlobal = [];
+let bdMadreGlobal = [];
 
-let historialGlobal = {};
-let remesaEnEdicion = "";
-let datosRemesaEnEdicion = {};
-let valoresIniciales = { "050351": 0, "050353": 0, "050354": 0 };
+// ==========================================
+// 2. GESTIÓN DE RANGO DE CAMPAÑA (LOCALSTORAGE)
+// ==========================================
+function inicializarFiltrosCampana() {
+    const inputInicio = document.getElementById('inputCampanaInicio');
+    const inputFin = document.getElementById('inputCampanaFin');
+    const btnGuardar = document.getElementById('btnGuardarCampana');
+
+    if(inputInicio && inputFin) {
+        inputInicio.value = localStorage.getItem('campanaRemesaInicio') || '';
+        inputFin.value = localStorage.getItem('campanaRemesaFin') || '';
+
+        if(btnGuardar) {
+            btnGuardar.addEventListener('click', () => {
+                localStorage.setItem('campanaRemesaInicio', inputInicio.value.trim());
+                localStorage.setItem('campanaRemesaFin', inputFin.value.trim());
+                alert("Rango de campaña guardado exitosamente.");
+                renderTablaCampana();
+            });
+        }
+    }
+}
 
 function construirHeaderTabla(selectorTabla) {
     const thead = document.querySelector(`${selectorTabla} thead`);
     if(!thead) return;
     thead.innerHTML = "";
     let trTitulos = document.createElement('tr');
-    let trNumeros = document.createElement('tr');
     
-    COLUMNAS_CAMPANA.forEach((colOriginal) => {
+    COLUMNAS_CAMPANA_KEYS.forEach((colKey) => {
         let thT = document.createElement('th');
-        let thN = document.createElement('th');
+        let nombreVisual = colKey.replace(/_/g, ' ')
+                                  .replace('SOLICITU DE', 'SOLICITUD DE')
+                                  .replace('DUPLICADO', 'DUPLICADOS')
+                                  .replace('DISPONIBLES', 'DISPONIBLES TOTAL')
+                                  .replace('CORR  DE', 'CORR DE');
         
-        let headerText = typeof colOriginal === 'string' ? colOriginal.replace('_', ' ') : ENCABEZADOS[colOriginal - 1];
-        thT.innerText = headerText;
-        thN.innerText = typeof colOriginal === 'string' ? "-" : colOriginal;
+        thT.innerText = nombreVisual;
+        thT.style.height = "50px";
+        thT.style.verticalAlignment = "middle";
+        thT.style.fontSize = "11px";
         
-        let anchoCelda = "50px"; 
-        if(colOriginal === 45 || colOriginal === 46 || colOriginal === 47) anchoCelda = "60px"; 
-        else if(colOriginal === 5 || colOriginal === 6) anchoCelda = "105px"; 
-        else if(typeof colOriginal === 'string') anchoCelda = "90px";
+        let anchoCelda = "90px"; 
+        if(['MODULO', 'REMESA', 'ENT', 'DTTO'].includes(colKey)) anchoCelda = "70px"; 
+        else if(['INICIAL', 'FINAL'].includes(colKey)) anchoCelda = "110px";
         
-        thT.style.width = anchoCelda; thT.style.minWidth = anchoCelda; thT.style.maxWidth = anchoCelda;
+        thT.style.width = anchoCelda; thT.style.minWidth = anchoCelda;
         
-        // Estilos colores originales
-        if(colOriginal >= 5 && colOriginal <= 7) thT.classList.add('bg-folios');
-        if(colOriginal >= 19 && colOriginal <= 30) thT.classList.add('bg-retiradas');
-        if(colOriginal === 16) thT.style.backgroundColor = "#92d050"; 
-        if(colOriginal === 17) thT.style.backgroundColor = "red"; 
-        
-        if(typeof colOriginal === 'string') thT.style.backgroundColor = "#ffc107"; // Destacar custom
-        
-        thN.className = "table-light";
-        trTitulos.appendChild(thT); trNumeros.appendChild(thN);
-    });
-    thead.appendChild(trTitulos); thead.appendChild(trNumeros);
-}
-
-construirHeaderTabla('#tablaCampana');
-construirHeaderTabla('#tablaEditarRemesa');
-
-// --- LÓGICA DE INICIALES EN FIREBASE ---
-function cargarInicialesDB() {
-    get(ref(db, 'configuracion/iniciales_campana')).then((snapshot) => {
-        if(snapshot.exists()) {
-            valoresIniciales = snapshot.val();
-            document.getElementById('ini_050351').value = valoresIniciales["050351"] || 0;
-            document.getElementById('ini_050353').value = valoresIniciales["050353"] || 0;
-            document.getElementById('ini_050354').value = valoresIniciales["050354"] || 0;
+        if(['INICIAL', 'FINAL', 'TOTAL_DE_FOLIOS'].includes(colKey)) {
+            thT.classList.add('bg-folios');
         }
-        cargarDatosCampana(); // Cargar tabla después de tener los iniciales
-    }).catch(err => { console.error(err); cargarDatosCampana(); });
+        trTitulos.appendChild(thT);
+    });
+    thead.appendChild(trTitulos);
 }
 
-document.getElementById('btnGuardarIniciales').addEventListener('click', () => {
-    let nuevosValores = {
-        "050351": parseFloat(document.getElementById('ini_050351').value) || 0,
-        "050353": parseFloat(document.getElementById('ini_050353').value) || 0,
-        "050354": parseFloat(document.getElementById('ini_050354').value) || 0
-    };
-    set(ref(db, 'configuracion/iniciales_campana'), nuevosValores).then(() => {
-        alert('Valores INICIALES guardados correctamente.');
-        valoresIniciales = nuevosValores;
-        procesarYMostrarDatos(); // Recalcular la tabla en vivo
-    });
-});
-// ----------------------------------------
+// ==========================================
+// 3. CARGA DE DATOS Y RENDERIZADO
+// ==========================================
+function normalizarObjeto(item) {
+    let limpio = {};
+    for (let key in item) limpio[key.toUpperCase().trim()] = item[key];
+    return limpio;
+}
 
 function cargarDatosCampana() {
-    get(ref(db, 'historial_campanas')).then((snapshot) => {
-        if (snapshot.exists()) {
-            historialGlobal = snapshot.val();
-            poblarSelectoresRemesa();
-            procesarYMostrarDatos();
-            renderListaRemesas();
-        } else {
-            historialGlobal = {};
-            const tb = document.querySelector('#tablaCampana tbody');
-            if(tb) tb.innerHTML = '<tr><td colspan="46" class="text-center py-3 text-muted">No hay remesas guardadas aún.</td></tr>';
-        }
-    }).catch(err => console.error(err));
-}
+    construirHeaderTabla('#tablaCampana');
+    inicializarFiltrosCampana();
 
-function obtenerTotalesRemesa(remesaData) {
-    if (remesaData.totales) return remesaData.totales;
-    let modulos = ["050351", "050353", "050354"];
-    let matrizTotales = [];
-    modulos.forEach(mod => {
-        if (remesaData[mod] && Array.isArray(remesaData[mod])) {
-            let filasMod = remesaData[mod];
-            let filaTot = filasMod[filasMod.length - 1] || Array(75).fill("0");
-            matrizTotales.push(filaTot);
-        } else { matrizTotales.push(Array(75).fill("0")); }
+    Promise.all([
+        get(ref(db, 'bd_madre')),
+        get(ref(db, 'bdtotales'))
+    ]).then(([snapMadre, snapTotales]) => {
+        if (snapMadre.exists()) bdMadreGlobal = (Array.isArray(snapMadre.val()) ? snapMadre.val() : Object.values(snapMadre.val())).map(normalizarObjeto);
+        if (snapTotales.exists()) bdtotalesGlobal = (Array.isArray(snapTotales.val()) ? snapTotales.val() : Object.values(snapTotales.val())).map(normalizarObjeto);
+        renderTablaCampana();
     });
-    let filaGranTotal = Array(75).fill("0");
-    filaGranTotal[0] = "GRAN TOTAL";
-    for(let c=1; c<75; c++) {
-        let suma = 0;
-        [0,1,2].forEach(i => { let v = parseFloat(matrizTotales[i][c]); if(!isNaN(v)) suma += v; });
-        filaGranTotal[c] = suma;
-    }
-    matrizTotales.push(filaGranTotal);
-    return matrizTotales;
 }
 
-function poblarSelectoresRemesa() {
-    const selectInicio = document.getElementById('filtroRemesaInicio');
-    const selectFin = document.getElementById('filtroRemesaFin');
-    if(!selectInicio || !selectFin) return;
-    const remesasKeys = Object.keys(historialGlobal).sort((a,b) => parseInt(a) - parseInt(b));
-    let opts = '<option value="">-- Todas / Inicio --</option>';
-    remesasKeys.forEach(r => opts += `<option value="${r}">Remesa ${r}</option>`);
-    selectInicio.innerHTML = opts;
-    selectFin.innerHTML = opts.replace('-- Todas / Inicio --', '-- Todas / Fin --');
-}
-
-function procesarYMostrarDatos() {
-    let sumas = { "050351": Array(75).fill(0), "050353": Array(75).fill(0), "050354": Array(75).fill(0) };
-    const remesaInicio = document.getElementById('filtroRemesaInicio').value;
-    const remesaFin = document.getElementById('filtroRemesaFin').value;
-
-    for (const remesa in historialGlobal) {
-        let numR = parseInt(remesa);
-        if(remesaInicio && numR < parseInt(remesaInicio)) continue;
-        if(remesaFin && numR > parseInt(remesaFin)) continue;
-        let remesaData = historialGlobal[remesa];
-        if(!remesaData) continue;
-        
-        let tablaTotalesRemesa = obtenerTotalesRemesa(remesaData);
-        [0, 1, 2].forEach(idx => {
-            let modId = idx === 0 ? "050351" : (idx === 1 ? "050353" : "050354");
-            for(let c = 0; c < 75; c++) {
-                let valor = parseFloat(tablaTotalesRemesa[idx][c]);
-                if(!isNaN(valor)) sumas[modId][c] += valor;
-            }
-        });
-    }
-
+function renderTablaCampana() {
     const tbody = document.querySelector('#tablaCampana tbody');
     if(!tbody) return;
     tbody.innerHTML = "";
-    const filasAMostrar = ["050351", "050353", "050354", "GRAN TOTAL"];
 
-    filasAMostrar.forEach(fila => {
+    const rInicio = localStorage.getItem('campanaRemesaInicio');
+    const rFin = localStorage.getItem('campanaRemesaFin');
+
+    if (!rInicio || !rFin) {
+        tbody.innerHTML = `<tr><td colspan="${COLUMNAS_CAMPANA_KEYS.length}" class="text-center py-4 text-muted">Por favor establece la remesa Inicial y Final de la Campaña.</td></tr>`;
+        return;
+    }
+
+    // Filtrar registros que estén en el rango de remesas
+    let dataFiltrada = bdtotalesGlobal.length > 0 ? bdtotalesGlobal : bdMadreGlobal;
+    let registrosRango = dataFiltrada.filter(item => {
+        let r = String(item['REMESA'] || '').trim();
+        return r >= rInicio && r <= rFin;
+    });
+
+    if (registrosRango.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="${COLUMNAS_CAMPANA_KEYS.length}" class="text-center py-4 text-muted">No hay datos en el rango de remesas indicado (${rInicio} a ${rFin}).</td></tr>`;
+        return;
+    }
+
+    // Agrupar por módulo
+    let modulosMap = {};
+    registrosRango.forEach(f => {
+        let mod = String(f['MODULO'] || 'General').trim();
+        if (!modulosMap[mod]) modulosMap[mod] = [];
+        modulosMap[mod].push(f);
+    });
+
+    Object.keys(modulosMap).sort().forEach(modNombre => {
         let tr = document.createElement('tr');
-        if (fila === "GRAN TOTAL") tr.classList.add('fila-totales');
+        
+        // Ordenar los registros del módulo por remesa para asegurar 1ero y último
+        let registrosMod = modulosMap[modNombre].sort((a, b) => String(a['REMESA']).localeCompare(String(b['REMESA'])));
+        
+        let primerRegistro = registrosMod[0];
+        let ultimoRegistro = registrosMod[registrosMod.length - 1];
 
-        COLUMNAS_CAMPANA.forEach(colOriginal => {
+        COLUMNAS_CAMPANA_KEYS.forEach(colKey => {
             let td = document.createElement('td');
-            if(colOriginal === 45) td.innerText = fila === "GRAN TOTAL" ? "-" : "05";
-            else if (colOriginal === 46) td.innerText = fila === "GRAN TOTAL" ? "-" : "03";
-            else if (colOriginal === 47) td.innerText = fila === "GRAN TOTAL" ? "GRAN TOTAL" : fila.substring(4,6);
-            else if (typeof colOriginal === 'string') {
-                if(colOriginal === 'INICIALES') {
-                    if(fila === "GRAN TOTAL") {
-                        td.innerText = (parseFloat(valoresIniciales["050351"]) || 0) + (parseFloat(valoresIniciales["050353"]) || 0) + (parseFloat(valoresIniciales["050354"]) || 0);
-                    } else {
-                        td.innerText = valoresIniciales[fila] || 0;
-                    }
-                    td.classList.add('fw-bold', 'text-primary');
-                } else {
-                    td.innerText = "0"; // CIP-05, SOBRANTES, NO UTILIZADOS
-                    td.classList.add('text-muted');
-                }
-            }
-            else {
-                if(fila === "GRAN TOTAL") {
-                    let totalCol = sumas["050351"][colOriginal-1] + sumas["050353"][colOriginal-1] + sumas["050354"][colOriginal-1];
-                    td.innerText = totalCol === 0 ? "0" : totalCol;
-                } else {
-                    let valorSuma = sumas[fila][colOriginal-1];
-                    td.innerText = valorSuma === 0 ? "0" : valorSuma;
-                }
+
+            if (colKey === "MODULO") {
+                td.innerText = modNombre;
+            } else if (colKey === "REMESA") {
+                td.innerText = `${rInicio} - ${rFin}`;
+            } else if (colKey === "INICIAL") {
+                td.innerText = primerRegistro["INICIAL"] || "0"; // Primer folio de la remesa inicial
+            } else if (colKey === "FINAL") {
+                td.innerText = ultimoRegistro["FINAL"] || "0"; // Último folio de la remesa final
+            } else if (["INICIALES_A", "INICIALES_S", "INICIALES_C"].includes(colKey)) {
+                td.innerText = primerRegistro[colKey] || "0"; // Iniciales de la remesa inicial
+            } else if (colKey === "CONFIGURACION") {
+                td.innerText = ultimoRegistro[colKey] || "0"; // Configuración de la última remesa (no se suma)
+            } else if (["ENT", "DTTO"].includes(colKey)) {
+                td.innerText = primerRegistro[colKey] || "";
+            } else {
+                let sumaCol = 0;
+                registrosMod.forEach(reg => {
+                    let val = parseFloat(reg[colKey] || 0);
+                    if (!isNaN(val)) sumaCol += val;
+                });
+                td.innerText = sumaCol;
             }
             tr.appendChild(td);
         });
         tbody.appendChild(tr);
     });
+
+    renderGranTotalCampana(tbody, modulosMap, rInicio, rFin);
 }
 
-const btnFiltro = document.getElementById('btnFiltrarCampana');
-if(btnFiltro) btnFiltro.addEventListener('click', procesarYMostrarDatos);
+function renderGranTotalCampana(tbody, modulosMap, rInicio, rFin) {
+    let trGranTotal = document.createElement('tr');
+    trGranTotal.classList.add('fila-totales');
+    
+    // Obtenemos todos los registros de todos los módulos ya ordenados
+    let todosLosRegistros = [];
+    Object.values(modulosMap).forEach(arr => todosLosRegistros = todosLosRegistros.concat(arr));
+    
+    COLUMNAS_CAMPANA_KEYS.forEach(colKey => {
+        let td = document.createElement('td');
 
-function renderListaRemesas() {
-    const tbody = document.querySelector('#tablaListaRemesas tbody');
-    if(!tbody) return;
-    tbody.innerHTML = "";
-    Object.keys(historialGlobal).forEach(remesaId => {
-        let tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td class="fw-bold fs-5 text-primary">Remesa ${remesaId}</td>
-            <td>
-                <button class="btn btn-sm btn-primary px-3 me-2 btn-editar" data-id="${remesaId}"><i class="bi bi-pencil-square"></i> Ver / Editar</button>
-                <button class="btn btn-sm btn-danger px-3 btn-borrar" data-id="${remesaId}"><i class="bi bi-trash"></i> Eliminar</button>
-            </td>
-        `;
-        tbody.appendChild(tr);
+        if (colKey === "MODULO") {
+            td.innerText = "GRAN TOTAL";
+        } else if (colKey === "REMESA") {
+            td.innerText = `${rInicio} - ${rFin}`;
+        } else if (["INICIAL", "FINAL", "INICIALES_A", "INICIALES_S", "INICIALES_C", "CONFIGURACION", "ENT", "DTTO"].includes(colKey)) {
+            td.innerText = ""; // Se dejan vacíos en el gran total
+        } else {
+            let sumaTotal = 0;
+            todosLosRegistros.forEach(reg => {
+                let val = parseFloat(reg[colKey] || 0);
+                if (!isNaN(val)) sumaTotal += val;
+            });
+            td.innerText = sumaTotal;
+        }
+        trGranTotal.appendChild(td);
     });
-    // ... eventos de borrar y editar... (omitidos parcialmente por espacio, se mantienen igual en funcionalidad básica)
+    tbody.appendChild(trGranTotal);
 }
 
-cargarInicialesDB(); // INICIA AQUI EN VEZ DE cargarDatosCampana() directo
+// Iniciar carga
+cargarDatosCampana();
