@@ -92,16 +92,23 @@ function dibujarTablaTotales(datosArreglo) {
         return;
     }
 
-    let columnas = Object.keys(datosArreglo[0]);
+    // Obtener llaves únicas y eliminar posibles duplicados por mayúsculas/minúsculas
+    let rawColumnas = Object.keys(datosArreglo[0]);
+    let columnasUnicasMap = new Map();
+    rawColumnas.forEach(c => {
+        columnasUnicasMap.set(c.toUpperCase(), c); // Mantiene la llave real normalizada
+    });
+    let columnas = Array.from(columnasUnicasMap.values());
 
+    // ORDEN DESEADO LIMPIO (SIN REPETIR MODULO NI REMESA)
     const ordenDeseado = [
-        "IDMAC", "modulo", "remesa", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
+        "IDMAC", "MODULO", "REMESA", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
         "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSISION",
         "CORR__DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES",
         "CANCELADOS", "TOTAL_DE_ANEXOS_POR_RECHAZO", "CPV_devuelta_entrega", "DISPONIBLES_AL_DIA_ANTERIOR",
         "RECIBIDAS", "RECIBIDAS_DE_OTROS_TIPOS", "ENTREGADAS", "RECIBO_Y_O_EXTRAVIO", "ANEXAS_A_FUAR",
         "DATOS_ERRONEOS", "FOTO_MAL_IMPRESA", "LIBRE2", "RETIRADAS_POR_OTRA_CAUSA", "DISPONIBLES",
-        // Resto de columnas de la BD
+        // Resto de columnas ordenadas sin duplicados
         "RECHAZOS_DE_MAC_34", "RECHAZOS_DE_MAC_35", "CRED_PROD_CANJE_POR_NUEVA", "INICIALES_A", "INICIALES_S", "INICIALES_C",
         "ACTUALIZACIÓN", "FICHAS_ENTREGADAS", "FICHAS_ATENDIDAS", "DIAS_TRABAJADOS", "SOLICITUD_EXPEDICION_REPATRIADOS",
         "SOLICITUD_EXPEDICION", "SOLICITUD_RECTIFICACION", "DEMANDA_DE_JUICIO", "TOTAL_DE_MOVIMIENTOS",
@@ -131,7 +138,7 @@ function dibujarTablaTotales(datosArreglo) {
                               .replace('RECIBO_Y_O_EXTRAVIO', 'RECIBO_Y/O_EXTRAVIO');
         
         let iconoFlechita = '<i class="bi bi-arrow-down-up ms-1" style="font-size: 0.8em; color: rgba(255,255,255,0.4);"></i>';
-        if (columnaOrdenActual === col) {
+        if (columnaOrdenActual.toUpperCase() === col.toUpperCase()) {
             iconoFlechita = ordenAscendente ? '<i class="bi bi-caret-up-fill text-warning ms-1"></i>' : '<i class="bi bi-caret-down-fill text-warning ms-1"></i>';
         }
 
@@ -144,7 +151,7 @@ function dibujarTablaTotales(datosArreglo) {
 
     let htmlCuerpo = '';
     datosArreglo.forEach(fila => {
-        const idMacVal = fila.IDMAC || '';
+        const idMacVal = fila.IDMAC || fila.idmac || '';
         htmlCuerpo += '<tr>';
         
         htmlCuerpo += `<td class="text-center align-middle" style="min-width: 110px;">
@@ -157,13 +164,13 @@ function dibujarTablaTotales(datosArreglo) {
                        </td>`;
 
         columnas.forEach(col => {
-            htmlCuerpo += `<td class="align-middle">${fila[col] !== undefined && fila[col] !== null ? fila[col] : ''}</td>`;
+            let val = fila[col] !== undefined && fila[col] !== null ? fila[col] : (fila[col.toLowerCase()] !== undefined ? fila[col.toLowerCase()] : '');
+            htmlCuerpo += `<td class="align-middle">${val}</td>`;
         });
         htmlCuerpo += '</tr>';
     });
     tbody.innerHTML = htmlCuerpo;
 }
-
 // BUSCADOR
 const buscadorTotales = document.getElementById('buscadorBdTotales');
 if (buscadorTotales) {
