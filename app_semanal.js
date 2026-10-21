@@ -17,15 +17,14 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// Tus nuevos 78 encabezados oficiales estandarizados (Índice 0 a 69)
+// Tus 78 encabezados oficiales estandarizados
 const ENCABEZADOS_OFICIALES = [
     "MODULO", "REMESA", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
     "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSISION",
     "CORR__DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES",
-    "CANCELADOS", "RECHAZOS_DE_MAC_34", "RECHAZOS_DE_MAC_35", "CRED_PROD_CANJE_POR_NUEVA",
-    "INICIALES_A", "INICIALES_S", "INICIALES_C", "ACTUALIZACIÓN", "RECIBIDAS_DE_OTROS_TIPOS",
-    "ENTREGADAS", "RECIBO_Y_O_EXTRAVIO", "ANEXAS_A_FUAR", "DATOS_ERRONEOS", "FOTO_MAL_IMPRESA",
-    "RETIRADAS_POR_OTRA_CAUSA", "DISPONIBLES", "FICHAS_ENTREGADAS", "FICHAS_ATENDIDAS",
+    "CANCELADOS", "TOTAL_DE_ANEXOS_POR_RECHAZO", "CPV_devuelta_entrega", "DISPONIBLES_AL_DIA_ANTERIOR",
+    "RECIBIDAS", "RECIBIDAS_DE_OTROS_TIPOS", "ENTREGADAS", "RECIBO_Y_O_EXTRAVIO", "ANEXAS_A_FUAR",
+    "DATOS_ERRONEOS", "FOTO_MAL_IMPRESA", "LIBRE2", "RETIRADAS_POR_OTRA_CAUSA", "DISPONIBLES", "FICHAS_ENTREGADAS", "FICHAS_ATENDIDAS",
     "DIAS_TRABAJADOS", "SOLICITUD_EXPEDICION_REPATRIADOS", "SOLICITUD_EXPEDICION",
     "SOLICITUD_RECTIFICACION", "DEMANDA_DE_JUICIO", "TOTAL_DE_MOVIMIENTOS", "DEVUELTAS_POR_TERCEROS",
     "34_IMAGEN_INCONSISTENTE", "35_MOVIMIENTO_POSTERIOR", "CONFIGURACION", "ENT", "DTTO",
@@ -39,8 +38,14 @@ const ENCABEZADOS_OFICIALES = [
     "CRED_PRODUCTO_DE_REGISTRO_DUPLICADO", "CIF-05", "SOLICITUDE_RECTIFICACIÒN"
 ];
 
-// Columnas que deseas mostrar en el reporte semanal (basadas en los índices o puedes agregar/quitar)
-let COLUMNAS_SEMANAL = [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30];
+// Definimos las columnas que se pintarán en la tabla semanal por sus nombres clave oficiales
+let COLUMNAS_SEMANAL_KEYS = [
+    "MODULO", "REMESA", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
+    "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSISION",
+    "CORR__DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES",
+    "CANCELADOS", "RECHAZOS_DE_MAC_34", "RECHAZOS_DE_MAC_35", "CRED_PROD_CANJE_POR_NUEVA",
+    "INICIALES_A", "INICIALES_S", "INICIALES_C", "ACTUALIZACIÓN"
+];
 
 let bdMadreGlobal = [];
 let bdtotalesGlobal = [];
@@ -67,24 +72,25 @@ function construirHeaderTabla(selectorTabla) {
     thead.innerHTML = "";
     let trTitulos = document.createElement('tr');
     
-    COLUMNAS_SEMANAL.forEach((colIdx) => {
+    COLUMNAS_SEMANAL_KEYS.forEach((colKey) => {
         let thT = document.createElement('th');
-        let nombreCol = ENCABEZADOS_OFICIALES[colIdx] || `Col_${colIdx}`;
+        let nombreVisual = colKey.replace(/_/g, ' ');
         
-        let nombreVisual = nombreCol.replace(/_/g, ' ');
         thT.innerText = nombreVisual;
         thT.style.height = "50px";
         thT.style.verticalAlignment = "middle";
         thT.style.fontSize = "11px";
         
         let anchoCelda = "90px"; 
-        if(colIdx === 1 || colIdx === 2 || colIdx === 3) anchoCelda = "85px"; 
-        else if(colIdx === 4) anchoCelda = "130px"; // SEDES
-        else if(colIdx === 5 || colIdx === 6) anchoCelda = "110px"; // INICIAL / FINAL
+        if(colKey === 'MODULO' || colKey === 'REMESA') anchoCelda = "85px"; 
+        else if(colKey === 'INICIAL' || colKey === 'FINAL') anchoCelda = "110px";
         
-        thT.style.width = anchoCelda; thT.style.minWidth = anchoCelda;
+        thT.style.width = anchoCelda; 
+        thT.style.minWidth = anchoCelda;
         
-        if(colIdx >= 5 && colIdx <= 7) thT.classList.add('bg-folios');
+        if(['INICIAL', 'FINAL', 'TOTAL_DE_FOLIOS'].includes(colKey)) {
+            thT.classList.add('bg-folios');
+        }
         
         trTitulos.appendChild(thT);
     });
@@ -96,6 +102,14 @@ construirHeaderTabla('#tablaSemanal');
 // ==========================================
 // 3. CARGA DE DATOS Y GESTIÓN DE REMESA
 // ==========================================
+function normalizarObjeto(item) {
+    let limpio = {};
+    for (let key in item) {
+        limpio[key.toUpperCase().trim()] = item[key];
+    }
+    return limpio;
+}
+
 function cargarDatosSemanal() {
     Promise.all([
         get(ref(db, 'bd_madre')),
@@ -103,14 +117,16 @@ function cargarDatosSemanal() {
     ]).then(([snapMadre, snapTotales]) => {
         if (snapMadre.exists()) {
             const dataRaw = snapMadre.val();
-            bdMadreGlobal = Array.isArray(dataRaw) ? dataRaw : Object.values(dataRaw);
+            let arr = Array.isArray(dataRaw) ? dataRaw : Object.values(dataRaw);
+            bdMadreGlobal = arr.map(normalizarObjeto);
         } else {
             bdMadreGlobal = [];
         }
 
         if (snapTotales.exists()) {
             const dataTotalesRaw = snapTotales.val();
-            bdtotalesGlobal = Array.isArray(dataTotalesRaw) ? dataTotalesRaw : Object.values(dataTotalesRaw);
+            let arr = Array.isArray(dataTotalesRaw) ? dataTotalesRaw : Object.values(dataTotalesRaw);
+            bdtotalesGlobal = arr.map(normalizarObjeto);
         } else {
             bdtotalesGlobal = [];
         }
@@ -138,11 +154,11 @@ function obtenerRemesaSeleccionada() {
 
     let remesasDisponibles = new Set();
     bdMadreGlobal.forEach(f => {
-        let r = String(f['REMESA'] || f['Remesa'] || f['remesa'] || '').trim();
+        let r = String(f['REMESA'] || '').trim();
         if(r) remesasDisponibles.add(r);
     });
     bdtotalesGlobal.forEach(f => {
-        let r = String(f['REMESA'] || f['Remesa'] || f['remesa'] || '').trim();
+        let r = String(f['REMESA'] || '').trim();
         if(r) remesasDisponibles.add(r);
     });
 
@@ -166,21 +182,19 @@ function renderTablaSemanal() {
     }
 
     if (!remesaActiva) {
-        tbody.innerHTML = '<tr><td colspan="30" class="text-center py-4 text-muted">No se encontró ninguna remesa registrada o escrita.</td></tr>';
+        tbody.innerHTML = `<tr><td colspan="${COLUMNAS_SEMANAL_KEYS.length}" class="text-center py-4 text-muted">No se encontró ninguna remesa registrada o escrita.</td></tr>`;
         return;
     }
 
-    let registrosTotalesRemesa = bdtotalesGlobal.filter(item => String(item.REMESA || item.Remesa || '').trim() === String(remesaActiva));
+    let registrosTotalesRemesa = bdtotalesGlobal.filter(item => String(item['REMESA'] || '').trim() === String(remesaActiva));
 
     if (registrosTotalesRemesa.length > 0) {
         registrosTotalesRemesa.forEach(reg => {
             let tr = document.createElement('tr');
 
-            COLUMNAS_SEMANAL.forEach(colIdx => {
+            COLUMNAS_SEMANAL_KEYS.forEach(colKey => {
                 let td = document.createElement('td');
-                let nombreColKey = ENCABEZADOS_OFICIALES[colIdx];
-
-                td.innerText = reg[nombreColKey] || reg[`Columna ${colIdx + 1}`] || "0";
+                td.innerText = reg[colKey] !== undefined && reg[colKey] !== null ? reg[colKey] : "0";
                 tr.appendChild(td);
             });
             tbody.appendChild(tr);
@@ -189,16 +203,16 @@ function renderTablaSemanal() {
         renderGranTotalDesdeRegistros(tbody, registrosTotalesRemesa, remesaActiva);
 
     } else {
-        let filasRemesa = bdMadreGlobal.filter(item => String(item.REMESA || item.Remesa || '').trim() === String(remesaActiva));
+        let filasRemesa = bdMadreGlobal.filter(item => String(item['REMESA'] || '').trim() === String(remesaActiva));
 
         if (filasRemesa.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="30" class="text-center py-4 text-muted">No hay registros para la remesa: ${remesaActiva}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="${COLUMNAS_SEMANAL_KEYS.length}" class="text-center py-4 text-muted">No hay registros para la remesa: ${remesaActiva}</td></tr>`;
             return;
         }
 
         let modulosMap = {};
         filasRemesa.forEach(f => {
-            let mod = String(f['MODULO'] || f['MÓDULO'] || f['Módulo'] || f['Modulo'] || 'General').trim();
+            let mod = String(f['MODULO'] || 'General').trim();
             if (!modulosMap[mod]) modulosMap[mod] = [];
             modulosMap[mod].push(f);
         });
@@ -207,18 +221,17 @@ function renderTablaSemanal() {
             let tr = document.createElement('tr');
             let registrosMod = modulosMap[modNombre];
 
-            COLUMNAS_SEMANAL.forEach(colIdx => {
+            COLUMNAS_SEMANAL_KEYS.forEach(colKey => {
                 let td = document.createElement('td');
-                let nombreColKey = ENCABEZADOS_OFICIALES[colIdx];
 
-                if (nombreColKey === "MODULO") {
+                if (colKey === "MODULO") {
                     td.innerText = modNombre;
-                } else if (nombreColKey === "REMESA") {
+                } else if (colKey === "REMESA") {
                     td.innerText = remesaActiva;
                 } else {
                     let sumaCol = 0;
                     registrosMod.forEach(reg => {
-                        let val = parseFloat(reg[nombreColKey] || 0);
+                        let val = parseFloat(reg[colKey] || 0);
                         if (!isNaN(val)) sumaCol += val;
                     });
                     td.innerText = sumaCol;
@@ -236,18 +249,17 @@ function renderGranTotalDesdeRegistros(tbody, listaRegistros, remesaId) {
     let trGranTotal = document.createElement('tr');
     trGranTotal.classList.add('fila-totales');
     
-    COLUMNAS_SEMANAL.forEach(colIdx => {
+    COLUMNAS_SEMANAL_KEYS.forEach(colKey => {
         let td = document.createElement('td');
-        let nombreColKey = ENCABEZADOS_OFICIALES[colIdx];
 
-        if (nombreColKey === "MODULO") {
+        if (colKey === "MODULO") {
             td.innerText = "GRAN TOTAL";
-        } else if (nombreColKey === "REMESA") {
+        } else if (colKey === "REMESA") {
             td.innerText = remesaId;
         } else {
             let sumaTotalRemesa = 0;
             listaRegistros.forEach(reg => {
-                let val = parseFloat(reg[nombreColKey] || 0);
+                let val = parseFloat(reg[colKey] || 0);
                 if (!isNaN(val)) sumaTotalRemesa += val;
             });
             td.innerText = sumaTotalRemesa;
