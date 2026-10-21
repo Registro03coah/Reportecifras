@@ -1,5 +1,5 @@
 // ==========================================
-// 1. IMPORTACIONES Y CONFIGURACIÓN FIREBASE (BD MADRE Y BD TOTALES)
+// 1. IMPORTACIONES Y CONFIGURACIÓN FIREBASE (REPORTE SEMANAL)
 // ==========================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, get, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
@@ -22,9 +22,10 @@ const ENCABEZADOS_OFICIALES = [
     "MODULO", "REMESA", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
     "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSISION",
     "CORR__DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES",
-    "CANCELADOS", "TOTAL_DE_ANEXOS_POR_RECHAZO", "CPV_devuelta_entrega", "DISPONIBLES_AL_DIA_ANTERIOR",
-    "RECIBIDAS", "RECIBIDAS_DE_OTROS_TIPOS", "ENTREGADAS", "RECIBO_Y_O_EXTRAVIO", "ANEXAS_A_FUAR",
-    "DATOS_ERRONEOS", "FOTO_MAL_IMPRESA", "LIBRE2", "RETIRADAS_POR_OTRA_CAUSA", "DISPONIBLES", "FICHAS_ENTREGADAS", "FICHAS_ATENDIDAS",
+    "CANCELADOS", "RECHAZOS_DE_MAC_34", "RECHAZOS_DE_MAC_35", "CRED_PROD_CANJE_POR_NUEVA",
+    "INICIALES_A", "INICIALES_S", "INICIALES_C", "ACTUALIZACIÓN", "RECIBIDAS_DE_OTROS_TIPOS",
+    "ENTREGADAS", "RECIBO_Y_O_EXTRAVIO", "ANEXAS_A_FUAR", "DATOS_ERRONEOS", "FOTO_MAL_IMPRESA",
+    "RETIRADAS_POR_OTRA_CAUSA", "DISPONIBLES", "FICHAS_ENTREGADAS", "FICHAS_ATENDIDAS",
     "DIAS_TRABAJADOS", "SOLICITUD_EXPEDICION_REPATRIADOS", "SOLICITUD_EXPEDICION",
     "SOLICITUD_RECTIFICACION", "DEMANDA_DE_JUICIO", "TOTAL_DE_MOVIMIENTOS", "DEVUELTAS_POR_TERCEROS",
     "34_IMAGEN_INCONSISTENTE", "35_MOVIMIENTO_POSTERIOR", "CONFIGURACION", "ENT", "DTTO",
@@ -38,13 +39,19 @@ const ENCABEZADOS_OFICIALES = [
     "CRED_PRODUCTO_DE_REGISTRO_DUPLICADO", "CIF-05", "SOLICITUDE_RECTIFICACIÒN"
 ];
 
-// Definimos las columnas que se pintarán en la tabla semanal por sus nombres clave oficiales
+// ORDEN EXACTO BASADO EN TU IMAGEN DE REFERENCIA
 let COLUMNAS_SEMANAL_KEYS = [
-    "MODULO", "REMESA", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
-    "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSISION",
-    "CORR__DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES",
-    "CANCELADOS", "RECHAZOS_DE_MAC_34", "RECHAZOS_DE_MAC_35", "CRED_PROD_CANJE_POR_NUEVA",
-    "INICIALES_A", "INICIALES_S", "INICIALES_C", "ACTUALIZACIÓN"
+    "ENT", "DTTO", "MODULO", "REMESA", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS", 
+    "NO_UTILIZADOS", "INSCRIPCIONES", "ANEXAS_A_FUAR", "RESGUARDO", "SOLICITU_DE_REIMPRESION", 
+    "RECIBO_Y_O_EXTRAVIO", "RETIRADAS_POR_OTRA_CAUSA", "SOBRANTES", "DUPLICADO", 
+    "DISPONIBLES", "DISPONIBLES_DE_SOL_DE_EXP", "REIMPRE_FUERA_DEL_SISTEMA", 
+    "CREDEN_DEVUELTAS_POR_TERCEROS", "CRED_PRODUCTO_DE_REGISTRO_DUPLICADO", 
+    "CRED_PROD_CANJE_POR_NUEVA", "DIAS_TRABAJADOS", "CONFIGURACION", 
+    "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSISION", 
+    "CORR__DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", 
+    "TOTAL_DE_TRAMITES", "RECHAZOS_DE_MAC_34", "RECHAZOS_DE_MAC_35", "CANCELADOS", 
+    "TOTAL_DE_MOVIMIENTOS", "CIF-05", "SOLICITUD_EXPEDICION", "SOLICITUD_RECTIFICACION", 
+    "DEMANDA_DE_JUICIO", "ACTUALIZACIÓN", "RECIBIDAS_DE_OTROS_TIPOS", "IMPORTADAS", "EXPORTADAS", "ENTREGADAS"
 ];
 
 let bdMadreGlobal = [];
@@ -74,7 +81,10 @@ function construirHeaderTabla(selectorTabla) {
     
     COLUMNAS_SEMANAL_KEYS.forEach((colKey) => {
         let thT = document.createElement('th');
-        let nombreVisual = colKey.replace(/_/g, ' ');
+        let nombreVisual = colKey.replace(/_/g, ' ')
+                                  .replace('SOLICITU DE', 'SOLICITUD DE')
+                                  .replace('DUPLICADO', 'DUPLICADOS')
+                                  .replace('DISPONIBLES', 'DISPONIBLES TOTAL');
         
         thT.innerText = nombreVisual;
         thT.style.height = "50px";
@@ -82,7 +92,7 @@ function construirHeaderTabla(selectorTabla) {
         thT.style.fontSize = "11px";
         
         let anchoCelda = "90px"; 
-        if(colKey === 'MODULO' || colKey === 'REMESA') anchoCelda = "85px"; 
+        if(colKey === 'MODULO' || colKey === 'REMESA' || colKey === 'ENT' || colKey === 'DTTO') anchoCelda = "70px"; 
         else if(colKey === 'INICIAL' || colKey === 'FINAL') anchoCelda = "110px";
         
         thT.style.width = anchoCelda; 
@@ -228,6 +238,9 @@ function renderTablaSemanal() {
                     td.innerText = modNombre;
                 } else if (colKey === "REMESA") {
                     td.innerText = remesaActiva;
+                } else if (colKey === "INICIAL" || colKey === "FINAL") {
+                    // No llevarán suma ni valor en filas individuales o se dejan vacías/guion según prefieras
+                    td.innerText = "";
                 } else {
                     let sumaCol = 0;
                     registrosMod.forEach(reg => {
@@ -256,6 +269,9 @@ function renderGranTotalDesdeRegistros(tbody, listaRegistros, remesaId) {
             td.innerText = "GRAN TOTAL";
         } else if (colKey === "REMESA") {
             td.innerText = remesaId;
+        } else if (colKey === "INICIAL" || colKey === "FINAL") {
+            // Se quitan las sumas en INICIAL y FINAL (quedan en blanco)
+            td.innerText = "";
         } else {
             let sumaTotalRemesa = 0;
             listaRegistros.forEach(reg => {
