@@ -30,6 +30,16 @@ let ordenAscendente = false;
 database.ref('bdtotales').on('value', (snapshot) => {
     let datos = snapshot.val();
     datosGlobalesTotales = datos ? (Array.isArray(datos) ? datos : Object.values(datos)) : [];
+    
+    // Normalizar llaves para evitar duplicados en memoria
+    datosGlobalesTotales = datosGlobalesTotales.map(item => {
+        let limpio = {};
+        for (let key in item) {
+            limpio[key.toUpperCase().trim()] = item[key];
+        }
+        return limpio;
+    });
+
     ejecutarOrdenamientoTotales(datosGlobalesTotales);
 });
 
@@ -92,15 +102,7 @@ function dibujarTablaTotales(datosArreglo) {
         return;
     }
 
-    // Obtener llaves únicas y eliminar posibles duplicados por mayúsculas/minúsculas
-    let rawColumnas = Object.keys(datosArreglo[0]);
-    let columnasUnicasMap = new Map();
-    rawColumnas.forEach(c => {
-        columnasUnicasMap.set(c.toUpperCase(), c); // Mantiene la llave real normalizada
-    });
-    let columnas = Array.from(columnasUnicasMap.values());
-
-    // ORDEN DESEADO LIMPIO (SIN REPETIR MODULO NI REMESA)
+    // ORDEN DESEADO EXACTO (Sin repeticiones)
     const ordenDeseado = [
         "IDMAC", "MODULO", "REMESA", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
         "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSISION",
@@ -108,7 +110,7 @@ function dibujarTablaTotales(datosArreglo) {
         "CANCELADOS", "TOTAL_DE_ANEXOS_POR_RECHAZO", "CPV_devuelta_entrega", "DISPONIBLES_AL_DIA_ANTERIOR",
         "RECIBIDAS", "RECIBIDAS_DE_OTROS_TIPOS", "ENTREGADAS", "RECIBO_Y_O_EXTRAVIO", "ANEXAS_A_FUAR",
         "DATOS_ERRONEOS", "FOTO_MAL_IMPRESA", "LIBRE2", "RETIRADAS_POR_OTRA_CAUSA", "DISPONIBLES",
-        // Resto de columnas ordenadas sin duplicados
+        // Resto de columnas
         "RECHAZOS_DE_MAC_34", "RECHAZOS_DE_MAC_35", "CRED_PROD_CANJE_POR_NUEVA", "INICIALES_A", "INICIALES_S", "INICIALES_C",
         "ACTUALIZACIÓN", "FICHAS_ENTREGADAS", "FICHAS_ATENDIDAS", "DIAS_TRABAJADOS", "SOLICITUD_EXPEDICION_REPATRIADOS",
         "SOLICITUD_EXPEDICION", "SOLICITUD_RECTIFICACION", "DEMANDA_DE_JUICIO", "TOTAL_DE_MOVIMIENTOS",
@@ -122,12 +124,13 @@ function dibujarTablaTotales(datosArreglo) {
         "CREDEN_DEVUELTAS_POR_TERCEROS", "CRED_PRODUCTO_DE_REGISTRO_DUPLICADO", "CIF-05", "SOLICITUDE_RECTIFICACIÒN"
     ];
 
-    columnas.sort((a, b) => {
-        let indiceA = ordenDeseado.indexOf(a.toUpperCase());
-        let indiceB = ordenDeseado.indexOf(b.toUpperCase());
-        if (indiceA === -1) indiceA = 999;
-        if (indiceB === -1) indiceB = 999;
-        return indiceA - indiceB;
+    // Filtrar únicamente las columnas que existan en los datos reales y ordenarlas estrictamente según ordenDeseado
+    let columnasDisponibles = Object.keys(datosArreglo[0]);
+    let columnas = ordenDeseado.filter(col => columnasDisponibles.includes(col));
+    
+    // Si hay alguna columna extra en el JSON que no esté en ordenDeseado, la agregamos al final para no perderla
+    columnasDisponibles.forEach(c => {
+        if (!columnas.includes(c)) columnas.push(c);
     });
 
     let trHead = '<tr>';
@@ -151,7 +154,7 @@ function dibujarTablaTotales(datosArreglo) {
 
     let htmlCuerpo = '';
     datosArreglo.forEach(fila => {
-        const idMacVal = fila.IDMAC || fila.idmac || '';
+        const idMacVal = fila.IDMAC || '';
         htmlCuerpo += '<tr>';
         
         htmlCuerpo += `<td class="text-center align-middle" style="min-width: 110px;">
@@ -164,13 +167,13 @@ function dibujarTablaTotales(datosArreglo) {
                        </td>`;
 
         columnas.forEach(col => {
-            let val = fila[col] !== undefined && fila[col] !== null ? fila[col] : (fila[col.toLowerCase()] !== undefined ? fila[col.toLowerCase()] : '');
-            htmlCuerpo += `<td class="align-middle">${val}</td>`;
+            htmlCuerpo += `<td class="align-middle">${fila[col] !== undefined && fila[col] !== null ? fila[col] : ''}</td>`;
         });
         htmlCuerpo += '</tr>';
     });
     tbody.innerHTML = htmlCuerpo;
 }
+
 // BUSCADOR
 const buscadorTotales = document.getElementById('buscadorBdTotales');
 if (buscadorTotales) {
@@ -191,7 +194,7 @@ if (buscadorTotales) {
 }
 
 // =========================================================
-// SUBIR Y FUSIONAR ARCHIVO JSON EN BDTOTALES (RECALCULA IDMAC SIEMPRE)
+// SUBIR Y FUSIONAR ARCHIVO JSON EN BDTOTALES (NORMALIZA LLAVES)
 // =========================================================
 const btnSubirTotales = document.getElementById('btnSubirTotales');
 const fileInputTotales = document.getElementById('fileInputTotales');
@@ -220,17 +223,26 @@ if (btnSubirTotales && fileInputTotales) {
 
                     let mapaTotales = new Map();
 
-                    // Cargar los existentes
+                    // Cargar existentes normalizados
                     datosActuales.forEach(item => {
-                        const idmac = String(item.IDMAC || '');
-                        if (idmac) mapaTotales.set(idmac, item);
+                        let itemClean = {};
+                        for (let key in item) {
+                            itemClean[key.toUpperCase().trim()] = item[key];
+                        }
+                        const idmac = String(itemClean.IDMAC || '');
+                        if (idmac) mapaTotales.set(idmac, itemClean);
                     });
 
-                    // Procesar los nuevos (Forzando la corrección del IDMAC)
+                    // Procesar nuevos normalizando llaves y calculando IDMAC
                     nuevosDatos.forEach(itemNuevo => {
-                        if (itemNuevo.MODULO && itemNuevo.REMESA) {
-                            const m = String(itemNuevo.MODULO).trim().slice(-3);
-                            let remStr = String(itemNuevo.REMESA).trim();
+                        let itemClean = {};
+                        for (let key in itemNuevo) {
+                            itemClean[key.toUpperCase().trim()] = itemNuevo[key];
+                        }
+
+                        if (itemClean.MODULO && itemClean.REMESA) {
+                            const m = String(itemClean.MODULO).trim().slice(-3);
+                            let remStr = String(itemClean.REMESA).trim();
                             let r = remStr;
                             
                             if (/^\d{4}/.test(remStr)) {
@@ -238,12 +250,12 @@ if (btnSubirTotales && fileInputTotales) {
                             } else if (!remStr.includes('-')) {
                                 r = remStr.slice(-2);
                             }
-                            itemNuevo.IDMAC = `${m}${r}`;
+                            itemClean.IDMAC = `${m}${r}`;
                         }
                         
-                        const idmacNuevo = String(itemNuevo.IDMAC || '');
+                        const idmacNuevo = String(itemClean.IDMAC || '');
                         if (idmacNuevo) {
-                            mapaTotales.set(idmacNuevo, itemNuevo);
+                            mapaTotales.set(idmacNuevo, itemClean);
                         }
                     });
 
@@ -251,7 +263,7 @@ if (btnSubirTotales && fileInputTotales) {
 
                     database.ref('bdtotales').set(datosFusionados).then(() => {
                         if (loadingOverlay) loadingOverlay.style.display = 'none';
-                        alert("¡BD Totales actualizada y los IDMAC fueron corregidos con éxito!");
+                        alert("¡BD Totales actualizada y duplicados corregidos con éxito!");
                         fileInputTotales.value = '';
                     }).catch(() => {
                         if (loadingOverlay) loadingOverlay.style.display = 'none';
@@ -300,7 +312,7 @@ window.borrarRegistroTotales = function(idmac) {
 };
 
 // =========================================================
-// FUNCIONES DE EDICIÓN DINÁMICA (TODAS LAS COLUMNAS)
+// FUNCIONES DE EDICIÓN DINÁMICA
 // =========================================================
 window.abrirModalEdicionTotales = function(idmac) {
     const registro = datosGlobalesTotales.find(item => String(item.IDMAC) === String(idmac));
