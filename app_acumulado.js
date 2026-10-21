@@ -17,7 +17,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// Todas las columnas oficiales (se podará a 30 después)
+// Todas las columnas oficiales a mostrar
 const COLUMNAS_ACUMULADO_KEYS = [
     "ENT", "DTTO", "MODULO", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS", 
     "NO_UTILIZADOS", "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", 
@@ -32,10 +32,50 @@ const COLUMNAS_ACUMULADO_KEYS = [
     "DIAS_TRABAJADOS", "CONFIGURACION"
 ];
 
+// ==========================================
+// 2. CONFIGURACIÓN DE HISTORIAL DE FOLIOS (RANGOS ROJOS Y NEGROS)
+// ==========================================
+// Estos son los rangos rojos históricos que pediste dejar fijos.
+const HISTORIAL_ROJOS = {
+    "50351": [
+        { i: "2605035100001", f: "2605035108668" },
+        { i: "2505035125557", f: "2505035139930" },
+        { i: "2505035109053", f: "2505035125556" },
+        { i: "2505035100001", f: "2505035109052" },
+        { i: "2405035119618", f: "2405035132139" },
+        { i: "2405035109082", f: "2405035119617" }
+    ],
+    "50353": [
+        { i: "2605035300001", f: "2605035303085" },
+        { i: "2505035309689", f: "2505035316305" },
+        { i: "2505035303324", f: "2505035309688" },
+        { i: "2505035300001", f: "2505035303323" },
+        { i: "2405035307991", f: "2405035313485" },
+        { i: "2405035303096", f: "2405035307990" }
+    ],
+    "50354": [
+        { i: "2605035400001", f: "2605035401972" },
+        { i: "2505035404268", f: "2505035408381" },
+        { i: "2505035401417", f: "2505035404267" },
+        { i: "2505035400001", f: "2505035401416" },
+        { i: "2405035402884", f: "2405035405329" },
+        { i: "2405035400971", f: "2405035402883" }
+    ]
+};
+
+// Folio INICIAL de la campaña actual (Fila Negra)
+const INICIAL_ACTUAL = {
+    "50351": "2605035108669",
+    "50353": "2605035303086",
+    "50354": "2605035401973"
+};
+
+const MODULOS_ORDEN = ["50351", "50353", "50354"];
+
 let dataGlobalAcumulado = [];
 
 // ==========================================
-// 2. SEMÁFORO Y CONSTRUCCIÓN DE CABECERA
+// 3. SEMÁFORO Y CONSTRUCCIÓN DE CABECERA
 // ==========================================
 const connectedRef = ref(db, ".info/connected");
 onValue(connectedRef, (snap) => {
@@ -82,7 +122,7 @@ function construirHeaderTabla(selectorTabla) {
 }
 
 // ==========================================
-// 3. CARGA DE DATOS Y RENDERIZADO ACUMULADO
+// 4. CARGA DE DATOS Y RENDERIZADO ACUMULADO
 // ==========================================
 function normalizarObjeto(item) {
     let limpio = {};
@@ -100,7 +140,6 @@ function cargarDatosAcumulado() {
         let arrMadre = snapMadre.exists() ? (Array.isArray(snapMadre.val()) ? snapMadre.val() : Object.values(snapMadre.val())).map(normalizarObjeto) : [];
         let arrTotales = snapTotales.exists() ? (Array.isArray(snapTotales.val()) ? snapTotales.val() : Object.values(snapTotales.val())).map(normalizarObjeto) : [];
         
-        // El acumulado considera toda la base de datos combinada
         dataGlobalAcumulado = [...arrTotales, ...arrMadre];
         renderTablaAcumulado();
     }).catch(err => console.error("Error al leer datos:", err));
@@ -111,120 +150,114 @@ function renderTablaAcumulado() {
     if(!tbody) return;
     tbody.innerHTML = "";
 
-    if (dataGlobalAcumulado.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="${COLUMNAS_ACUMULADO_KEYS.length}" class="text-center py-4 text-muted">No hay datos registrados en el sistema.</td></tr>`;
-        return;
-    }
-
-    // Agrupar por módulo y extraer rangos únicos de folios
-    let modulosMap = {};
+    let modulosMap = { "50351": [], "50353": [], "50354": [] };
+    
+    // Agrupar registros por módulo (limpiando ceros a la izquierda)
     dataGlobalAcumulado.forEach(f => {
-        let mod = String(f['MODULO'] || 'General').trim();
-        if (!modulosMap[mod]) {
-            modulosMap[mod] = { registros: [], foliosUnicos: new Set() };
-        }
-        modulosMap[mod].registros.push(f);
-
-        let ini = String(f['INICIAL'] || '').trim();
-        let fin = String(f['FINAL'] || '').trim();
-        if (ini !== '' && fin !== '' && ini !== '0' && fin !== '0') {
-            modulosMap[mod].foliosUnicos.add(JSON.stringify({ i: ini, f: fin }));
+        let modRaw = String(f['MODULO'] || '').trim();
+        let mod = modRaw.replace(/^0+/, ''); 
+        if (modulosMap[mod]) {
+            modulosMap[mod].push(f);
         }
     });
 
     let sumaGranTotalFolios = 0;
 
-    Object.keys(modulosMap).sort().forEach(modNombre => {
-        let dataMod = modulosMap[modNombre];
+    MODULOS_ORDEN.forEach(modNombre => {
+        let registrosMod = modulosMap[modNombre].sort((a, b) => String(a['REMESA']).localeCompare(String(b['REMESA'])));
         
-        // Convertir el Set a Array y ordenar de mayor a menor (folio FINAL descendente)
-        let rangosFolios = Array.from(dataMod.foliosUnicos).map(str => JSON.parse(str));
-        rangosFolios.sort((a, b) => Number(b.f) - Number(a.f));
+        // --- 1. FILA NEGRA (ACTUAL) ---
+        let trNegra = document.createElement('tr');
+        
+        // Obtener el folio FINAL máximo registrado en la base de datos para este módulo
+        let maxFinal = 0;
+        registrosMod.forEach(r => {
+            let val = Number(r["FINAL"]);
+            if (!isNaN(val) && val > maxFinal) maxFinal = val;
+        });
+        
+        let cIniActual = Number(INICIAL_ACTUAL[modNombre]);
+        let foliosNegra = (maxFinal > 0 && cIniActual > 0) ? (maxFinal - cIniActual + 1) : 0;
+        sumaGranTotalFolios += foliosNegra; // Sumamos al gran total
 
-        // Si no hay folios registrados para este módulo, creamos uno vacío por defecto para mostrar las métricas
-        if (rangosFolios.length === 0) {
-            rangosFolios.push({ i: "", f: "" });
-        }
+        COLUMNAS_ACUMULADO_KEYS.forEach(colKey => {
+            let td = document.createElement('td');
 
-        // Renderizar una fila por cada rango de folio
-        rangosFolios.forEach((rango, index) => {
-            let tr = document.createElement('tr');
-            
-            // La fila 0 es la principal (negra). > 0 son históricas (rojas).
-            let esFilaPrincipal = (index === 0);
-            if (!esFilaPrincipal) {
-                tr.classList.add('fila-historica');
+            if (colKey === "ENT") td.innerText = "05";
+            else if (colKey === "DTTO") td.innerText = "03";
+            else if (colKey === "MODULO") td.innerText = modNombre;
+            else if (colKey === "INICIAL") td.innerText = INICIAL_ACTUAL[modNombre];
+            else if (colKey === "FINAL") td.innerText = maxFinal > 0 ? maxFinal : "";
+            else if (colKey === "TOTAL_DE_FOLIOS") td.innerText = foliosNegra;
+            else if (["INICIALES_A", "INICIALES_S", "INICIALES_C"].includes(colKey)) {
+                td.innerText = registrosMod.length > 0 ? (registrosMod[0][colKey] || "0") : "0";
+            } else if (colKey === "CONFIGURACION") {
+                td.innerText = registrosMod.length > 0 ? (registrosMod[registrosMod.length - 1][colKey] || "0") : "0";
+            } else {
+                // Sumar todos los trámites históricos de ese módulo
+                let sumaCol = 0;
+                registrosMod.forEach(reg => {
+                    let val = parseFloat(reg[colKey] || 0);
+                    if (!isNaN(val)) sumaCol += val;
+                });
+                td.innerText = sumaCol;
             }
+            trNegra.appendChild(td);
+        });
+        tbody.appendChild(trNegra);
+
+        // --- 2. FILAS ROJAS (HISTORIAL) ---
+        let historial = HISTORIAL_ROJOS[modNombre] || [];
+        historial.forEach(rango => {
+            let trRoja = document.createElement('tr');
+            trRoja.classList.add('fila-historica'); // Pinta los textos de rojo
+            
+            let cIniHist = Number(rango.i);
+            let cFinHist = Number(rango.f);
+            let foliosRoja = (cFinHist - cIniHist + 1);
+            sumaGranTotalFolios += foliosRoja; // Sumamos al gran total
 
             COLUMNAS_ACUMULADO_KEYS.forEach(colKey => {
                 let td = document.createElement('td');
 
-                if (colKey === "ENT") {
-                    td.innerText = dataMod.registros[0]['ENT'] || "";
-                } else if (colKey === "DTTO") {
-                    td.innerText = dataMod.registros[0]['DTTO'] || "";
-                } else if (colKey === "MODULO") {
-                    td.innerText = modNombre;
-                } else if (colKey === "INICIAL") {
-                    td.innerText = rango.i;
-                } else if (colKey === "FINAL") {
-                    td.innerText = rango.f;
-                } else if (colKey === "TOTAL_DE_FOLIOS") {
-                    // CÁLCULO ESTRICTO: FINAL - INICIAL + 1
-                    let cIni = Number(rango.i);
-                    let cFin = Number(rango.f);
-                    if (rango.i !== "" && rango.f !== "" && !isNaN(cIni) && !isNaN(cFin)) {
-                        let totalCalculado = cFin - cIni + 1;
-                        td.innerText = totalCalculado;
-                        sumaGranTotalFolios += totalCalculado; // Sumar al gran total global
-                    } else {
-                        td.innerText = "";
-                    }
-                } else if (["INICIALES_A", "INICIALES_S", "INICIALES_C", "CONFIGURACION"].includes(colKey)) {
-                    // Se muestran en la principal sacados del registro más reciente
-                    if (esFilaPrincipal) {
-                        td.innerText = dataMod.registros[0][colKey] || "0";
-                    } else {
-                        td.innerText = "";
-                    }
-                } else {
-                    // COLUMNAS DE TRÁMITES: Solo se suman y muestran en la fila negra (principal)
-                    if (esFilaPrincipal) {
-                        let sumaCol = 0;
-                        dataMod.registros.forEach(reg => {
-                            let val = parseFloat(reg[colKey] || 0);
-                            if (!isNaN(val)) sumaCol += val;
-                        });
-                        td.innerText = sumaCol;
-                    } else {
-                        td.innerText = ""; // Filas rojas van vacías
-                    }
+                if (colKey === "ENT") td.innerText = "05";
+                else if (colKey === "DTTO") td.innerText = "03";
+                else if (colKey === "MODULO") td.innerText = modNombre;
+                else if (colKey === "INICIAL") td.innerText = rango.i;
+                else if (colKey === "FINAL") td.innerText = rango.f;
+                else if (colKey === "TOTAL_DE_FOLIOS") td.innerText = foliosRoja;
+                else {
+                    // Los demás campos en las filas rojas van vacíos
+                    td.innerText = "";
                 }
-                tr.appendChild(td);
+                trRoja.appendChild(td);
             });
-            tbody.appendChild(tr);
+            tbody.appendChild(trRoja);
         });
     });
 
-    renderGranTotalAcumulado(tbody, sumaGranTotalFolios);
+    renderGranTotalAcumulado(tbody, modulosMap, sumaGranTotalFolios);
 }
 
-function renderGranTotalAcumulado(tbody, sumaGlobalFolios) {
+function renderGranTotalAcumulado(tbody, modulosMap, sumaGlobalFolios) {
     let trGranTotal = document.createElement('tr');
     trGranTotal.classList.add('fila-totales');
+    
+    // Juntar los registros de los 3 módulos
+    let todosLosRegistros = [];
+    MODULOS_ORDEN.forEach(m => todosLosRegistros = todosLosRegistros.concat(modulosMap[m]));
     
     COLUMNAS_ACUMULADO_KEYS.forEach(colKey => {
         let td = document.createElement('td');
 
-        if (colKey === "MODULO") {
-            td.innerText = "TOTAL";
-        } else if (["ENT", "DTTO", "INICIAL", "FINAL", "INICIALES_A", "INICIALES_S", "INICIALES_C", "CONFIGURACION"].includes(colKey)) {
-            td.innerText = ""; // Vacíos
+        if (colKey === "MODULO") td.innerText = "TOTAL";
+        else if (["ENT", "DTTO", "INICIAL", "FINAL", "INICIALES_A", "INICIALES_S", "INICIALES_C", "CONFIGURACION"].includes(colKey)) {
+            td.innerText = ""; // Columnas que NO se suman en el gran total
         } else if (colKey === "TOTAL_DE_FOLIOS") {
-            td.innerText = sumaGlobalFolios; // Suma de todos los bloques calculados (negros y rojos)
+            td.innerText = sumaGlobalFolios; // La suma de todos los bloques calculados
         } else {
             let sumaTotal = 0;
-            dataGlobalAcumulado.forEach(reg => {
+            todosLosRegistros.forEach(reg => {
                 let val = parseFloat(reg[colKey] || 0);
                 if (!isNaN(val)) sumaTotal += val;
             });
