@@ -1,4 +1,60 @@
-html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte Semanal MAC</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        .header-banner { background: linear-gradient(135deg, #ff9800, #ff5722); color: white; padding: 20px 0; border-bottom: 5px solid #1b396b; margin-bottom: 20px; }
+        
+        .excel-container { width: 100%; max-height: 65vh; overflow: auto; border: 1px solid #ddd; background: white; margin-bottom: 15px; }
+        .excel-table { margin-bottom: 0; table-layout: fixed; }
+        
+        .excel-table thead tr th { 
+            position: sticky; top: 0; z-index: 2; font-size: 10px; text-transform: uppercase; 
+            background-color: #e9ecef; white-space: normal !important; word-wrap: break-word; 
+            height: 55px; vertical-align: middle; line-height: 1.1; padding: 4px; text-align: center;
+        }
+
+        .excel-table td { padding: 4px; border: 1px solid #ccc; text-align: center; vertical-align: middle; font-size: 11px;}
+        
+        .bg-folios { background-color: #f4b084 !important; }
+        .fila-totales td { background-color: #d1e7dd !important; font-weight: bold; }
+    </style>
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+    <!-- MENÚ DE NAVEGACIÓN SUPERIOR -->
+    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #1b396b;">
+      <div class="container-fluid px-4">
+        <a class="navbar-brand fw-bold" href="index.html"><i class="bi bi-hdd-network"></i> SISTEMA MAC</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto gap-3">
+            <li class="nav-item"><a class="nav-link text-light px-3" href="index.html"><i class="bi bi-pencil-square"></i> Vaciado de Datos</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-3" href="reporte_dias.html"><i class="bi bi-calendar3"></i> Reporte Días</a></li>
+            <li class="nav-item"><a class="nav-link active bg-primary rounded px-3 text-white fw-bold" href="reporte_semanal.html"><i class="bi bi-calendar-week"></i> Reporte Semanal</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-3" href="reporte_campana.html"><i class="bi bi-bar-chart-fill"></i> Reporte Campaña</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-3" href="reporte_acumulado.html"><i class="bi bi-archive-fill"></i> Reporte Acumulado</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-3" href="bd_madre.html"><i class="bi bi-database-fill"></i> BD Principal</a></li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <div class="header-banner text-center d-flex justify-content-center align-items-center">
+        <div>
+            <h1 class="fw-bold mb-0"><i class="bi bi-calendar-week"></i> Reporte Semanal</h1>
+            <p class="lead mb-0">Totales Generales Remesa a Remesa</p>
+        </div>
+    </div>
+
     <div class="container-fluid px-4 flex-grow-1">
         
         <div class="alert alert-warning d-flex justify-content-between align-items-center shadow-sm mb-3">
@@ -7,7 +63,7 @@ html
             </div>
         </div>
 
-        <!-- SECCIÓN DE FILTRO DE REMESA Y SEMÁFORO (Colocada aquí correctamente) -->
+        <!-- SECCIÓN DE FILTRO DE REMESA Y SEMÁFORO -->
         <div class="row align-items-center mb-3 p-3 bg-white shadow-sm rounded">
             <div class="col-md-4">
                 <label for="inputRemesaFiltro" class="form-label fw-bold mb-1">Buscar o Filtrar Remesa:</label>
@@ -27,266 +83,43 @@ html
                 <tbody></tbody>
             </table>
         </div>
-```
 
----
+        <!-- SECCIÓN ADMINISTRADOR DE REMESAS -->
+        <div class="accordion mt-4 shadow-sm mb-4" id="accordionRemesas">
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed bg-light text-dark fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRemesas">
+                        <i class="bi bi-gear-fill me-2 text-warning"></i> Administrador de Remesas Semanales (Ver, Editar, Borrar)
+                    </button>
+                </h2>
+                <div id="collapseRemesas" class="accordion-collapse collapse" data-bs-parent="#accordionRemesas">
+                    <div class="accordion-body">
+                        <table class="table table-bordered table-hover text-center align-middle" id="tablaListaRemesas">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th># Remesa</th>
+                                    <th>Acciones Disponibles</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- JS fills -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-### 2. Actualiza tu archivo `app_semanal.js` para limpiar y mostrar las columnas correctas
-Para asegurarnos de que la tabla te muestre exactamente las columnas que necesitas (y no datos revueltos), actualizamos el script. Abre tu archivo **`app_semanal.js`** y **reemplázalo por completo con esta versión limpia y optimizada**:
+    </div>
 
-```javascript
-// ==========================================
-// 1. IMPORTACIONES Y CONFIGURACIÓN FIREBASE
-// ==========================================
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, get, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    <footer class="text-center py-4 mt-auto text-white" style="background-color: #1b396b;">
+        <small>
+            &copy; 2026 Todos los derechos reservados.<br>
+            Desarrollado por <span class="text-info fw-bold">Carrivers Desing</span> para Módulos MAC.
+        </small>
+    </footer>
 
-const firebaseConfig = {
-    apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo",
-    authDomain: "cifrasmac.firebaseapp.com",
-    databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com",
-    projectId: "cifrasmac",
-    storageBucket: "cifrasmac.firebasestorage.app",
-    messagingSenderId: "916644687837",
-    appId: "1:916644687837:web:03d346cc48a071af1ed034"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-
-// Tus 70 encabezados oficiales estandarizados (Índices 0 al 69)
-const ENCABEZADOS_OFICIALES = [
-    "IDMAC", "MODULO", "REMESA", "SEDES", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
-    "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSISION",
-    "CORR__DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES",
-    "CANCELADOS", "TOTAL_DE_ANEXOS_POR_RECHAZO", "CPV_devuelta_entrega", "DISPONIBLES_AL_DIA_ANTERIOR",
-    "RECIBIDAS", "RECIBIDAS_DE_OTROS_TIPOS", "ENTREGADAS", "RECIBO_Y_O_EXTRAVIO", "ANEXAS_A_FUAR",
-    "DATOS_ERRONEOS", "FOTO_MAL_IMPRESA", "LIBRE2", "RETIRADAS_POR_OTRA_CAUSA", "DISPONIBLES",
-    "credenciales_x_canje", "fichas_Entregadas", "fichas_atendidas", "Dias_trabajados",
-    "SOLICITUD_EXPEDICION_O_RECTIFICACION", "SOLICITUD_EXPEDICION_REPATRIADOS", "SOLICITU_DE_REIMPRESION",
-    "DEMANDA_DE_JUICIO", "Total_de_movimientos", "DEVUELTAS_POR_TERCEROS", "34_Imagen_inconsistente",
-    "35_Movimiento_posterior", "CONFIGURACION", "ENT", "DTTO", "RESGUARDO", "SOLICITUD_DE_NUM_DE_EMISION",
-    "LIBRE1", "Sript_ejecutado_VIGENCIA", "FOLIO_NEC_POST", "cartografia_SOLICITUD", "lotes_de_credenciales",
-    "registradas_por_dia", "faltantes", "observaciones", "sin_nombre1", "sin_nombre2", "sin_nombre3",
-    "MAC_QUE_RECIBE", "MAC_QUE_ENTREGA", "IMPORTADAS", "EXPORTADAS", "REPOSISION_+_REIMPRESIONES",
-    "MAL_IMPRESAS", "ERROR_EN_CARTOGRAFIA", "DEFUNCION", "SUSPENSION", "DUPLICADO", "ERROR_EN_NUM_DE_EMISION",
-    "PERDIDA_DE_VIGENCIA", "MOY_POST", "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS"
-];
-
-// Seleccionamos las columnas principales que quieres ver en el reporte semanal (puedes cambiar los índices si gustas)
-let COLUMNAS_SEMANAL = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29];
-
-let bdMadreGlobal = [];
-let bdtotalesGlobal = [];
-
-// ==========================================
-// 2. SEMÁFORO DE CONEXIÓN FIREBASE
-// ==========================================
-const connectedRef = ref(db, ".info/connected");
-onValue(connectedRef, (snap) => {
-    const semaforo = document.getElementById("semaforoConexion");
-    if(!semaforo) return;
-    if (snap.val() === true) {
-        semaforo.className = "badge bg-success text-white fs-6 px-3 py-2 rounded-pill online-glow";
-        semaforo.innerHTML = '<i class="bi bi-wifi"></i> ONLINE';
-    } else {
-        semaforo.className = "badge bg-danger text-white fs-6 px-3 py-2 rounded-pill offline-glow";
-        semaforo.innerHTML = '<i class="bi bi-wifi-off"></i> OFFLINE';
-    }
-});
-
-function construirHeaderTabla(selectorTabla) {
-    const thead = document.querySelector(`${selectorTabla} thead`);
-    if(!thead) return;
-    thead.innerHTML = "";
-    let trTitulos = document.createElement('tr');
-    
-    COLUMNAS_SEMANAL.forEach((colIdx) => {
-        let thT = document.createElement('th');
-        let nombreCol = ENCABEZADOS_OFICIALES[colIdx] || `Col_${colIdx}`;
-        
-        let nombreVisual = nombreCol.replace(/_/g, ' ');
-        thT.innerText = nombreVisual;
-        thT.style.height = "55px";
-        thT.style.verticalAlignment = "middle";
-        thT.style.fontSize = "11px";
-        
-        let anchoCelda = "100px"; 
-        if(colIdx === 0) anchoCelda = "90px";  // IDMAC
-        else if(colIdx === 1 || colIdx === 2) anchoCelda = "85px"; // MODULO, REMESA
-        else if(colIdx === 3) anchoCelda = "130px"; // SEDES
-        
-        thT.style.width = anchoCelda; thT.style.minWidth = anchoCelda;
-        
-        if(colIdx >= 4 && colIdx <= 6) thT.classList.add('bg-folios');
-        
-        trTitulos.appendChild(thT);
-    });
-    thead.appendChild(trTitulos);
-}
-
-construirHeaderTabla('#tablaSemanal');
-
-// ==========================================
-// 3. CARGA DE DATOS Y GESTIÓN DE REMESA
-// ==========================================
-function cargarDatosSemanal() {
-    Promise.all([
-        get(ref(db, 'bd_madre')),
-        get(ref(db, 'bdtotales'))
-    ]).then(([snapMadre, snapTotales]) => {
-        bdMadreGlobal = snapMadre.exists() ? (Array.isArray(snapMadre.val()) ? snapMadre.val() : Object.values(snapMadre.val())) : [];
-        bdtotalesGlobal = snapTotales.exists() ? (Array.isArray(snapTotales.val()) ? snapTotales.val() : Object.values(snapTotales.val())) : [];
-
-        inicializarFiltroRemesa();
-        renderTablaSemanal();
-    }).catch(err => console.error("Error al leer la base de datos:", err));
-}
-
-function inicializarFiltroRemesa() {
-    const inputRemesa = document.getElementById('inputRemesaFiltro');
-    if (inputRemesa) {
-        inputRemesa.removeEventListener('input', renderTablaSemanal);
-        inputRemesa.addEventListener('input', renderTablaSemanal);
-    }
-}
-
-function obtenerRemesaSeleccionada() {
-    const inputRemesa = document.getElementById('inputRemesaFiltro');
-    let remesaEscrita = inputRemesa ? inputRemesa.value.trim() : "";
-
-    if (remesaEscrita !== "") {
-        return remesaEscrita;
-    }
-
-    let remesasDisponibles = new Set();
-    bdMadreGlobal.forEach(f => {
-        let r = String(f['REMESA'] || f['Remesa'] || f['remesa'] || '').trim();
-        if(r) remesasDisponibles.add(r);
-    });
-    bdtotalesGlobal.forEach(f => {
-        let r = String(f['REMESA'] || f['Remesa'] || f['remesa'] || '').trim();
-        if(r) remesasDisponibles.add(r);
-    });
-
-    if (remesasDisponibles.size > 0) {
-        let listaRemesas = Array.from(remesasDisponibles).sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
-        return listaRemesas[0]; 
-    }
-
-    return "";
-}
-
-function renderTablaSemanal() {
-    const tbody = document.querySelector('#tablaSemanal tbody');
-    if(!tbody) return;
-    tbody.innerHTML = "";
-
-    let remesaActiva = obtenerRemesaSeleccionada();
-    const lblRemesaActual = document.getElementById('lblRemesaActiva');
-    if(lblRemesaActual) {
-        lblRemesaActual.innerText = remesaActiva ? `Remesa en vista: ${remesaActiva}` : "Sin remesa detectada";
-    }
-
-    if (!remesaActiva) {
-        tbody.innerHTML = '<tr><td colspan="30" class="text-center py-4 text-muted">No se encontró ninguna remesa registrada o escrita.</td></tr>';
-        return;
-    }
-
-    // Buscamos directamente en bdtotales (donde ya están los totales consolidados)
-    let registrosTotalesRemesa = bdtotalesGlobal.filter(item => String(item.REMESA || item.Remesa || '').trim() === String(remesaActiva));
-
-    if (registrosTotalesRemesa.length > 0) {
-        registrosTotalesRemesa.forEach(reg => {
-            let tr = document.createElement('tr');
-
-            COLUMNAS_SEMANAL.forEach(colIdx => {
-                let td = document.createElement('td');
-                let nombreColKey = ENCABEZADOS_OFICIALES[colIdx];
-
-                td.innerText = reg[nombreColKey] || reg[`Columna ${colIdx + 1}`] || "0";
-                tr.appendChild(td);
-            });
-            tbody.appendChild(tr);
-        });
-
-        renderGranTotalDesdeRegistros(tbody, registrosTotalesRemesa, remesaActiva);
-
-    } else {
-        // Respaldado sumando desde bd_madre si no estuviera en bdtotales
-        let filasRemesa = bdMadreGlobal.filter(item => String(item.REMESA || item.Remesa || '').trim() === String(remesaActiva));
-
-        if (filasRemesa.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="30" class="text-center py-4 text-muted">No hay registros para la remesa: ${remesaActiva}</td></tr>`;
-            return;
-        }
-
-        let modulosMap = {};
-        filasRemesa.forEach(f => {
-            let mod = String(f['MODULO'] || f['MÓDULO'] || f['Módulo'] || f['Modulo'] || 'General').trim();
-            if (!modulosMap[mod]) modulosMap[mod] = [];
-            modulosMap[mod].push(f);
-        });
-
-        Object.keys(modulosMap).sort().forEach(modNombre => {
-            let tr = document.createElement('tr');
-            let registrosMod = modulosMap[modNombre];
-
-            COLUMNAS_SEMANAL.forEach(colIdx => {
-                let td = document.createElement('td');
-                let nombreColKey = ENCABEZADOS_OFICIALES[colIdx];
-
-                if (nombreColKey === "MODULO") {
-                    td.innerText = modNombre;
-                } else if (nombreColKey === "REMESA") {
-                    td.innerText = remesaActiva;
-                } else if (nombreColKey === "IDMAC") {
-                    let ultimos3 = modNombre.replace(/[^0-9]/g, '').slice(-3);
-                    let remNum = remesaActiva.includes('-') ? remesaActiva.substring(remesaActiva.indexOf('-') + 1) : remesaActiva.slice(-2);
-                    td.innerText = `${ultimos3}${remNum}`;
-                } else {
-                    let sumaCol = 0;
-                    registrosMod.forEach(reg => {
-                        let val = parseFloat(reg[nombreColKey] || 0);
-                        if (!isNaN(val)) sumaCol += val;
-                    });
-                    td.innerText = sumaCol;
-                }
-                tr.appendChild(td);
-            });
-            tbody.appendChild(tr);
-        });
-
-        renderGranTotalDesdeRegistros(tbody, filasRemesa, remesaActiva);
-    }
-}
-
-function renderGranTotalDesdeRegistros(tbody, listaRegistros, remesaId) {
-    let trGranTotal = document.createElement('tr');
-    trGranTotal.classList.add('fila-totales');
-    
-    COLUMNAS_SEMANAL.forEach(colIdx => {
-        let td = document.createElement('td');
-        let nombreColKey = ENCABEZADOS_OFICIALES[colIdx];
-
-        if (nombreColKey === "MODULO") {
-            td.innerText = "GRAN TOTAL";
-        } else if (nombreColKey === "REMESA") {
-            td.innerText = remesaId;
-        } else if (nombreColKey === "IDMAC") {
-            td.innerText = "-";
-        } else {
-            let sumaTotalRemesa = 0;
-            listaRegistros.forEach(reg => {
-                let val = parseFloat(reg[nombreColKey] || 0);
-                if (!isNaN(val)) sumaTotalRemesa += val;
-            });
-            td.innerText = sumaTotalRemesa;
-        }
-        trGranTotal.appendChild(td);
-    });
-    tbody.appendChild(trGranTotal);
-}
-
-// Iniciar carga
-cargarDatosSemanal();
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="app_semanal.js?v=3.1.0"></script>
+</body>
+</html>
