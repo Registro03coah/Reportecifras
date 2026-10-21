@@ -54,7 +54,7 @@ onValue(connectedRef, (snap) => {
 });
 
 // ==========================================
-// 4. GENERADOR DE CABECERA Y FLECHITAS
+// 4. GENERADOR DE CABECERA (SIN LÍNEA DE NÚMEROS)
 // ==========================================
 function construirHeaderTabla() {
     const thead = document.getElementById('cabeceraTablaDias');
@@ -62,11 +62,9 @@ function construirHeaderTabla() {
     thead.innerHTML = "";
     
     let trTitulos = document.createElement('tr');
-    let trNumeros = document.createElement('tr');
     
-    COLUMNAS_REPORTE_DIAS.forEach((col, index) => {
+    COLUMNAS_REPORTE_DIAS.forEach((col) => {
         let thT = document.createElement('th');
-        let thN = document.createElement('th');
         thT.setAttribute('data-col', col);
         
         let nombreVisual = col.replace('CORR__DE_DATOS_DIRECCION', 'CORR. DE DATOS DIRECCION')
@@ -78,7 +76,7 @@ function construirHeaderTabla() {
         if (col === "SEDES") nombreVisual = "SEDE DE OPERACIÓN DE MÓDULO";
 
         thT.innerText = nombreVisual;
-        thT.style.height = "55px"; // Cabecera compacta para ahorrar espacio vertical
+        thT.style.height = "55px"; 
         thT.style.verticalAlignment = "middle";
         thT.style.fontSize = "11px";
         
@@ -94,30 +92,10 @@ function construirHeaderTabla() {
 
         if(col === "INICIAL" || col === "FINAL" || col === "TOTAL_DE_FOLIOS") thT.classList.add('bg-folios');
         
-        thN.className = "table-light text-dark text-center fw-bold";
-        thN.style.cursor = "pointer";
-        thN.style.height = "25px";
-        thN.title = "Clic para ordenar por esta columna";
-        thN.onclick = () => window.cambiarOrdenDias(col);
-        
-        let contenidoHtml = `${index + 1} `;
-        
-        if (columnaOrdenActual === col) {
-            contenidoHtml += ordenAscendente 
-                           ? '<i class="bi bi-caret-up-fill text-primary ms-1"></i>' 
-                           : '<i class="bi bi-caret-down-fill text-primary ms-1"></i>';
-        } else {
-            contenidoHtml += '<i class="bi bi-arrow-down-up text-secondary opacity-25 ms-1" style="font-size: 0.8em;"></i>';
-        }
-        
-        thN.innerHTML = contenidoHtml;
-        
         trTitulos.appendChild(thT); 
-        trNumeros.appendChild(thN);
     });
     
     thead.appendChild(trTitulos); 
-    thead.appendChild(trNumeros);
 
     const observer = new ResizeObserver(entries => {
         let cambiados = false;
@@ -138,35 +116,6 @@ function construirHeaderTabla() {
     const ths = trTitulos.querySelectorAll('th');
     ths.forEach(th => observer.observe(th));
 }
-
-function actualizarStickyLeft() {
-    const table = document.getElementById('tablaDias');
-    if(!table) return;
-    
-    const ths = document.querySelectorAll('#cabeceraTablaDias tr:first-child th');
-    if (ths.length < 4) return;
-    
-    let w0 = ths[0].getBoundingClientRect().width;
-    let w1 = ths[1].getBoundingClientRect().width;
-    let w2 = ths[2].getBoundingClientRect().width;
-    
-    let left1 = w0;
-    let left2 = w0 + w1;
-    let left3 = w0 + w1 + w2;
-
-    const headTrs = document.querySelectorAll('#cabeceraTablaDias tr');
-    headTrs.forEach(tr => {
-        const h = tr.querySelectorAll('th');
-        if(h.length >= 4) { h[1].style.left = left1+'px'; h[2].style.left = left2+'px'; h[3].style.left = left3+'px'; }
-    });
-
-    const trs = document.querySelectorAll('#cuerpoTablaDias tr');
-    trs.forEach(tr => {
-        const tds = tr.querySelectorAll('td');
-        if(tds.length >= 4) { tds[1].style.left = left1+'px'; tds[2].style.left = left2+'px'; tds[3].style.left = left3+'px'; }
-    });
-}
-
 // ==========================================
 // 5. LECTURA Y ORDENAMIENTO INTELIGENTE
 // ==========================================
