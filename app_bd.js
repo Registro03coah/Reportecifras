@@ -42,10 +42,9 @@ function ejecutarOrdenamiento(arregloA_Ordenar) {
         return;
     }
 
-    // Copiamos el arreglo recibido para no alterar el original
     let arregloOrdenado = [...arregloA_Ordenar];
 
-    // Mapeo cronológico de los días de la semana
+    // Diccionario cronológico de los días de la semana (cubriendo con y sin acento)
     const ordenDias = {
         "lunes": 1,
         "martes": 2,
@@ -56,30 +55,31 @@ function ejecutarOrdenamiento(arregloA_Ordenar) {
         "sábado": 6,
         "sabado": 6,    
         "domingo": 7,
-        "linea totales": 8 
+        "linea totales": 8,
+        "totales": 8
     };
 
     arregloOrdenado.sort((a, b) => {
         // 1. REGLA 1: REMESA (De Mayor a Menor)
-        let remesaA = String(a['REMESA'] || a['Remesa'] || '').trim();
-        let remesaB = String(b['REMESA'] || b['Remesa'] || '').trim();
+        let remesaA = String(a['REMESA'] || a['Remesa'] || a['remesa'] || '').trim();
+        let remesaB = String(b['REMESA'] || b['Remesa'] || b['remesa'] || '').trim();
         if (remesaA !== remesaB) {
             return remesaB.localeCompare(remesaA, undefined, { numeric: true });
         }
 
         // 2. REGLA 2: MÓDULO (De Menor a Mayor: 50351, 50353, 50354)
-        let moduloA = String(a['MODULO'] || a['MÓDULO'] || a['Módulo'] || a['Modulo'] || '').trim();
-        let moduloB = String(b['MODULO'] || b['MÓDULO'] || b['Módulo'] || b['Modulo'] || '').trim();
+        let moduloA = String(a['MODULO'] || a['MÓDULO'] || a['Módulo'] || a['Modulo'] || a['modulo'] || '').trim();
+        let moduloB = String(b['MODULO'] || b['MÓDULO'] || b['Módulo'] || b['Modulo'] || b['modulo'] || '').trim();
         if (moduloA !== moduloB) {
             return moduloA.localeCompare(moduloB, undefined, { numeric: true });
         }
 
         // 3. REGLA 3: DÍA (Lunes a Domingo cronológico)
-        let diaA = String(a['DIA'] || a['Dia'] || '').trim().toLowerCase();
-        let diaB = String(b['DIA'] || b['Dia'] || '').trim().toLowerCase();
+        let diaA = String(a['DIA'] || a['DÍA'] || a['Dia'] || a['dia'] || '').trim().toLowerCase();
+        let diaB = String(b['DIA'] || b['DÍA'] || b['Dia'] || b['dia'] || '').trim().toLowerCase();
         
-        let valorDiaA = ordenDias[diaA] || 99; 
-        let valorDiaB = ordenDias[diaB] || 99;
+        let valorDiaA = ordenDias[diaA] !== undefined ? ordenDias[diaA] : 99; 
+        let valorDiaB = ordenDias[diaB] !== undefined ? ordenDias[diaB] : 99;
 
         if (valorDiaA !== valorDiaB) {
             return valorDiaA - valorDiaB; 
@@ -88,7 +88,6 @@ function ejecutarOrdenamiento(arregloA_Ordenar) {
         return 0;
     });
 
-    // Dibujamos usando la variable correcta ya ordenada
     dibujarTablaBd(arregloOrdenado);
 }
 window.cambiarOrden = function(columnaClick) {
