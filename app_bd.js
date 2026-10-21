@@ -79,15 +79,15 @@ function ejecutarOrdenamiento(arreglo) { // *Nota: Si tu función se llama difer
         let valorDiaB = ordenDias[diaB] || 99;
 
         if (valorDiaA !== valorDiaB) {
-            return valorDiaA - valorDiaB; // Menor a mayor (1 al 7)
+            return valorDiaA - valorDiaB; 
         }
 
-        // Si llegan a ser el mismo día exacto, los deja igual
         return 0;
     });
 
-    // Llamamos a la función que dibuja el HTML de tu tabla (Ajusta el nombre si es distinto en tu código)
-    dibujarTabla(arreglo); 
+    // AQUÍ ESTABA EL ERROR: Debe llamar a tu función real "dibujarTablaBd"
+    dibujarTablaBd(arregloOrdenado);
+}
 }
 window.cambiarOrden = function(columnaClick) {
     if (columnaOrdenActual === columnaClick) {
