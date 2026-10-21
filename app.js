@@ -14,13 +14,12 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 // ==========================================
-// 2. CONFIGURACIÓN DE TABLAS
+// 2. CONFIGURACIÓN DE TABLAS Y ENCABEZADOS
 // ==========================================
 const TOTAL_COLUMNAS = 75;
 const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo", "LINEA TOTALES"];
 const MODULOS = ["050351", "050353", "050354"];
 
-// Arreglo de encabezados exactos para alinear el Vaciado con la Base de Datos
 const ENCABEZADOS = [
     "DIA", "FECHA", "Horas_trabajadas", "SEDES", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
     "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSISION",
@@ -40,7 +39,6 @@ const ENCABEZADOS = [
     "MOV_POST", "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS"
 ];
 
-// Nombres estandarizados de columnas idénticos para BD Madre y BD Totales
 const NOMBRES_ESTANDAR_BD = [
     "DIA", "FECHA", "Horas_trabajadas", "SEDES", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
     "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSISION",
@@ -152,7 +150,6 @@ function detectarRemesa() {
         const tbody = document.querySelector(`#tablaCaptura_${mod} tbody`);
         const filas = tbody.querySelectorAll('tr');
         for(let i=0; i<7; i++) {
-            // Columna 39 es índice 38
             let inp = filas[i].querySelectorAll('td')[38].querySelector('input');
             if(inp && inp.value.trim() !== "" && inp.value.trim() !== "0") {
                 remesaDetectada = inp.value.trim();
@@ -163,6 +160,58 @@ function detectarRemesa() {
     }
     const inputRemesa = document.getElementById('inputRemesa');
     if(inputRemesa) inputRemesa.value = remesaDetectada;
+}
+
+// NUEVA FUNCIÓN: Calcula la línea de totales por cada módulo 
+function calcularTotalesDiarios(mod) {
+    const tbody = document.querySelector(`#tablaCaptura_${mod} tbody`);
+    const filas = tbody.querySelectorAll('tr');
+    const filaTotales = filas[7]; 
+
+    for (let c = 1; c <= TOTAL_COLUMNAS; c++) {
+        if (c === 1 || c === 2 || c === 4) continue;
+
+        if (c === 5) {
+            let primerInicial = "";
+            for (let d = 0; d < 7; d++) {
+                let val = filas[d].querySelectorAll('td')[c-1].querySelector('input').value;
+                if (val.trim() !== "" && val.trim() !== "0") {
+                    primerInicial = val;
+                    break;
+                }
+            }
+            filaTotales.querySelectorAll('td')[c-1].querySelector('input').value = primerInicial;
+            continue;
+        }
+
+        if (c === 6) {
+            let ultimoFinal = "";
+            for (let d = 6; d >= 0; d--) {
+                let val = filas[d].querySelectorAll('td')[c-1].querySelector('input').value;
+                if (val.trim() !== "" && val.trim() !== "0") {
+                    ultimoFinal = val;
+                    break;
+                }
+            }
+            filaTotales.querySelectorAll('td')[c-1].querySelector('input').value = ultimoFinal;
+            continue;
+        }
+
+        let sumaColumna = 0;
+        let tieneDatos = false;
+        
+        for (let d = 0; d < 7; d++) { 
+            let inputCelda = filas[d].querySelectorAll('td')[c-1].querySelector('input');
+            let valStr = inputCelda.value.replace(/,/g, '');
+            if (valStr.trim() !== "") {
+                let valor = parseFloat(valStr) || 0;
+                sumaColumna += valor;
+                tieneDatos = true;
+            }
+        }
+        
+        filaTotales.querySelectorAll('td')[c-1].querySelector('input').value = tieneDatos ? sumaColumna : "";
+    }
 }
 
 function sincronizarTotales() {
@@ -192,7 +241,11 @@ MODULOS.forEach(mod => {
     generarCuerpoCaptura(`#tablaCaptura_${mod}`);
     
     const tbodyMod = document.querySelector(`#tablaCaptura_${mod} tbody`);
-    tbodyMod.addEventListener('input', sincronizarTotales);
+    
+    tbodyMod.addEventListener('input', () => {
+        calcularTotalesDiarios(mod);
+        sincronizarTotales();
+    });
     
     document.getElementById(`pasteZone_${mod}`).addEventListener('paste', (e) => {
         e.preventDefault();
@@ -214,6 +267,7 @@ MODULOS.forEach(mod => {
             }
         });
         alert(`Datos pegados con éxito en la tabla del Módulo ${mod}.`);
+        calcularTotalesDiarios(mod);
         sincronizarTotales(); 
     });
 });
@@ -246,7 +300,6 @@ document.getElementById('btnGuardarBD').addEventListener('click', () => {
         return;
     }
 
-    // A. Recolectar datos normales para vaciado_actual e historial de campañas
     const tablasNombres = [...MODULOS, "totales"];
     let datosAGuardar = {};
     
@@ -264,7 +317,6 @@ document.getElementById('btnGuardarBD').addEventListener('click', () => {
         datosAGuardar[mod] = datosTabla;
     });
 
-    // B. Recolectar exclusivamente las 3 filas de módulos de la tabla Totales Generales para bdtotales
     let registrosTotalesParaBD = [];
     const tbodyTotales = document.querySelector('#tablaCaptura_totales tbody');
     
