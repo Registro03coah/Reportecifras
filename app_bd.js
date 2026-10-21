@@ -42,9 +42,10 @@ function ejecutarOrdenamiento(arregloA_Ordenar) {
         return;
     }
 
+    // Copiamos el arreglo recibido para no alterar el original
     let arregloOrdenado = [...arregloA_Ordenar];
 
-    // Mapeo exacto de los días (con mayúscula y acentos gracias a .toLowerCase())
+    // Mapeo cronológico de los días de la semana
     const ordenDias = {
         "Lunes": 1,
         "Martes": 2,
@@ -87,6 +88,7 @@ function ejecutarOrdenamiento(arregloA_Ordenar) {
         return 0;
     });
 
+    // Dibujamos usando la variable correcta ya ordenada
     dibujarTablaBd(arregloOrdenado);
 }
 window.cambiarOrden = function(columnaClick) {
