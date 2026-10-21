@@ -42,15 +42,15 @@ function ejecutarOrdenamiento(arreglo) { // *Nota: Si tu función se llama difer
 
     // 1. Le enseñamos a JS el valor numérico de cada día de la semana
     const ordenDias = {
-        "lunes": 1,
-        "martes": 2,
-        "miércoles": 3,
+        "Lunes": 1,
+        "Martes": 2,
+        "Miércoles": 3,
         "miercoles": 3, // Por si acaso se guarda sin acento
-        "jueves": 4,
-        "viernes": 5,
-        "sábado": 6,
+        "Jueves": 4,
+        "Viernes": 5,
+        "Sábado": 6,
         "sabado": 6,    // Por si acaso se guarda sin acento
-        "domingo": 7,
+        "Domingo": 7,
         "linea totales": 8 // Deja los totales al final de cada bloque si los hubiera
     };
 
