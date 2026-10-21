@@ -17,7 +17,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// Mismo orden validado que en el Semanal
+// Mismo orden validado
 const COLUMNAS_CAMPANA_KEYS = [
     "ENT", "DTTO", "MODULO", "REMESA", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS", 
     "NO_UTILIZADOS", "INSCRIPCIONES", "ANEXAS_A_FUAR", "RESGUARDO", "SOLICITU_DE_REIMPRESION", 
@@ -63,6 +63,12 @@ function construirHeaderTabla(selectorTabla) {
     const thead = document.querySelector(`${selectorTabla} thead`);
     if(!thead) return;
     thead.innerHTML = "";
+    
+    // Fila 1 - Títulos Vacíos/Agrupaciones (Opcional, pero creamos la fila para respetar el sticky thead CSS del usuario)
+    let trGrupo = document.createElement('tr');
+    trGrupo.style.display = 'none'; // El usuario usa thead tr:first-child y thead tr:nth-child(2). Si lo necesita visible, lo ajustamos, pero aquí generaremos directamente los <th>
+    // Vamos a generar solo una fila porque en el CSS el usuario espera dos filas. Lo ajustaremos para que pinte bien en su CSS.
+    
     let trTitulos = document.createElement('tr');
     
     COLUMNAS_CAMPANA_KEYS.forEach((colKey) => {
@@ -74,9 +80,6 @@ function construirHeaderTabla(selectorTabla) {
                                   .replace('CORR  DE', 'CORR DE');
         
         thT.innerText = nombreVisual;
-        thT.style.height = "50px";
-        thT.style.verticalAlignment = "middle";
-        thT.style.fontSize = "11px";
         
         let anchoCelda = "90px"; 
         if(['MODULO', 'REMESA', 'ENT', 'DTTO'].includes(colKey)) anchoCelda = "70px"; 
@@ -89,6 +92,8 @@ function construirHeaderTabla(selectorTabla) {
         }
         trTitulos.appendChild(thT);
     });
+    
+    // Para que los estilos CSS thead tr:first-child funcionen como el usuario espera:
     thead.appendChild(trTitulos);
 }
 
@@ -124,11 +129,10 @@ function renderTablaCampana() {
     const rFin = localStorage.getItem('campanaRemesaFin');
 
     if (!rInicio || !rFin) {
-        tbody.innerHTML = `<tr><td colspan="${COLUMNAS_CAMPANA_KEYS.length}" class="text-center py-4 text-muted">Por favor establece la remesa Inicial y Final de la Campaña.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${COLUMNAS_CAMPANA_KEYS.length}" class="text-center py-4 text-muted">Por favor establece la remesa Inicial y Final de la Campaña en la configuración superior.</td></tr>`;
         return;
     }
 
-    // Filtrar registros que estén en el rango de remesas
     let dataFiltrada = bdtotalesGlobal.length > 0 ? bdtotalesGlobal : bdMadreGlobal;
     let registrosRango = dataFiltrada.filter(item => {
         let r = String(item['REMESA'] || '').trim();
@@ -140,7 +144,6 @@ function renderTablaCampana() {
         return;
     }
 
-    // Agrupar por módulo
     let modulosMap = {};
     registrosRango.forEach(f => {
         let mod = String(f['MODULO'] || 'General').trim();
@@ -151,7 +154,6 @@ function renderTablaCampana() {
     Object.keys(modulosMap).sort().forEach(modNombre => {
         let tr = document.createElement('tr');
         
-        // Ordenar los registros del módulo por remesa para asegurar 1ero y último
         let registrosMod = modulosMap[modNombre].sort((a, b) => String(a['REMESA']).localeCompare(String(b['REMESA'])));
         
         let primerRegistro = registrosMod[0];
@@ -165,13 +167,13 @@ function renderTablaCampana() {
             } else if (colKey === "REMESA") {
                 td.innerText = `${rInicio} - ${rFin}`;
             } else if (colKey === "INICIAL") {
-                td.innerText = primerRegistro["INICIAL"] || "0"; // Primer folio de la remesa inicial
+                td.innerText = primerRegistro["INICIAL"] || "0"; 
             } else if (colKey === "FINAL") {
-                td.innerText = ultimoRegistro["FINAL"] || "0"; // Último folio de la remesa final
+                td.innerText = ultimoRegistro["FINAL"] || "0"; 
             } else if (["INICIALES_A", "INICIALES_S", "INICIALES_C"].includes(colKey)) {
-                td.innerText = primerRegistro[colKey] || "0"; // Iniciales de la remesa inicial
+                td.innerText = primerRegistro[colKey] || "0"; 
             } else if (colKey === "CONFIGURACION") {
-                td.innerText = ultimoRegistro[colKey] || "0"; // Configuración de la última remesa (no se suma)
+                td.innerText = ultimoRegistro[colKey] || "0"; 
             } else if (["ENT", "DTTO"].includes(colKey)) {
                 td.innerText = primerRegistro[colKey] || "";
             } else {
@@ -194,7 +196,6 @@ function renderGranTotalCampana(tbody, modulosMap, rInicio, rFin) {
     let trGranTotal = document.createElement('tr');
     trGranTotal.classList.add('fila-totales');
     
-    // Obtenemos todos los registros de todos los módulos ya ordenados
     let todosLosRegistros = [];
     Object.values(modulosMap).forEach(arr => todosLosRegistros = todosLosRegistros.concat(arr));
     
@@ -206,7 +207,8 @@ function renderGranTotalCampana(tbody, modulosMap, rInicio, rFin) {
         } else if (colKey === "REMESA") {
             td.innerText = `${rInicio} - ${rFin}`;
         } else if (["INICIAL", "FINAL", "INICIALES_A", "INICIALES_S", "INICIALES_C", "CONFIGURACION", "ENT", "DTTO"].includes(colKey)) {
-            td.innerText = ""; // Se dejan vacíos en el gran total
+            // EN TOTALES ESTAS COLUMNAS SE QUEDAN EN BLANCO
+            td.innerText = ""; 
         } else {
             let sumaTotal = 0;
             todosLosRegistros.forEach(reg => {
@@ -219,6 +221,20 @@ function renderGranTotalCampana(tbody, modulosMap, rInicio, rFin) {
     });
     tbody.appendChild(trGranTotal);
 }
+
+// SEMÁFORO DE CONEXIÓN
+const connectedRef = ref(db, ".info/connected");
+onValue(connectedRef, (snap) => {
+    const semaforo = document.getElementById("semaforoConexion");
+    if(!semaforo) return;
+    if (snap.val() === true) {
+        semaforo.className = "badge bg-success text-white fs-6 px-3 py-2 rounded-pill online-glow";
+        semaforo.innerHTML = '<i class="bi bi-wifi"></i> ONLINE';
+    } else {
+        semaforo.className = "badge bg-danger text-white fs-6 px-3 py-2 rounded-pill offline-glow";
+        semaforo.innerHTML = '<i class="bi bi-wifi-off"></i> OFFLINE';
+    }
+});
 
 // Iniciar carga
 cargarDatosCampana();

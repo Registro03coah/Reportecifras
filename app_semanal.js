@@ -56,6 +56,7 @@ function construirHeaderTabla(selectorTabla) {
     const thead = document.querySelector(`${selectorTabla} thead`);
     if(!thead) return;
     thead.innerHTML = "";
+    
     let trTitulos = document.createElement('tr');
     
     COLUMNAS_SEMANAL_KEYS.forEach((colKey) => {
@@ -67,10 +68,8 @@ function construirHeaderTabla(selectorTabla) {
                                   .replace('CORR  DE', 'CORR DE');
         
         thT.innerText = nombreVisual;
-        thT.style.height = "50px";
-        thT.style.verticalAlignment = "middle";
-        thT.style.fontSize = "11px";
         
+        // Ajustamos la apariencia general, las clases de Bootstrap/CSS de usuario se aplican con este orden
         let anchoCelda = "90px"; 
         if(['MODULO', 'REMESA', 'ENT', 'DTTO'].includes(colKey)) anchoCelda = "70px"; 
         else if(['INICIAL', 'FINAL'].includes(colKey)) anchoCelda = "110px";
@@ -203,7 +202,10 @@ function renderTablaSemanal() {
                 let td = document.createElement('td');
                 if (colKey === "MODULO") td.innerText = modNombre;
                 else if (colKey === "REMESA") td.innerText = remesaActiva;
-                else if (colKey === "INICIAL" || colKey === "FINAL") td.innerText = "";
+                else if (["INICIAL", "FINAL", "INICIALES_A", "INICIALES_S", "INICIALES_C", "CONFIGURACION", "ENT", "DTTO"].includes(colKey)) {
+                    // Solo toma el valor tal cual para el modulo
+                    td.innerText = registrosMod[0][colKey] || (["INICIAL", "FINAL", "INICIALES_A", "INICIALES_S", "INICIALES_C", "CONFIGURACION"].includes(colKey) ? "0" : "");
+                }
                 else {
                     let sumaCol = 0;
                     registrosMod.forEach(reg => {
@@ -228,7 +230,10 @@ function renderGranTotalDesdeRegistros(tbody, listaRegistros, remesaId) {
         let td = document.createElement('td');
         if (colKey === "MODULO") td.innerText = "GRAN TOTAL";
         else if (colKey === "REMESA") td.innerText = remesaId;
-        else if (colKey === "INICIAL" || colKey === "FINAL") td.innerText = ""; // Sin sumas en INICIAL/FINAL
+        else if (["INICIAL", "FINAL", "INICIALES_A", "INICIALES_S", "INICIALES_C", "CONFIGURACION", "ENT", "DTTO"].includes(colKey)) {
+            // Sin sumas en INICIAL/FINAL, INICIALES A/S/C, ENT, DTTO, CONFIG
+            td.innerText = ""; 
+        }
         else {
             let sumaTotalRemesa = 0;
             listaRegistros.forEach(reg => {
