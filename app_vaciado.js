@@ -49,12 +49,9 @@ function generarIdMac(remesa, modulo) {
     return `${modDigits}${numPart}${suffix}`;
 }
 
-// ESTRUCTURA COMPARTIDA DE 84 COLUMNAS
+// ESTRUCTURA DE 84 COLUMNAS (FECHA, HORAS_TRABAJADAS y SEDES REORDENADAS AL FINAL)
 let ESTRUCTURA_COLUMNAS = [
     { pos: 1, key: 'DIA', label: 'DIA' },
-    { pos: 2, key: 'FECHA', label: 'FECHA' },
-    { pos: 3, key: 'HORAS_TRABAJADAS', label: 'HORAS_TRABAJADAS' },
-    { pos: 4, key: 'SEDES', label: 'SEDES' },
     { pos: 5, key: 'INICIAL', label: 'INICIAL' },
     { pos: 6, key: 'FINAL', label: 'FINAL' },
     { pos: 7, key: 'TOTAL_DE_FOLIOS', label: 'TOTAL_DE_FOLIOS' },
@@ -134,7 +131,11 @@ let ESTRUCTURA_COLUMNAS = [
     { pos: 81, key: 'ACTUALIZACION', label: 'ACTUALIZACION' },
     { pos: 82, key: 'SOBRANTES', label: 'SOBRANTES' },
     { pos: 83, key: 'DISPONIBLES_DE_SOL_DE_EXP', label: 'DISPONIBLES_DE_SOL_DE_EXP' },
-    { pos: 84, key: 'REIMPRE_FUERA_DEL_SISTEMA', label: 'REIMPRE_FUERA_DEL_SISTEMA' }
+    { pos: 84, key: 'REIMPRE_FUERA_DEL_SISTEMA', label: 'REIMPRE_FUERA_DEL_SISTEMA' },
+    // COLUMNAS MOVIDAS AL FINAL PARA NO ESTORBAR VISUALMENTE
+    { pos: 2, key: 'FECHA', label: 'FECHA' },
+    { pos: 3, key: 'HORAS_TRABAJADAS', label: 'HORAS_TRABAJADAS' },
+    { pos: 4, key: 'SEDES', label: 'SEDES' }
 ];
 
 const DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo', 'LINEA TOTALES'];
@@ -149,7 +150,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// CONTROL DE CAMBIO DE NAVEGACIÓN Y VISTAS
 window.cambiarModulo = function(modulo) {
     moduloSeleccionado = modulo;
     
@@ -167,7 +167,7 @@ window.cambiarModulo = function(modulo) {
         if (areaPegado) areaPegado.classList.add('d-none');
         if (btnGuardarMadre) btnGuardarMadre.classList.add('d-none');
         
-        document.getElementById('lblMensajeAyuda').innerHTML = '<b>Vista Totales Generales:</b> Muestra el consolidado de la línea de totales de los 3 módulos.';
+        document.getElementById('lblMensajeAyuda').innerHTML = '<b>Vista Totales Generales:</b> Consolidado de los 3 módulos listos para sincronizar.';
         renderizarVistaTotalesGenerales();
     } else {
         if (panelTotales) panelTotales.classList.remove('d-flex');
@@ -202,7 +202,6 @@ function dibujarEncabezadosYNumeros() {
     thead.innerHTML = htmlHead;
 }
 
-// EDICIÓN DINÁMICA DE ENCABEZADOS DE COLUMNA
 window.editarNombreEncabezado = function(indexColumna) {
     let actual = ESTRUCTURA_COLUMNAS[indexColumna];
     let nuevoNombre = prompt(`Editar nombre de columna #${actual.pos}:`, actual.label);
@@ -249,18 +248,24 @@ function renderizarFilasEnPantalla(filasDatos) {
     });
 }
 
-// CONSTRUCCIÓN DE LA TABLA CONSOLIDADA DE TOTALES GENERALES (3 MÓDULOS)
+// CONSTRUCCIÓN DE LA TABLA DE TOTALES GENERALES (MUESTRA SOLO EL NÚMERO DE MÓDULO)
 function renderizarVistaTotalesGenerales() {
     const tbody = document.getElementById('cuerpoVaciado');
+    const lblRemesa = document.getElementById('lblRemesaNumero');
     if (!tbody) return;
 
     tbody.innerHTML = '';
 
     const modulosList = ['050351', '050353', '050354'];
+    let remesaDetectada = '';
 
     modulosList.forEach(modKey => {
         let filas = datosMesaTrabajo[modKey] || [];
         let filaTotales = filas.find(f => String(f.DIA || '').toLowerCase() === 'linea totales') || {};
+
+        if (!remesaDetectada && filaTotales['REMESA']) {
+            remesaDetectada = filaTotales['REMESA'];
+        }
 
         let tr = document.createElement('tr');
         tr.className = 'fila-totales';
@@ -268,7 +273,8 @@ function renderizarVistaTotalesGenerales() {
         let htmlRow = '';
         ESTRUCTURA_COLUMNAS.forEach((col, idxCol) => {
             if (idxCol === 0) {
-                htmlRow += `<td class="col-dia">Módulo ${modKey}</td>`;
+                // SOLO MOSTRAR EL NÚMERO DEL MÓDULO SIN LA PALABRA "Módulo"
+                htmlRow += `<td class="col-dia">${modKey}</td>`;
             } else {
                 let valor = filaTotales[col.key] !== undefined && filaTotales[col.key] !== null ? filaTotales[col.key] : '';
                 htmlRow += `<td>${valor}</td>`;
@@ -278,9 +284,13 @@ function renderizarVistaTotalesGenerales() {
         tr.innerHTML = htmlRow;
         tbody.appendChild(tr);
     });
+
+    if (lblRemesa) {
+        lblRemesa.textContent = remesaDetectada || 'S/N';
+    }
 }
 
-// PEGADO EN PANTALLA (SIN GUARDAR EN FIREBASE)
+// PEGADO CON MAPEO EXACTO BASADO EN POSICIÓN EN PORTAPAPELES (pos - 1)
 function manejarPegadoClipboard(e) {
     if (moduloSeleccionado === 'TOTALES') return;
 
@@ -297,10 +307,11 @@ function manejarPegadoClipboard(e) {
         let valores = linea.split('\t');
         let objetoFila = {};
 
-        ESTRUCTURA_COLUMNAS.forEach((colDef, idxCol) => {
-            let valorCelda = valores[idxCol] !== undefined ? valores[idxCol].trim() : '';
+        ESTRUCTURA_COLUMNAS.forEach((colDef) => {
+            let indexClipboard = colDef.pos - 1; // Extraer exactamente según su columna original de origen
+            let valorCelda = valores[indexClipboard] !== undefined ? valores[indexClipboard].trim() : '';
 
-            if (idxCol === 0) {
+            if (colDef.pos === 1) {
                 objetoFila[colDef.key] = DIAS_SEMANA[idxLinea] || valorCelda;
             } else {
                 objetoFila[colDef.key] = valorCelda;
@@ -315,7 +326,7 @@ function manejarPegadoClipboard(e) {
     renderizarFilasEnPantalla(nuevasFilas);
 }
 
-// GUARDAR EN BASE MADRE (SOLO DÍAS LUNES A DOMINGO, EXCLUYE TOTALES)
+// GUARDAR EN BASE MADRE
 window.guardarEnBaseMadre = function() {
     const overlay = document.getElementById('loadingOverlay');
     const txtOverlay = document.getElementById('lblOverlayTexto');
@@ -363,7 +374,7 @@ window.guardarEnBaseMadre = function() {
     });
 };
 
-// GUARDAR EN BD TOTALES (SOLO LA LÍNEA DE TOTALES DE CADA MÓDULO CON IDMAC)
+// GUARDAR EN BD TOTALES
 window.guardarEnBaseTotales = function() {
     const overlay = document.getElementById('loadingOverlay');
     const txtOverlay = document.getElementById('lblOverlayTexto');
@@ -398,7 +409,6 @@ window.guardarEnBaseTotales = function() {
 
         let mapaRegistros = new Map();
 
-        // Cargar registros existentes
         arregloBase.forEach(item => {
             const r = item.REMESA || item.Remesa || '';
             const m = item.MODULO || item.Modulo || '';
@@ -406,7 +416,6 @@ window.guardarEnBaseTotales = function() {
             if (id && id !== '000000') mapaRegistros.set(id, item);
         });
 
-        // Fusionar los 3 nuevos registros consolidados
         filasTotalesA_Guardar.forEach(itemNuevo => {
             mapaRegistros.set(itemNuevo.IDMAC, itemNuevo);
         });
