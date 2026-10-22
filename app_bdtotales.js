@@ -1,6 +1,9 @@
 // =========================================================
 // CONFIGURACIÓN FIREBASE
 // =========================================================
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, get, set, remove, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
 const firebaseConfig = {
     apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo",
     authDomain: "cifrasmac.firebaseapp.com",
@@ -11,13 +14,8 @@ const firebaseConfig = {
     appId: "1:916644687837:web:03d346cc48a071af1ed034"
 };
 
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-} else {
-    firebase.app();
-}
-
-const database = firebase.database();
+const app = initializeApp(firebaseConfig);
+const database = getDatabase(app);
 
 let datosGlobalesTotales = [];
 let datosEnPantallaTotales = [];
@@ -25,14 +23,40 @@ let columnaOrdenActual = 'REMESA';
 let ordenAscendente = false;
 
 // =========================================================
+// SEMÁFORO DE CONEXIÓN
+// =========================================================
+const connectedRef = ref(database, ".info/connected");
+onValue(connectedRef, (snap) => {
+    const semaforo = document.getElementById("semaforoConexion");
+    if(!semaforo) return;
+    if (snap.val() === true) {
+        semaforo.className = "badge bg-success text-white fs-6 px-3 py-2 rounded-pill online-glow";
+        semaforo.innerHTML = '<i class="bi bi-wifi"></i> ONLINE';
+    } else {
+        semaforo.className = "badge bg-danger text-white fs-6 px-3 py-2 rounded-pill offline-glow";
+        semaforo.innerHTML = '<i class="bi bi-wifi-off"></i> OFFLINE';
+    }
+});
+
+// =========================================================
+// RECUPERAR INICIALES FIJAS AL CARGAR LA PÁGINA
+// =========================================================
+document.addEventListener("DOMContentLoaded", () => {
+    ['camp_50351', 'camp_50353', 'camp_50354', 'acum_50351', 'acum_50353', 'acum_50354'].forEach(id => {
+        let input = document.getElementById(id);
+        if (input) input.value = localStorage.getItem(id) || "";
+    });
+});
+
+// =========================================================
 // LECTURA EN TIEMPO REAL DESDE BDTOTALES
 // =========================================================
-database.ref('bdtotales').on('value', (snapshot) => {
+onValue(ref(database, 'bdtotales'), (snapshot) => {
     let datos = snapshot.val();
-    datosGlobalesTotales = datos ? (Array.isArray(datos) ? datos : Object.values(datos)) : [];
+    let crudos = datos ? (Array.isArray(datos) ? datos : Object.values(datos)) : [];
     
     // Normalizar llaves para evitar duplicados en memoria
-    datosGlobalesTotales = datosGlobalesTotales.map(item => {
+    datosGlobalesTotales = crudos.map(item => {
         let limpio = {};
         for (let key in item) {
             limpio[key.toUpperCase().trim()] = item[key];
@@ -53,15 +77,11 @@ function ejecutarOrdenamientoTotales(arreglo) {
     arreglo.sort((a, b) => {
         let remesaA = String(a['REMESA'] || '').trim();
         let remesaB = String(b['REMESA'] || '').trim();
-        if (remesaA !== remesaB) {
-            return remesaB.localeCompare(remesaA, undefined, { numeric: true });
-        }
+        if (remesaA !== remesaB) return remesaB.localeCompare(remesaA, undefined, { numeric: true });
 
         let moduloA = String(a['MODULO'] || '').trim();
         let moduloB = String(b['MODULO'] || '').trim();
-        if (moduloA !== moduloB) {
-            return moduloA.localeCompare(moduloB, undefined, { numeric: true });
-        }
+        if (moduloA !== moduloB) return moduloA.localeCompare(moduloB, undefined, { numeric: true });
 
         let valA = a[columnaOrdenActual] !== undefined && a[columnaOrdenActual] !== null ? String(a[columnaOrdenActual]).toUpperCase() : '';
         let valB = b[columnaOrdenActual] !== undefined && b[columnaOrdenActual] !== null ? String(b[columnaOrdenActual]).toUpperCase() : '';
@@ -102,7 +122,6 @@ function dibujarTablaTotales(datosArreglo) {
         return;
     }
 
-    // ORDEN DESEADO EXACTO (Sin repeticiones)
     const ordenDeseado = [
         "IDMAC", "MODULO", "REMESA", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
         "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSISION",
@@ -110,7 +129,6 @@ function dibujarTablaTotales(datosArreglo) {
         "CANCELADOS", "TOTAL_DE_ANEXOS_POR_RECHAZO", "CPV_devuelta_entrega", "DISPONIBLES_AL_DIA_ANTERIOR",
         "RECIBIDAS", "RECIBIDAS_DE_OTROS_TIPOS", "ENTREGADAS", "RECIBO_Y_O_EXTRAVIO", "ANEXAS_A_FUAR",
         "DATOS_ERRONEOS", "FOTO_MAL_IMPRESA", "LIBRE2", "RETIRADAS_POR_OTRA_CAUSA", "DISPONIBLES",
-        // Resto de columnas
         "RECHAZOS_DE_MAC_34", "RECHAZOS_DE_MAC_35", "CRED_PROD_CANJE_POR_NUEVA", "INICIALES_A", "INICIALES_S", "INICIALES_C",
         "ACTUALIZACIÓN", "FICHAS_ENTREGADAS", "FICHAS_ATENDIDAS", "DIAS_TRABAJADOS", "SOLICITUD_EXPEDICION_REPATRIADOS",
         "SOLICITUD_EXPEDICION", "SOLICITUD_RECTIFICACION", "DEMANDA_DE_JUICIO", "TOTAL_DE_MOVIMIENTOS",
@@ -124,266 +142,12 @@ function dibujarTablaTotales(datosArreglo) {
         "CREDEN_DEVUELTAS_POR_TERCEROS", "CRED_PRODUCTO_DE_REGISTRO_DUPLICADO", "CIF-05", "SOLICITUDE_RECTIFICACIÒN"
     ];
 
-    // Filtrar únicamente las columnas que existan en los datos reales y ordenarlas estrictamente según ordenDeseado
     let columnasDisponibles = Object.keys(datosArreglo[0]);
     let columnas = ordenDeseado.filter(col => columnasDisponibles.includes(col));
-    
-    // Si hay alguna columna extra en el JSON que no esté en ordenDeseado, la agregamos al final para no perderla
-    columnasDisponibles.forEach(c => {
-        if (!columnas.includes(c)) columnas.push(c);
-    });
+    columnasDisponibles.forEach(c => { if (!columnas.includes(c)) columnas.push(c); });
 
-    let trHead = '<tr>';
-    trHead += `<th class="text-white text-center" style="color: white !important; min-width: 110px;">ACCIONES</th>`;
-
+    let trHead = '<tr><th style="min-width: 90px; background-color: #1b396b; z-index: 5;">ACCIONES</th>';
     columnas.forEach(col => {
         let nombreVisual = col.replace('CORR__DE_DATOS_DIRECCION', 'CORR._DE_DATOS_DIRECCION')
                               .replace('RECIBO_Y_O_EXTRAVIO', 'RECIBO_Y/O_EXTRAVIO');
-        
-        let iconoFlechita = '<i class="bi bi-arrow-down-up ms-1" style="font-size: 0.8em; color: rgba(255,255,255,0.4);"></i>';
-        if (columnaOrdenActual.toUpperCase() === col.toUpperCase()) {
-            iconoFlechita = ordenAscendente ? '<i class="bi bi-caret-up-fill text-warning ms-1"></i>' : '<i class="bi bi-caret-down-fill text-warning ms-1"></i>';
-        }
-
-        trHead += `<th class="text-white" style="color: white !important; cursor: pointer; white-space: normal; min-width: 110px; resize: horizontal; overflow: hidden;" onclick="cambiarOrdenTotales('${col}')">
-                        ${nombreVisual} ${iconoFlechita}
-                   </th>`;
-    });
-    trHead += '</tr>';
-    thead.innerHTML = trHead;
-
-    let htmlCuerpo = '';
-    datosArreglo.forEach(fila => {
-        const idMacVal = fila.IDMAC || '';
-        htmlCuerpo += '<tr>';
-        
-        htmlCuerpo += `<td class="text-center align-middle" style="min-width: 110px;">
-                            <button class="btn btn-sm btn-outline-primary me-1" onclick="abrirModalEdicionTotales('${idMacVal}')" title="Editar total">
-                                <i class="bi bi-pencil-square"></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="borrarRegistroTotales('${idMacVal}')" title="Eliminar total">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                       </td>`;
-
-        columnas.forEach(col => {
-            htmlCuerpo += `<td class="align-middle">${fila[col] !== undefined && fila[col] !== null ? fila[col] : ''}</td>`;
-        });
-        htmlCuerpo += '</tr>';
-    });
-    tbody.innerHTML = htmlCuerpo;
-}
-
-// BUSCADOR
-const buscadorTotales = document.getElementById('buscadorBdTotales');
-if (buscadorTotales) {
-    buscadorTotales.addEventListener('input', function(e) {
-        const termino = e.target.value.toLowerCase();
-        if(termino.trim() === '') {
-            ejecutarOrdenamientoTotales(datosGlobalesTotales);
-            return;
-        }
-        const filtrados = datosGlobalesTotales.filter(item => {
-            const idmac = String(item.IDMAC || '').toLowerCase();
-            const remesa = String(item.REMESA || '').toLowerCase();
-            const modulo = String(item.MODULO || '').toLowerCase();
-            return idmac.includes(termino) || remesa.includes(termino) || modulo.includes(termino);
-        });
-        ejecutarOrdenamientoTotales(filtrados);
-    });
-}
-
-// =========================================================
-// SUBIR Y FUSIONAR ARCHIVO JSON EN BDTOTALES (NORMALIZA LLAVES)
-// =========================================================
-const btnSubirTotales = document.getElementById('btnSubirTotales');
-const fileInputTotales = document.getElementById('fileInputTotales');
-
-if (btnSubirTotales && fileInputTotales) {
-    btnSubirTotales.addEventListener('click', () => {
-        fileInputTotales.click();
-    });
-
-    fileInputTotales.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const loadingOverlay = document.getElementById('loadingOverlay');
-        if (loadingOverlay) loadingOverlay.style.display = 'flex';
-
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            try {
-                let nuevosDatos = JSON.parse(event.target.result);
-                if (!Array.isArray(nuevosDatos)) nuevosDatos = [nuevosDatos];
-
-                database.ref('bdtotales').once('value').then((snapshot) => {
-                    let datosActuales = snapshot.val();
-                    datosActuales = datosActuales ? (Array.isArray(datosActuales) ? datosActuales : Object.values(datosActuales)) : [];
-
-                    let mapaTotales = new Map();
-
-                    // Cargar existentes normalizados
-                    datosActuales.forEach(item => {
-                        let itemClean = {};
-                        for (let key in item) {
-                            itemClean[key.toUpperCase().trim()] = item[key];
-                        }
-                        const idmac = String(itemClean.IDMAC || '');
-                        if (idmac) mapaTotales.set(idmac, itemClean);
-                    });
-
-                    // Procesar nuevos normalizando llaves y calculando IDMAC
-                    nuevosDatos.forEach(itemNuevo => {
-                        let itemClean = {};
-                        for (let key in itemNuevo) {
-                            itemClean[key.toUpperCase().trim()] = itemNuevo[key];
-                        }
-
-                        if (itemClean.MODULO && itemClean.REMESA) {
-                            const m = String(itemClean.MODULO).trim().slice(-3);
-                            let remStr = String(itemClean.REMESA).trim();
-                            let r = remStr;
-                            
-                            if (/^\d{4}/.test(remStr)) {
-                                r = remStr.substring(4); 
-                            } else if (!remStr.includes('-')) {
-                                r = remStr.slice(-2);
-                            }
-                            itemClean.IDMAC = `${m}${r}`;
-                        }
-                        
-                        const idmacNuevo = String(itemClean.IDMAC || '');
-                        if (idmacNuevo) {
-                            mapaTotales.set(idmacNuevo, itemClean);
-                        }
-                    });
-
-                    const datosFusionados = Array.from(mapaTotales.values());
-
-                    database.ref('bdtotales').set(datosFusionados).then(() => {
-                        if (loadingOverlay) loadingOverlay.style.display = 'none';
-                        alert("¡BD Totales actualizada y duplicados corregidos con éxito!");
-                        fileInputTotales.value = '';
-                    }).catch(() => {
-                        if (loadingOverlay) loadingOverlay.style.display = 'none';
-                        alert("Error al guardar los datos en Firebase.");
-                    });
-
-                }).catch(() => {
-                    if (loadingOverlay) loadingOverlay.style.display = 'none';
-                    alert("Error al conectar con la base de datos.");
-                });
-
-            } catch (error) {
-                if (loadingOverlay) loadingOverlay.style.display = 'none';
-                alert("Error al leer y parsear el archivo JSON.");
-            }
-        };
-        reader.readAsText(file);
-    });
-}
-
-// =========================================================
-// ACCIONES DE GESTIÓN (ELIMINAR Y EDITAR)
-// =========================================================
-window.vaciarBaseTotales = function() {
-    if(confirm("🚨 ¿Seguro que deseas vaciar toda la BD Totales?")) {
-        database.ref('bdtotales').remove().then(() => alert("BD Totales vaciada."));
-    }
-};
-
-window.descargarRespaldoTotalesJSON = function() {
-    if(datosGlobalesTotales.length === 0) { alert("No hay datos."); return; }
-    const blob = new Blob([JSON.stringify(datosGlobalesTotales, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `bdtotales_respaldo_${new Date().toISOString().slice(0,10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-};
-
-window.borrarRegistroTotales = function(idmac) {
-    if(confirm(`¿Eliminar el registro con IDMAC ${idmac}?`)) {
-        const resto = datosGlobalesTotales.filter(item => String(item.IDMAC) !== String(idmac));
-        database.ref('bdtotales').set(resto);
-    }
-};
-
-// =========================================================
-// FUNCIONES DE EDICIÓN DINÁMICA
-// =========================================================
-window.abrirModalEdicionTotales = function(idmac) {
-    const registro = datosGlobalesTotales.find(item => String(item.IDMAC) === String(idmac));
-    if (!registro) return;
-
-    const contenedor = document.getElementById('contenedorCamposDinamicos');
-    contenedor.innerHTML = ''; 
-
-    let columnas = Object.keys(registro);
-    
-    const principales = ["IDMAC", "REMESA", "MODULO"];
-    columnas = columnas.sort((a, b) => {
-        let ia = principales.indexOf(a) !== -1 ? principales.indexOf(a) : 999;
-        let ib = principales.indexOf(b) !== -1 ? principales.indexOf(b) : 999;
-        return ia - ib;
-    });
-
-    columnas.forEach(col => {
-        const valorActual = registro[col] !== undefined && registro[col] !== null ? registro[col] : '';
-        const esReadOnly = (col === 'IDMAC') ? 'readonly' : '';
-        const claseFondo = (col === 'IDMAC') ? 'bg-light' : '';
-
-        const divCol = document.createElement('div');
-        divCol.className = 'col-md-4 mb-3';
-        
-        divCol.innerHTML = `
-            <label class="form-label small fw-bold text-muted mb-1">${col}</label>
-            <input type="text" class="form-control form-control-sm ${claseFondo}" data-columna="${col}" value="${valorActual}" ${esReadOnly}>
-        `;
-        contenedor.appendChild(divCol);
-    });
-    
-    var myModal = new bootstrap.Modal(document.getElementById('modalEditarTotales'));
-    myModal.show();
-};
-
-window.guardarEdicionTotales = function() {
-    const idmacInput = document.querySelector('#contenedorCamposDinamicos input[data-columna="IDMAC"]');
-    if(!idmacInput) return;
-    const idmac = idmacInput.value;
-
-    let indice = datosGlobalesTotales.findIndex(item => String(item.IDMAC) === String(idmac));
-    
-    if(indice !== -1) {
-        const inputs = document.querySelectorAll('#contenedorCamposDinamicos input');
-        
-        inputs.forEach(input => {
-            const col = input.getAttribute('data-columna');
-            if(col !== 'IDMAC') {
-                datosGlobalesTotales[indice][col] = input.value;
-            }
-        });
-
-        const btnGuardar = document.querySelector('#modalEditarTotales .btn-primary');
-        btnGuardar.innerHTML = "Guardando...";
-        btnGuardar.disabled = true;
-
-        database.ref('bdtotales').set(datosGlobalesTotales).then(() => {
-            var myModalEl = document.getElementById('modalEditarTotales');
-            var modal = bootstrap.Modal.getInstance(myModalEl);
-            modal.hide();
-            
-            btnGuardar.innerHTML = '<i class="bi bi-save"></i> Guardar Cambios';
-            btnGuardar.disabled = false;
-            
-            alert("¡Todos los datos del registro se actualizaron correctamente!");
-        }).catch(error => {
-            console.error("Error al actualizar:", error);
-            btnGuardar.innerHTML = '<i class="bi bi-save"></i> Guardar Cambios';
-            btnGuardar.disabled = false;
-            alert("Hubo un error al guardar.");
-        });
-    }
-};
+        let iconoFlechita = '<i class="bi bi-arrow-down-up ms-1" style="font-size: 0.8em; color: rgba(255,255,2
