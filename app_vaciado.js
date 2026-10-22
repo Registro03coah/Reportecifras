@@ -49,7 +49,7 @@ function generarIdMac(remesa, modulo) {
     return `${modDigits}${numPart}${suffix}`;
 }
 
-// ESTRUCTURA DE 84 COLUMNAS (FECHA, HORAS_TRABAJADAS y SEDES REORDENADAS AL FINAL)
+// ESTRUCTURA DE 84 COLUMNAS (KEYS EN MINÚSCULAS Y LABELS TIPO NOMBRE PROPIO)
 let ESTRUCTURA_COLUMNAS = [
     { pos: 1, key: 'dia', label: 'Día' },
     { pos: 5, key: 'inicial', label: 'Inicial' },
@@ -149,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// NAVEGACIÓN Y CAMBIO DE PESTAÑAS (CORREGIDO Y PROTEGIDO)
+// NAVEGACIÓN Y CAMBIO DE PESTAÑAS
 window.cambiarModulo = function(modulo) {
     moduloSeleccionado = modulo;
     
@@ -163,7 +163,6 @@ window.cambiarModulo = function(modulo) {
     const lblAyuda = document.getElementById('lblMensajeAyuda');
     const lblPegado = document.getElementById('lblModuloPegado');
 
-    // Redibujar encabezados (cambia DIA <-> MODULO en pos 1)
     dibujarEncabezadosYNumeros();
 
     if (modulo === 'TOTALES') {
@@ -221,7 +220,7 @@ window.editarNombreEncabezado = function(indexColumna) {
     if (nuevoNombre && nuevoNombre.trim() !== '') {
         nuevoNombre = nuevoNombre.trim().toUpperCase().replace(/\s+/g, '_');
         ESTRUCTURA_COLUMNAS[indexColumna].label = nuevoNombre;
-        ESTRUCTURA_COLUMNAS[indexColumna].key = nuevoNombre;
+        ESTRUCTURA_COLUMNAS[indexColumna].key = nuevoNombre.toLowerCase();
         dibujarEncabezadosYNumeros();
         
         if (moduloSeleccionado === 'TOTALES') {
@@ -240,7 +239,7 @@ function renderizarFilasEnPantalla(filasDatos) {
 
     DIAS_SEMANA.forEach((diaNombre, indexFila) => {
         let esTotales = indexFila === 7;
-        let itemFila = filasDatos.find(f => String(f.DIA || '').toLowerCase() === diaNombre.toLowerCase()) || {};
+        let itemFila = filasDatos.find(f => String(f.dia || f.DIA || '').toLowerCase() === diaNombre.toLowerCase()) || {};
 
         let tr = document.createElement('tr');
         if (esTotales) tr.className = 'fila-totales';
@@ -272,10 +271,10 @@ function renderizarVistaTotalesGenerales() {
 
     modulosList.forEach(modKey => {
         let filas = datosMesaTrabajo[modKey] || [];
-        let filaTotales = filas.find(f => String(f.DIA || '').toLowerCase() === 'linea totales') || {};
+        let filaTotales = filas.find(f => String(f.dia || f.DIA || '').toLowerCase() === 'linea totales') || {};
 
-        if (!remesaDetectada && filaTotales['REMESA']) {
-            remesaDetectada = filaTotales['REMESA'];
+        if (!remesaDetectada && (filaTotales['remesa'] || filaTotales['REMESA'])) {
+            remesaDetectada = filaTotales['remesa'] || filaTotales['REMESA'];
         }
 
         let tr = document.createElement('tr');
@@ -327,6 +326,7 @@ function manejarPegadoClipboard(e) {
             }
         });
 
+        objetoFila['modulo'] = moduloSeleccionado;
         objetoFila['MODULO'] = moduloSeleccionado;
         nuevasFilas.push(objetoFila);
     });
@@ -346,7 +346,7 @@ window.guardarEnBaseMadre = function() {
     Object.keys(datosMesaTrabajo).forEach(modKey => {
         let filasMod = datosMesaTrabajo[modKey];
         filasMod.forEach(fila => {
-            let diaLwr = String(fila.DIA || '').toLowerCase();
+            let diaLwr = String(fila.dia || fila.DIA || '').toLowerCase();
             if (diaLwr !== 'linea totales' && diaLwr !== 'totales' && diaLwr !== '') {
                 filasA_Guardar.push(fila);
             }
@@ -366,7 +366,7 @@ window.guardarEnBaseMadre = function() {
         let modulosActualizados = Object.keys(datosMesaTrabajo).filter(m => datosMesaTrabajo[m].length > 0);
 
         let arregloFiltrado = arregloBase.filter(item => {
-            let modItem = String(item.MODULO || item.MÓDULO || item.Módulo || '');
+            let modItem = String(item.modulo || item.MODULO || item.MÓDULO || item.Módulo || '');
             return !modulosActualizados.includes(modItem);
         });
 
@@ -393,12 +393,13 @@ window.guardarEnBaseTotales = function() {
 
     modulosList.forEach(modKey => {
         let filas = datosMesaTrabajo[modKey] || [];
-        let filaTotales = filas.find(f => String(f.DIA || '').toLowerCase() === 'linea totales');
+        let filaTotales = filas.find(f => String(f.dia || f.DIA || '').toLowerCase() === 'linea totales');
 
         if (filaTotales) {
             let copiaTotales = { ...filaTotales };
-            const rem = copiaTotales['REMESA'] || '';
+            const rem = copiaTotales['remesa'] || copiaTotales['REMESA'] || '';
             copiaTotales['IDMAC'] = generarIdMac(rem, modKey);
+            copiaTotales['modulo'] = modKey;
             copiaTotales['MODULO'] = modKey;
             filasTotalesA_Guardar.push(copiaTotales);
         }
@@ -417,8 +418,8 @@ window.guardarEnBaseTotales = function() {
         let mapaRegistros = new Map();
 
         arregloBase.forEach(item => {
-            const r = item.REMESA || item.Remesa || '';
-            const m = item.MODULO || item.Modulo || '';
+            const r = item.remesa || item.REMESA || item.Remesa || '';
+            const m = item.modulo || item.MODULO || item.Modulo || '';
             const id = item.IDMAC || generarIdMac(r, m);
             if (id && id !== '000000') mapaRegistros.set(id, item);
         });
@@ -446,7 +447,7 @@ function cargarDatosInicialesFirebase() {
 
         ['050351', '050353', '050354'].forEach(m => {
             datosMesaTrabajo[m] = arregloGlobal.filter(item => {
-                let modItem = String(item.MODULO || item.MÓDULO || item.Módulo || item.Modulo || '');
+                let modItem = String(item.modulo || item.MODULO || item.MÓDULO || item.Módulo || item.Modulo || '');
                 return modItem === m;
             });
         });
