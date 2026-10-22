@@ -34,7 +34,7 @@ database.ref('bd_madre').on('value', (snapshot) => {
 });
 
 // =========================================================
-// EVENTO SUBIR ARCHIVO JSON (Agregado para que funcione el botón)
+// EVENTO SUBIR ARCHIVO JSON
 // =========================================================
 document.addEventListener('DOMContentLoaded', () => {
     const btnSubir = document.getElementById('btnSubir');
@@ -154,6 +154,9 @@ window.cambiarOrden = function(columnaClick) {
     ejecutarOrdenamiento(datosEnPantalla);
 };
 
+// =========================================================
+// CONSTRUCCIÓN DE LA TABLA EN PANTALLA
+// =========================================================
 function dibujarTablaBd(datosArreglo) {
     datosEnPantalla = datosArreglo; 
     const thead = document.getElementById('cabeceraBdMadre');
@@ -170,26 +173,23 @@ function dibujarTablaBd(datosArreglo) {
 
     let columnas = Object.keys(datosArreglo[0]);
 
+    // ORDEN PERSONALIZADO DE COLUMNAS
     const ordenDeseado = [
-        "MODULO", "MÓDULO", "Módulo", "Modulo", 
         "REMESA", "Remesa", "remesa", 
         "FECHA", "Fecha", "fecha", 
         "DIA", "DÍA", "Dia", "Día", 
-        "SEDES", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
-        "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSISION",
-        "CORR__DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES",
-        "CANCELADOS", "TOTAL_DE_ANEXOS_POR_RECHAZO", "CPV_devuelta_entrega", "DISPONIBLES_AL_DIA_ANTERIOR",
-        "RECIBIDAS", "RECIBIDAS_DE_OTROS_TIPOS", "ENTREGADAS", "RECIBO_Y_O_EXTRAVIO", "ANEXAS_A_FUAR",
-        "DATOS_ERRONEOS", "FOTO_MAL_IMPRESA", "LIBRE2", "RETIRADAS_POR_OTRA_CAUSA", "DISPONIBLES",
-        "credenciales_x_canje", "fichas_Entregadas", "fichas_atendidas", "Dias_trabajados",
-        "SOLICITUD_EXPEDICION_O_RECTIFICACION", "SOLICITUD_EXPEDICION_REPATRIADOS", "SOLICITU_DE_REIMPRESION",
-        "DEMANDA_DE_JUICIO", "Total_de_movimientos", "DEVUELTAS_POR_TERCEROS", "34_Imagen_inconsistente",
-        "35_Movimiento_posterior", "CONFIGURACION", "ENT", "DTTO", "RESGUARDO", "SOLICITUD_DE_NUM_DE_EMISION",
-        "LIBRE1", "Sript_ejecutado_VIGENCIA", "FOLIO_NEC_POST", "cartografia_SOLICITUD", "lotes_de_credenciales",
-        "registradas_por_dia", "faltantes", "observaciones", "sin_nombre1", "sin_nombre2", "sin_nombre3",
-        "MAC_QUE_RECIBE", "MAC_QUE_ENTREGA", "IMPORTADAS", "EXPORTADAS", "REPOSISION_+_REIMPRESIONES",
-        "MAL_IMPRESAS", "ERROR_EN_CARTOGRAFIA", "DEFUNCION", "SUSPENSION", "DUPLICADO", "ERROR_EN_NUM_DE_EMISION",
-        "PERDIDA_DE_VIGENCIA", "MOY_POST", "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS"
+        "MODULO", "MÓDULO", "Módulo", "Modulo", 
+        "INICIAL", "FINAL", "TOTAL_DE_FOLIOS", "NO_UTILIZADOS", 
+        "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO",
+        "REPOSISION", "CORR__DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "TOTAL_DE_TRAMITES",
+        "RECHAZOS_DE_MAC_34", "RECHAZOS_DE_MAC_35", "CANCELADOS", "TOTAL_DE_MOVIMIENTOS",
+        "CIF-05", "SOLICITUD_EXPEDICION", "SOLICITUD_RECTIFICACION", "DEMANDA_DE_JUICIO",
+        "INICIALES_A", "INICIALES_S", "INICIALES_C", "ACTUALIZACIÓN", "RECIBIDAS_DE_OTROS_TIPOS",
+        "IMPORTADAS", "EXPORTADAS", "ENTREGADAS", "ANEXAS_A_FUAR", "RESGUARDO", "SOLICITU_DE_REIMPRESION",
+        "RECIBO_Y_O_EXTRAVIO", "RETIRADAS_POR_OTRA_CAUSA", "SOBRANTES", "DUPLICADO",
+        "DISPONIBLES", "DISPONIBLES_DE_SOL_DE_EXP", "REIMPRE_FUERA_DEL_SISTEMA",
+        "CREDEN_DEVUELTAS_POR_TERCEROS", "CRED_PRODUCTO_DE_REGISTRO_DUPLICADO", "CRED_PROD_CANJE_POR_NUEVA",
+        "DIAS_TRABAJADOS", "CONFIGURACION"
     ];
 
     columnas.sort((a, b) => {
@@ -236,7 +236,14 @@ function dibujarTablaBd(datosArreglo) {
                        </td>`;
 
         columnas.forEach(col => {
-            htmlCuerpo += `<td class="align-middle">${fila[col] !== undefined && fila[col] !== null ? fila[col] : ''}</td>`;
+            let valorCelda = fila[col] !== undefined && fila[col] !== null ? fila[col] : '';
+
+            // Limpieza del formato ISO a YYYY-MM-DD
+            if (typeof valorCelda === 'string' && valorCelda.includes('T00:00:00')) {
+                valorCelda = valorCelda.split('T')[0];
+            }
+
+            htmlCuerpo += `<td class="align-middle">${valorCelda}</td>`;
         });
         htmlCuerpo += '</tr>';
     });
@@ -244,7 +251,7 @@ function dibujarTablaBd(datosArreglo) {
 }
 
 // =========================================================
-// 4. FUNCIONES GLOBALES
+// FUNCIONES GLOBALES
 // =========================================================
 window.vaciarBaseDatosGeneral = function() {
     if (confirm("🚨 ¿ESTÁS COMPLETAMENTE SEGURO?\n\nEsto borrará TODOS los registros de BD Madre en la nube.")) {
