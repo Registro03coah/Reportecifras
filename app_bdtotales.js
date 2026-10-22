@@ -63,18 +63,43 @@ database.ref('bdtotales').on('value', (snapshot) => {
 });
 
 // =========================================================
-// 3. FUNCIONES GLOBALES PARA SUBIR ARCHIVO JSON
+// 3. EVENTOS DE EVENT LISTENERS (SUBIR JSON Y BUSCADOR)
 // =========================================================
-window.abrirSelectorArchivo = function() {
-    const fileInput = document.getElementById('fileInput');
-    if (fileInput) {
-        fileInput.click();
-    } else {
-        alert("No se encontró el elemento <input id='fileInput'> en el HTML.");
-    }
-};
+document.addEventListener('DOMContentLoaded', () => {
+    const btnSubir = document.getElementById('btnSubirTotales');
+    const fileInput = document.getElementById('fileInputTotales');
 
-window.procesarArchivoJson = function(e) {
+    if (btnSubir && fileInput) {
+        btnSubir.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', procesarArchivoJson);
+    }
+
+    const buscadorInput = document.getElementById('buscadorBdTotales');
+    if (buscadorInput) {
+        buscadorInput.addEventListener('input', function(e) {
+            const termino = e.target.value.toLowerCase().trim();
+            if(termino === '') {
+                ejecutarOrdenamiento(datosGlobalesBd);
+                return;
+            }
+
+            const datosFiltrados = datosGlobalesBd.filter(item => {
+                const idmac = String(item['IDMAC'] || item['idmac'] || '').toLowerCase();
+                const remesa = String(item['REMESA'] || item['Remesa'] || item['remesa'] || '').toLowerCase();
+                const fecha = String(item['FECHA'] || item['Fecha'] || item['fecha'] || '').toLowerCase();
+                const modulo = String(item['MODULO'] || item['MÓDULO'] || item['Módulo'] || item['Modulo'] || '').toLowerCase();
+                return idmac.includes(termino) || remesa.includes(termino) || fecha.includes(termino) || modulo.includes(termino);
+            });
+
+            ejecutarOrdenamiento(datosFiltrados);
+        });
+    }
+});
+
+function procesarArchivoJson(e) {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -114,7 +139,7 @@ window.procesarArchivoJson = function(e) {
 
                 database.ref('bdtotales').set(datosFusionados).then(() => {
                     if (loadingOverlay) loadingOverlay.style.display = 'none';
-                    const fileInput = document.getElementById('fileInput');
+                    const fileInput = document.getElementById('fileInputTotales');
                     if (fileInput) fileInput.value = ''; 
                     alert("¡Datos subidos e integrados correctamente en BDTO TALES!");
                 }).catch((error) => {
@@ -133,36 +158,10 @@ window.procesarArchivoJson = function(e) {
         }
     };
     reader.readAsText(file);
-};
+}
 
 // =========================================================
-// 4. BUSCADOR EN TIEMPO REAL
-// =========================================================
-document.addEventListener('DOMContentLoaded', () => {
-    const buscadorInput = document.getElementById('buscadorBd');
-    if (buscadorInput) {
-        buscadorInput.addEventListener('input', function(e) {
-            const termino = e.target.value.toLowerCase().trim();
-            if(termino === '') {
-                ejecutarOrdenamiento(datosGlobalesBd);
-                return;
-            }
-
-            const datosFiltrados = datosGlobalesBd.filter(item => {
-                const idmac = String(item['IDMAC'] || item['idmac'] || '').toLowerCase();
-                const remesa = String(item['REMESA'] || item['Remesa'] || item['remesa'] || '').toLowerCase();
-                const fecha = String(item['FECHA'] || item['Fecha'] || item['fecha'] || '').toLowerCase();
-                const modulo = String(item['MODULO'] || item['MÓDULO'] || item['Módulo'] || item['Modulo'] || '').toLowerCase();
-                return idmac.includes(termino) || remesa.includes(termino) || fecha.includes(termino) || modulo.includes(termino);
-            });
-
-            ejecutarOrdenamiento(datosFiltrados);
-        });
-    }
-});
-
-// =========================================================
-// 5. ORDENAMIENTO DE FILAS: REMESA -> MÓDULO -> DÍA
+// 4. ORDENAMIENTO DE FILAS: REMESA -> MÓDULO -> DÍA
 // =========================================================
 function ejecutarOrdenamiento(arregloA_Ordenar) {
     if(!arregloA_Ordenar || arregloA_Ordenar.length === 0) {
@@ -218,7 +217,7 @@ window.cambiarOrden = function(columnaClick) {
 };
 
 // =========================================================
-// 6. PATRÓN DE COLUMNAS PARA BD TOTALES (INICIA CON IDMAC)
+// 5. PATRÓN DE COLUMNAS BD TOTALES
 // =========================================================
 const ordenDeseadoPatronBdTotales = [
     "IDMAC", "REMESA", "MODULO", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS", "NO_UTILIZADOS",
@@ -244,12 +243,12 @@ function obtenerIndiceOrdenBdTotales(columnaOriginal) {
 }
 
 // =========================================================
-// 7. CONSTRUCCIÓN DE LA TABLA BD TOTALES
+// 6. CONSTRUCCIÓN DE LA TABLA EN PANTALLA
 // =========================================================
 function dibujarTablaBd(datosArreglo) {
     datosEnPantalla = datosArreglo; 
-    const thead = document.getElementById('cabeceraBdTotales') || document.getElementById('cabeceraBdMadre');
-    const tbody = document.getElementById('cuerpoBdTotales') || document.getElementById('cuerpoBdMadre');
+    const thead = document.getElementById('cabeceraBdTotales');
+    const tbody = document.getElementById('cuerpoBdTotales');
     if(!thead || !tbody) return;
 
     thead.innerHTML = '';
@@ -336,9 +335,9 @@ function dibujarTablaBd(datosArreglo) {
 }
 
 // =========================================================
-// 8. FUNCIONES GLOBALES DE MANTENIMIENTO
+// 7. FUNCIONES GLOBALES (COINCIDEN CON LOS ONCLICK DE TU HTML)
 // =========================================================
-window.vaciarBaseDatosGeneral = function() {
+window.vaciarBaseTotales = function() {
     if (confirm("🚨 ¿ESTÁS COMPLETAMENTE SEGURO?\n\nEsto borrará TODOS los registros de BDTO TALES en la nube.")) {
         database.ref('bdtotales').remove()
             .then(() => alert("BDTO TALES ha sido vaciada."))
@@ -346,7 +345,7 @@ window.vaciarBaseDatosGeneral = function() {
     }
 };
 
-window.descargarRespaldoJSON = function() {
+window.descargarRespaldoTotalesJSON = function() {
     if (datosGlobalesBd.length === 0) {
         alert("No hay datos en BDTO TALES para respaldar.");
         return;
