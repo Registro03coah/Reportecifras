@@ -20,20 +20,21 @@
         /* Contenedor de Tabla con Scroll Horizontal */
         .excel-container { width: 100%; max-height: 60vh; overflow-x: auto !important; overflow-y: auto; border: 1px solid #ced4da; background: white; border-radius: 6px; }
         .excel-table { margin-bottom: 0; table-layout: auto !important; width: max-content; }
-       .excel-table thead th { 
-    position: sticky; top: 0; z-index: 3; font-size: 10px; font-weight: 700; background-color: #1b396b !important; 
-    color: white; text-align: center; vertical-align: middle; white-space: normal !important; word-wrap: break-word !important; 
-    min-width: 120px !important; max-width: 160px !important; padding: 6px 4px !important; line-height: 1.2; cursor: pointer;
-}
+        .excel-table thead th { 
+            position: sticky; top: 0; z-index: 3; font-size: 10px; font-weight: 700; background-color: #1b396b !important; 
+            color: white; text-align: center; vertical-align: middle; white-space: normal !important; word-wrap: break-word !important; 
+            min-width: 120px !important; max-width: 160px !important; padding: 6px 4px !important; line-height: 1.2; cursor: pointer;
+        }
+        /* CORREGIDO: top en 62px para evitar que la barra gris tape la fila de lunes */
         .excel-table thead tr.num-row th { 
-    top: 54px; 
-    z-index: 2; 
-    background-color: #e9ecef !important; 
-    color: #212529 !important; 
-    font-size: 11px; 
-    padding: 3px !important; 
-    border-bottom: 2px solid #2d3436; 
-}
+            top: 62px; 
+            z-index: 2; 
+            background-color: #e9ecef !important; 
+            color: #212529 !important; 
+            font-size: 11px; 
+            padding: 3px !important; 
+            border-bottom: 2px solid #2d3436; 
+        }
         
         .excel-table td { padding: 4px 6px; border: 1px solid #ccc; text-align: center; vertical-align: middle; font-size: 11px; white-space: nowrap; }
         .excel-table tr.fila-totales td { background-color: #d1e7dd !important; font-weight: 800; color: #0f5132; }
@@ -107,7 +108,7 @@
                     </div>
                 </div>
 
-                <!-- ACCIONES Y BOTONES DE CONTROL (Se removió el botón amarillo duplicado superior) -->
+                <!-- ACCIONES Y BOTONES DE CONTROL -->
                 <div class="d-flex align-items-center gap-2">
                     <button class="btn btn-outline-danger fw-bold" onclick="vaciarMesaTrabajo()"><i class="bi bi-trash"></i> Limpiar Pantalla</button>
                     <button class="btn btn-outline-secondary fw-bold" onclick="descargarRespaldoJSON()"><i class="bi bi-download"></i> Respaldo</button>
@@ -144,7 +145,7 @@
                     <span id="semaforoConexion" class="badge bg-success text-white"><i class="bi bi-check-circle"></i> Conectado</span>
                 </div>
 
-                <!-- ACCIONES ESPECÍFICAS DE TOTALES GENERALES (MUESTRA NÚMERO DE REMESA) -->
+                <!-- ACCIONES ESPECÍFICAS DE TOTALES GENERALES -->
                 <div id="panelAccionesTotales" class="alert alert-warning py-2 px-3 mb-3 d-none justify-content-between align-items-center">
                     <span class="fw-bold fs-6">
                         <i class="bi bi-info-circle-fill"></i> Vaciado Consolidado Remesa: <span id="lblRemesaNumero" class="badge bg-dark text-white fs-6">S/N</span>
