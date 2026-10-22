@@ -34,6 +34,71 @@ database.ref('bd_madre').on('value', (snapshot) => {
 });
 
 // =========================================================
+// EVENTO SUBIR ARCHIVO JSON (Agregado para que funcione el botón)
+// =========================================================
+document.addEventListener('DOMContentLoaded', () => {
+    const btnSubir = document.getElementById('btnSubir');
+    const fileInput = document.getElementById('fileInput');
+
+    if (btnSubir && fileInput) {
+        btnSubir.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            if (loadingOverlay) loadingOverlay.style.display = 'flex';
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    const jsonData = JSON.parse(event.target.result);
+                    
+                    // Subir datos leídos a Firebase directamente
+                    database.ref('bd_madre').set(jsonData).then(() => {
+                        if (loadingOverlay) loadingOverlay.style.display = 'none';
+                        fileInput.value = ''; 
+                        alert("Datos subidos a Firebase correctamente.");
+                    }).catch((error) => {
+                        if (loadingOverlay) loadingOverlay.style.display = 'none';
+                        alert("Error subiendo a Firebase: " + error.message);
+                    });
+
+                } catch (err) {
+                    if (loadingOverlay) loadingOverlay.style.display = 'none';
+                    alert('Error al leer el archivo JSON. Verifica que el formato sea correcto.');
+                }
+            };
+            reader.readAsText(file);
+        });
+    }
+    
+    // BUSCADOR EN TIEMPO REAL
+    const buscadorInput = document.getElementById('buscadorBd');
+    if (buscadorInput) {
+        buscadorInput.addEventListener('input', function(e) {
+            const termino = e.target.value.toLowerCase();
+            if(termino.trim() === '') {
+                ejecutarOrdenamiento(datosGlobalesBd);
+                return;
+            }
+
+            const datosFiltrados = datosGlobalesBd.filter(item => {
+                const remesa = String(item['REMESA'] || item['Remesa'] || '').toLowerCase();
+                const fecha = String(item['FECHA'] || item['Fecha'] || '').toLowerCase();
+                const modulo = String(item['MODULO'] || item['MÓDULO'] || item['Módulo'] || '').toLowerCase();
+                return remesa.includes(termino) || fecha.includes(termino) || modulo.includes(termino);
+            });
+
+            ejecutarOrdenamiento(datosFiltrados);
+        });
+    }
+});
+
+// =========================================================
 // ORDENAMIENTO INTELIGENTE: REMESA -> MÓDULO -> DÍA DE LA SEMANA
 // =========================================================
 function ejecutarOrdenamiento(arregloA_Ordenar) {
@@ -44,37 +109,25 @@ function ejecutarOrdenamiento(arregloA_Ordenar) {
 
     let arregloOrdenado = [...arregloA_Ordenar];
 
-    // Diccionario cronológico de los días de la semana (cubriendo con y sin acento)
     const ordenDias = {
-        "lunes": 1,
-        "martes": 2,
-        "miércoles": 3,
-        "miercoles": 3, 
-        "jueves": 4,
-        "viernes": 5,
-        "sábado": 6,
-        "sabado": 6,    
-        "domingo": 7,
-        "linea totales": 8,
-        "totales": 8
+        "lunes": 1, "martes": 2, "miércoles": 3, "miercoles": 3, 
+        "jueves": 4, "viernes": 5, "sábado": 6, "sabado": 6,    
+        "domingo": 7, "linea totales": 8, "totales": 8
     };
 
     arregloOrdenado.sort((a, b) => {
-        // 1. REGLA 1: REMESA (De Mayor a Menor)
         let remesaA = String(a['REMESA'] || a['Remesa'] || a['remesa'] || '').trim();
         let remesaB = String(b['REMESA'] || b['Remesa'] || b['remesa'] || '').trim();
         if (remesaA !== remesaB) {
             return remesaB.localeCompare(remesaA, undefined, { numeric: true });
         }
 
-        // 2. REGLA 2: MÓDULO (De Menor a Mayor: 50351, 50353, 50354)
         let moduloA = String(a['MODULO'] || a['MÓDULO'] || a['Módulo'] || a['Modulo'] || a['modulo'] || '').trim();
         let moduloB = String(b['MODULO'] || b['MÓDULO'] || b['Módulo'] || b['Modulo'] || b['modulo'] || '').trim();
         if (moduloA !== moduloB) {
             return moduloA.localeCompare(moduloB, undefined, { numeric: true });
         }
 
-        // 3. REGLA 3: DÍA (Lunes a Domingo cronológico)
         let diaA = String(a['DIA'] || a['DÍA'] || a['Dia'] || a['dia'] || '').trim().toLowerCase();
         let diaB = String(b['DIA'] || b['DÍA'] || b['Dia'] || b['dia'] || '').trim().toLowerCase();
         
@@ -90,6 +143,7 @@ function ejecutarOrdenamiento(arregloA_Ordenar) {
 
     dibujarTablaBd(arregloOrdenado);
 }
+
 window.cambiarOrden = function(columnaClick) {
     if (columnaOrdenActual === columnaClick) {
         ordenAscendente = !ordenAscendente;
@@ -116,7 +170,6 @@ function dibujarTablaBd(datosArreglo) {
 
     let columnas = Object.keys(datosArreglo[0]);
 
-    // ORDEN VISIBLE PRIORIZANDO ACCIONES, REMESA, MÓDULO, FECHA Y DÍA AL FRENTE
     const ordenDeseado = [
         "MODULO", "MÓDULO", "Módulo", "Modulo", 
         "REMESA", "Remesa", "remesa", 
@@ -173,7 +226,6 @@ function dibujarTablaBd(datosArreglo) {
         const fechaFila = fila.FECHA || fila.Fecha || '';
 
         htmlCuerpo += '<tr>';
-        // BOTONES DE ACCIÓN (Editar y Borrar pequeños)
         htmlCuerpo += `<td class="text-center align-middle" style="white-space: nowrap;">
                             <button class="btn btn-sm btn-warning text-dark py-0 px-1 me-1" onclick="editarRegistroLinea('${remFila}', '${modFila}', '${fechaFila}')" title="Editar registro">
                                 <i class="bi bi-pencil-square" style="font-size: 0.85rem;"></i>
@@ -189,29 +241,6 @@ function dibujarTablaBd(datosArreglo) {
         htmlCuerpo += '</tr>';
     });
     tbody.innerHTML = htmlCuerpo;
-}
-
-// =========================================================
-// 3. BUSCADOR EN TIEMPO REAL
-// =========================================================
-const buscadorInput = document.getElementById('buscadorBd');
-if (buscadorInput) {
-    buscadorInput.addEventListener('input', function(e) {
-        const termino = e.target.value.toLowerCase();
-        if(termino.trim() === '') {
-            ejecutarOrdenamiento(datosGlobalesBd);
-            return;
-        }
-
-        const datosFiltrados = datosGlobalesBd.filter(item => {
-            const remesa = String(item['REMESA'] || item['Remesa'] || '').toLowerCase();
-            const fecha = String(item['FECHA'] || item['Fecha'] || '').toLowerCase();
-            const modulo = String(item['MODULO'] || item['MÓDULO'] || item['Módulo'] || '').toLowerCase();
-            return remesa.includes(termino) || fecha.includes(termino) || modulo.includes(termino);
-        });
-
-        ejecutarOrdenamiento(datosFiltrados);
-    });
 }
 
 // =========================================================
