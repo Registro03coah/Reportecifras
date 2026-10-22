@@ -44,83 +44,87 @@ database.ref('bdtotales').on('value', (snapshot) => {
 });
 
 // =========================================================
-// 3. EVENTOS DE INTERFAZ (SUBIR JSON Y BUSCADOR)
+// 3. FUNCIONES GLOBALES PARA SUBIR ARCHIVO JSON
+// =========================================================
+window.abrirSelectorArchivo = function() {
+    const fileInput = document.getElementById('fileInput');
+    if (fileInput) {
+        fileInput.click();
+    } else {
+        alert("No se encontró el elemento <input id='fileInput'> en el HTML.");
+    }
+};
+
+window.procesarArchivoJson = function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    if (loadingOverlay) loadingOverlay.style.display = 'flex';
+
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        try {
+            let jsonData = JSON.parse(event.target.result);
+            if (!Array.isArray(jsonData)) {
+                jsonData = [jsonData];
+            }
+
+            // Fusión inteligente en BDTO TALES usando IDMAC
+            database.ref('bdtotales').once('value').then((snapshot) => {
+                let datosActuales = snapshot.val();
+                datosActuales = datosActuales ? (Array.isArray(datosActuales) ? datosActuales : Object.values(datosActuales)) : [];
+
+                let mapaRegistros = new Map();
+
+                // Cargar existentes
+                datosActuales.forEach(item => {
+                    const rem = item['REMESA'] || item['Remesa'] || item['remesa'] || '';
+                    const mod = item['MODULO'] || item['MÓDULO'] || item['Módulo'] || item['Modulo'] || '';
+                    const fec = item['FECHA'] || item['Fecha'] || item['fecha'] || '';
+                    const id = item['IDMAC'] || item['idmac'] || generarIdMac(rem, mod, fec);
+                    if (id && id !== '__') mapaRegistros.set(id, item);
+                });
+
+                // Insertar o actualizar con los datos del JSON nuevo
+                jsonData.forEach(itemNuevo => {
+                    const rem = itemNuevo['REMESA'] || itemNuevo['Remesa'] || itemNuevo['remesa'] || '';
+                    const mod = itemNuevo['MODULO'] || itemNuevo['MÓDULO'] || itemNuevo['Módulo'] || itemNuevo['Modulo'] || '';
+                    const fec = itemNuevo['FECHA'] || itemNuevo['Fecha'] || itemNuevo['fecha'] || '';
+                    const id = itemNuevo['IDMAC'] || itemNuevo['idmac'] || generarIdMac(rem, mod, fec);
+                    if (!itemNuevo['IDMAC']) itemNuevo['IDMAC'] = id;
+                    if (id && id !== '__') mapaRegistros.set(id, itemNuevo);
+                });
+
+                const datosFusionados = Array.from(mapaRegistros.values());
+
+                database.ref('bdtotales').set(datosFusionados).then(() => {
+                    if (loadingOverlay) loadingOverlay.style.display = 'none';
+                    const fileInput = document.getElementById('fileInput');
+                    if (fileInput) fileInput.value = ''; 
+                    alert("¡Datos subidos e integrados correctamente en BDTO TALES!");
+                }).catch((error) => {
+                    if (loadingOverlay) loadingOverlay.style.display = 'none';
+                    alert("Error subiendo a Firebase: " + error.message);
+                });
+
+            }).catch((error) => {
+                if (loadingOverlay) loadingOverlay.style.display = 'none';
+                alert("Error al consultar Firebase: " + error.message);
+            });
+
+        } catch (err) {
+            if (loadingOverlay) loadingOverlay.style.display = 'none';
+            alert('Error al leer el archivo JSON. Verifica que la estructura sea válida.');
+        }
+    };
+    reader.readAsText(file);
+};
+
+// =========================================================
+// 4. BUSCADOR EN TIEMPO REAL
 // =========================================================
 document.addEventListener('DOMContentLoaded', () => {
-    const btnSubir = document.getElementById('btnSubir');
-    const fileInput = document.getElementById('fileInput');
-
-    if (btnSubir && fileInput) {
-        btnSubir.addEventListener('click', () => {
-            fileInput.click();
-        });
-
-        fileInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const loadingOverlay = document.getElementById('loadingOverlay');
-            if (loadingOverlay) loadingOverlay.style.display = 'flex';
-
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                try {
-                    let jsonData = JSON.parse(event.target.result);
-                    if (!Array.isArray(jsonData)) {
-                        jsonData = [jsonData];
-                    }
-
-                    // Fusión inteligente manteniendo/actualizando por IDMAC
-                    database.ref('bdtotales').once('value').then((snapshot) => {
-                        let datosActuales = snapshot.val();
-                        datosActuales = datosActuales ? (Array.isArray(datosActuales) ? datosActuales : Object.values(datosActuales)) : [];
-
-                        let mapaRegistros = new Map();
-
-                        // Cargar existentes
-                        datosActuales.forEach(item => {
-                            const rem = item['REMESA'] || item['Remesa'] || item['remesa'] || '';
-                            const mod = item['MODULO'] || item['MÓDULO'] || item['Módulo'] || item['Modulo'] || '';
-                            const fec = item['FECHA'] || item['Fecha'] || item['fecha'] || '';
-                            const id = generarIdMac(rem, mod, fec);
-                            if (id !== '__') mapaRegistros.set(id, item);
-                        });
-
-                        // Insertar / Sobrescribir con los nuevos
-                        jsonData.forEach(itemNuevo => {
-                            const rem = itemNuevo['REMESA'] || itemNuevo['Remesa'] || itemNuevo['remesa'] || '';
-                            const mod = itemNuevo['MODULO'] || itemNuevo['MÓDULO'] || itemNuevo['Módulo'] || itemNuevo['Modulo'] || '';
-                            const fec = itemNuevo['FECHA'] || itemNuevo['Fecha'] || itemNuevo['fecha'] || '';
-                            const id = generarIdMac(rem, mod, fec);
-                            if (id !== '__') mapaRegistros.set(id, itemNuevo);
-                        });
-
-                        const datosFusionados = Array.from(mapaRegistros.values());
-
-                        database.ref('bdtotales').set(datosFusionados).then(() => {
-                            if (loadingOverlay) loadingOverlay.style.display = 'none';
-                            fileInput.value = ''; 
-                            alert("Datos de BDTO TALES subidos y actualizados en Firebase correctamente.");
-                        }).catch((error) => {
-                            if (loadingOverlay) loadingOverlay.style.display = 'none';
-                            alert("Error subiendo a Firebase: " + error.message);
-                        });
-
-                    }).catch((error) => {
-                        if (loadingOverlay) loadingOverlay.style.display = 'none';
-                        alert("Error al consultar Firebase: " + error.message);
-                    });
-
-                } catch (err) {
-                    if (loadingOverlay) loadingOverlay.style.display = 'none';
-                    alert('Error al leer el archivo JSON. Verifica que el formato sea correcto.');
-                }
-            };
-            reader.readAsText(file);
-        });
-    }
-    
-    // BUSCADOR EN TIEMPO REAL
     const buscadorInput = document.getElementById('buscadorBd');
     if (buscadorInput) {
         buscadorInput.addEventListener('input', function(e) {
@@ -131,10 +135,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const datosFiltrados = datosGlobalesBd.filter(item => {
-                const remesa = String(item['REMESA'] || item['Remesa'] || '').toLowerCase();
-                const fecha = String(item['FECHA'] || item['Fecha'] || '').toLowerCase();
-                const modulo = String(item['MODULO'] || item['MÓDULO'] || item['Módulo'] || '').toLowerCase();
-                return remesa.includes(termino) || fecha.includes(termino) || modulo.includes(termino);
+                const idmac = String(item['IDMAC'] || item['idmac'] || '').toLowerCase();
+                const remesa = String(item['REMESA'] || item['Remesa'] || item['remesa'] || '').toLowerCase();
+                const fecha = String(item['FECHA'] || item['Fecha'] || item['fecha'] || '').toLowerCase();
+                const modulo = String(item['MODULO'] || item['MÓDULO'] || item['Módulo'] || item['Modulo'] || '').toLowerCase();
+                return idmac.includes(termino) || remesa.includes(termino) || fecha.includes(termino) || modulo.includes(termino);
             });
 
             ejecutarOrdenamiento(datosFiltrados);
@@ -143,7 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // =========================================================
-// 4. ORDENAMIENTO INTELIGENTE: REMESA -> MÓDULO -> DÍA
+// 5. ORDENAMIENTO DE FILAS: REMESA -> MÓDULO -> DÍA
 // =========================================================
 function ejecutarOrdenamiento(arregloA_Ordenar) {
     if(!arregloA_Ordenar || arregloA_Ordenar.length === 0) {
@@ -199,12 +204,52 @@ window.cambiarOrden = function(columnaClick) {
 };
 
 // =========================================================
-// 5. CONSTRUCCIÓN DE LA TABLA BDTO TALES EN PANTALLA
+// 6. NORMALIZACIÓN Y ORDENAMIENTO DE COLUMNAS SOLICITADO
+// =========================================================
+function normalizarNombreColumna(str) {
+    return String(str || '')
+        .trim()
+        .toUpperCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^A-Z0-9]/g, "_");
+}
+
+// NUEVO ORDEN SOLICITADO COMENZANDO POR IDMAC
+const ordenDeseadoPatron = [
+    "IDMAC",
+    "REMESA", "REMESA", "REMESA",
+    "MODULO", "MODULO",
+    "FECHA", "DIA", // Por si existen en el JSON original
+    "INICIAL", "FINAL", "TOTAL_DE_FOLIOS", "NO_UTILIZADOS",
+    "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO",
+    "REPOSISION", "REPOSICION", "CORR__DE_DATOS_DIRECCION", "CORR_DE_DATOS_DIRECCION",
+    "REINCORPORACION", "REEMPLAZO", "TOTAL_DE_TRAMITES",
+    "RECHAZOS_DE_MAC_34", "34_IMAGEN_INCONSISTENTE", "RECHAZOS_DE_MAC_35", "35_MOVIMIENTO_POSTERIOR",
+    "CANCELADOS", "TOTAL_DE_MOVIMIENTOS", "CIF_05", "CIF-05", "SOLICITUD_EXPEDICION",
+    "SOLICITUD_RECTIFICACION", "DEMANDA_DE_JUICIO",
+    "INICIALES_A", "INICIALES_S", "INICIALES_C", "ACTUALIZACION", "ACTUALIZACIÓN", "RECIBIDAS_DE_OTROS_TIPOS",
+    "IMPORTADAS", "EXPORTADAS", "ENTREGADAS", "ANEXAS_A_FUAR", "RESGUARDO",
+    "SOLICITU_DE_REIMPRESION", "SOLICITUD_DE_REIMPRESION", "REIMPRESION", "RECIBO_Y_O_EXTRAVIO",
+    "RETIRADAS_POR_OTRA_CAUSA", "SOBRANTES", "DUPLICADO", "DISPONIBLES",
+    "DISPONIBLES_DE_SOL_DE_EXP", "REIMPRE_FUERA_DEL_SISTEMA", "CREDEN_DEVUELTAS_POR_TERCEROS",
+    "CRED_PRODUCTO_DE_REGISTRO_DUPLICADO", "CRED_PROD_CANJE_POR_NUEVA",
+    "DIAS_TRABAJADOS", "CONFIGURACION"
+].map(normalizarNombreColumna);
+
+function obtenerIndiceOrdenColumna(columnaOriginal) {
+    const colNorm = normalizarNombreColumna(columnaOriginal);
+    const idx = ordenDeseadoPatron.indexOf(colNorm);
+    return idx !== -1 ? idx : 9999;
+}
+
+// =========================================================
+// 7. CONSTRUCCIÓN DE LA TABLA EN PANTALLA
 // =========================================================
 function dibujarTablaBd(datosArreglo) {
     datosEnPantalla = datosArreglo; 
-    const thead = document.getElementById('cabeceraBdMadre') || document.getElementById('cabeceraBdTotales');
-    const tbody = document.getElementById('cuerpoBdMadre') || document.getElementById('cuerpoBdTotales');
+    const thead = document.getElementById('cabeceraBdTotales') || document.getElementById('cabeceraBdMadre');
+    const tbody = document.getElementById('cuerpoBdTotales') || document.getElementById('cuerpoBdMadre');
     if(!thead || !tbody) return;
 
     thead.innerHTML = '';
@@ -215,33 +260,29 @@ function dibujarTablaBd(datosArreglo) {
         return;
     }
 
-    let columnas = Object.keys(datosArreglo[0]);
+    // Garantizar que la propiedad IDMAC existe en cada fila
+    datosArreglo.forEach(fila => {
+        const r = fila.REMESA || fila.Remesa || fila.remesa || '';
+        const m = fila.MODULO || fila.MÓDULO || fila.Módulo || fila.Modulo || '';
+        const f = fila.FECHA || fila.Fecha || fila.fecha || '';
+        if (!fila['IDMAC'] && !fila['idmac']) {
+            fila['IDMAC'] = generarIdMac(r, m, f);
+        }
+    });
 
-    // ORDEN ESTABLECIDO DE COLUMNAS PARA BDTO TALES
-    const ordenDeseado = [
-        "REMESA", "Remesa", "remesa", 
-        "FECHA", "Fecha", "fecha", 
-        "DIA", "DÍA", "Dia", "Día", 
-        "MODULO", "MÓDULO", "Módulo", "Modulo", 
-        "INICIAL", "FINAL", "TOTAL_DE_FOLIOS", "NO_UTILIZADOS", 
-        "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO",
-        "REPOSISION", "CORR__DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "TOTAL_DE_TRAMITES",
-        "RECHAZOS_DE_MAC_34", "RECHAZOS_DE_MAC_35", "CANCELADOS", "TOTAL_DE_MOVIMIENTOS",
-        "CIF-05", "SOLICITUD_EXPEDICION", "SOLICITUD_RECTIFICACION", "DEMANDA_DE_JUICIO",
-        "INICIALES_A", "INICIALES_S", "INICIALES_C", "ACTUALIZACIÓN", "RECIBIDAS_DE_OTROS_TIPOS",
-        "IMPORTADAS", "EXPORTADAS", "ENTREGADAS", "ANEXAS_A_FUAR", "RESGUARDO", "SOLICITU_DE_REIMPRESION",
-        "RECIBO_Y_O_EXTRAVIO", "RETIRADAS_POR_OTRA_CAUSA", "SOBRANTES", "DUPLICADO",
-        "DISPONIBLES", "DISPONIBLES_DE_SOL_DE_EXP", "REIMPRE_FUERA_DEL_SISTEMA",
-        "CREDEN_DEVUELTAS_POR_TERCEROS", "CRED_PRODUCTO_DE_REGISTRO_DUPLICADO", "CRED_PROD_CANJE_POR_NUEVA",
-        "DIAS_TRABAJADOS", "CONFIGURACION"
-    ];
+    let columnasSet = new Set();
+    datosArreglo.forEach(item => {
+        Object.keys(item).forEach(k => columnasSet.add(k));
+    });
+    let columnas = Array.from(columnasSet);
 
     columnas.sort((a, b) => {
-        let indiceA = ordenDeseado.indexOf(a);
-        let indiceB = ordenDeseado.indexOf(b);
-        if (indiceA === -1) indiceA = 999;
-        if (indiceB === -1) indiceB = 999;
-        return indiceA - indiceB;
+        let idxA = obtenerIndiceOrdenColumna(a);
+        let idxB = obtenerIndiceOrdenColumna(b);
+        if (idxA === idxB) {
+            return a.localeCompare(b);
+        }
+        return idxA - idxB;
     });
 
     let trHead = '<tr>';
@@ -295,7 +336,7 @@ function dibujarTablaBd(datosArreglo) {
 }
 
 // =========================================================
-// 6. FUNCIONES GLOBALES Y MANTENIMIENTO
+// 8. MANTENIMIENTO Y FUNCIONES GLOBALES
 // =========================================================
 window.vaciarBaseDatosGeneral = function() {
     if (confirm("🚨 ¿ESTÁS COMPLETAMENTE SEGURO?\n\nEsto borrará TODOS los registros de BDTO TALES en la nube.")) {
@@ -334,7 +375,8 @@ window.borrarRegistroLinea = function(remesa, modulo, fecha) {
             const r = item.REMESA || item.Remesa || item.remesa || '';
             const m = item.MODULO || item.MÓDULO || item.Módulo || item.Modulo || '';
             const f = item.FECHA || item.Fecha || item.fecha || '';
-            return generarIdMac(r, m, f) !== targetId;
+            const id = item.IDMAC || item.idmac || generarIdMac(r, m, f);
+            return id !== targetId;
         });
 
         database.ref('bdtotales').set(datosRestantes)
@@ -349,7 +391,8 @@ window.editarRegistroLinea = function(remesa, modulo, fecha) {
         const r = item.REMESA || item.Remesa || item.remesa || '';
         const m = item.MODULO || item.MÓDULO || item.Módulo || item.Modulo || '';
         const f = item.FECHA || item.Fecha || item.fecha || '';
-        return generarIdMac(r, m, f) === targetId;
+        const id = item.IDMAC || item.idmac || generarIdMac(r, m, f);
+        return id === targetId;
     });
 
     if (registroIndex === -1) {
