@@ -23,6 +23,7 @@ let datosGlobalesBd = [];
 let datosEnPantalla = [];
 let columnaOrdenActual = 'REMESA';
 let ordenAscendente = false; 
+let idmacEdicionActual = null; // Guarda el registro que se está editando en la ventana flotante
 
 // =========================================================
 // HELPERS DE NORMALIZACIÓN E IDENTIFICACIÓN
@@ -63,7 +64,7 @@ database.ref('bdtotales').on('value', (snapshot) => {
 });
 
 // =========================================================
-// 3. EVENTOS DE EVENT LISTENERS (SUBIR JSON Y BUSCADOR)
+// 3. EVENTOS LISTENERS (SUBIR JSON Y BUSCADOR)
 // =========================================================
 document.addEventListener('DOMContentLoaded', () => {
     const btnSubir = document.getElementById('btnSubirTotales');
@@ -312,7 +313,7 @@ function dibujarTablaBd(datosArreglo) {
 
         htmlCuerpo += '<tr>';
         htmlCuerpo += `<td class="text-center align-middle" style="white-space: nowrap;">
-                            <button class="btn btn-sm btn-warning text-dark py-0 px-1 me-1" onclick="editarRegistroLinea('${idmacFila}')" title="Editar registro">
+                            <button class="btn btn-sm btn-warning text-dark py-0 px-1 me-1" onclick="editarRegistroLinea('${idmacFila}')" title="Editar registro completo">
                                 <i class="bi bi-pencil-square" style="font-size: 0.85rem;"></i>
                             </button>
                             <button class="btn btn-sm btn-danger py-0 px-1" onclick="borrarRegistroLinea('${idmacFila}')" title="Eliminar registro">
@@ -335,7 +336,115 @@ function dibujarTablaBd(datosArreglo) {
 }
 
 // =========================================================
-// 7. FUNCIONES GLOBALES (COINCIDEN CON LOS ONCLICK DE TU HTML)
+// 7. EDICIÓN EN VENTANA FLOTANTE (MODAL COMPLETO)
+// =========================================================
+window.editarRegistroLinea = function(idmac) {
+    idmacEdicionActual = idmac;
+    const registro = datosGlobalesBd.find(item => {
+        const r = item.REMESA || item.Remesa || item.remesa || '';
+        const m = item.MODULO || item.MÓDULO || item.Módulo || item.Modulo || '';
+        const f = item.FECHA || item.Fecha || item.fecha || '';
+        const id = item.IDMAC || item.idmac || generarIdMac(r, m, f);
+        return id === idmac;
+    });
+
+    if (!registro) {
+        alert("No se encontró el registro para editar.");
+        return;
+    }
+
+    const contenedor = document.getElementById('contenedorCamposDinamicos');
+    if (!contenedor) return;
+
+    contenedor.innerHTML = '';
+
+    // Obtener todas las columnas presentes en el objeto
+    let llaves = Object.keys(registro);
+
+    llaves.forEach(clave => {
+        let valor = registro[clave] !== undefined && registro[clave] !== null ? registro[clave] : '';
+        if (typeof valor === 'string' && valor.includes('T00:00:00')) {
+            valor = valor.split('T')[0];
+        }
+
+        let nombreVisual = clave.replace('CORR__DE_DATOS_DIRECCION', 'CORR._DE_DATOS_DIRECCION')
+                                .replace('RECIBO_Y_O_EXTRAVIO', 'RECIBO_Y/O_EXTRAVIO');
+
+        const colDiv = document.createElement('div');
+        colDiv.className = 'col-md-6 mb-3';
+        colDiv.innerHTML = `
+            <label class="form-label fw-bold text-secondary style="font-size: 0.85rem;">
+                ${nombreVisual} <small class="text-muted">(${clave})</small>
+            </label>
+            <div class="input-group">
+                <input type="text" class="form-control campo-dinamico-totales" data-clave="${clave}" value="${valor}">
+                <button class="btn btn-outline-danger" type="button" onclick="eliminarCampoFormulario(this)" title="Eliminar esta columna/campo de este registro">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        `;
+        contenedor.appendChild(colDiv);
+    });
+
+    const modalElement = document.getElementById('modalEditarTotales');
+    if (modalElement) {
+        const modal = new bootstrap.Modal(modalElement);
+        modal.show();
+    }
+};
+
+window.eliminarCampoFormulario = function(btn) {
+    if (confirm("¿Deseas eliminar este campo de este registro?")) {
+        const colDiv = btn.closest('.col-md-6');
+        if (colDiv) colDiv.remove();
+    }
+};
+
+window.guardarEdicionTotales = function() {
+    if (!idmacEdicionActual) return;
+
+    const registroIndex = datosGlobalesBd.findIndex(item => {
+        const r = item.REMESA || item.Remesa || item.remesa || '';
+        const m = item.MODULO || item.MÓDULO || item.Módulo || item.Modulo || '';
+        const f = item.FECHA || item.Fecha || item.fecha || '';
+        const id = item.IDMAC || item.idmac || generarIdMac(r, m, f);
+        return id === idmacEdicionActual;
+    });
+
+    if (registroIndex === -1) {
+        alert("Error: no se encontró el registro para actualizar.");
+        return;
+    }
+
+    const inputs = document.querySelectorAll('.campo-dinamico-totales');
+    let nuevoRegistro = {};
+
+    inputs.forEach(input => {
+        const clave = input.getAttribute('data-clave');
+        const valor = input.value.trim();
+        nuevoRegistro[clave] = valor;
+    });
+
+    if (!nuevoRegistro['IDMAC']) {
+        nuevoRegistro['IDMAC'] = idmacEdicionActual;
+    }
+
+    datosGlobalesBd[registroIndex] = nuevoRegistro;
+
+    database.ref('bdtotales').set(datosGlobalesBd)
+        .then(() => {
+            const modalElement = document.getElementById('modalEditarTotales');
+            const modalInstance = bootstrap.Modal.getInstance(modalElement);
+            if (modalInstance) modalInstance.hide();
+            alert("¡Registro actualizado con éxito en la nube!");
+        })
+        .catch((error) => {
+            alert("Error al guardar la modificación: " + error.message);
+        });
+};
+
+// =========================================================
+// 8. FUNCIONES GLOBALES DE ADMINISTRACIÓN
 // =========================================================
 window.vaciarBaseTotales = function() {
     if (confirm("🚨 ¿ESTÁS COMPLETAMENTE SEGURO?\n\nEsto borrará TODOS los registros de BDTO TALES en la nube.")) {
@@ -381,38 +490,4 @@ window.borrarRegistroLinea = function(idmac) {
             .then(() => alert("Registro eliminado correctamente de BDTO TALES."))
             .catch(() => alert("Hubo un error al intentar eliminar la fila."));
     }
-};
-
-window.editarRegistroLinea = function(idmac) {
-    const registroIndex = datosGlobalesBd.findIndex(item => {
-        const r = item.REMESA || item.Remesa || item.remesa || '';
-        const m = item.MODULO || item.MÓDULO || item.Módulo || item.Modulo || '';
-        const f = item.FECHA || item.Fecha || item.fecha || '';
-        const id = item.IDMAC || item.idmac || generarIdMac(r, m, f);
-        return id === idmac;
-    });
-
-    if (registroIndex === -1) {
-        alert("No se encontró el registro para editar.");
-        return;
-    }
-
-    let registro = datosGlobalesBd[registroIndex];
-    let campoEditar = prompt("Escribe el nombre de la columna que deseas modificar (ej. TOTAL_DE_FOLIOS, INSCRIPCIONES, TOTAL_DE_TRAMITES):");
-    if (!campoEditar) return;
-    
-    campoEditar = campoEditar.trim();
-    let claveReal = Object.keys(registro).find(k => normalizarNombreColumna(k) === normalizarNombreColumna(campoEditar)) || campoEditar;
-
-    let valorActual = registro[claveReal] !== undefined ? registro[claveReal] : '';
-    let nuevoValor = prompt(`Modificando "${claveReal}"\nValor actual: ${valorActual}\nEscribe el nuevo valor:`, valorActual);
-    
-    if (nuevoValor === null) return;
-
-    registro[claveReal] = nuevoValor;
-    datosGlobalesBd[registroIndex] = registro;
-
-    database.ref('bdtotales').set(datosGlobalesBd)
-        .then(() => alert("¡Registro actualizado con éxito en BDTO TALES!"))
-        .catch(() => alert("Error al guardar la modificación en la nube."));
 };
