@@ -25,13 +25,32 @@ let columnaOrdenActual = 'REMESA';
 let ordenAscendente = false; 
 
 // =========================================================
-// HELPER: GENERACIÓN Y NORMALIZACIÓN DE IDMAC (INCLUYE -bis)
+// HELPERS DE NORMALIZACIÓN E IDENTIFICACIÓN
 // =========================================================
 function generarIdMac(remesa, modulo, fecha) {
     let remClean = String(remesa || '').trim().toLowerCase();
     let modClean = String(modulo || '').trim();
     let fecClean = String(fecha || '').trim().split('T')[0];
     return `${remClean}_${modClean}_${fecClean}`;
+}
+
+function normalizarNombreColumna(str) {
+    return String(str || '')
+        .trim()
+        .toUpperCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^A-Z0-9]/g, "_");
+}
+
+function obtenerClaveCanonica(key) {
+    const norm = normalizarNombreColumna(key);
+    if (norm === 'REMESA') return 'REMESA';
+    if (norm === 'MODULO' || norm === 'MODULOS') return 'MODULO';
+    if (norm === 'FECHA') return 'FECHA';
+    if (norm === 'DIA' || norm === 'DIA_') return 'DIA';
+    if (norm === 'IDMAC') return 'IDMAC';
+    return key;
 }
 
 // =========================================================
@@ -66,18 +85,14 @@ window.procesarArchivoJson = function(e) {
     reader.onload = function(event) {
         try {
             let jsonData = JSON.parse(event.target.result);
-            if (!Array.isArray(jsonData)) {
-                jsonData = [jsonData];
-            }
+            if (!Array.isArray(jsonData)) jsonData = [jsonData];
 
-            // Fusión inteligente en BDTO TALES usando IDMAC
             database.ref('bdtotales').once('value').then((snapshot) => {
                 let datosActuales = snapshot.val();
                 datosActuales = datosActuales ? (Array.isArray(datosActuales) ? datosActuales : Object.values(datosActuales)) : [];
 
                 let mapaRegistros = new Map();
 
-                // Cargar existentes
                 datosActuales.forEach(item => {
                     const rem = item['REMESA'] || item['Remesa'] || item['remesa'] || '';
                     const mod = item['MODULO'] || item['MÓDULO'] || item['Módulo'] || item['Modulo'] || '';
@@ -86,7 +101,6 @@ window.procesarArchivoJson = function(e) {
                     if (id && id !== '__') mapaRegistros.set(id, item);
                 });
 
-                // Insertar o actualizar con los datos del JSON nuevo
                 jsonData.forEach(itemNuevo => {
                     const rem = itemNuevo['REMESA'] || itemNuevo['Remesa'] || itemNuevo['remesa'] || '';
                     const mod = itemNuevo['MODULO'] || itemNuevo['MÓDULO'] || itemNuevo['Módulo'] || itemNuevo['Modulo'] || '';
@@ -204,24 +218,10 @@ window.cambiarOrden = function(columnaClick) {
 };
 
 // =========================================================
-// 6. NORMALIZACIÓN Y ORDENAMIENTO DE COLUMNAS SOLICITADO
+// 6. PATRÓN DE COLUMNAS PARA BD TOTALES (INICIA CON IDMAC)
 // =========================================================
-function normalizarNombreColumna(str) {
-    return String(str || '')
-        .trim()
-        .toUpperCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^A-Z0-9]/g, "_");
-}
-
-// NUEVO ORDEN SOLICITADO COMENZANDO POR IDMAC
-const ordenDeseadoPatron = [
-    "IDMAC",
-    "REMESA", "REMESA", "REMESA",
-    "MODULO", "MODULO",
-    "FECHA", "DIA", // Por si existen en el JSON original
-    "INICIAL", "FINAL", "TOTAL_DE_FOLIOS", "NO_UTILIZADOS",
+const ordenDeseadoPatronBdTotales = [
+    "IDMAC", "REMESA", "MODULO", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS", "NO_UTILIZADOS",
     "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO",
     "REPOSISION", "REPOSICION", "CORR__DE_DATOS_DIRECCION", "CORR_DE_DATOS_DIRECCION",
     "REINCORPORACION", "REEMPLAZO", "TOTAL_DE_TRAMITES",
@@ -237,14 +237,14 @@ const ordenDeseadoPatron = [
     "DIAS_TRABAJADOS", "CONFIGURACION"
 ].map(normalizarNombreColumna);
 
-function obtenerIndiceOrdenColumna(columnaOriginal) {
+function obtenerIndiceOrdenBdTotales(columnaOriginal) {
     const colNorm = normalizarNombreColumna(columnaOriginal);
-    const idx = ordenDeseadoPatron.indexOf(colNorm);
+    const idx = ordenDeseadoPatronBdTotales.indexOf(colNorm);
     return idx !== -1 ? idx : 9999;
 }
 
 // =========================================================
-// 7. CONSTRUCCIÓN DE LA TABLA EN PANTALLA
+// 7. CONSTRUCCIÓN DE LA TABLA BD TOTALES
 // =========================================================
 function dibujarTablaBd(datosArreglo) {
     datosEnPantalla = datosArreglo; 
@@ -260,28 +260,31 @@ function dibujarTablaBd(datosArreglo) {
         return;
     }
 
-    // Garantizar que la propiedad IDMAC existe en cada fila
-    datosArreglo.forEach(fila => {
-        const r = fila.REMESA || fila.Remesa || fila.remesa || '';
-        const m = fila.MODULO || fila.MÓDULO || fila.Módulo || fila.Modulo || '';
-        const f = fila.FECHA || fila.Fecha || fila.fecha || '';
-        if (!fila['IDMAC'] && !fila['idmac']) {
-            fila['IDMAC'] = generarIdMac(r, m, f);
+    const datosNormalizados = datosArreglo.map(item => {
+        let obj = {};
+        Object.keys(item).forEach(k => {
+            let cleanKey = obtenerClaveCanonica(k);
+            if (obj[cleanKey] === undefined || obj[cleanKey] === '' || obj[cleanKey] === null) {
+                obj[cleanKey] = item[k];
+            }
+        });
+        
+        if (!obj['IDMAC']) {
+            obj['IDMAC'] = generarIdMac(obj['REMESA'], obj['MODULO'], obj['FECHA']);
         }
+        return obj;
     });
 
     let columnasSet = new Set();
-    datosArreglo.forEach(item => {
+    datosNormalizados.forEach(item => {
         Object.keys(item).forEach(k => columnasSet.add(k));
     });
     let columnas = Array.from(columnasSet);
 
     columnas.sort((a, b) => {
-        let idxA = obtenerIndiceOrdenColumna(a);
-        let idxB = obtenerIndiceOrdenColumna(b);
-        if (idxA === idxB) {
-            return a.localeCompare(b);
-        }
+        let idxA = obtenerIndiceOrdenBdTotales(a);
+        let idxB = obtenerIndiceOrdenBdTotales(b);
+        if (idxA === idxB) return a.localeCompare(b);
         return idxA - idxB;
     });
 
@@ -305,17 +308,15 @@ function dibujarTablaBd(datosArreglo) {
     thead.innerHTML = trHead;
 
     let htmlCuerpo = '';
-    datosArreglo.forEach((fila) => {
-        const remFila = fila.REMESA || fila.Remesa || fila.remesa || '';
-        const modFila = fila.MODULO || fila.MÓDULO || fila.Módulo || fila.Modulo || '';
-        const fechaFila = fila.FECHA || fila.Fecha || fila.fecha || '';
+    datosNormalizados.forEach((fila) => {
+        const idmacFila = fila.IDMAC || generarIdMac(fila.REMESA, fila.MODULO, fila.FECHA);
 
         htmlCuerpo += '<tr>';
         htmlCuerpo += `<td class="text-center align-middle" style="white-space: nowrap;">
-                            <button class="btn btn-sm btn-warning text-dark py-0 px-1 me-1" onclick="editarRegistroLinea('${remFila}', '${modFila}', '${fechaFila}')" title="Editar registro">
+                            <button class="btn btn-sm btn-warning text-dark py-0 px-1 me-1" onclick="editarRegistroLinea('${idmacFila}')" title="Editar registro">
                                 <i class="bi bi-pencil-square" style="font-size: 0.85rem;"></i>
                             </button>
-                            <button class="btn btn-sm btn-danger py-0 px-1" onclick="borrarRegistroLinea('${remFila}', '${modFila}', '${fechaFila}')" title="Eliminar registro">
+                            <button class="btn btn-sm btn-danger py-0 px-1" onclick="borrarRegistroLinea('${idmacFila}')" title="Eliminar registro">
                                 <i class="bi bi-trash" style="font-size: 0.85rem;"></i>
                             </button>
                        </td>`;
@@ -323,7 +324,6 @@ function dibujarTablaBd(datosArreglo) {
         columnas.forEach(col => {
             let valorCelda = fila[col] !== undefined && fila[col] !== null ? fila[col] : '';
 
-            // Limpieza del formato ISO a YYYY-MM-DD
             if (typeof valorCelda === 'string' && valorCelda.includes('T00:00:00')) {
                 valorCelda = valorCelda.split('T')[0];
             }
@@ -336,7 +336,7 @@ function dibujarTablaBd(datosArreglo) {
 }
 
 // =========================================================
-// 8. MANTENIMIENTO Y FUNCIONES GLOBALES
+// 8. FUNCIONES GLOBALES DE MANTENIMIENTO
 // =========================================================
 window.vaciarBaseDatosGeneral = function() {
     if (confirm("🚨 ¿ESTÁS COMPLETAMENTE SEGURO?\n\nEsto borrará TODOS los registros de BDTO TALES en la nube.")) {
@@ -368,31 +368,29 @@ window.descargarRespaldoJSON = function() {
     URL.revokeObjectURL(url);
 };
 
-window.borrarRegistroLinea = function(remesa, modulo, fecha) {
-    if(confirm(`¿Estás seguro de eliminar el registro del Módulo ${modulo}, Remesa ${remesa}, Fecha ${fecha}?`)) {
-        const targetId = generarIdMac(remesa, modulo, fecha);
+window.borrarRegistroLinea = function(idmac) {
+    if(confirm(`¿Estás seguro de eliminar el registro ${idmac}?`)) {
         const datosRestantes = datosGlobalesBd.filter(item => {
             const r = item.REMESA || item.Remesa || item.remesa || '';
             const m = item.MODULO || item.MÓDULO || item.Módulo || item.Modulo || '';
             const f = item.FECHA || item.Fecha || item.fecha || '';
             const id = item.IDMAC || item.idmac || generarIdMac(r, m, f);
-            return id !== targetId;
+            return id !== idmac;
         });
 
         database.ref('bdtotales').set(datosRestantes)
-            .then(() => console.log("Registro eliminado correctamente de BDTO TALES."))
+            .then(() => alert("Registro eliminado correctamente de BDTO TALES."))
             .catch(() => alert("Hubo un error al intentar eliminar la fila."));
     }
 };
 
-window.editarRegistroLinea = function(remesa, modulo, fecha) {
-    const targetId = generarIdMac(remesa, modulo, fecha);
+window.editarRegistroLinea = function(idmac) {
     const registroIndex = datosGlobalesBd.findIndex(item => {
         const r = item.REMESA || item.Remesa || item.remesa || '';
         const m = item.MODULO || item.MÓDULO || item.Módulo || item.Modulo || '';
         const f = item.FECHA || item.Fecha || item.fecha || '';
         const id = item.IDMAC || item.idmac || generarIdMac(r, m, f);
-        return id === targetId;
+        return id === idmac;
     });
 
     if (registroIndex === -1) {
@@ -405,17 +403,14 @@ window.editarRegistroLinea = function(remesa, modulo, fecha) {
     if (!campoEditar) return;
     
     campoEditar = campoEditar.trim();
-    if (registro[campoEditar] === undefined) {
-        alert(`El campo "${campoEditar}" no existe en este registro.`);
-        return;
-    }
+    let claveReal = Object.keys(registro).find(k => normalizarNombreColumna(k) === normalizarNombreColumna(campoEditar)) || campoEditar;
 
-    let valorActual = registro[campoEditar];
-    let nuevoValor = prompt(`Modificando "${campoEditar}"\nValor actual: ${valorActual}\nEscribe el nuevo valor:`, valorActual);
+    let valorActual = registro[claveReal] !== undefined ? registro[claveReal] : '';
+    let nuevoValor = prompt(`Modificando "${claveReal}"\nValor actual: ${valorActual}\nEscribe el nuevo valor:`, valorActual);
     
     if (nuevoValor === null) return;
 
-    registro[campoEditar] = nuevoValor;
+    registro[claveReal] = nuevoValor;
     datosGlobalesBd[registroIndex] = registro;
 
     database.ref('bdtotales').set(datosGlobalesBd)
