@@ -26,34 +26,23 @@ let ordenAscendente = false;
 let idmacEdicionActual = null;
 
 // =========================================================
-// HELPERS DE FORMACIÓN DE IDMAC Y NORMALIZACIÓN DE COLUMNAS
+// NUEVA FÓRMULA IDMAC: [2 DÍGITOS MÓDULO] + [4 DÍGITOS REMESA] + [SUFIJO -BIS]
 // =========================================================
-
-// Estructura IDMAC: [2 dígitos Módulo][2 dígitos Año][2 dígitos Remesa][Sufijo -bis]
-function generarIdMac(remesa, modulo, fecha) {
+function generarIdMac(remesa, modulo) {
     // 1. Módulo: últimos 2 dígitos (ej. "0301" -> "01", "050351" -> "51")
     let modStr = String(modulo || '').replace(/\D/g, '');
     let modDigits = modStr.length >= 2 ? modStr.slice(-2) : modStr.padStart(2, '0');
     if (!modDigits) modDigits = '00';
 
-    // 2. Año: últimos 2 dígitos del año de la fecha (ej. "2026" -> "26")
-    let fecStr = String(fecha || '').trim();
-    let yearMatch = fecStr.match(/(20\d{2}|\d{4}|\d{2})/);
-    let yrDigits = '00';
-    if (yearMatch) {
-        let yr = yearMatch[1];
-        yrDigits = yr.slice(-2);
-    }
-
-    // 3. Remesa: últimos 2 dígitos + sufijo (-bis, -bis2, -Bis, -Bis2, etc.)
+    // 2. Remesa: últimos 4 dígitos con ceros a la izquierda + sufijo (-bis, -bis2, -Bis, etc.)
     let remStr = String(remesa || '').trim();
     let remMatch = remStr.match(/(\d+)\s*(-?\s*bis\d*)?/i);
-    let numPart = '00';
+    let numPart = '0000';
     let suffix = '';
 
     if (remMatch) {
         let n = remMatch[1];
-        numPart = n.length >= 2 ? n.slice(-2) : n.padStart(2, '0');
+        numPart = n.length >= 4 ? n.slice(-4) : n.padStart(4, '0');
         if (remMatch[2]) {
             suffix = remMatch[2].replace(/\s+/g, '');
             if (!suffix.startsWith('-')) {
@@ -62,7 +51,7 @@ function generarIdMac(remesa, modulo, fecha) {
         }
     }
 
-    return `${modDigits}${yrDigits}${numPart}${suffix}`;
+    return `${modDigits}${numPart}${suffix}`;
 }
 
 function normalizarNombreColumna(str) {
@@ -120,14 +109,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const datosFiltrados = datosGlobalesBd.filter(item => {
                 const rem = item['REMESA'] || item['Remesa'] || item['remesa'] || '';
                 const mod = item['MODULO'] || item['MÓDULO'] || item['Módulo'] || item['Modulo'] || '';
-                const fec = item['FECHA'] || item['Fecha'] || item['fecha'] || '';
-                const idmacCalculado = generarIdMac(rem, mod, fec).toLowerCase();
+                const idmacCalculado = generarIdMac(rem, mod).toLowerCase();
 
                 const idmac = String(item['IDMAC'] || idmacCalculado).toLowerCase();
                 const remesa = String(rem).toLowerCase();
-                const fecha = String(fec).toLowerCase();
                 const modulo = String(mod).toLowerCase();
-                return idmac.includes(termino) || remesa.includes(termino) || fecha.includes(termino) || modulo.includes(termino);
+                return idmac.includes(termino) || remesa.includes(termino) || modulo.includes(termino);
             });
 
             ejecutarOrdenamiento(datosFiltrados);
@@ -157,8 +144,7 @@ function procesarArchivoJson(e) {
                 datosActuales.forEach(item => {
                     const rem = item['REMESA'] || item['Remesa'] || item['remesa'] || '';
                     const mod = item['MODULO'] || item['MÓDULO'] || item['Módulo'] || item['Modulo'] || '';
-                    const fec = item['FECHA'] || item['Fecha'] || item['fecha'] || '';
-                    const id = generarIdMac(rem, mod, fec);
+                    const id = generarIdMac(rem, mod);
                     item['IDMAC'] = id;
                     if (id && id !== '000000') mapaRegistros.set(id, item);
                 });
@@ -166,8 +152,7 @@ function procesarArchivoJson(e) {
                 jsonData.forEach(itemNuevo => {
                     const rem = itemNuevo['REMESA'] || itemNuevo['Remesa'] || itemNuevo['remesa'] || '';
                     const mod = itemNuevo['MODULO'] || itemNuevo['MÓDULO'] || itemNuevo['Módulo'] || itemNuevo['Modulo'] || '';
-                    const fec = itemNuevo['FECHA'] || itemNuevo['Fecha'] || itemNuevo['fecha'] || '';
-                    const id = generarIdMac(rem, mod, fec);
+                    const id = generarIdMac(rem, mod);
                     itemNuevo['IDMAC'] = id;
                     if (id && id !== '000000') mapaRegistros.set(id, itemNuevo);
                 });
@@ -305,8 +290,8 @@ function dibujarTablaBd(datosArreglo) {
             }
         });
         
-        // Recalcular siempre IDMAC con la fórmula especificada
-        obj['IDMAC'] = generarIdMac(obj['REMESA'], obj['MODULO'], obj['FECHA']);
+        // Recalcular IDMAC con la nueva fórmula
+        obj['IDMAC'] = generarIdMac(obj['REMESA'], obj['MODULO']);
         return obj;
     });
 
@@ -344,7 +329,7 @@ function dibujarTablaBd(datosArreglo) {
 
     let htmlCuerpo = '';
     datosNormalizados.forEach((fila) => {
-        const idmacFila = fila.IDMAC || generarIdMac(fila.REMESA, fila.MODULO, fila.FECHA);
+        const idmacFila = fila.IDMAC || generarIdMac(fila.REMESA, fila.MODULO);
 
         htmlCuerpo += '<tr>';
         htmlCuerpo += `<td class="text-center align-middle" style="white-space: nowrap;">
@@ -378,8 +363,7 @@ window.editarRegistroLinea = function(idmac) {
     const registro = datosGlobalesBd.find(item => {
         const r = item.REMESA || item.Remesa || item.remesa || '';
         const m = item.MODULO || item.MÓDULO || item.Módulo || item.Modulo || '';
-        const f = item.FECHA || item.Fecha || item.fecha || '';
-        const id = item.IDMAC || item.idmac || generarIdMac(r, m, f);
+        const id = item.IDMAC || item.idmac || generarIdMac(r, m);
         return id === idmac;
     });
 
@@ -440,8 +424,7 @@ window.guardarEdicionTotales = function() {
     const registroIndex = datosGlobalesBd.findIndex(item => {
         const r = item.REMESA || item.Remesa || item.remesa || '';
         const m = item.MODULO || item.MÓDULO || item.Módulo || item.Modulo || '';
-        const f = item.FECHA || item.Fecha || item.fecha || '';
-        const id = item.IDMAC || item.idmac || generarIdMac(r, m, f);
+        const id = item.IDMAC || item.idmac || generarIdMac(r, m);
         return id === idmacEdicionActual;
     });
 
@@ -459,11 +442,10 @@ window.guardarEdicionTotales = function() {
         nuevoRegistro[clave] = valor;
     });
 
-    // Recalcular IDMAC por si se modificó Módulo, Fecha o Remesa
+    // Recalcular IDMAC por si se modificó Módulo o Remesa
     const rem = nuevoRegistro['REMESA'] || nuevoRegistro['Remesa'] || '';
     const mod = nuevoRegistro['MODULO'] || nuevoRegistro['Modulo'] || '';
-    const fec = nuevoRegistro['FECHA'] || nuevoRegistro['Fecha'] || '';
-    nuevoRegistro['IDMAC'] = generarIdMac(rem, mod, fec);
+    nuevoRegistro['IDMAC'] = generarIdMac(rem, mod);
 
     datosGlobalesBd[registroIndex] = nuevoRegistro;
 
@@ -517,8 +499,7 @@ window.borrarRegistroLinea = function(idmac) {
         const datosRestantes = datosGlobalesBd.filter(item => {
             const r = item.REMESA || item.Remesa || item.remesa || '';
             const m = item.MODULO || item.MÓDULO || item.Módulo || item.Modulo || '';
-            const f = item.FECHA || item.Fecha || item.fecha || '';
-            const id = item.IDMAC || item.idmac || generarIdMac(r, m, f);
+            const id = item.IDMAC || item.idmac || generarIdMac(r, m);
             return id !== idmac;
         });
 
