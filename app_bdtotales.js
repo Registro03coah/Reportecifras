@@ -23,16 +23,46 @@ let datosGlobalesBd = [];
 let datosEnPantalla = [];
 let columnaOrdenActual = 'REMESA';
 let ordenAscendente = false; 
-let idmacEdicionActual = null; // Guarda el registro que se está editando en la ventana flotante
+let idmacEdicionActual = null;
 
 // =========================================================
-// HELPERS DE NORMALIZACIÓN E IDENTIFICACIÓN
+// HELPERS DE FORMACIÓN DE IDMAC Y NORMALIZACIÓN DE COLUMNAS
 // =========================================================
+
+// Estructura IDMAC: [2 dígitos Módulo][2 dígitos Año][2 dígitos Remesa][Sufijo -bis]
 function generarIdMac(remesa, modulo, fecha) {
-    let remClean = String(remesa || '').trim().toLowerCase();
-    let modClean = String(modulo || '').trim();
-    let fecClean = String(fecha || '').trim().split('T')[0];
-    return `${remClean}_${modClean}_${fecClean}`;
+    // 1. Módulo: últimos 2 dígitos (ej. "0301" -> "01", "050351" -> "51")
+    let modStr = String(modulo || '').replace(/\D/g, '');
+    let modDigits = modStr.length >= 2 ? modStr.slice(-2) : modStr.padStart(2, '0');
+    if (!modDigits) modDigits = '00';
+
+    // 2. Año: últimos 2 dígitos del año de la fecha (ej. "2026" -> "26")
+    let fecStr = String(fecha || '').trim();
+    let yearMatch = fecStr.match(/(20\d{2}|\d{4}|\d{2})/);
+    let yrDigits = '00';
+    if (yearMatch) {
+        let yr = yearMatch[1];
+        yrDigits = yr.slice(-2);
+    }
+
+    // 3. Remesa: últimos 2 dígitos + sufijo (-bis, -bis2, -Bis, -Bis2, etc.)
+    let remStr = String(remesa || '').trim();
+    let remMatch = remStr.match(/(\d+)\s*(-?\s*bis\d*)?/i);
+    let numPart = '00';
+    let suffix = '';
+
+    if (remMatch) {
+        let n = remMatch[1];
+        numPart = n.length >= 2 ? n.slice(-2) : n.padStart(2, '0');
+        if (remMatch[2]) {
+            suffix = remMatch[2].replace(/\s+/g, '');
+            if (!suffix.startsWith('-')) {
+                suffix = '-' + suffix;
+            }
+        }
+    }
+
+    return `${modDigits}${yrDigits}${numPart}${suffix}`;
 }
 
 function normalizarNombreColumna(str) {
@@ -88,10 +118,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const datosFiltrados = datosGlobalesBd.filter(item => {
-                const idmac = String(item['IDMAC'] || item['idmac'] || '').toLowerCase();
-                const remesa = String(item['REMESA'] || item['Remesa'] || item['remesa'] || '').toLowerCase();
-                const fecha = String(item['FECHA'] || item['Fecha'] || item['fecha'] || '').toLowerCase();
-                const modulo = String(item['MODULO'] || item['MÓDULO'] || item['Módulo'] || item['Modulo'] || '').toLowerCase();
+                const rem = item['REMESA'] || item['Remesa'] || item['remesa'] || '';
+                const mod = item['MODULO'] || item['MÓDULO'] || item['Módulo'] || item['Modulo'] || '';
+                const fec = item['FECHA'] || item['Fecha'] || item['fecha'] || '';
+                const idmacCalculado = generarIdMac(rem, mod, fec).toLowerCase();
+
+                const idmac = String(item['IDMAC'] || idmacCalculado).toLowerCase();
+                const remesa = String(rem).toLowerCase();
+                const fecha = String(fec).toLowerCase();
+                const modulo = String(mod).toLowerCase();
                 return idmac.includes(termino) || remesa.includes(termino) || fecha.includes(termino) || modulo.includes(termino);
             });
 
@@ -123,17 +158,18 @@ function procesarArchivoJson(e) {
                     const rem = item['REMESA'] || item['Remesa'] || item['remesa'] || '';
                     const mod = item['MODULO'] || item['MÓDULO'] || item['Módulo'] || item['Modulo'] || '';
                     const fec = item['FECHA'] || item['Fecha'] || item['fecha'] || '';
-                    const id = item['IDMAC'] || item['idmac'] || generarIdMac(rem, mod, fec);
-                    if (id && id !== '__') mapaRegistros.set(id, item);
+                    const id = generarIdMac(rem, mod, fec);
+                    item['IDMAC'] = id;
+                    if (id && id !== '000000') mapaRegistros.set(id, item);
                 });
 
                 jsonData.forEach(itemNuevo => {
                     const rem = itemNuevo['REMESA'] || itemNuevo['Remesa'] || itemNuevo['remesa'] || '';
                     const mod = itemNuevo['MODULO'] || itemNuevo['MÓDULO'] || itemNuevo['Módulo'] || itemNuevo['Modulo'] || '';
                     const fec = itemNuevo['FECHA'] || itemNuevo['Fecha'] || itemNuevo['fecha'] || '';
-                    const id = itemNuevo['IDMAC'] || itemNuevo['idmac'] || generarIdMac(rem, mod, fec);
-                    if (!itemNuevo['IDMAC']) itemNuevo['IDMAC'] = id;
-                    if (id && id !== '__') mapaRegistros.set(id, itemNuevo);
+                    const id = generarIdMac(rem, mod, fec);
+                    itemNuevo['IDMAC'] = id;
+                    if (id && id !== '000000') mapaRegistros.set(id, itemNuevo);
                 });
 
                 const datosFusionados = Array.from(mapaRegistros.values());
@@ -269,9 +305,8 @@ function dibujarTablaBd(datosArreglo) {
             }
         });
         
-        if (!obj['IDMAC']) {
-            obj['IDMAC'] = generarIdMac(obj['REMESA'], obj['MODULO'], obj['FECHA']);
-        }
+        // Recalcular siempre IDMAC con la fórmula especificada
+        obj['IDMAC'] = generarIdMac(obj['REMESA'], obj['MODULO'], obj['FECHA']);
         return obj;
     });
 
@@ -358,7 +393,6 @@ window.editarRegistroLinea = function(idmac) {
 
     contenedor.innerHTML = '';
 
-    // Obtener todas las columnas presentes en el objeto
     let llaves = Object.keys(registro);
 
     llaves.forEach(clave => {
@@ -373,12 +407,12 @@ window.editarRegistroLinea = function(idmac) {
         const colDiv = document.createElement('div');
         colDiv.className = 'col-md-6 mb-3';
         colDiv.innerHTML = `
-            <label class="form-label fw-bold text-secondary style="font-size: 0.85rem;">
+            <label class="form-label fw-bold text-secondary" style="font-size: 0.85rem;">
                 ${nombreVisual} <small class="text-muted">(${clave})</small>
             </label>
             <div class="input-group">
                 <input type="text" class="form-control campo-dinamico-totales" data-clave="${clave}" value="${valor}">
-                <button class="btn btn-outline-danger" type="button" onclick="eliminarCampoFormulario(this)" title="Eliminar esta columna/campo de este registro">
+                <button class="btn btn-outline-danger" type="button" onclick="eliminarCampoFormulario(this)" title="Eliminar este campo de este registro">
                     <i class="bi bi-trash"></i>
                 </button>
             </div>
@@ -425,9 +459,11 @@ window.guardarEdicionTotales = function() {
         nuevoRegistro[clave] = valor;
     });
 
-    if (!nuevoRegistro['IDMAC']) {
-        nuevoRegistro['IDMAC'] = idmacEdicionActual;
-    }
+    // Recalcular IDMAC por si se modificó Módulo, Fecha o Remesa
+    const rem = nuevoRegistro['REMESA'] || nuevoRegistro['Remesa'] || '';
+    const mod = nuevoRegistro['MODULO'] || nuevoRegistro['Modulo'] || '';
+    const fec = nuevoRegistro['FECHA'] || nuevoRegistro['Fecha'] || '';
+    nuevoRegistro['IDMAC'] = generarIdMac(rem, mod, fec);
 
     datosGlobalesBd[registroIndex] = nuevoRegistro;
 
