@@ -17,28 +17,23 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// ORDEN EXACTO BASADO EN TU IMAGEN DE REFERENCIA PARA EL REPORTE SEMANAL
+// COLUMNAS EXACTAS SEGÚN TU IMAGEN (SEMANAL)
 const COLUMNAS_SEMANAL_KEYS = [
-    "ENT", "DTTO", "MODULO", "REMESA", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS", 
-    "NO_UTILIZADOS", "INSCRIPCIONES", "ANEXAS_A_FUAR", "RESGUARDO", "SOLICITU_DE_REIMPRESION", 
-    "RECIBO_Y_O_EXTRAVIO", "RETIRADAS_POR_OTRA_CAUSA", "SOBRANTES", "DUPLICADO", 
-    "DISPONIBLES", "DISPONIBLES_DE_SOL_DE_EXP", "REIMPRE_FUERA_DEL_SISTEMA", 
-    "CREDEN_DEVUELTAS_POR_TERCEROS", "CRED_PRODUCTO_DE_REGISTRO_DUPLICADO", 
-    "CRED_PROD_CANJE_POR_NUEVA", "DIAS_TRABAJADOS", "CONFIGURACION", 
-    "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSISION", 
-    "CORR__DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", 
-    "TOTAL_DE_TRAMITES", "RECHAZOS_DE_MAC_34", "RECHAZOS_DE_MAC_35", "CANCELADOS", 
-    "TOTAL_DE_MOVIMIENTOS", "CIF-05", "SOLICITUD_EXPEDICION", "SOLICITUD_RECTIFICACION", 
-    "DEMANDA_DE_JUICIO", "INICIALES_A", "INICIALES_S", "INICIALES_C", "ACTUALIZACIÓN", 
-    "RECIBIDAS_DE_OTROS_TIPOS", "IMPORTADAS", "EXPORTADAS", "ENTREGADAS"
+    "ENT", "DTTO", "MODULO", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS", 
+    "NO_UTILIZADOS", "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", 
+    "REPOSISION", "CORR__DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES", 
+    "RECHAZOS_DE_MAC_34", "RECHAZOS_DE_MAC_35", "CANCELADOS", "TOTAL_DE_MOVIMIENTOS", 
+    "CIF-05", "SOLICITUD_EXPEDICION", "SOLICITUD_RECTIFICACION", "DEMANDA_DE_JUICIO", 
+    "INICIALES_S", "ACTUALIZACIÓN", "RECIBIDAS_DE_OTROS_TIPOS", "IMPORTADAS", "EXPORTADAS", 
+    "ENTREGADAS", "ANEXAS_A_FUAR", "RESGUARDO", "SOLICITU_DE_REIMPRESION", "RECIBO_Y_O_EXTRAVIO", 
+    "RETIRADAS_POR_OTRA_CAUSA", "SOBRANTES", "DUPLICADO", "DISPONIBLES", "DISPONIBLES_DE_SOL_DE_EXP", 
+    "REIMPRE_FUERA_DEL_SISTEMA", "CREDEN_DEVUELTAS_POR_TERCEROS", "CRED_PRODUCTO_DE_REGISTRO_DUPLICADO", 
+    "CRED_PROD_CANJE_POR_NUEVA", "DIAS_TRABAJADOS", "CONFIGURACION"
 ];
 
 let bdMadreGlobal = [];
 let bdtotalesGlobal = [];
 
-// ==========================================
-// 2. SEMÁFORO DE CONEXIÓN FIREBASE
-// ==========================================
 const connectedRef = ref(db, ".info/connected");
 onValue(connectedRef, (snap) => {
     const semaforo = document.getElementById("semaforoConexion");
@@ -64,36 +59,27 @@ function construirHeaderTabla(selectorTabla) {
         let nombreVisual = colKey.replace(/_/g, ' ')
                                   .replace('SOLICITU DE', 'SOLICITUD DE')
                                   .replace('DUPLICADO', 'DUPLICADOS')
-                                  .replace('DISPONIBLES', 'DISPONIBLES TOTAL')
-                                  .replace('CORR  DE', 'CORR DE');
+                                  .replace('CORR  DE', 'CORR DE')
+                                  .replace('CREDEN DEVUELTAS POR TERCEROS', 'DEVUELTAS POR TERCEROS');
         
         thT.innerText = nombreVisual;
         
-        // Ajustamos la apariencia general, las clases de Bootstrap/CSS de usuario se aplican con este orden
         let anchoCelda = "90px"; 
-        if(['MODULO', 'REMESA', 'ENT', 'DTTO'].includes(colKey)) anchoCelda = "70px"; 
+        if(['MODULO', 'ENT', 'DTTO'].includes(colKey)) anchoCelda = "70px"; 
         else if(['INICIAL', 'FINAL'].includes(colKey)) anchoCelda = "110px";
         
         thT.style.width = anchoCelda; 
         thT.style.minWidth = anchoCelda;
-        
-        if(['INICIAL', 'FINAL', 'TOTAL_DE_FOLIOS'].includes(colKey)) {
-            thT.classList.add('bg-folios');
-        }
+        if(['INICIAL', 'FINAL', 'TOTAL_DE_FOLIOS'].includes(colKey)) thT.classList.add('bg-folios');
         
         trTitulos.appendChild(thT);
     });
     thead.appendChild(trTitulos);
 }
 
-// ==========================================
-// 3. CARGA DE DATOS Y GESTIÓN DE REMESA
-// ==========================================
 function normalizarObjeto(item) {
     let limpio = {};
-    for (let key in item) {
-        limpio[key.toUpperCase().trim()] = item[key];
-    }
+    for (let key in item) limpio[key.toUpperCase().trim()] = item[key];
     return limpio;
 }
 
@@ -104,24 +90,18 @@ function cargarDatosSemanal() {
         get(ref(db, 'bdtotales'))
     ]).then(([snapMadre, snapTotales]) => {
         if (snapMadre.exists()) {
-            const dataRaw = snapMadre.val();
-            let arr = Array.isArray(dataRaw) ? dataRaw : Object.values(dataRaw);
-            bdMadreGlobal = arr.map(normalizarObjeto);
-        } else {
-            bdMadreGlobal = [];
-        }
+            let dataRaw = snapMadre.val();
+            bdMadreGlobal = (Array.isArray(dataRaw) ? dataRaw : Object.values(dataRaw)).map(normalizarObjeto);
+        } else { bdMadreGlobal = []; }
 
         if (snapTotales.exists()) {
-            const dataTotalesRaw = snapTotales.val();
-            let arr = Array.isArray(dataTotalesRaw) ? dataTotalesRaw : Object.values(dataTotalesRaw);
-            bdtotalesGlobal = arr.map(normalizarObjeto);
-        } else {
-            bdtotalesGlobal = [];
-        }
+            let dataTotalesRaw = snapTotales.val();
+            bdtotalesGlobal = (Array.isArray(dataTotalesRaw) ? dataTotalesRaw : Object.values(dataTotalesRaw)).map(normalizarObjeto);
+        } else { bdtotalesGlobal = []; }
 
         inicializarFiltroRemesa();
         renderTablaSemanal();
-    }).catch(err => console.error("Error al leer la base de datos:", err));
+    }).catch(err => console.error("Error:", err));
 }
 
 function inicializarFiltroRemesa() {
@@ -158,9 +138,7 @@ function renderTablaSemanal() {
 
     let remesaActiva = obtenerRemesaSeleccionada();
     const lblRemesaActual = document.getElementById('lblRemesaActiva');
-    if(lblRemesaActual) {
-        lblRemesaActual.innerText = remesaActiva ? `Remesa en vista: ${remesaActiva}` : "Sin remesa detectada";
-    }
+    if(lblRemesaActual) lblRemesaActual.innerText = remesaActiva ? `Remesa en vista: ${remesaActiva}` : "Sin remesa detectada";
 
     if (!remesaActiva) {
         tbody.innerHTML = `<tr><td colspan="${COLUMNAS_SEMANAL_KEYS.length}" class="text-center py-4 text-muted">No se encontró ninguna remesa.</td></tr>`;
@@ -179,7 +157,7 @@ function renderTablaSemanal() {
             });
             tbody.appendChild(tr);
         });
-        renderGranTotalDesdeRegistros(tbody, registrosTotalesRemesa, remesaActiva);
+        renderGranTotalDesdeRegistros(tbody, registrosTotalesRemesa);
     } else {
         let filasRemesa = bdMadreGlobal.filter(item => String(item['REMESA'] || '').trim() === String(remesaActiva));
         if (filasRemesa.length === 0) {
@@ -201,10 +179,8 @@ function renderTablaSemanal() {
             COLUMNAS_SEMANAL_KEYS.forEach(colKey => {
                 let td = document.createElement('td');
                 if (colKey === "MODULO") td.innerText = modNombre;
-                else if (colKey === "REMESA") td.innerText = remesaActiva;
-                else if (["INICIAL", "FINAL", "INICIALES_A", "INICIALES_S", "INICIALES_C", "CONFIGURACION", "ENT", "DTTO"].includes(colKey)) {
-                    // Solo toma el valor tal cual para el modulo
-                    td.innerText = registrosMod[0][colKey] || (["INICIAL", "FINAL", "INICIALES_A", "INICIALES_S", "INICIALES_C", "CONFIGURACION"].includes(colKey) ? "0" : "");
+                else if (["INICIAL", "FINAL", "INICIALES_S", "CONFIGURACION", "ENT", "DTTO"].includes(colKey)) {
+                    td.innerText = registrosMod[0][colKey] || (["INICIAL", "FINAL", "INICIALES_S", "CONFIGURACION"].includes(colKey) ? "0" : "");
                 }
                 else {
                     let sumaCol = 0;
@@ -218,20 +194,18 @@ function renderTablaSemanal() {
             });
             tbody.appendChild(tr);
         });
-        renderGranTotalDesdeRegistros(tbody, filasRemesa, remesaActiva);
+        renderGranTotalDesdeRegistros(tbody, filasRemesa);
     }
 }
 
-function renderGranTotalDesdeRegistros(tbody, listaRegistros, remesaId) {
+function renderGranTotalDesdeRegistros(tbody, listaRegistros) {
     let trGranTotal = document.createElement('tr');
     trGranTotal.classList.add('fila-totales');
     
     COLUMNAS_SEMANAL_KEYS.forEach(colKey => {
         let td = document.createElement('td');
         if (colKey === "MODULO") td.innerText = "GRAN TOTAL";
-        else if (colKey === "REMESA") td.innerText = remesaId;
-        else if (["INICIAL", "FINAL", "INICIALES_A", "INICIALES_S", "INICIALES_C", "CONFIGURACION", "ENT", "DTTO"].includes(colKey)) {
-            // Sin sumas en INICIAL/FINAL, INICIALES A/S/C, ENT, DTTO, CONFIG
+        else if (["INICIAL", "FINAL", "INICIALES_S", "CONFIGURACION", "ENT", "DTTO"].includes(colKey)) {
             td.innerText = ""; 
         }
         else {
@@ -247,5 +221,4 @@ function renderGranTotalDesdeRegistros(tbody, listaRegistros, remesaId) {
     tbody.appendChild(trGranTotal);
 }
 
-// Iniciar
 cargarDatosSemanal();

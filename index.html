@@ -68,4 +68,68 @@
                         <div class="d-flex gap-2">
                             <input type="text" id="acum_50351" class="form-control form-control-sm text-center fw-bold" placeholder="50351" style="width: 75px;" title="Acumulado 50351">
                             <input type="text" id="acum_50353" class="form-control form-control-sm text-center fw-bold" placeholder="50353" style="width: 75px;" title="Acumulado 50353">
-                            <input type
+                            <input type="text" id="acum_50354" class="form-control form-control-sm text-center fw-bold" placeholder="50354" style="width: 75px;" title="Acumulado 50354">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ACCIONES DE TABLA Y ARCHIVOS -->
+                <div class="d-flex align-items-center gap-2">
+                    <input type="file" id="fileInputTotales" accept=".json" style="display: none;">
+                    <button class="btn btn-outline-danger fw-bold" onclick="vaciarBaseTotales()"><i class="bi bi-trash"></i> Limpiar BD</button>
+                    <button class="btn btn-outline-secondary fw-bold" onclick="descargarRespaldoTotalesJSON()"><i class="bi bi-download"></i> Respaldo</button>
+                    <button id="btnSubirTotales" class="btn btn-success fw-bold"><i class="bi bi-cloud-upload"></i> Subir JSON (BD Totales)</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="alert alert-info d-flex justify-content-between align-items-center shadow-sm">
+            <div class="d-flex align-items-center gap-3">
+                <input type="text" id="buscadorBdTotales" class="form-control form-control-sm" placeholder="Buscar por Módulo o Remesa..." style="max-width: 250px;">
+            </div>
+            <div id="semaforoConexion" class="badge bg-warning text-dark fs-6"><i class="bi bi-arrow-repeat spin"></i> Conectando...</div>
+        </div>
+
+        <div class="excel-container shadow-sm rounded">
+            <table class="excel-table table table-hover" id="tablaTotales">
+                <thead id="cabeceraBdTotales"></thead>
+                <tbody id="cuerpoBdTotales"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- MODAL EDICIÓN -->
+    <div class="modal fade" id="modalEditarTotales" tabindex="-1">
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title"><i class="bi bi-pencil-square"></i> Editar Registro BD Totales</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row" id="contenedorCamposDinamicos"></div>
+          </div>
+          <div class="modal-footer border-top-0">
+            <button type="button" class="btn btn-secondary fw-bold" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-primary fw-bold" onclick="guardarEdicionTotales()"><i class="bi bi-save"></i> Guardar Cambios</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="loadingOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; color: white;">
+        <div class="spinner-border text-info" style="width: 3rem; height: 3rem;" role="status"></div>
+        <h4 class="mt-3">Procesando y guardando datos...</h4>
+    </div>
+
+    <footer class="text-center py-4 mt-auto text-white" style="background-color: #1b396b;">
+        <small>
+            &copy; 2026 Todos los derechos reservados.<br>
+            Desarrollado por <span class="text-info fw-bold">Carrivers Desing</span> para Módulos MAC.
+        </small>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="app_bdtotales.js?v=1.0.2"></script>
+</body>
+</html>

@@ -17,28 +17,23 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// Mismo orden validado
+// COLUMNAS EXACTAS SEGÚN TU IMAGEN (CAMPAÑA)
 const COLUMNAS_CAMPANA_KEYS = [
-    "ENT", "DTTO", "MODULO", "REMESA", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS", 
-    "NO_UTILIZADOS", "INSCRIPCIONES", "ANEXAS_A_FUAR", "RESGUARDO", "SOLICITU_DE_REIMPRESION", 
-    "RECIBO_Y_O_EXTRAVIO", "RETIRADAS_POR_OTRA_CAUSA", "SOBRANTES", "DUPLICADO", 
-    "DISPONIBLES", "DISPONIBLES_DE_SOL_DE_EXP", "REIMPRE_FUERA_DEL_SISTEMA", 
-    "CREDEN_DEVUELTAS_POR_TERCEROS", "CRED_PRODUCTO_DE_REGISTRO_DUPLICADO", 
-    "CRED_PROD_CANJE_POR_NUEVA", "DIAS_TRABAJADOS", "CONFIGURACION", 
-    "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSISION", 
-    "CORR__DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", 
-    "TOTAL_DE_TRAMITES", "RECHAZOS_DE_MAC_34", "RECHAZOS_DE_MAC_35", "CANCELADOS", 
-    "TOTAL_DE_MOVIMIENTOS", "CIF-05", "SOLICITUD_EXPEDICION", "SOLICITUD_RECTIFICACION", 
-    "DEMANDA_DE_JUICIO", "INICIALES_A", "INICIALES_S", "INICIALES_C", "ACTUALIZACIÓN", 
-    "RECIBIDAS_DE_OTROS_TIPOS", "IMPORTADAS", "EXPORTADAS", "ENTREGADAS"
+    "ENT", "DTTO", "MODULO", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS", 
+    "NO_UTILIZADOS", "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", 
+    "REPOSISION", "CORR__DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES", 
+    "RECHAZOS_DE_MAC_34", "RECHAZOS_DE_MAC_35", "CANCELADOS", "TOTAL_DE_MOVIMIENTOS", 
+    "CIF-05", "SOLICITUD_EXPEDICION", "SOLICITUD_RECTIFICACION", "DEMANDA_DE_JUICIO", 
+    "INICIALES_C", "ACTUALIZACIÓN", "RECIBIDAS_DE_OTROS_TIPOS", "IMPORTADAS", "EXPORTADAS", 
+    "ENTREGADAS", "ANEXAS_A_FUAR", "RESGUARDO", "SOLICITU_DE_REIMPRESION", "RECIBO_Y_O_EXTRAVIO", 
+    "RETIRADAS_POR_OTRA_CAUSA", "SOBRANTES", "DUPLICADO", "DISPONIBLES", "DISPONIBLES_DE_SOL_DE_EXP", 
+    "REIMPRE_FUERA_DEL_SISTEMA", "CREDEN_DEVUELTAS_POR_TERCEROS", "CRED_PRODUCTO_DE_REGISTRO_DUPLICADO", 
+    "CRED_PROD_CANJE_POR_NUEVA", "DIAS_TRABAJADOS", "CONFIGURACION"
 ];
 
 let bdtotalesGlobal = [];
 let bdMadreGlobal = [];
 
-// ==========================================
-// 2. GESTIÓN DE RANGO DE CAMPAÑA (LOCALSTORAGE)
-// ==========================================
 function inicializarFiltrosCampana() {
     const inputInicio = document.getElementById('inputCampanaInicio');
     const inputFin = document.getElementById('inputCampanaFin');
@@ -64,11 +59,6 @@ function construirHeaderTabla(selectorTabla) {
     if(!thead) return;
     thead.innerHTML = "";
     
-    // Fila 1 - Títulos Vacíos/Agrupaciones (Opcional, pero creamos la fila para respetar el sticky thead CSS del usuario)
-    let trGrupo = document.createElement('tr');
-    trGrupo.style.display = 'none'; // El usuario usa thead tr:first-child y thead tr:nth-child(2). Si lo necesita visible, lo ajustamos, pero aquí generaremos directamente los <th>
-    // Vamos a generar solo una fila porque en el CSS el usuario espera dos filas. Lo ajustaremos para que pinte bien en su CSS.
-    
     let trTitulos = document.createElement('tr');
     
     COLUMNAS_CAMPANA_KEYS.forEach((colKey) => {
@@ -76,30 +66,23 @@ function construirHeaderTabla(selectorTabla) {
         let nombreVisual = colKey.replace(/_/g, ' ')
                                   .replace('SOLICITU DE', 'SOLICITUD DE')
                                   .replace('DUPLICADO', 'DUPLICADOS')
-                                  .replace('DISPONIBLES', 'DISPONIBLES TOTAL')
-                                  .replace('CORR  DE', 'CORR DE');
+                                  .replace('CORR  DE', 'CORR DE')
+                                  .replace('CREDEN DEVUELTAS POR TERCEROS', 'DEVUELTAS POR TERCEROS');
         
         thT.innerText = nombreVisual;
         
         let anchoCelda = "90px"; 
-        if(['MODULO', 'REMESA', 'ENT', 'DTTO'].includes(colKey)) anchoCelda = "70px"; 
+        if(['MODULO', 'ENT', 'DTTO'].includes(colKey)) anchoCelda = "70px"; 
         else if(['INICIAL', 'FINAL'].includes(colKey)) anchoCelda = "110px";
         
         thT.style.width = anchoCelda; thT.style.minWidth = anchoCelda;
+        if(['INICIAL', 'FINAL', 'TOTAL_DE_FOLIOS'].includes(colKey)) thT.classList.add('bg-folios');
         
-        if(['INICIAL', 'FINAL', 'TOTAL_DE_FOLIOS'].includes(colKey)) {
-            thT.classList.add('bg-folios');
-        }
         trTitulos.appendChild(thT);
     });
-    
-    // Para que los estilos CSS thead tr:first-child funcionen como el usuario espera:
     thead.appendChild(trTitulos);
 }
 
-// ==========================================
-// 3. CARGA DE DATOS Y RENDERIZADO
-// ==========================================
 function normalizarObjeto(item) {
     let limpio = {};
     for (let key in item) limpio[key.toUpperCase().trim()] = item[key];
@@ -129,7 +112,7 @@ function renderTablaCampana() {
     const rFin = localStorage.getItem('campanaRemesaFin');
 
     if (!rInicio || !rFin) {
-        tbody.innerHTML = `<tr><td colspan="${COLUMNAS_CAMPANA_KEYS.length}" class="text-center py-4 text-muted">Por favor establece la remesa Inicial y Final de la Campaña en la configuración superior.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${COLUMNAS_CAMPANA_KEYS.length}" class="text-center py-4 text-muted">Por favor establece la remesa Inicial y Final.</td></tr>`;
         return;
     }
 
@@ -140,7 +123,7 @@ function renderTablaCampana() {
     });
 
     if (registrosRango.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="${COLUMNAS_CAMPANA_KEYS.length}" class="text-center py-4 text-muted">No hay datos en el rango de remesas indicado (${rInicio} a ${rFin}).</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${COLUMNAS_CAMPANA_KEYS.length}" class="text-center py-4 text-muted">No hay datos en el rango indicado.</td></tr>`;
         return;
     }
 
@@ -153,7 +136,6 @@ function renderTablaCampana() {
 
     Object.keys(modulosMap).sort().forEach(modNombre => {
         let tr = document.createElement('tr');
-        
         let registrosMod = modulosMap[modNombre].sort((a, b) => String(a['REMESA']).localeCompare(String(b['REMESA'])));
         
         let primerRegistro = registrosMod[0];
@@ -162,21 +144,13 @@ function renderTablaCampana() {
         COLUMNAS_CAMPANA_KEYS.forEach(colKey => {
             let td = document.createElement('td');
 
-            if (colKey === "MODULO") {
-                td.innerText = modNombre;
-            } else if (colKey === "REMESA") {
-                td.innerText = `${rInicio} - ${rFin}`;
-            } else if (colKey === "INICIAL") {
-                td.innerText = primerRegistro["INICIAL"] || "0"; 
-            } else if (colKey === "FINAL") {
-                td.innerText = ultimoRegistro["FINAL"] || "0"; 
-            } else if (["INICIALES_A", "INICIALES_S", "INICIALES_C"].includes(colKey)) {
-                td.innerText = primerRegistro[colKey] || "0"; 
-            } else if (colKey === "CONFIGURACION") {
-                td.innerText = ultimoRegistro[colKey] || "0"; 
-            } else if (["ENT", "DTTO"].includes(colKey)) {
-                td.innerText = primerRegistro[colKey] || "";
-            } else {
+            if (colKey === "MODULO") td.innerText = modNombre;
+            else if (colKey === "INICIAL") td.innerText = primerRegistro["INICIAL"] || "0"; 
+            else if (colKey === "FINAL") td.innerText = ultimoRegistro["FINAL"] || "0"; 
+            else if (colKey === "INICIALES_C") td.innerText = primerRegistro[colKey] || "0"; 
+            else if (colKey === "CONFIGURACION") td.innerText = ultimoRegistro[colKey] || "0"; 
+            else if (["ENT", "DTTO"].includes(colKey)) td.innerText = primerRegistro[colKey] || "";
+            else {
                 let sumaCol = 0;
                 registrosMod.forEach(reg => {
                     let val = parseFloat(reg[colKey] || 0);
@@ -189,10 +163,10 @@ function renderTablaCampana() {
         tbody.appendChild(tr);
     });
 
-    renderGranTotalCampana(tbody, modulosMap, rInicio, rFin);
+    renderGranTotalCampana(tbody, modulosMap);
 }
 
-function renderGranTotalCampana(tbody, modulosMap, rInicio, rFin) {
+function renderGranTotalCampana(tbody, modulosMap) {
     let trGranTotal = document.createElement('tr');
     trGranTotal.classList.add('fila-totales');
     
@@ -202,12 +176,8 @@ function renderGranTotalCampana(tbody, modulosMap, rInicio, rFin) {
     COLUMNAS_CAMPANA_KEYS.forEach(colKey => {
         let td = document.createElement('td');
 
-        if (colKey === "MODULO") {
-            td.innerText = "GRAN TOTAL";
-        } else if (colKey === "REMESA") {
-            td.innerText = `${rInicio} - ${rFin}`;
-        } else if (["INICIAL", "FINAL", "INICIALES_A", "INICIALES_S", "INICIALES_C", "CONFIGURACION", "ENT", "DTTO"].includes(colKey)) {
-            // EN TOTALES ESTAS COLUMNAS SE QUEDAN EN BLANCO
+        if (colKey === "MODULO") td.innerText = "GRAN TOTAL";
+        else if (["INICIAL", "FINAL", "INICIALES_C", "CONFIGURACION", "ENT", "DTTO"].includes(colKey)) {
             td.innerText = ""; 
         } else {
             let sumaTotal = 0;
@@ -222,7 +192,6 @@ function renderGranTotalCampana(tbody, modulosMap, rInicio, rFin) {
     tbody.appendChild(trGranTotal);
 }
 
-// SEMÁFORO DE CONEXIÓN
 const connectedRef = ref(db, ".info/connected");
 onValue(connectedRef, (snap) => {
     const semaforo = document.getElementById("semaforoConexion");
@@ -236,5 +205,4 @@ onValue(connectedRef, (snap) => {
     }
 });
 
-// Iniciar carga
 cargarDatosCampana();

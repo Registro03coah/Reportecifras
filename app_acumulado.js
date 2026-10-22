@@ -17,25 +17,22 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// Todas las columnas oficiales a mostrar
+// COLUMNAS EXACTAS SEGÚN TU IMAGEN (ACUMULADO) - Suma de Reposición y Reimpresión incluida
 const COLUMNAS_ACUMULADO_KEYS = [
     "ENT", "DTTO", "MODULO", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS", 
     "NO_UTILIZADOS", "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", 
-    "REPOSISION", "CORR__DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "TOTAL_DE_TRAMITES", 
+    "REPOSISION_REIMPRESIONES", "CORR__DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "TOTAL_DE_TRAMITES", 
     "RECHAZOS_DE_MAC_34", "RECHAZOS_DE_MAC_35", "CANCELADOS", "TOTAL_DE_MOVIMIENTOS", 
     "CIF-05", "SOLICITUD_EXPEDICION", "SOLICITUD_RECTIFICACION", "DEMANDA_DE_JUICIO", 
-    "INICIALES_A", "INICIALES_S", "INICIALES_C", "ACTUALIZACIÓN", "RECIBIDAS_DE_OTROS_TIPOS", 
-    "IMPORTADAS", "EXPORTADAS", "ENTREGADAS", "ANEXAS_A_FUAR", "RESGUARDO", "SOLICITU_DE_REIMPRESION",
-    "RECIBO_Y_O_EXTRAVIO", "RETIRADAS_POR_OTRA_CAUSA", "SOBRANTES", "DUPLICADO", 
-    "DISPONIBLES", "DISPONIBLES_DE_SOL_DE_EXP", "REIMPRE_FUERA_DEL_SISTEMA", 
-    "CREDEN_DEVUELTAS_POR_TERCEROS", "CRED_PRODUCTO_DE_REGISTRO_DUPLICADO", "CRED_PROD_CANJE_POR_NUEVA", 
-    "DIAS_TRABAJADOS", "CONFIGURACION"
+    "INICIALES_A", "ACTUALIZACIÓN", "RECIBIDAS_DE_OTROS_TIPOS", "ENTREGADAS", "ANEXAS_A_FUAR", 
+    "RESGUARDO", "SOLICITU_DE_REIMPRESION", "RECIBO_Y_O_EXTRAVIO", "RETIRADAS_POR_OTRA_CAUSA", 
+    "SOBRANTES", "DUPLICADO", "DISPONIBLES", "REIMPRE_FUERA_DEL_SISTEMA", "CREDEN_DEVUELTAS_POR_TERCEROS", 
+    "CRED_PRODUCTO_DE_REGISTRO_DUPLICADO", "CRED_PROD_CANJE_POR_NUEVA", "DIAS_TRABAJADOS", "CONFIGURACION"
 ];
 
 // ==========================================
-// 2. CONFIGURACIÓN DE HISTORIAL DE FOLIOS (RANGOS ROJOS Y NEGROS)
+// 2. CONFIGURACIÓN DE HISTORIAL DE FOLIOS
 // ==========================================
-// Estos son los rangos rojos históricos que pediste dejar fijos.
 const HISTORIAL_ROJOS = {
     "50351": [
         { i: "2605035100001", f: "2605035108668" },
@@ -63,7 +60,6 @@ const HISTORIAL_ROJOS = {
     ]
 };
 
-// Folio INICIAL de la campaña actual (Fila Negra)
 const INICIAL_ACTUAL = {
     "50351": "2605035108669",
     "50353": "2605035303086",
@@ -71,12 +67,8 @@ const INICIAL_ACTUAL = {
 };
 
 const MODULOS_ORDEN = ["50351", "50353", "50354"];
-
 let dataGlobalAcumulado = [];
 
-// ==========================================
-// 3. SEMÁFORO Y CONSTRUCCIÓN DE CABECERA
-// ==========================================
 const connectedRef = ref(db, ".info/connected");
 onValue(connectedRef, (snap) => {
     const semaforo = document.getElementById("semaforoConexion");
@@ -102,8 +94,8 @@ function construirHeaderTabla(selectorTabla) {
         let nombreVisual = colKey.replace(/_/g, ' ')
                                   .replace('SOLICITU DE', 'SOLICITUD DE')
                                   .replace('DUPLICADO', 'DUPLICADOS')
-                                  .replace('DISPONIBLES', 'DISPONIBLES TOTAL')
-                                  .replace('CORR  DE', 'CORR DE');
+                                  .replace('CORR  DE', 'CORR DE')
+                                  .replace('CREDEN DEVUELTAS POR TERCEROS', 'DEVUELTAS POR TERCEROS');
         
         thT.innerText = nombreVisual;
         
@@ -112,18 +104,13 @@ function construirHeaderTabla(selectorTabla) {
         else if(['INICIAL', 'FINAL'].includes(colKey)) anchoCelda = "130px";
         
         thT.style.width = anchoCelda; thT.style.minWidth = anchoCelda;
+        if(['INICIAL', 'FINAL', 'TOTAL_DE_FOLIOS'].includes(colKey)) thT.classList.add('bg-folios');
         
-        if(['INICIAL', 'FINAL', 'TOTAL_DE_FOLIOS'].includes(colKey)) {
-            thT.classList.add('bg-folios');
-        }
         trTitulos.appendChild(thT);
     });
     thead.appendChild(trTitulos);
 }
 
-// ==========================================
-// 4. CARGA DE DATOS Y RENDERIZADO ACUMULADO
-// ==========================================
 function normalizarObjeto(item) {
     let limpio = {};
     for (let key in item) limpio[key.toUpperCase().trim()] = item[key];
@@ -152,13 +139,10 @@ function renderTablaAcumulado() {
 
     let modulosMap = { "50351": [], "50353": [], "50354": [] };
     
-    // Agrupar registros por módulo (limpiando ceros a la izquierda)
     dataGlobalAcumulado.forEach(f => {
         let modRaw = String(f['MODULO'] || '').trim();
         let mod = modRaw.replace(/^0+/, ''); 
-        if (modulosMap[mod]) {
-            modulosMap[mod].push(f);
-        }
+        if (modulosMap[mod]) modulosMap[mod].push(f);
     });
 
     let sumaGranTotalFolios = 0;
@@ -166,10 +150,8 @@ function renderTablaAcumulado() {
     MODULOS_ORDEN.forEach(modNombre => {
         let registrosMod = modulosMap[modNombre].sort((a, b) => String(a['REMESA']).localeCompare(String(b['REMESA'])));
         
-        // --- 1. FILA NEGRA (ACTUAL) ---
+        // --- FILA NEGRA ---
         let trNegra = document.createElement('tr');
-        
-        // Obtener el folio FINAL máximo registrado en la base de datos para este módulo
         let maxFinal = 0;
         registrosMod.forEach(r => {
             let val = Number(r["FINAL"]);
@@ -178,7 +160,7 @@ function renderTablaAcumulado() {
         
         let cIniActual = Number(INICIAL_ACTUAL[modNombre]);
         let foliosNegra = (maxFinal > 0 && cIniActual > 0) ? (maxFinal - cIniActual + 1) : 0;
-        sumaGranTotalFolios += foliosNegra; // Sumamos al gran total
+        sumaGranTotalFolios += foliosNegra;
 
         COLUMNAS_ACUMULADO_KEYS.forEach(colKey => {
             let td = document.createElement('td');
@@ -189,12 +171,21 @@ function renderTablaAcumulado() {
             else if (colKey === "INICIAL") td.innerText = INICIAL_ACTUAL[modNombre];
             else if (colKey === "FINAL") td.innerText = maxFinal > 0 ? maxFinal : "";
             else if (colKey === "TOTAL_DE_FOLIOS") td.innerText = foliosNegra;
-            else if (["INICIALES_A", "INICIALES_S", "INICIALES_C"].includes(colKey)) {
+            else if (colKey === "INICIALES_A") {
                 td.innerText = registrosMod.length > 0 ? (registrosMod[0][colKey] || "0") : "0";
             } else if (colKey === "CONFIGURACION") {
                 td.innerText = registrosMod.length > 0 ? (registrosMod[registrosMod.length - 1][colKey] || "0") : "0";
+            } else if (colKey === "REPOSISION_REIMPRESIONES") {
+                // SUMATORIA EXCLUSIVA PARA ACUMULADO
+                let sumaCol = 0;
+                registrosMod.forEach(reg => {
+                    let r1 = parseFloat(reg["REPOSISION"] || 0);
+                    let r2 = parseFloat(reg["REIMPRESION"] || 0);
+                    if (!isNaN(r1)) sumaCol += r1;
+                    if (!isNaN(r2)) sumaCol += r2;
+                });
+                td.innerText = sumaCol;
             } else {
-                // Sumar todos los trámites históricos de ese módulo
                 let sumaCol = 0;
                 registrosMod.forEach(reg => {
                     let val = parseFloat(reg[colKey] || 0);
@@ -206,30 +197,27 @@ function renderTablaAcumulado() {
         });
         tbody.appendChild(trNegra);
 
-        // --- 2. FILAS ROJAS (HISTORIAL) ---
+        // --- FILAS ROJAS ---
         let historial = HISTORIAL_ROJOS[modNombre] || [];
         historial.forEach(rango => {
             let trRoja = document.createElement('tr');
-            trRoja.classList.add('fila-historica'); // Pinta los textos de rojo
+            trRoja.classList.add('fila-historica');
             
             let cIniHist = Number(rango.i);
             let cFinHist = Number(rango.f);
             let foliosRoja = (cFinHist - cIniHist + 1);
-            sumaGranTotalFolios += foliosRoja; // Sumamos al gran total
+            sumaGranTotalFolios += foliosRoja;
 
             COLUMNAS_ACUMULADO_KEYS.forEach(colKey => {
                 let td = document.createElement('td');
-
                 if (colKey === "ENT") td.innerText = "05";
                 else if (colKey === "DTTO") td.innerText = "03";
                 else if (colKey === "MODULO") td.innerText = modNombre;
                 else if (colKey === "INICIAL") td.innerText = rango.i;
                 else if (colKey === "FINAL") td.innerText = rango.f;
                 else if (colKey === "TOTAL_DE_FOLIOS") td.innerText = foliosRoja;
-                else {
-                    // Los demás campos en las filas rojas van vacíos
-                    td.innerText = "";
-                }
+                else td.innerText = "";
+                
                 trRoja.appendChild(td);
             });
             tbody.appendChild(trRoja);
@@ -243,7 +231,6 @@ function renderGranTotalAcumulado(tbody, modulosMap, sumaGlobalFolios) {
     let trGranTotal = document.createElement('tr');
     trGranTotal.classList.add('fila-totales');
     
-    // Juntar los registros de los 3 módulos
     let todosLosRegistros = [];
     MODULOS_ORDEN.forEach(m => todosLosRegistros = todosLosRegistros.concat(modulosMap[m]));
     
@@ -251,10 +238,19 @@ function renderGranTotalAcumulado(tbody, modulosMap, sumaGlobalFolios) {
         let td = document.createElement('td');
 
         if (colKey === "MODULO") td.innerText = "TOTAL";
-        else if (["ENT", "DTTO", "INICIAL", "FINAL", "INICIALES_A", "INICIALES_S", "INICIALES_C", "CONFIGURACION"].includes(colKey)) {
-            td.innerText = ""; // Columnas que NO se suman en el gran total
+        else if (["ENT", "DTTO", "INICIAL", "FINAL", "INICIALES_A", "CONFIGURACION"].includes(colKey)) {
+            td.innerText = ""; 
         } else if (colKey === "TOTAL_DE_FOLIOS") {
-            td.innerText = sumaGlobalFolios; // La suma de todos los bloques calculados
+            td.innerText = sumaGlobalFolios;
+        } else if (colKey === "REPOSISION_REIMPRESIONES") {
+            let sumaTotal = 0;
+            todosLosRegistros.forEach(reg => {
+                let r1 = parseFloat(reg["REPOSISION"] || 0);
+                let r2 = parseFloat(reg["REIMPRESION"] || 0);
+                if (!isNaN(r1)) sumaTotal += r1;
+                if (!isNaN(r2)) sumaTotal += r2;
+            });
+            td.innerText = sumaTotal;
         } else {
             let sumaTotal = 0;
             todosLosRegistros.forEach(reg => {
@@ -268,5 +264,4 @@ function renderGranTotalAcumulado(tbody, modulosMap, sumaGlobalFolios) {
     tbody.appendChild(trGranTotal);
 }
 
-// Iniciar carga
 cargarDatosAcumulado();
