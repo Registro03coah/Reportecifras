@@ -26,7 +26,7 @@ let datosMesaTrabajo = {
     '050354': []
 };
 
-// HELPER: CÁLCULO DE IDMAC PARA BDTO TALES
+// HELPER: CÁLCULO DE IDMAC PARA BDTOTALES
 function generarIdMac(remesa, modulo) {
     let modStr = String(modulo || '').replace(/\D/g, '');
     let modDigits = modStr.length >= 2 ? modStr.slice(-2) : modStr.padStart(2, '0');
@@ -132,7 +132,6 @@ let ESTRUCTURA_COLUMNAS = [
     { pos: 82, key: 'SOBRANTES', label: 'SOBRANTES' },
     { pos: 83, key: 'DISPONIBLES_DE_SOL_DE_EXP', label: 'DISPONIBLES_DE_SOL_DE_EXP' },
     { pos: 84, key: 'REIMPRE_FUERA_DEL_SISTEMA', label: 'REIMPRE_FUERA_DEL_SISTEMA' },
-    // COLUMNAS MOVIDAS AL FINAL PARA NO ESTORBAR VISUALMENTE
     { pos: 2, key: 'FECHA', label: 'FECHA' },
     { pos: 3, key: 'HORAS_TRABAJADAS', label: 'HORAS_TRABAJADAS' },
     { pos: 4, key: 'SEDES', label: 'SEDES' }
@@ -150,6 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+// CONTROL DE CAMBIO DE NAVEGACIÓN Y VISTAS
 window.cambiarModulo = function(modulo) {
     moduloSeleccionado = modulo;
     
@@ -160,6 +160,9 @@ window.cambiarModulo = function(modulo) {
     const panelTotales = document.getElementById('panelAccionesTotales');
     const areaPegado = document.getElementById('areaPegado');
     const btnGuardarMadre = document.getElementById('btnGuardarMadre');
+
+    // DIBUJA DE NUEVO LOS ENCABEZADOS SEGÚN LA VISTA SELECCIONADA
+    dibujarEncabezadosYNumeros();
 
     if (modulo === 'TOTALES') {
         if (panelTotales) panelTotales.classList.remove('d-none');
@@ -183,13 +186,21 @@ window.cambiarModulo = function(modulo) {
     }
 };
 
+// DIBUJA ENCABEZADOS Y CAMBIA DINÁMICAMENTE 'DIA' POR 'MODULO' EN LA VISTA TOTALES
 function dibujarEncabezadosYNumeros() {
     const thead = document.getElementById('cabeceraVaciado');
     if (!thead) return;
 
     let htmlHead = '<tr>';
     ESTRUCTURA_COLUMNAS.forEach((col, idx) => {
-        htmlHead += `<th ondblclick="editarNombreEncabezado(${idx})" title="Doble clic para editar nombre de columna">${col.label}</th>`;
+        let textoMostrar = col.label;
+        
+        // Si estamos en la vista TOTALES y es la primera columna (pos: 1), cambia 'DIA' por 'MODULO'
+        if (moduloSeleccionado === 'TOTALES' && idx === 0) {
+            textoMostrar = 'MODULO';
+        }
+
+        htmlHead += `<th ondblclick="editarNombreEncabezado(${idx})" title="Doble clic para editar nombre de columna">${textoMostrar}</th>`;
     });
     htmlHead += '</tr>';
 
@@ -248,7 +259,6 @@ function renderizarFilasEnPantalla(filasDatos) {
     });
 }
 
-// CONSTRUCCIÓN DE LA TABLA DE TOTALES GENERALES (MUESTRA SOLO EL NÚMERO DE MÓDULO)
 function renderizarVistaTotalesGenerales() {
     const tbody = document.getElementById('cuerpoVaciado');
     const lblRemesa = document.getElementById('lblRemesaNumero');
@@ -273,7 +283,6 @@ function renderizarVistaTotalesGenerales() {
         let htmlRow = '';
         ESTRUCTURA_COLUMNAS.forEach((col, idxCol) => {
             if (idxCol === 0) {
-                // SOLO MOSTRAR EL NÚMERO DEL MÓDULO SIN LA PALABRA "Módulo"
                 htmlRow += `<td class="col-dia">${modKey}</td>`;
             } else {
                 let valor = filaTotales[col.key] !== undefined && filaTotales[col.key] !== null ? filaTotales[col.key] : '';
@@ -290,7 +299,6 @@ function renderizarVistaTotalesGenerales() {
     }
 }
 
-// PEGADO CON MAPEO EXACTO BASADO EN POSICIÓN EN PORTAPAPELES (pos - 1)
 function manejarPegadoClipboard(e) {
     if (moduloSeleccionado === 'TOTALES') return;
 
@@ -308,7 +316,7 @@ function manejarPegadoClipboard(e) {
         let objetoFila = {};
 
         ESTRUCTURA_COLUMNAS.forEach((colDef) => {
-            let indexClipboard = colDef.pos - 1; // Extraer exactamente según su columna original de origen
+            let indexClipboard = colDef.pos - 1;
             let valorCelda = valores[indexClipboard] !== undefined ? valores[indexClipboard].trim() : '';
 
             if (colDef.pos === 1) {
@@ -326,7 +334,6 @@ function manejarPegadoClipboard(e) {
     renderizarFilasEnPantalla(nuevasFilas);
 }
 
-// GUARDAR EN BASE MADRE
 window.guardarEnBaseMadre = function() {
     const overlay = document.getElementById('loadingOverlay');
     const txtOverlay = document.getElementById('lblOverlayTexto');
@@ -374,7 +381,6 @@ window.guardarEnBaseMadre = function() {
     });
 };
 
-// GUARDAR EN BD TOTALES
 window.guardarEnBaseTotales = function() {
     const overlay = document.getElementById('loadingOverlay');
     const txtOverlay = document.getElementById('lblOverlayTexto');
