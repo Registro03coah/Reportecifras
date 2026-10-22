@@ -149,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// CONTROL DE CAMBIO DE NAVEGACIÓN Y VISTAS
+// NAVEGACIÓN Y CAMBIO DE PESTAÑAS (CORREGIDO Y PROTEGIDO)
 window.cambiarModulo = function(modulo) {
     moduloSeleccionado = modulo;
     
@@ -160,33 +160,36 @@ window.cambiarModulo = function(modulo) {
     const panelTotales = document.getElementById('panelAccionesTotales');
     const areaPegado = document.getElementById('areaPegado');
     const btnGuardarMadre = document.getElementById('btnGuardarMadre');
+    const lblAyuda = document.getElementById('lblMensajeAyuda');
+    const lblPegado = document.getElementById('lblModuloPegado');
 
-    // DIBUJA DE NUEVO LOS ENCABEZADOS SEGÚN LA VISTA SELECCIONADA
+    // Redibujar encabezados (cambia DIA <-> MODULO en pos 1)
     dibujarEncabezadosYNumeros();
 
     if (modulo === 'TOTALES') {
-        if (panelTotales) panelTotales.classList.remove('d-none');
-        if (panelTotales) panelTotales.classList.add('d-flex');
+        if (panelTotales) { panelTotales.classList.remove('d-none'); panelTotales.classList.add('d-flex'); }
         if (areaPegado) areaPegado.classList.add('d-none');
         if (btnGuardarMadre) btnGuardarMadre.classList.add('d-none');
         
-        document.getElementById('lblMensajeAyuda').innerHTML = '<b>Vista Totales Generales:</b> Consolidado de los 3 módulos listos para sincronizar.';
+        if (lblAyuda) {
+            lblAyuda.innerHTML = '<b>Vista Totales Generales:</b> Consolidado de los 3 módulos listos para sincronizar.';
+        }
+        
         renderizarVistaTotalesGenerales();
     } else {
-        if (panelTotales) panelTotales.classList.remove('d-flex');
-        if (panelTotales) panelTotales.classList.add('d-none');
+        if (panelTotales) { panelTotales.classList.remove('d-flex'); panelTotales.classList.add('d-none'); }
         if (areaPegado) areaPegado.classList.remove('d-none');
         if (btnGuardarMadre) btnGuardarMadre.classList.remove('d-none');
 
-        document.getElementById('lblModuloActivo').textContent = modulo;
-        document.getElementById('lblModuloPegado').textContent = modulo;
-        document.getElementById('lblMensajeAyuda').innerHTML = `Módulo <b>${modulo}</b>: Pega los datos con Ctrl+V. Haz doble clic en un encabezado para cambiar su nombre.`;
+        if (lblPegado) lblPegado.textContent = modulo;
+        if (lblAyuda) {
+            lblAyuda.innerHTML = `Módulo <b>${modulo}</b>: Pega los datos con Ctrl+V. Haz doble clic en un encabezado para cambiar su nombre.`;
+        }
         
         renderizarFilasEnPantalla(datosMesaTrabajo[moduloSeleccionado] || []);
     }
 };
 
-// DIBUJA ENCABEZADOS Y CAMBIA DINÁMICAMENTE 'DIA' POR 'MODULO' EN LA VISTA TOTALES
 function dibujarEncabezadosYNumeros() {
     const thead = document.getElementById('cabeceraVaciado');
     if (!thead) return;
@@ -194,8 +197,6 @@ function dibujarEncabezadosYNumeros() {
     let htmlHead = '<tr>';
     ESTRUCTURA_COLUMNAS.forEach((col, idx) => {
         let textoMostrar = col.label;
-        
-        // Si estamos en la vista TOTALES y es la primera columna (pos: 1), cambia 'DIA' por 'MODULO'
         if (moduloSeleccionado === 'TOTALES' && idx === 0) {
             textoMostrar = 'MODULO';
         }
