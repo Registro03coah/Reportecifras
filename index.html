@@ -9,14 +9,13 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
-    <!-- Firebase SDK v8 -->
+    <!-- 1. LIBRERÍAS DE FIREBASE (OBLIGATORIO PARA EVITAR EL 404 Y ERRORES DE CONEXIÓN) -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <style>
         body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         
-        /* Pestañas estilo Módulo */
         .nav-tabs .nav-link {
             font-size: 1.1rem;
             font-weight: 700;
@@ -33,7 +32,6 @@
             border-color: #1b396b;
         }
 
-        /* Caja azul de pegado por Ctrl+V */
         .caja-pegado {
             border: 2px dashed #0d6efd;
             background-color: #e7f1ff;
@@ -53,7 +51,6 @@
             outline: none;
         }
 
-        /* Tabla tipo Excel con Scroll Horizontal */
         .excel-container {
             width: 100%;
             max-height: 65vh;
@@ -70,7 +67,6 @@
             border-collapse: collapse;
         }
 
-        /* Encabezados y mapa numérico */
         .excel-table thead th {
             position: sticky;
             top: 0;
@@ -88,9 +84,8 @@
             border: 1px solid #b2bec3;
         }
 
-        /* Fila de Números de Columna (1 a 75) */
         .excel-table thead tr.num-row th {
-            top: 42px; /* Ajuste para quedarse pegado abajo de la fila de titulos */
+            top: 42px;
             z-index: 2;
             background-color: #f1f2f6 !important;
             color: #2d3436 !important;
@@ -99,7 +94,7 @@
             border-bottom: 2px solid #2d3436;
         }
 
-        /* Paleta de Colores por Grupos Funcionales */
+        /* Colores por bloques de columnas */
         .th-gris { background-color: #e9ecef !important; color: #212529; }
         .th-naranja { background-color: #f4a261 !important; color: #000000; }
         .th-verde-tramites { background-color: #8ac926 !important; color: #000000; }
@@ -109,7 +104,6 @@
         .th-oliva { background-color: #808000 !important; color: #ffffff; }
         .th-amarillo-fuerte { background-color: #ffff00 !important; color: #000000; }
 
-        /* Celdas del cuerpo */
         .excel-table td {
             padding: 4px 6px;
             border: 1px solid #dcdde1;
@@ -138,7 +132,7 @@
 </head>
 <body class="d-flex flex-column min-vh-100">
 
-    <!-- MENÚ DE NAVEGACIÓN PRINCIPAL -->
+    <!-- MENÚ -->
     <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #1b396b;">
       <div class="container-fluid px-4">
         <a class="navbar-brand fw-bold" href="index.html"><i class="bi bi-hdd-network"></i> SISTEMA MAC</a>
@@ -157,21 +151,20 @@
 
     <div class="container-fluid px-4 mt-4 flex-grow-1">
         
-        <!-- PESTAÑAS DE MÓDULOS + BOTÓN TOTALES GENERALES -->
         <div class="d-flex justify-content-between align-items-center mb-3">
             <ul class="nav nav-tabs border-bottom-0" id="tabsModulos" role="tablist">
                 <li class="nav-item">
-                    <button class="nav-link active" id="btn-tab-50351" onclick="cambiarModulo('050351')">Módulo 050351</button>
+                    <button class="nav-link active" id="btn-tab-050351" onclick="cambiarModulo('050351')">Módulo 050351</button>
                 </li>
                 <li class="nav-item">
-                    <button class="nav-link" id="btn-tab-50353" onclick="cambiarModulo('050353')">Módulo 050353</button>
+                    <button class="nav-link" id="btn-tab-050353" onclick="cambiarModulo('050353')">Módulo 050353</button>
                 </li>
                 <li class="nav-item">
-                    <button class="nav-link" id="btn-tab-50354" onclick="cambiarModulo('050354')">Módulo 050354</button>
+                    <button class="nav-link" id="btn-tab-050354" onclick="cambiarModulo('050354')">Módulo 050354</button>
                 </li>
             </ul>
 
-            <a href="bdtotales.html" class="btn btn-warning fw-bold px-4 shadow-sm" style="background-color: #ffc107; border: none;">
+            <a href="bdtotales.html" class="btn btn-warning fw-bold px-4 shadow-sm">
                 <i class="bi bi-calculator-fill"></i> Totales Generales
             </a>
         </div>
@@ -179,18 +172,15 @@
         <div class="card shadow-sm border-0 mb-3">
             <div class="card-body bg-white rounded border">
                 
-                <!-- INSTRUCCIONES DE COPIADO -->
-                <div class="alert alert-primary py-2 px-3 mb-3 fw-bold" id="lblInstrucciones">
+                <div class="alert alert-primary py-2 px-3 mb-3 fw-bold">
                     Módulo <span id="lblModuloActivo">050351</span>: Copia y pega las 8 líneas de este módulo en el cuadro de abajo.
                 </div>
 
-                <!-- ÁREA INTERACTIVA DE PEGADO -->
                 <div class="caja-pegado mb-3" id="areaPegado" tabindex="0">
                     <i class="bi bi-clipboard-plus fs-4 d-block mb-1"></i>
                     Clic aquí y Ctrl+V para pegar datos del Módulo <span id="lblModuloPegado">050351</span>
                 </div>
 
-                <!-- CONTENEDOR DE LA TABLA MATRIZ DE 7 DÍAS + TOTALES -->
                 <div class="excel-container shadow-sm">
                     <table class="excel-table table table-hover" id="tablaVaciado">
                         <thead id="cabeceraVaciado"></thead>
@@ -203,10 +193,9 @@
 
     </div>
 
-    <!-- OVERLAY DE CARGA -->
     <div id="loadingOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; color: white;">
         <div class="spinner-border text-info" style="width: 3.5rem; height: 3.5rem;" role="status"></div>
-        <h4 class="mt-3 fw-bold">Procesando y Sincronizando con BD Principal...</h4>
+        <h4 class="mt-3 fw-bold">Guardando en Base Madre...</h4>
     </div>
 
     <footer class="text-center py-3 mt-auto text-white" style="background-color: #1b396b;">
@@ -216,10 +205,10 @@
         </small>
     </footer>
 
-    <!-- Bootstrap Bundle JS -->
+    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Script de Control del Vaciado de Datos -->
+    <!-- Cargar archivo con el nombre EXACTO en la raíz del proyecto -->
     <script src="app_vaciado.js"></script>
 </body>
 </html>
