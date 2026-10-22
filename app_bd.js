@@ -34,7 +34,7 @@ database.ref('bd_madre').on('value', (snapshot) => {
 });
 
 // =========================================================
-// EVENTO SUBIR ARCHIVO JSON
+// EVENTO SUBIR ARCHIVO JSON Y BUSCADOR
 // =========================================================
 document.addEventListener('DOMContentLoaded', () => {
     const btnSubir = document.getElementById('btnSubir');
@@ -57,11 +57,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 try {
                     const jsonData = JSON.parse(event.target.result);
                     
-                    // Subir datos leídos a Firebase directamente
+                    // Subir datos leídos a bd_madre
                     database.ref('bd_madre').set(jsonData).then(() => {
                         if (loadingOverlay) loadingOverlay.style.display = 'none';
                         fileInput.value = ''; 
-                        alert("Datos subidos a Firebase correctamente.");
+                        alert("Datos subidos a BD Madre correctamente.");
                     }).catch((error) => {
                         if (loadingOverlay) loadingOverlay.style.display = 'none';
                         alert("Error subiendo a Firebase: " + error.message);
@@ -80,16 +80,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const buscadorInput = document.getElementById('buscadorBd');
     if (buscadorInput) {
         buscadorInput.addEventListener('input', function(e) {
-            const termino = e.target.value.toLowerCase();
-            if(termino.trim() === '') {
+            const termino = e.target.value.toLowerCase().trim();
+            if(termino === '') {
                 ejecutarOrdenamiento(datosGlobalesBd);
                 return;
             }
 
             const datosFiltrados = datosGlobalesBd.filter(item => {
-                const remesa = String(item['REMESA'] || item['Remesa'] || '').toLowerCase();
-                const fecha = String(item['FECHA'] || item['Fecha'] || '').toLowerCase();
-                const modulo = String(item['MODULO'] || item['MÓDULO'] || item['Módulo'] || '').toLowerCase();
+                const remesa = String(item['REMESA'] || item['Remesa'] || item['remesa'] || '').toLowerCase();
+                const fecha = String(item['FECHA'] || item['Fecha'] || item['fecha'] || '').toLowerCase();
+                const modulo = String(item['MODULO'] || item['MÓDULO'] || item['Módulo'] || item['Modulo'] || '').toLowerCase();
                 return remesa.includes(termino) || fecha.includes(termino) || modulo.includes(termino);
             });
 
@@ -155,7 +155,42 @@ window.cambiarOrden = function(columnaClick) {
 };
 
 // =========================================================
-// CONSTRUCCIÓN DE LA TABLA EN PANTALLA
+// NORMALIZACIÓN DE NOMBRES DE COLUMNAS (INSENSIBLE A MINÚSCULAS Y ACENTOS)
+// =========================================================
+function normalizarNombreColumna(str) {
+    return String(str || '')
+        .trim()
+        .toUpperCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^A-Z0-9]/g, "_");
+}
+
+const ordenDeseadoPatron = [
+    "REMESA", "FECHA", "DIA", "MODULO", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS", "NO_UTILIZADOS",
+    "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO",
+    "REPOSISION", "REPOSICION", "CORR__DE_DATOS_DIRECCION", "CORR_DE_DATOS_DIRECCION",
+    "REINCORPORACION", "REEMPLAZO", "TOTAL_DE_TRAMITES",
+    "RECHAZOS_DE_MAC_34", "34_IMAGEN_INCONSISTENTE", "RECHAZOS_DE_MAC_35", "35_MOVIMIENTO_POSTERIOR",
+    "CANCELADOS", "TOTAL_DE_MOVIMIENTOS", "CIF_05", "SOLICITUD_EXPEDICION",
+    "SOLICITUD_EXPEDICION_O_RECTIFICACION", "SOLICITUD_RECTIFICACION", "DEMANDA_DE_JUICIO",
+    "INICIALES_A", "INICIALES_S", "INICIALES_C", "ACTUALIZACION", "RECIBIDAS_DE_OTROS_TIPOS",
+    "IMPORTADAS", "EXPORTADAS", "ENTREGADAS", "ANEXAS_A_FUAR", "RESGUARDO",
+    "SOLICITU_DE_REIMPRESION", "SOLICITUD_DE_REIMPRESION", "REIMPRESION", "RECIBO_Y_O_EXTRAVIO",
+    "RETIRADAS_POR_OTRA_CAUSA", "SOBRANTES", "DUPLICADO", "DISPONIBLES",
+    "DISPONIBLES_DE_SOL_DE_EXP", "REIMPRE_FUERA_DEL_SISTEMA", "CREDEN_DEVUELTAS_POR_TERCEROS",
+    "DEVUELTAS_POR_TERCEROS", "CRED_PRODUCTO_DE_REGISTRO_DUPLICADO", "CRED_PROD_CANJE_POR_NUEVA",
+    "CREDENCIALES_X_CANJE", "DIAS_TRABAJADOS", "CONFIGURACION"
+].map(normalizarNombreColumna);
+
+function obtenerIndiceOrdenColumna(columnaOriginal) {
+    const colNorm = normalizarNombreColumna(columnaOriginal);
+    const idx = ordenDeseadoPatron.indexOf(colNorm);
+    return idx !== -1 ? idx : 9999;
+}
+
+// =========================================================
+// CONSTRUCCIÓN DE LA TABLA BD MADRE
 // =========================================================
 function dibujarTablaBd(datosArreglo) {
     datosEnPantalla = datosArreglo; 
@@ -171,33 +206,21 @@ function dibujarTablaBd(datosArreglo) {
         return;
     }
 
-    let columnas = Object.keys(datosArreglo[0]);
+    // Extraer TODAS las columnas existentes en todo el conjunto de datos
+    let columnasSet = new Set();
+    datosArreglo.forEach(item => {
+        Object.keys(item).forEach(k => columnasSet.add(k));
+    });
+    let columnas = Array.from(columnasSet);
 
-    // ORDEN PERSONALIZADO DE COLUMNAS
-    const ordenDeseado = [
-        "REMESA", "Remesa", "remesa", 
-        "FECHA", "Fecha", "fecha", 
-        "DIA", "DÍA", "Dia", "Día", 
-        "MODULO", "MÓDULO", "Módulo", "Modulo", 
-        "INICIAL", "FINAL", "TOTAL_DE_FOLIOS", "NO_UTILIZADOS", 
-        "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO",
-        "REPOSISION", "CORR__DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "TOTAL_DE_TRAMITES",
-        "RECHAZOS_DE_MAC_34", "RECHAZOS_DE_MAC_35", "CANCELADOS", "TOTAL_DE_MOVIMIENTOS",
-        "CIF-05", "SOLICITUD_EXPEDICION", "SOLICITUD_RECTIFICACION", "DEMANDA_DE_JUICIO",
-        "INICIALES_A", "INICIALES_S", "INICIALES_C", "ACTUALIZACIÓN", "RECIBIDAS_DE_OTROS_TIPOS",
-        "IMPORTADAS", "EXPORTADAS", "ENTREGADAS", "ANEXAS_A_FUAR", "RESGUARDO", "SOLICITU_DE_REIMPRESION",
-        "RECIBO_Y_O_EXTRAVIO", "RETIRADAS_POR_OTRA_CAUSA", "SOBRANTES", "DUPLICADO",
-        "DISPONIBLES", "DISPONIBLES_DE_SOL_DE_EXP", "REIMPRE_FUERA_DEL_SISTEMA",
-        "CREDEN_DEVUELTAS_POR_TERCEROS", "CRED_PRODUCTO_DE_REGISTRO_DUPLICADO", "CRED_PROD_CANJE_POR_NUEVA",
-        "DIAS_TRABAJADOS", "CONFIGURACION"
-    ];
-
+    // Ordenar columnas según la lista patrón
     columnas.sort((a, b) => {
-        let indiceA = ordenDeseado.indexOf(a);
-        let indiceB = ordenDeseado.indexOf(b);
-        if (indiceA === -1) indiceA = 999;
-        if (indiceB === -1) indiceB = 999;
-        return indiceA - indiceB;
+        let idxA = obtenerIndiceOrdenColumna(a);
+        let idxB = obtenerIndiceOrdenColumna(b);
+        if (idxA === idxB) {
+            return a.localeCompare(b);
+        }
+        return idxA - idxB;
     });
 
     let trHead = '<tr>';
@@ -221,9 +244,9 @@ function dibujarTablaBd(datosArreglo) {
 
     let htmlCuerpo = '';
     datosArreglo.forEach((fila) => {
-        const remFila = fila.REMESA || fila.Remesa || '';
-        const modFila = fila.MODULO || fila.MÓDULO || fila.Módulo || '';
-        const fechaFila = fila.FECHA || fila.Fecha || '';
+        const remFila = fila.REMESA || fila.Remesa || fila.remesa || '';
+        const modFila = fila.MODULO || fila.MÓDULO || fila.Módulo || fila.Modulo || '';
+        const fechaFila = fila.FECHA || fila.Fecha || fila.fecha || '';
 
         htmlCuerpo += '<tr>';
         htmlCuerpo += `<td class="text-center align-middle" style="white-space: nowrap;">
@@ -251,7 +274,7 @@ function dibujarTablaBd(datosArreglo) {
 }
 
 // =========================================================
-// FUNCIONES GLOBALES
+// FUNCIONES GLOBALES DE ADMINISTRACIÓN
 // =========================================================
 window.vaciarBaseDatosGeneral = function() {
     if (confirm("🚨 ¿ESTÁS COMPLETAMENTE SEGURO?\n\nEsto borrará TODOS los registros de BD Madre en la nube.")) {
@@ -286,9 +309,9 @@ window.descargarRespaldoJSON = function() {
 window.borrarRegistroLinea = function(remesa, modulo, fecha) {
     if(confirm(`¿Estás seguro de eliminar el registro del Módulo ${modulo}, Remesa ${remesa}, Fecha ${fecha}?`)) {
         const datosRestantes = datosGlobalesBd.filter(item => {
-            const r = String(item.REMESA || item.Remesa || '');
-            const m = String(item.MODULO || item.MÓDULO || item.Módulo || '');
-            const f = String(item.FECHA || item.Fecha || '');
+            const r = String(item.REMESA || item.Remesa || item.remesa || '');
+            const m = String(item.MODULO || item.MÓDULO || item.Módulo || item.Modulo || '');
+            const f = String(item.FECHA || item.Fecha || item.fecha || '');
             
             return !(r === String(remesa) && m === String(modulo) && f === String(fecha));
         });
@@ -301,9 +324,9 @@ window.borrarRegistroLinea = function(remesa, modulo, fecha) {
 
 window.editarRegistroLinea = function(remesa, modulo, fecha) {
     const registroIndex = datosGlobalesBd.findIndex(item => {
-        const r = String(item.REMESA || item.Remesa || '');
-        const m = String(item.MODULO || item.MÓDULO || item.Módulo || '');
-        const f = String(item.FECHA || item.Fecha || '');
+        const r = String(item.REMESA || item.Remesa || item.remesa || '');
+        const m = String(item.MODULO || item.MÓDULO || item.Módulo || item.Modulo || '');
+        const f = String(item.FECHA || item.Fecha || item.fecha || '');
         return r === String(remesa) && m === String(modulo) && f === String(fecha);
     });
 
