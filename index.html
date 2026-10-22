@@ -44,7 +44,7 @@
 </head>
 <body class="d-flex flex-column min-vh-100">
 
-    <!-- MENÚ DE NAVEGACIÓN COMPLETO RESTAURADO -->
+    <!-- MENÚ DE NAVEGACIÓN PRINCIPAL -->
     <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #1b396b;">
       <div class="container-fluid px-4">
         <a class="navbar-brand fw-bold" href="index.html"><i class="bi bi-hdd-network"></i> SISTEMA MAC</a>
@@ -99,18 +99,13 @@
                     </div>
                 </div>
 
-                <!-- ACCIONES Y BOTONES DE CONTROL -->
+                <!-- ACCIONES Y BOTONES DE CONTROL (Se removió el botón amarillo duplicado superior) -->
                 <div class="d-flex align-items-center gap-2">
                     <button class="btn btn-outline-danger fw-bold" onclick="vaciarMesaTrabajo()"><i class="bi bi-trash"></i> Limpiar Pantalla</button>
                     <button class="btn btn-outline-secondary fw-bold" onclick="descargarRespaldoJSON()"><i class="bi bi-download"></i> Respaldo</button>
                     
                     <!-- BOTÓN GUARDAR EN BD MADRE -->
                     <button class="btn btn-success fw-bold shadow-sm" id="btnGuardarMadre" onclick="guardarEnBaseMadre()"><i class="bi bi-cloud-arrow-up-fill"></i> Guardar en BD Madre</button>
-
-                    <!-- BOTÓN AMARILLO: ABRE LA PANTALLA DE TOTALES GENERALES -->
-                    <button class="btn btn-warning text-dark fw-bold shadow-sm" onclick="cambiarModulo('TOTALES')">
-                        <i class="bi bi-calculator-fill"></i> Totales Generales
-                    </button>
                 </div>
             </div>
         </div>
@@ -127,7 +122,9 @@
                 <button class="nav-link" id="btn-tab-050354" onclick="cambiarModulo('050354')"><i class="bi bi-laptop"></i> Módulo 050354</button>
             </li>
             <li class="nav-item">
-                <button class="nav-link tab-totales text-dark" id="btn-tab-TOTALES" onclick="cambiarModulo('TOTALES')"><i class="bi bi-calculator-fill"></i> Totales Generales</button>
+                <button class="nav-link tab-totales text-dark fw-bold" id="btn-tab-TOTALES" style="background-color: #ffc107;" onclick="cambiarModulo('TOTALES')">
+                    <i class="bi bi-calculator-fill"></i> Totales Generales
+                </button>
             </li>
         </ul>
 
@@ -139,22 +136,24 @@
                     <span id="semaforoConexion" class="badge bg-success text-white"><i class="bi bi-check-circle"></i> Conectado</span>
                 </div>
 
-                <!-- ACCIONES ESPECÍFICAS DE TOTALES GENERALES (OCULTO EN MÓDULOS) -->
+                <!-- ACCIONES ESPECÍFICAS DE TOTALES GENERALES (MUESTRA NÚMERO DE REMESA) -->
                 <div id="panelAccionesTotales" class="alert alert-warning py-2 px-3 mb-3 d-none justify-content-between align-items-center">
-                    <span class="fw-bold"><i class="bi bi-info-circle-fill"></i> Vaciado Consolidado: Muestra los totales de los 3 Módulos</span>
+                    <span class="fw-bold fs-6">
+                        <i class="bi bi-info-circle-fill"></i> Vaciado Consolidado Remesa: <span id="lblRemesaNumero" class="badge bg-dark text-white fs-6">S/N</span>
+                    </span>
                     <div class="d-flex gap-2">
                         <button class="btn btn-sm btn-success fw-bold" onclick="guardarEnBaseTotales()"><i class="bi bi-cloud-upload-fill"></i> Guardar en BD Totales</button>
                         <a href="bdtotales.html" class="btn btn-sm btn-dark fw-bold"><i class="bi bi-box-arrow-up-right"></i> Ir a BD Totales</a>
                     </div>
                 </div>
 
-                <!-- CAJA DE PEGADO (OCULTA EN VISTA TOTALES GENERALES) -->
+                <!-- CAJA DE PEGADO -->
                 <div class="caja-pegado mb-3" id="areaPegado" tabindex="0">
                     <i class="bi bi-clipboard-plus fs-4 d-block mb-1"></i>
                     Clic aquí y Ctrl+V para pegar datos del Módulo <span id="lblModuloPegado">050351</span>
                 </div>
 
-                <!-- TABLA MATRIZ DE 84 COLUMNAS -->
+                <!-- TABLA MATRIZ CON SCROLL HORIZONTAL -->
                 <div class="excel-container shadow-sm">
                     <table class="excel-table table table-hover" id="tablaVaciado">
                         <thead id="cabeceraVaciado"></thead>
