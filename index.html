@@ -9,17 +9,71 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
-    <!-- 1. LIBRERÍAS DE FIREBASE SDK v8 (OBLIGATORIO PARA EVITAR EL ERROR "firebase is not defined") -->
+    <!-- 1. LIBRERÍAS DE FIREBASE SDK v8 (OBLIGATORIO PARA LA CONEXIÓN) -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <style>
-        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .header-banner { background: linear-gradient(135deg, #0dcaf0, #055160); color: white; padding: 20px 0; border-bottom: 5px solid #1b396b; margin-bottom: 20px; }
-        .excel-container { width: 100%; max-height: 60vh; overflow: auto; border: 1px solid #ddd; background: white; }
-        .excel-table { margin-bottom: 0; table-layout: fixed; }
-        .excel-table thead th { position: sticky; top: 0; z-index: 2; font-size: 10px; background-color: #1b396b; color: white; text-align: center; vertical-align: middle; }
-        .excel-table td { padding: 4px; border: 1px solid #ccc; text-align: center; vertical-align: middle; font-size: 11px;}
+        body { 
+            background-color: #f8f9fa; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+        }
+        .header-banner { 
+            background: linear-gradient(135deg, #0dcaf0, #055160); 
+            color: white; 
+            padding: 20px 0; 
+            border-bottom: 5px solid #1b396b; 
+            margin-bottom: 20px; 
+        }
+        
+        /* CONTENEDOR CON SCROLL HORIZONTAL Y VERTICAL */
+        .excel-container { 
+            width: 100%; 
+            max-height: 65vh; 
+            overflow-x: auto !important;
+            overflow-y: auto; 
+            border: 1px solid #ddd; 
+            background: white; 
+        }
+
+        /* TABLA FLEXIBLE QUE NO APLASTA LAS COLUMNAS */
+        .excel-table { 
+            margin-bottom: 0; 
+            table-layout: auto !important;
+            width: max-content;
+        }
+
+        /* ENCABEZADOS HORIZONTALES AJUSTADOS (MÁXIMO 3 LÍNEAS) */
+        .excel-table thead th { 
+            position: sticky; 
+            top: 0; 
+            z-index: 2; 
+            font-size: 11px; 
+            font-weight: 600;
+            background-color: #1b396b !important; 
+            color: white; 
+            text-align: center; 
+            vertical-align: middle; 
+            
+            white-space: normal !important; 
+            word-wrap: break-word !important; 
+            writing-mode: horizontal-tb !important; 
+            
+            min-width: 125px !important; 
+            max-width: 160px !important; 
+            padding: 6px 4px !important;
+            line-height: 1.2;
+        }
+
+        .excel-table td { 
+            padding: 5px 8px; 
+            border: 1px solid #ccc; 
+            text-align: center; 
+            vertical-align: middle; 
+            font-size: 11px;
+            white-space: nowrap;
+        }
+
         .spin { animation: spin 1s linear infinite; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
     </style>
@@ -116,7 +170,7 @@
             </li>
         </ul>
 
-        <!-- CONTENEDOR TABLA PRINCIPAL -->
+        <!-- CONTENEDOR TABLA PRINCIPAL CON SCROLL HORIZONTAL Y VERTICAL -->
         <div class="excel-container shadow-sm rounded mb-4">
             <table class="excel-table table table-hover" id="tablaTotales">
                 <thead id="cabeceraBdTotales"></thead>
@@ -125,7 +179,7 @@
         </div>
     </div>
 
-    <!-- MODAL EDICIÓN -->
+    <!-- MODAL EDICIÓN DINÁMICA -->
     <div class="modal fade" id="modalEditarTotales" tabindex="-1">
       <div class="modal-dialog modal-xl">
         <div class="modal-content">
@@ -159,7 +213,7 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- SCRIPT PRINCIPAL (Cargado en modo normal después de Firebase) -->
+    <!-- SCRIPT PRINCIPAL DESPUÉS DE FIREBASE -->
     <script src="app_bdtotales.js?v=1.0.2"></script>
 </body>
 </html>
