@@ -3,55 +3,135 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vaciado de Datos MAC</title>
+    <title>Vaciado de Datos MAC - Sistema Principal</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
-        .navbar-nav .nav-link { font-size: 12px !important; }
-        .navbar-brand { font-size: 15px !important; }
-        nav.navbar { padding: 4px 15px !important; }
-        .header-banner { padding: 12px 0 !important; margin-bottom: 15px !important; }
-        .header-banner h1 { font-size: 1.5rem !important; }
-        .header-banner p { font-size: 0.9rem !important; }
+        html, body { height: 100%; margin: 0; display: flex; flex-direction: column; background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; }
+        header.fixed-top-nav { position: fixed; top: 0; left: 0; width: 100%; z-index: 1030; background-color: #1b396b; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .main-container-scroll { margin-top: 55px; margin-bottom: 40px; flex: 1; overflow-y: auto; overflow-x: hidden; padding: 15px 20px; }
+        .header-banner { background: linear-gradient(135deg, #0dcaf0, #055160); color: white; padding: 10px 0; border-bottom: 4px solid #1b396b; margin-bottom: 10px; border-radius: 6px; }
+        .excel-container { width: 100%; max-height: calc(21 * 32px + 50px); overflow-x: auto !important; overflow-y: auto !important; border: 1px solid #ced4da; background: white; border-radius: 6px; }
+        .excel-table { margin-bottom: 0; table-layout: auto !important; width: max-content; border-collapse: separate; border-spacing: 0; }
+        .excel-table thead th { position: sticky; top: 0; z-index: 3; font-size: 11px; font-weight: 700; background-color: #1b396b !important; color: white; text-align: center; vertical-align: middle; white-space: normal !important; word-wrap: break-word !important; min-width: 120px !important; max-width: 160px !important; padding: 6px 4px !important; line-height: 1.2; cursor: pointer; height: 50px; }
+        .excel-table thead tr.num-row th { position: sticky; top: 50px; z-index: 2; background-color: #e9ecef !important; color: #212529 !important; font-size: 11px; padding: 3px !important; border-bottom: 2px solid #2d3436; height: 25px; }
+        .excel-table td { padding: 4px 6px; border: 1px solid #ccc; text-align: center; vertical-align: middle; font-size: 11px; white-space: nowrap; }
+        .excel-table tr.fila-totales td { background-color: #d1e7dd !important; font-weight: 800; color: #0f5132; }
+        .excel-table td.col-dia { font-weight: 700; background-color: #f8f9fa; text-align: left; position: sticky; left: 0; z-index: 4; border-right: 2px solid #b2bec3; }
+        .caja-pegado { border: 2px dashed #0d6efd; background-color: #e7f1ff; color: #0d6efd; border-radius: 8px; padding: 10px; text-align: center; font-size: 1rem; font-weight: 700; cursor: pointer; user-select: none; }
+        .caja-pegado:hover, .caja-pegado:focus { background-color: #cfe2ff; border-color: #0a58ca; outline: none; }
+        .nav-tabs .nav-link { font-weight: 700; color: #1b396b; font-size: 12px; }
+        .nav-tabs .nav-link.active { background-color: #1b396b !important; color: white !important; }
+        .nav-tabs .nav-link.tab-totales.active { background-color: #ffc107 !important; color: #000 !important; }
     </style>
-
-    <style>body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }</style>
 </head>
-<body class="d-flex flex-column min-vh-100">
-    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #1b396b;">
-      <div class="container-fluid px-4">
-        <a class="navbar-brand fw-bold" href="https://registro03coah.github.io/mimenu/"><i class="bi bi-hdd-network"></i> SISTEMA MAC</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-          <ul class="navbar-nav ms-auto gap-2">
-            <li class="nav-item"><a class="nav-link active bg-primary rounded px-2 text-white fw-bold" href="index.html"><i class="bi bi-pencil-square"></i> Vaciado de Datos</a></li>
-            <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_dias.html"><i class="bi bi-calendar3"></i> Reporte Días</a></li>
-            <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_semanal.html"><i class="bi bi-calendar-week"></i> Reporte Semanal</a></li>
-            <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_campana.html"><i class="bi bi-bar-chart-fill"></i> Reporte Campaña</a></li>
-            <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_acumulado.html"><i class="bi bi-archive-fill"></i> Reporte Acumulado</a></li>
-            <li class="nav-item"><a class="nav-link px-2" href="graficos.html" style="color: #ff66b2 !important; font-weight: bold;"><i class="bi bi-pie-chart-fill"></i> Gráficos</a></li>
-            <li class="nav-item"><a class="nav-link text-light px-2" href="bd_madre.html"><i class="bi bi-database-fill"></i> BD Principal</a></li>
-            <li class="nav-item"><a class="nav-link text-light px-2" href="bdtotales.html"><i class="bi bi-database-fill-gear"></i> BD Totales</a></li>
-          </ul>
-        </div>
-      </div>
-    </nav>
-    <div class="header-banner text-center d-flex justify-content-center align-items-center bg-info text-dark">
-        <div><h1 class="fw-bold mb-0"><i class="bi bi-pencil-square"></i> Vaciado de Datos</h1></div>
+<body>
+    <header class="fixed-top-nav"><style>
+    .navbar-nav .nav-link { font-size: 11px !important; }
+    .navbar-brand { font-size: 14px !important; }
+    nav.navbar, .fixed-top-nav .navbar { padding: 2px 15px !important; }
+    .header-banner { padding: 10px 0 !important; margin-bottom: 15px !important; }
+    .header-banner h1 { font-size: 1.4rem !important; }
+    .header-banner p { font-size: 0.85rem !important; }
+</style>
+<nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #1b396b; width: 100%;">
+  <div class="container-fluid px-3">
+    <a class="navbar-brand fw-bold" href="https://registro03coah.github.io/mimenu/"><i class="bi bi-hdd-network"></i> SISTEMA MAC</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto gap-2">
+        <li class="nav-item"><a class="nav-link active bg-primary rounded px-2 text-white fw-bold" href="index.html"><i class="bi bi-pencil-square"></i> Vaciado de Datos</a></li>
+        <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_dias.html"><i class="bi bi-calendar3"></i> Reporte Días</a></li>
+        <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_semanal.html"><i class="bi bi-calendar-week"></i> Reporte Semanal</a></li>
+        <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_campana.html"><i class="bi bi-bar-chart-fill"></i> Reporte Campaña</a></li>
+        <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_acumulado.html"><i class="bi bi-archive-fill"></i> Reporte Acumulado</a></li>
+        <li class="nav-item"><a class="nav-link px-2" href="graficos.html" style="color: #ff66b2 !important; font-weight: bold;"><i class="bi bi-pie-chart-fill"></i> Gráficos</a></li>
+        <li class="nav-item"><a class="nav-link text-light px-2" href="bd_madre.html"><i class="bi bi-database-fill"></i> BD Principal</a></li>
+        <li class="nav-item"><a class="nav-link text-light px-2" href="bdtotales.html"><i class="bi bi-database-fill-gear"></i> BD Totales</a></li>
+      </ul>
     </div>
-    <div class="container-fluid px-4 flex-grow-1 text-center mt-5">
-        <h4>Panel de Vaciado (Archivo Placeholder para ZIP)</h4>
-        <p>El código de JS se mantiene idéntico, solo se actualizó la barra de navegación superior según tus instrucciones.</p>
+  </div>
+</nav></header>
+    <div class="main-container-scroll">
+        <div class="header-banner text-center d-flex justify-content-center align-items-center shadow-sm">
+            <div>
+                <h1 class="fw-bold mb-0"><i class="bi bi-pencil-square"></i> Vaciado de Datos</h1>
+                <p class="lead mb-0">Gestión e importación de la base de datos general (Módulos 050351, 050353, 050354)</p>
+            </div>
+        </div>
+        <div class="card shadow-sm mb-3 border-0">
+            <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3 bg-white rounded border py-2">
+                <div class="d-flex flex-wrap gap-3">
+                    <div class="p-2 rounded shadow-sm" style="background-color: #ff99ff; border: 2px solid #ff4dff;">
+                        <span class="fw-bold text-dark d-block text-center mb-1" style="font-size: 11px;"><i class="bi bi-bar-chart-fill"></i> INICIALES CAMPAÑA (C)</span>
+                        <div class="d-flex gap-2">
+                            <input type="text" id="camp_050351" class="form-control form-control-sm text-center fw-bold" placeholder="050351" style="width: 80px;">
+                            <input type="text" id="camp_050353" class="form-control form-control-sm text-center fw-bold" placeholder="050353" style="width: 80px;">
+                            <input type="text" id="camp_050354" class="form-control form-control-sm text-center fw-bold" placeholder="050354" style="width: 80px;">
+                        </div>
+                    </div>
+                    <div class="p-2 rounded shadow-sm" style="background-color: #e63946; border: 2px solid #b71c1c;">
+                        <span class="fw-bold text-white d-block text-center mb-1" style="font-size: 11px;"><i class="bi bi-archive-fill"></i> INICIALES ACUMULADO (A)</span>
+                        <div class="d-flex gap-2">
+                            <input type="text" id="acum_050351" class="form-control form-control-sm text-center fw-bold" placeholder="050351" style="width: 80px;">
+                            <input type="text" id="acum_050353" class="form-control form-control-sm text-center fw-bold" placeholder="050353" style="width: 80px;">
+                            <input type="text" id="acum_050354" class="form-control form-control-sm text-center fw-bold" placeholder="050354" style="width: 80px;">
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn btn-outline-danger btn-sm fw-bold" onclick="vaciarMesaTrabajo()"><i class="bi bi-trash"></i> Limpiar</button>
+                    <button class="btn btn-success btn-sm fw-bold shadow-sm" id="btnGuardarMadre" onclick="guardarEnBaseMadre()"><i class="bi bi-cloud-arrow-up-fill"></i> Guardar en BD Madre</button>
+                </div>
+            </div>
+        </div>
+        <ul class="nav nav-tabs fw-bold mb-2" id="tabsModulos">
+            <li class="nav-item"><button class="nav-link active" id="btn-tab-050351" onclick="cambiarModulo('050351')"><i class="bi bi-laptop"></i> Módulo 050351</button></li>
+            <li class="nav-item"><button class="nav-link" id="btn-tab-050353" onclick="cambiarModulo('050353')"><i class="bi bi-laptop"></i> Módulo 050353</button></li>
+            <li class="nav-item"><button class="nav-link" id="btn-tab-050354" onclick="cambiarModulo('050354')"><i class="bi bi-laptop"></i> Módulo 050354</button></li>
+            <li class="nav-item"><button class="nav-link tab-totales text-dark fw-bold" id="btn-tab-TOTALES" style="background-color: #ffc107;" onclick="cambiarModulo('TOTALES')"><i class="bi bi-calculator-fill"></i> Totales Generales</button></li>
+        </ul>
+        <div class="card shadow-sm border-0 mb-3">
+            <div class="card-body bg-white rounded border p-2">
+                <div class="alert alert-info py-2 px-3 mb-2 fw-bold d-flex justify-content-between align-items-center" style="font-size: 13px;">
+                    <span id="lblMensajeAyuda">Módulo <span id="lblModuloActivo">050351</span>: Pega los datos con Ctrl+V. Haz doble clic en un encabezado para cambiar su nombre.</span>
+                    <span id="semaforoConexion" class="badge bg-success text-white"><i class="bi bi-check-circle"></i> Conectado</span>
+                </div>
+                <div id="panelAccionesTotales" class="alert alert-warning py-2 px-3 mb-2 d-none justify-content-between align-items-center" style="font-size: 13px;">
+                    <span class="fw-bold"><i class="bi bi-info-circle-fill"></i> Vaciado Consolidado Remesa: <span id="lblRemesaNumero" class="badge bg-dark text-white">S/N</span></span>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-success fw-bold" onclick="guardarEnBaseTotales()"><i class="bi bi-cloud-upload-fill"></i> Guardar en BD Totales</button>
+                    </div>
+                </div>
+                <div class="caja-pegado mb-2" id="areaPegado" tabindex="0">
+                    <i class="bi bi-clipboard-plus fs-5 d-block mb-0"></i>
+                    Clic aquí y Ctrl+V para pegar datos del Módulo <span id="lblModuloPegado">050351</span>
+                </div>
+                <div class="excel-container shadow-sm">
+                    <table class="excel-table table table-hover" id="tablaVaciado">
+                        <thead id="cabeceraVaciado"></thead>
+                        <tbody id="cuerpoVaciado"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
     
-    <footer class="text-center py-2 mt-auto text-white shadow-sm" style="background-color: #1b396b;">
-        <small>
-            &copy; 2026 Todos los derechos reservados. 
-            Desarrollado por <span class="text-info fw-bold">Carrivers Desing</span> para Módulos MAC. Versión 1.0.19
-        </small>
-    </footer>
+<footer class="text-center py-2 mt-auto text-white shadow-sm" style="background-color: #1b396b; width: 100%; position: fixed; z-index: 1030; bottom: 0;">
+    <small>
+        &copy; 2026 Todos los derechos reservados. Desarrollado por <span class="text-info fw-bold">Carrivers Desing</span> para Módulos MAC. Versión 1.0.19
+    </small>
+</footer>
 
-</body></html>
+    <div id="loadingOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; color: white;">
+        <div class="spinner-border text-info" style="width: 3.5rem; height: 3.5rem;" role="status"></div>
+        <h4 class="mt-3 fw-bold" id="lblOverlayTexto">Procesando y guardando datos...</h4>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="app_vaciado.js"></script>
+</body>
+</html>
