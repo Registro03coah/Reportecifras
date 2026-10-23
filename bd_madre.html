@@ -56,7 +56,28 @@
             <strong>BD Madre:</strong> Muestra todos los registros diarios almacenados en la nube.
             <div id="semaforoConexion" class="badge bg-success">Conectado</div>
         </div>
-        <div class="excel-container shadow-sm mb-3">
+        
+        <div class="card shadow-sm mb-3 border-0">
+            <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3 bg-white rounded border py-2">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="fw-bold text-dark"><i class="bi bi-database-fill"></i> Gestión de BD Principal:</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <input type="file" id="inputJSON" accept=".json" class="d-none" onchange="importarJSON(event)">
+                    <button class="btn btn-outline-primary btn-sm fw-bold" onclick="document.getElementById('inputJSON').click()">
+                        <i class="bi bi-upload"></i> Subir JSON
+                    </button>
+                    <button class="btn btn-outline-success btn-sm fw-bold" onclick="descargarJSON()">
+                        <i class="bi bi-download"></i> Descargar JSON
+                    </button>
+                    <button class="btn btn-outline-danger btn-sm fw-bold" onclick="borrarBaseMadre()">
+                        <i class="bi bi-trash"></i> Borrar Base de Datos
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    <div class="excel-container shadow-sm mb-3">
             <table class="excel-table table table-hover" id="tablaBdMadre">
                 <thead id="cabeceraBdMadre"></thead>
                 <tbody id="cuerpoBdMadre"></tbody>
@@ -84,6 +105,62 @@
         };
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
+
+        
+        window.descargarJSON = function() {
+            database.ref('bd_madre').once('value').then(snapshot => {
+                let data = snapshot.val();
+                if (!data) {
+                    alert("No hay datos para exportar.");
+                    return;
+                }
+                let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
+                let downloadAnchor = document.createElement('a');
+                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("download", "bd_madre_respaldo.json");
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
+            });
+        };
+
+        window.importarJSON = function(event) {
+            let file = event.target.files[0];
+            if (!file) return;
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    let jsonContent = JSON.parse(e.target.result);
+                    if (!Array.isArray(jsonContent) && typeof jsonContent !== 'object') {
+                        alert("El archivo JSON no tiene un formato válido.");
+                        return;
+                    }
+                    if (confirm("¿Estás seguro de sobrescribir la BD Principal con este archivo JSON?")) {
+                        database.ref('bd_madre').set(jsonContent).then(() => {
+                            alert("¡Base de Datos Principal importada con éxito!");
+                        }).catch(err => {
+                            alert("Error al importar: " + err.message);
+                        });
+                    }
+                } catch (err) {
+                    alert("Error al leer el archivo JSON: " + err.message);
+                }
+                event.target.value = '';
+            };
+            reader.readAsText(file);
+        };
+
+        window.borrarBaseMadre = function() {
+            if (confirm("⚠️ ADVERTENCIA: ¿Estás completamente seguro de borrar TODA la Base de Datos Principal (BD Madre)? Esta acción no se puede deshacer.")) {
+                if (confirm("Última confirmación: ¿Eliminar todos los registros de la nube?")) {
+                    database.ref('bd_madre').set(null).then(() => {
+                        alert("La Base de Datos Principal ha sido vaciada.");
+                    }).catch(err => {
+                        alert("Error al borrar: " + err.message);
+                    });
+                }
+            }
+        };
 
         database.ref('bd_madre').on('value', (snapshot) => {
             let data = snapshot.val();
