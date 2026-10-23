@@ -1,267 +1,142 @@
-// ==========================================
-// 1. IMPORTACIONES Y CONFIGURACIÓN FIREBASE (REPORTE ACUMULADO)
-// ==========================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, get, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
-const firebaseConfig = {
-    apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo",
-    authDomain: "cifrasmac.firebaseapp.com",
-    databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com",
-    projectId: "cifrasmac",
-    storageBucket: "cifrasmac.firebasestorage.app",
-    messagingSenderId: "916644687837",
-    appId: "1:916644687837:web:03d346cc48a071af1ed034"
-};
-
+import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+const firebaseConfig = { apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo", authDomain: "cifrasmac.firebaseapp.com", databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com", projectId: "cifrasmac", storageBucket: "cifrasmac.firebasestorage.app", messagingSenderId: "916644687837", appId: "1:916644687837:web:03d346cc48a071af1ed034" };
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// COLUMNAS EXACTAS SEGÚN TU IMAGEN (ACUMULADO) - Suma de Reposición y Reimpresión incluida
-const COLUMNAS_ACUMULADO_KEYS = [
-    "ENT", "DTTO", "MODULO", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS", 
-    "NO_UTILIZADOS", "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", 
-    "REPOSISION_REIMPRESIONES", "CORR__DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "TOTAL_DE_TRAMITES", 
-    "RECHAZOS_DE_MAC_34", "RECHAZOS_DE_MAC_35", "CANCELADOS", "TOTAL_DE_MOVIMIENTOS", 
-    "CIF-05", "SOLICITUD_EXPEDICION", "SOLICITUD_RECTIFICACION", "DEMANDA_DE_JUICIO", 
-    "INICIALES_A", "ACTUALIZACIÓN", "RECIBIDAS_DE_OTROS_TIPOS", "ENTREGADAS", "ANEXAS_A_FUAR", 
-    "RESGUARDO", "SOLICITU_DE_REIMPRESION", "RECIBO_Y_O_EXTRAVIO", "RETIRADAS_POR_OTRA_CAUSA", 
-    "SOBRANTES", "DUPLICADO", "DISPONIBLES", "REIMPRE_FUERA_DEL_SISTEMA", "CREDEN_DEVUELTAS_POR_TERCEROS", 
-    "CRED_PRODUCTO_DE_REGISTRO_DUPLICADO", "CRED_PROD_CANJE_POR_NUEVA", "DIAS_TRABAJADOS", "CONFIGURACION"
-];
+// INICIALES_A
+const COLUMNAS_ACUMULADO_KEYS = ["ENT", "DTTO", "MODULO", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS", "NO_UTILIZADOS", "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSISION", "CORR__DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES", "RECHAZOS_DE_MAC_34", "RECHAZOS_DE_MAC_35", "CANCELADOS", "TOTAL_DE_MOVIMIENTOS", "CIF_05", "SOLICITUD_EXPEDICION", "SOLICITUD_RECTIFICACION", "DEMANDA_DE_JUICIO", "INICIALES_A", "ACTUALIZACION", "RECIBIDAS_DE_OTROS_TIPOS", "IMPORTADAS", "EXPORTADAS", "ENTREGADAS", "ANEXAS_A_FUAR", "RESGUARDO", "SOLICITU_DE_REIMPRESION", "RECIBO_Y_O_EXTRAVIO", "RETIRADAS_POR_OTRA_CAUSA", "SOBRANTES", "DUPLICADO", "DISPONIBLES", "DISPONIBLES_DE_SOL_DE_EXP", "REIMPRE_FUERA_DEL_SISTEMA", "CREDEN_DEVUELTAS_POR_TERCEROS", "CRED_PRODUCTO_DE_REGISTRO_DUPLICADO", "CRED_PROD_CANJE_POR_NUEVA", "DIAS_TRABAJADOS", "CONFIGURACION"];
 
-// ==========================================
-// 2. CONFIGURACIÓN DE HISTORIAL DE FOLIOS
-// ==========================================
-const HISTORIAL_ROJOS = {
-    "50351": [
-        { i: "2605035100001", f: "2605035108668" },
-        { i: "2505035125557", f: "2505035139930" },
-        { i: "2505035109053", f: "2505035125556" },
-        { i: "2505035100001", f: "2505035109052" },
-        { i: "2405035119618", f: "2405035132139" },
-        { i: "2405035109082", f: "2405035119617" }
-    ],
-    "50353": [
-        { i: "2605035300001", f: "2605035303085" },
-        { i: "2505035309689", f: "2505035316305" },
-        { i: "2505035303324", f: "2505035309688" },
-        { i: "2505035300001", f: "2505035303323" },
-        { i: "2405035307991", f: "2405035313485" },
-        { i: "2405035303096", f: "2405035307990" }
-    ],
-    "50354": [
-        { i: "2605035400001", f: "2605035401972" },
-        { i: "2505035404268", f: "2505035408381" },
-        { i: "2505035401417", f: "2505035404267" },
-        { i: "2505035400001", f: "2505035401416" },
-        { i: "2405035402884", f: "2405035405329" },
-        { i: "2405035400971", f: "2405035402883" }
-    ]
-};
+const NUM_COLS = { "DIA": 1, "FECHA": 2, "HORAS_TRABAJADAS": 3, "SEDES": 4, "INICIAL": 5, "FINAL": 6, "TOTAL_DE_FOLIOS": 7, "INSCRIPCIONES": 8, "CORRECCION_DE_DATOS_PERSONALES": 9, "CAMBIO_DE_DOMICILIO": 10, "REPOSISION": 11, "CORR__DE_DATOS_DIRECCION": 12, "REINCORPORACION": 13, "REEMPLAZO": 14, "REIMPRESION": 15, "TOTAL_DE_TRAMITES": 16, "CANCELADOS": 17, "TOTAL_DE_ANEXOS_POR_RECHAZO": 18, "CPV_DEVUELTA_ENTREGA": 19, "DISPONIBLES_AL_DIA_ANTERIOR": 20, "ACTUALIZACION": 21, "RECIBIDAS_DE_OTROS_TIPOS": 22, "ENTREGADAS": 23, "RECIBO_Y_O_EXTRAVIO": 24, "ANEXAS_A_FUAR": 25, "DATOS_ERRONEOS": 26, "FOTO_MAL_IMPRESA": 27, "SOLICITU_DE_REIMPRESION": 28, "RETIRADAS_POR_OTRA_CAUSA": 29, "DISPONIBLES": 30, "CREDENCIALES_X_CANJE": 31, "FICHAS_ENTREGADAS": 32, "FICHAS_ATENDIDAS": 33, "DIAS_TRABAJADOS": 34, "CIF_05": 35, "SOLICITUD_EXPEDICION": 36, "SOLICITUD_RECTIFICACION": 37, "DEMANDA_DE_JUICIO": 38, "REMESA": 39, "TOTAL_DE_MOVIMIENTOS": 40, "CREDEN_DEVUELTAS_POR_TERCEROS": 41, "RECHAZOS_DE_MAC_34": 42, "RECHAZOS_DE_MAC_35": 43, "CONFIGURACION": 44, "ENT": 45, "DTTO": 46, "MODULO": 47, "RESGUARDO": 48, "SOLICITUD_DE_REIMPRESION": 49, "CPV_DEVUELTA_ENTREGA_2": 50, "SCRIPT_EJECUTADOS": 51, "FOLIO_NEC": 52, "NUMERO_DE_TRAMITES_APLICADOS": 53, "NUMERO_DE_FICHAS_REQUISITADAS": 54, "NUMERO_DE_ARCHIVOS_DE_TRANSACCION_ACEPTADOS": 55, "TOTAL_DE_ARCHIVOS_DE_TRANSACCION_PROCESADOS": 56, "CREDENCIALES_RECIBIDAS": 57, "CREDENCIALES_INCONSISTENTES": 58, "CREDENCIALES_EN_RESGUARDO": 59, "CREDENCIALES_TOTALES_EN_SIIRFE_DISPONIBLES_PARA_ENTREGA": 60, "TOTAL_DE_CREDENCIALES_ENTREGADAS": 61, "TOTAL_DE_CREDENCIALES_SOLICITADAS": 62, "IMPORTADAS": 63, "EXPORTADAS": 64, "REPOSICIONES_REIMPRESIONES": 65, "MAL_IMPRESA": 66, "ERROR_EN_CARTOGRAFIA": 67, "DEFUNCION": 68, "SUSPENSION": 69, "DUPLICADO": 70, "ERROR_EN_NUM_DE_EMISION": 71, "PERDIDA_DE_VIGENCIA": 72, "MOV_POST": 73, "ANEXAS_A_SOLICITUD": 74, "OTRAS_BAJAS": 75, "INICIALES_C": 76, "INICIALES_A": 77, "INICIALES_S": 78, "IDMAC": 79 };
+function getNumCol(key) { return NUM_COLS[key] || '-'; }
 
-const INICIAL_ACTUAL = {
-    "50351": "2605035108669",
-    "50353": "2605035303086",
-    "50354": "2605035401973"
-};
 
-const MODULOS_ORDEN = ["50351", "50353", "50354"];
-let dataGlobalAcumulado = [];
+window.copiarTablaExcel = function(tablaId) {
+    const tabla = document.getElementById(tablaId);
+    if (!tabla) return;
+    const clone = tabla.cloneNode(true);
+    const totales = clone.querySelectorAll('.fila-totales');
+    totales.forEach(t => t.remove()); // Quitar linea de totales como se solicitó
 
-const connectedRef = ref(db, ".info/connected");
-onValue(connectedRef, (snap) => {
-    const semaforo = document.getElementById("semaforoConexion");
-    if(!semaforo) return;
-    if (snap.val() === true) {
-        semaforo.className = "badge bg-success text-white fs-6 px-3 py-2 rounded-pill online-glow";
-        semaforo.innerHTML = '<i class="bi bi-wifi"></i> ONLINE';
-    } else {
-        semaforo.className = "badge bg-danger text-white fs-6 px-3 py-2 rounded-pill offline-glow";
-        semaforo.innerHTML = '<i class="bi bi-wifi-off"></i> OFFLINE';
+    const div = document.createElement('div');
+    div.appendChild(clone);
+    document.body.appendChild(div);
+
+    const range = document.createRange();
+    range.selectNode(clone);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    try {
+        document.execCommand('copy');
+        alert("¡Tabla copiada (sin totales)! Lista para pegar en Excel.");
+    } catch (err) {
+        alert("Error al intentar copiar.");
     }
-});
+    document.body.removeChild(div);
+    selection.removeAllRanges();
+};
 
-function construirHeaderTabla(selectorTabla) {
-    const thead = document.querySelector(`${selectorTabla} thead`);
-    if(!thead) return;
+let bdtotalesGlobal = [];
+
+function construirHeaderTabla() {
+    const thead = document.querySelector('#tablaAcumulado thead');
     thead.innerHTML = "";
-    
     let trTitulos = document.createElement('tr');
+    let trNumeros = document.createElement('tr');
+    trNumeros.className = 'num-row';
     
     COLUMNAS_ACUMULADO_KEYS.forEach((colKey) => {
         let thT = document.createElement('th');
-        let nombreVisual = colKey.replace(/_/g, ' ')
-                                  .replace('SOLICITU DE', 'SOLICITUD DE')
-                                  .replace('DUPLICADO', 'DUPLICADOS')
-                                  .replace('CORR  DE', 'CORR DE')
-                                  .replace('CREDEN DEVUELTAS POR TERCEROS', 'DEVUELTAS POR TERCEROS');
-        
-        thT.innerText = nombreVisual;
-        
-        let anchoCelda = "90px"; 
-        if(['MODULO', 'ENT', 'DTTO'].includes(colKey)) anchoCelda = "70px"; 
-        else if(['INICIAL', 'FINAL'].includes(colKey)) anchoCelda = "130px";
-        
-        thT.style.width = anchoCelda; thT.style.minWidth = anchoCelda;
+        thT.innerText = colKey.replace(/_/g, ' ');
+        let ancho = ['MODULO', 'ENT', 'DTTO'].includes(colKey) ? "70px" : "90px";
+        if(colKey === 'INICIAL' || colKey === 'FINAL') ancho = "110px";
+        thT.style.width = ancho; thT.style.minWidth = ancho;
         if(['INICIAL', 'FINAL', 'TOTAL_DE_FOLIOS'].includes(colKey)) thT.classList.add('bg-folios');
-        
         trTitulos.appendChild(thT);
+        
+        let thN = document.createElement('th');
+        thN.innerText = getNumCol(colKey);
+        trNumeros.appendChild(thN);
     });
     thead.appendChild(trTitulos);
+    thead.appendChild(trNumeros);
 }
 
-function normalizarObjeto(item) {
-    let limpio = {};
-    for (let key in item) limpio[key.toUpperCase().trim()] = item[key];
-    return limpio;
-}
-
-function cargarDatosAcumulado() {
-    construirHeaderTabla('#tablaAcumulado');
-
-    Promise.all([
-        get(ref(db, 'bd_madre')),
-        get(ref(db, 'bdtotales'))
-    ]).then(([snapMadre, snapTotales]) => {
-        let arrMadre = snapMadre.exists() ? (Array.isArray(snapMadre.val()) ? snapMadre.val() : Object.values(snapMadre.val())).map(normalizarObjeto) : [];
-        let arrTotales = snapTotales.exists() ? (Array.isArray(snapTotales.val()) ? snapTotales.val() : Object.values(snapTotales.val())).map(normalizarObjeto) : [];
-        
-        dataGlobalAcumulado = [...arrTotales, ...arrMadre];
-        renderTablaAcumulado();
-    }).catch(err => console.error("Error al leer datos:", err));
-}
-
-function renderTablaAcumulado() {
-    const tbody = document.querySelector('#tablaAcumulado tbody');
-    if(!tbody) return;
-    tbody.innerHTML = "";
-
-    let modulosMap = { "50351": [], "50353": [], "50354": [] };
-    
-    dataGlobalAcumulado.forEach(f => {
-        let modRaw = String(f['MODULO'] || '').trim();
-        let mod = modRaw.replace(/^0+/, ''); 
-        if (modulosMap[mod]) modulosMap[mod].push(f);
-    });
-
-    let sumaGranTotalFolios = 0;
-
-    MODULOS_ORDEN.forEach(modNombre => {
-        let registrosMod = modulosMap[modNombre].sort((a, b) => String(a['REMESA']).localeCompare(String(b['REMESA'])));
-        
-        // --- FILA NEGRA ---
-        let trNegra = document.createElement('tr');
-        let maxFinal = 0;
-        registrosMod.forEach(r => {
-            let val = Number(r["FINAL"]);
-            if (!isNaN(val) && val > maxFinal) maxFinal = val;
-        });
-        
-        let cIniActual = Number(INICIAL_ACTUAL[modNombre]);
-        let foliosNegra = (maxFinal > 0 && cIniActual > 0) ? (maxFinal - cIniActual + 1) : 0;
-        sumaGranTotalFolios += foliosNegra;
-
-        COLUMNAS_ACUMULADO_KEYS.forEach(colKey => {
-            let td = document.createElement('td');
-
-            if (colKey === "ENT") td.innerText = "05";
-            else if (colKey === "DTTO") td.innerText = "03";
-            else if (colKey === "MODULO") td.innerText = modNombre;
-            else if (colKey === "INICIAL") td.innerText = INICIAL_ACTUAL[modNombre];
-            else if (colKey === "FINAL") td.innerText = maxFinal > 0 ? maxFinal : "";
-            else if (colKey === "TOTAL_DE_FOLIOS") td.innerText = foliosNegra;
-            else if (colKey === "INICIALES_A") {
-                td.innerText = registrosMod.length > 0 ? (registrosMod[0][colKey] || "0") : "0";
-            } else if (colKey === "CONFIGURACION") {
-                td.innerText = registrosMod.length > 0 ? (registrosMod[registrosMod.length - 1][colKey] || "0") : "0";
-            } else if (colKey === "REPOSISION_REIMPRESIONES") {
-                // SUMATORIA EXCLUSIVA PARA ACUMULADO
-                let sumaCol = 0;
-                registrosMod.forEach(reg => {
-                    let r1 = parseFloat(reg["REPOSISION"] || 0);
-                    let r2 = parseFloat(reg["REIMPRESION"] || 0);
-                    if (!isNaN(r1)) sumaCol += r1;
-                    if (!isNaN(r2)) sumaCol += r2;
-                });
-                td.innerText = sumaCol;
-            } else {
-                let sumaCol = 0;
-                registrosMod.forEach(reg => {
-                    let val = parseFloat(reg[colKey] || 0);
-                    if (!isNaN(val)) sumaCol += val;
-                });
-                td.innerText = sumaCol;
-            }
-            trNegra.appendChild(td);
-        });
-        tbody.appendChild(trNegra);
-
-        // --- FILAS ROJAS ---
-        let historial = HISTORIAL_ROJOS[modNombre] || [];
-        historial.forEach(rango => {
-            let trRoja = document.createElement('tr');
-            trRoja.classList.add('fila-historica');
-            
-            let cIniHist = Number(rango.i);
-            let cFinHist = Number(rango.f);
-            let foliosRoja = (cFinHist - cIniHist + 1);
-            sumaGranTotalFolios += foliosRoja;
-
-            COLUMNAS_ACUMULADO_KEYS.forEach(colKey => {
-                let td = document.createElement('td');
-                if (colKey === "ENT") td.innerText = "05";
-                else if (colKey === "DTTO") td.innerText = "03";
-                else if (colKey === "MODULO") td.innerText = modNombre;
-                else if (colKey === "INICIAL") td.innerText = rango.i;
-                else if (colKey === "FINAL") td.innerText = rango.f;
-                else if (colKey === "TOTAL_DE_FOLIOS") td.innerText = foliosRoja;
-                else td.innerText = "";
-                
-                trRoja.appendChild(td);
+function cargarDatos() {
+    construirHeaderTabla();
+    get(ref(db, 'bdtotales')).then(snap => {
+        if (snap.exists()) {
+            let data = snap.val();
+            bdtotalesGlobal = (Array.isArray(data) ? data : Object.values(data)).map(item => {
+                let limpio = {};
+                for (let k in item) limpio[k.toUpperCase().trim()] = item[k];
+                return limpio;
             });
-            tbody.appendChild(trRoja);
-        });
-    });
-
-    renderGranTotalAcumulado(tbody, modulosMap, sumaGranTotalFolios);
-}
-
-function renderGranTotalAcumulado(tbody, modulosMap, sumaGlobalFolios) {
-    let trGranTotal = document.createElement('tr');
-    trGranTotal.classList.add('fila-totales');
-    
-    let todosLosRegistros = [];
-    MODULOS_ORDEN.forEach(m => todosLosRegistros = todosLosRegistros.concat(modulosMap[m]));
-    
-    COLUMNAS_ACUMULADO_KEYS.forEach(colKey => {
-        let td = document.createElement('td');
-
-        if (colKey === "MODULO") td.innerText = "TOTAL";
-        else if (["ENT", "DTTO", "INICIAL", "FINAL", "INICIALES_A", "CONFIGURACION"].includes(colKey)) {
-            td.innerText = ""; 
-        } else if (colKey === "TOTAL_DE_FOLIOS") {
-            td.innerText = sumaGlobalFolios;
-        } else if (colKey === "REPOSISION_REIMPRESIONES") {
-            let sumaTotal = 0;
-            todosLosRegistros.forEach(reg => {
-                let r1 = parseFloat(reg["REPOSISION"] || 0);
-                let r2 = parseFloat(reg["REIMPRESION"] || 0);
-                if (!isNaN(r1)) sumaTotal += r1;
-                if (!isNaN(r2)) sumaTotal += r2;
-            });
-            td.innerText = sumaTotal;
-        } else {
-            let sumaTotal = 0;
-            todosLosRegistros.forEach(reg => {
-                let val = parseFloat(reg[colKey] || 0);
-                if (!isNaN(val)) sumaTotal += val;
-            });
-            td.innerText = sumaTotal;
         }
-        trGranTotal.appendChild(td);
+        renderTabla();
     });
-    tbody.appendChild(trGranTotal);
 }
 
-cargarDatosAcumulado();
+function renderTabla() {
+    const tbody = document.querySelector('#tablaAcumulado tbody');
+    tbody.innerHTML = "";
+    
+    let remesas = [...new Set(bdtotalesGlobal.map(f => String(f.REMESA||'').trim()).filter(r => r))].sort((a,b)=>a.localeCompare(b));
+    let pRem = remesas[0] || 'N/A';
+    let uRem = remesas[remesas.length-1] || 'N/A';
+    document.getElementById('lblRangoRemesas').innerText = `De Remesa ${pRem} a Remesa ${uRem}`;
+
+    let modulosList = ['050351', '050353', '050354'];
+    let sumGlobalFolios = 0;
+    
+    modulosList.forEach(mod => {
+        let regsMod = bdtotalesGlobal.filter(r => String(r.MODULO||'').trim() === mod).sort((a,b)=>String(a.REMESA).localeCompare(String(b.REMESA)));
+        let tr = document.createElement('tr');
+        
+        let pReg = regsMod[0] || {};
+        let uReg = regsMod[regsMod.length-1] || {};
+        
+        let maxFinal = 0;
+        regsMod.forEach(r => { let v = Number(r.FINAL); if(v > maxFinal) maxFinal = v; });
+        let cIniActual = Number(pReg.INICIAL || 0); // O lógica de la inicial
+        let foliosNegra = (maxFinal > 0 && cIniActual > 0) ? (maxFinal - cIniActual + 1) : 0;
+        sumGlobalFolios += foliosNegra;
+
+        COLUMNAS_ACUMULADO_KEYS.forEach(col => {
+            let td = document.createElement('td');
+            if(col === 'MODULO') td.innerText = mod;
+            else if(col === 'INICIAL') td.innerText = pReg['INICIAL'] || "0";
+            else if(col === 'FINAL') td.innerText = uReg['FINAL'] || "0";
+            else if(col === 'INICIALES_A') td.innerText = pReg['INICIALES_A'] || "0";
+            else if(col === 'CONFIGURACION') td.innerText = uReg['CONFIGURACION'] || "0";
+            else if(['ENT','DTTO'].includes(col)) td.innerText = pReg[col] || "";
+            else if(col === 'TOTAL_DE_FOLIOS') td.innerText = foliosNegra;
+            else {
+                let sum = 0;
+                regsMod.forEach(r => { let val = parseFloat(r[col]||0); if(!isNaN(val)) sum += val; });
+                td.innerText = sum;
+            }
+            tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+    });
+    
+    let trTotal = document.createElement('tr');
+    trTotal.className = 'fila-totales';
+    COLUMNAS_ACUMULADO_KEYS.forEach(col => {
+        let td = document.createElement('td');
+        if(col === 'MODULO') td.innerText = "GRAN TOTAL";
+        else if (['INICIAL','FINAL','INICIALES_A','CONFIGURACION','ENT','DTTO'].includes(col)) td.innerText = "";
+        else if (col === 'TOTAL_DE_FOLIOS') td.innerText = sumGlobalFolios;
+        else {
+            let sum = 0;
+            bdtotalesGlobal.forEach(r => { let val = parseFloat(r[col]||0); if(!isNaN(val)) sum += val; });
+            td.innerText = sum;
+        }
+        trTotal.appendChild(td);
+    });
+    tbody.appendChild(trTotal);
+}
+cargarDatos();
