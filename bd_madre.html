@@ -3,134 +3,285 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Base de Datos Principal - MACs APP</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <title>Base de Datos Principal (BD Madre) - Sistema MAC</title>
     
-    <!-- Firebase SDK (Ajusta las versiones a las que usas en tus otros módulos) -->
+    <!-- Bootstrap 5 CSS e Iconos -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <!-- Firebase SDK v8 -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <style>
-        .table-responsive {
-            max-height: 70vh;
-            overflow-y: auto;
-            overflow-x: auto;
-        }
-        thead th {
-            position: sticky;
-            top: 0;
-            background-color: #1b396b !important;
-            color: white;
-            z-index: 1;
-            white-space: nowrap;
-        }
-        tbody td {
-            white-space: nowrap;
-            vertical-align: middle;
-        }
-        .col-acciones {
-            position: sticky;
-            right: 0;
-            background-color: #f8f9fa !important;
-            z-index: 2;
-            border-left: 2px solid #dee2e6;
-        }
-        thead .col-acciones {
-            background-color: #1b396b !important;
-            z-index: 3;
-        }
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .header-banner { background: linear-gradient(135deg, #0dcaf0, #055160); color: white; padding: 18px 0; border-bottom: 5px solid #1b396b; margin-bottom: 15px; }
         
-        /* Estilos del Overlay de Carga */
-        #loadingOverlay {
-            display: none; 
-            position: fixed; 
-            top: 0; left: 0; 
-            width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.85); 
-            z-index: 9999; 
-            flex-direction: column;
-            justify-content: center; 
-            align-items: center; 
-            color: white;
+        .excel-container { width: 100%; max-height: 70vh; overflow-x: auto !important; overflow-y: auto; border: 1px solid #ced4da; background: white; border-radius: 6px; }
+        .excel-table { margin-bottom: 0; table-layout: auto !important; width: max-content; }
+        .excel-table thead th { 
+            position: sticky; top: 0; z-index: 3; font-size: 10px; font-weight: 700; background-color: #1b396b !important; 
+            color: white; text-align: center; vertical-align: middle; white-space: normal !important; word-wrap: break-word !important; 
+            min-width: 120px !important; max-width: 160px !important; padding: 6px 4px !important; line-height: 1.2; cursor: pointer; user-select: none;
         }
+        .excel-table thead th:hover { background-color: #0d6efd !important; }
+        .excel-table thead tr.num-row th { top: 42px; z-index: 2; background-color: #e9ecef !important; color: #212529 !important; font-size: 11px; padding: 3px !important; border-bottom: 2px solid #2d3436; cursor: default; }
+        .excel-table td { padding: 4px 6px; border: 1px solid #ccc; text-align: center; vertical-align: middle; font-size: 11px; white-space: nowrap; }
+
+        .nav-tabs .nav-link { font-weight: 700; color: #1b396b; }
+        .nav-tabs .nav-link.active { background-color: #1b396b !important; color: white !important; }
     </style>
 </head>
-<body class="bg-light">
+<body class="d-flex flex-column min-vh-100">
 
-<!-- Pantalla de Carga -->
-<div id="loadingOverlay">
-    <div class="spinner-border text-light mb-3" role="status" style="width: 4rem; height: 4rem;"></div>
-    <h2>Subiendo y procesando archivo...</h2>
-    <p class="text-warning">Por favor no cierres ni recargues la ventana hasta que termine.</p>
-</div>
+    <!-- MENÚ DE NAVEGACIÓN -->
+    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #1b396b;">
+      <div class="container-fluid px-4">
+        <a class="navbar-brand fw-bold" href="index.html"><i class="bi bi-hdd-network"></i> SISTEMA MAC</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto gap-2">
+            <li class="nav-item"><a class="nav-link text-light px-3" href="index.html"><i class="bi bi-pencil-square"></i> Vaciado de Datos</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-3" href="reporte_dias.html"><i class="bi bi-calendar3"></i> Reporte Días</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-3" href="reporte_semanal.html"><i class="bi bi-calendar-week"></i> Reporte Semanal</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-3" href="reporte_campana.html"><i class="bi bi-bar-chart-fill"></i> Reporte Campaña</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-3" href="reporte_acumulado.html"><i class="bi bi-archive-fill"></i> Reporte Acumulado</a></li>
+            <li class="nav-item"><a class="nav-link active bg-primary rounded px-3 text-white fw-bold" href="bd_madre.html"><i class="bi bi-database-fill"></i> BD Principal</a></li>
+          </ul>
+        </div>
+      </div>
+    </nav>
 
-<div class="container-fluid mt-4 px-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2><i class="bi bi-database-fill"></i> Base de Datos Principal</h2>
+    <div class="header-banner text-center d-flex justify-content-center align-items-center">
         <div>
-            <button class="btn btn-danger me-2" onclick="vaciarBaseDatosGeneral()"><i class="bi bi-exclamation-triangle-fill"></i> Vaciar Base de Datos</button>
-            
-            <!-- NUEVO BOTÓN DE RESPALDO AQUI -->
-            <button class="btn btn-warning me-2" onclick="descargarRespaldoJSON()"><i class="bi bi-cloud-download"></i> Respaldar JSON</button>
-            
-            <input type="file" id="fileInput" accept=".json" style="display: none;">
-            <button class="btn btn-success" id="btnSubir"><i class="bi bi-cloud-arrow-up"></i> Subir Nueva Remesa</button>
-            <a href="index.html" class="btn btn-secondary ms-2"><i class="bi bi-house-door-fill"></i> Volver al Inicio</a>
+            <h1 class="fw-bold mb-0"><i class="bi bi-database-fill"></i> Base de Datos Principal (BD Madre)</h1>
+            <p class="lead mb-0">Registros diarios consolidados en la nube</p>
         </div>
     </div>
 
-    <!-- Buscador -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-body">
-            <div class="input-group">
-                <span class="input-group-text bg-primary text-white"><i class="bi bi-search"></i></span>
-                <input type="text" id="buscadorBd" class="form-control form-control-lg" placeholder="Buscar por Remesa (ej. 2026-10) o por Día (ej. 15/10/2026)...">
-            </div>
-            <small class="text-muted mt-2 d-block">Los datos se agrupan automáticamente por Módulo para visualizar la remesa completa (lunes a sábado) junta.</small>
-        </div>
-    </div>
+    <div class="container-fluid px-4 flex-grow-1 mb-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-body bg-white rounded border">
+                
+                <div class="alert alert-info py-2 px-3 mb-3 fw-bold d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-info-circle-fill"></i> <b>Instrucción:</b> Haz clic en cualquier encabezado de columna para ordenar la tabla de forma ascendente o descendente.</span>
+                    <span id="lblTotalRegistros" class="badge bg-dark">Total registros: 0</span>
+                </div>
 
-    <!-- Tabla Maestra -->
-    <div class="card shadow-sm">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-striped table-hover table-bordered mb-0" id="tablaBdMadre">
-                    <thead id="cabeceraBdMadre">
-                        <!-- Las columnas dinámicas se inyectarán aquí -->
-                    </thead>
-                    <tbody id="cuerpoBdMadre">
-                        <!-- Las filas se inyectarán aquí -->
-                    </tbody>
-                </table>
+                <div class="excel-container shadow-sm">
+                    <table class="excel-table table table-hover" id="tablaDatos">
+                        <thead id="cabeceraTabla"></thead>
+                        <tbody id="cuerpoTabla"></tbody>
+                    </table>
+                </div>
+
             </div>
         </div>
     </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="app_bd.js"></script>
-    <!-- Modal Flotante para Editar Registro Completo de BD Madre -->
-<div class="modal fade" id="modalEditarMadre" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header bg-primary text-white">
-        <h5 class="modal-title"><i class="bi bi-pencil-square"></i> Editar Registro Completo (BD Madre)</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
-        <form id="formDinamicoMadre">
-          <div class="row" id="contenedorCamposDinamicosMadre">
-            <!-- Aquí JavaScript inyectará automáticamente todos los campos -->
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" class="btn btn-primary" onclick="guardarEdicionMadre()"><i class="bi bi-save"></i> Guardar Cambios</button>
-      </div>
-    </div>
-  </div>
-</div>
+    <footer class="text-center py-3 mt-auto text-white" style="background-color: #1b396b;">
+        <small>
+            &copy; 2026 Todos los derechos reservados.<br>
+            Desarrollado por <span class="text-info fw-bold">Carrivers Desing</span> para Módulos MAC.
+        </small>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // CONFIGURACIÓN DE FIREBASE
+        const firebaseConfig = {
+            apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo",
+            authDomain: "cifrasmac.firebaseapp.com",
+            databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com",
+            projectId: "cifrasmac",
+            storageBucket: "cifrasmac.firebasestorage.app",
+            messagingSenderId: "916644687837",
+            appId: "1:916644687837:web:03d346cc48a071af1ed034"
+        };
+        if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+        const database = firebase.database();
+
+        let ESTRUCTURA_COLUMNAS = [
+            { pos: 1, key: 'dia', label: 'Día' },
+            { pos: 5, key: 'inicial', label: 'Inicial' },
+            { pos: 6, key: 'final', label: 'Final' },
+            { pos: 7, key: 'total_de_folios', label: 'Total de folios' },
+            { pos: 8, key: 'inscripciones', label: 'Inscripciones' },
+            { pos: 9, key: 'correccion_de_datos_personales', label: 'Corrección de datos personales' },
+            { pos: 10, key: 'cambio_de_domicilio', label: 'Cambio de domicilio' },
+            { pos: 11, key: 'reposision', label: 'Reposición' },
+            { pos: 12, key: 'corr__de_datos_direccion', label: 'Corr. de datos dirección' },
+            { pos: 13, key: 'reincorporacion', label: 'Reincorporación' },
+            { pos: 14, key: 'reemplazo', label: 'Reemplazo' },
+            { pos: 15, key: 'reimpresion', label: 'Reimpresión' },
+            { pos: 16, key: 'total_de_tramites', label: 'Total de trámites' },
+            { pos: 17, key: 'cancelados', label: 'Cancelados' },
+            { pos: 18, key: 'total_de_rechazos', label: 'Total de rechazos' },
+            { pos: 19, key: 'cpv_devuelta_entrega', label: 'Cpv devuelta entrega' },
+            { pos: 20, key: 'disponibles_al_dia_anterior', label: 'Disponibles al día anterior' },
+            { pos: 21, key: 'recibidas', label: 'Recibidas' },
+            { pos: 22, key: 'recibidas_de_otros_tipos', label: 'Recibidas de otros tipos' },
+            { pos: 23, key: 'entregadas', label: 'Entregadas' },
+            { pos: 24, key: 'recibo_y_o_extravio', label: 'Recibo y/o extravío' },
+            { pos: 25, key: 'anexas_a_fuar', label: 'Anexas a fuar' },
+            { pos: 26, key: 'datos_erroneos', label: 'Datos erróneos' },
+            { pos: 27, key: 'foto_mal_impresa', label: 'Foto mal impresa' },
+            { pos: 28, key: 'reimpresion_2', label: 'Reimpresión 2' },
+            { pos: 29, key: 'retiradas_as_por_causa', label: 'Retiradas por causa' },
+            { pos: 30, key: 'disponibles', label: 'Disponibles' },
+            { pos: 31, key: 'credenciales_x_canje', label: 'Credenciales x canje' },
+            { pos: 32, key: 'fichas_entregadas', label: 'Fichas entregadas' },
+            { pos: 33, key: 'fichas_atendidas', label: 'Fichas atendidas' },
+            { pos: 34, key: 'dias_trabajados', label: 'Días trabajados' },
+            { pos: 35, key: 'solicitud_expedicion_patriados', label: 'Solicitud expedición repatriados' },
+            { pos: 36, key: 'solicitud_expedicion_ordinaria', label: 'Solicitud expedición ordinaria' },
+            { pos: 37, key: 'solicitud_de_rectificacion', label: 'Solicitud de rectificación' },
+            { pos: 38, key: 'demanda_de_juicio', label: 'Demanda de juicio' },
+            { pos: 39, key: 'remesa', label: 'Remesa' },
+            { pos: 40, key: 'total_de_movimientos', label: 'Total de movimientos' },
+            { pos: 41, key: 'devueltas_por_terceros', label: 'Devueltas por terceros' },
+            { pos: 42, key: '34_imagen_inconsistente', label: '34 Imagen inconsistente' },
+            { pos: 43, key: '35_movimiento_posterior', label: '35 Movimiento posterior' },
+            { pos: 44, key: 'configuracion', label: 'Configuración' },
+            { pos: 45, key: 'ent', label: 'Ent' },
+            { pos: 46, key: 'dtto', label: 'Dtto' },
+            { pos: 47, key: 'modulo', label: 'Módulo' },
+            { pos: 48, key: 'resguardo', label: 'Resguardo' },
+            { pos: 49, key: 'solicitu_de_reimpresion', label: 'Solicitud de reimpresión' },
+            { pos: 50, key: 'cpv_devuelta_entrega_2', label: 'Cpv devuelta entrega 2' },
+            { pos: 51, key: 'script_ejecutado', label: 'Script ejecutado' },
+            { pos: 52, key: 'folio_nec', label: 'Folio nec' },
+            { pos: 53, key: 'cartografia', label: 'Cartografía' },
+            { pos: 54, key: 'lotes_de_credenciales', label: 'Lotes de credenciales' },
+            { pos: 55, key: 'registradas_por_dia', label: 'Registradas por día' },
+            { pos: 56, key: 'faltantes', label: 'Faltantes' },
+            { pos: 57, key: 'observaciones', label: 'Observaciones' },
+            { pos: 58, key: 'sin_nombre1', label: 'Sin nombre 1' },
+            { pos: 59, key: 'sin_nombre2', label: 'Sin nombre 2' },
+            { pos: 60, key: 'sin_nombre3', label: 'Sin nombre 3' },
+            { pos: 61, key: 'mac_que_recibe', label: 'Mac que recibe' },
+            { pos: 62, key: 'mac_que_entrega', label: 'Mac que entrega' },
+            { pos: 63, key: 'importadas', label: 'Importadas' },
+            { pos: 64, key: 'exportadas', label: 'Exportadas' },
+            { pos: 65, key: 'reposicion_reimpresion', label: 'Reposición reimpresión' },
+            { pos: 66, key: 'mal_impresa', label: 'Mal impresa' },
+            { pos: 67, key: 'error_en_cartografia', label: 'Error en cartografía' },
+            { pos: 68, key: 'defuncion', label: 'Defunción' },
+            { pos: 69, key: 'suspension', label: 'Suspensión' },
+            { pos: 70, key: 'duplicado', label: 'Duplicado' },
+            { pos: 71, key: 'error_num_de_emision', label: 'Error num de emisión' },
+            { pos: 72, key: 'perdida_de_vigencia', label: 'Pérdida de vigencia' },
+            { pos: 73, key: 'mov_post', label: 'Mov post' },
+            { pos: 74, key: 'anexas_a_solicitud', label: 'Anexas a solicitud' },
+            { pos: 75, key: 'otras_bajas', label: 'Otras bajas' },
+            { pos: 76, key: 'cif_05', label: 'Cif 05' },
+            { pos: 77, key: 'solicitud_expedicion', label: 'Solicitud expedición' },
+            { pos: 78, key: 'iniciales_a', label: 'Iniciales A' },
+            { pos: 79, key: 'iniciales_s', label: 'Iniciales S' },
+            { pos: 80, key: 'iniciales_c', label: 'Iniciales C' },
+            { pos: 81, key: 'actualizacion', label: 'Actualización' },
+            { pos: 82, key: 'sobrantes', label: 'Sobrantes' },
+            { pos: 83, key: 'disponibles_de_sol_de_exp', label: 'Disponibles de sol de exp' },
+            { pos: 84, key: 'reimpre_fuera_del_sistema', label: 'Reimpre fuera del sistema' },
+            { pos: 2, key: 'fecha', label: 'Fecha' },
+            { pos: 3, key: 'horas_trabajadas', label: 'Horas trabajadas' },
+            { pos: 4, key: 'sedes', label: 'Sedes' }
+        ];
+
+        let arregloGlobal = [];
+        let columnaOrdenActual = '';
+        let ordenAscendente = true;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            dibujarEncabezados();
+            cargarDatosFirebase();
+        });
+
+        function dibujarEncabezados() {
+            const thead = document.getElementById('cabeceraTabla');
+            if (!thead) return;
+
+            let htmlHead = '<tr>';
+            ESTRUCTURA_COLUMNAS.forEach((col) => {
+                let icono = columnaOrdenActual === col.key 
+                    ? (ordenAscendente ? '<i class="bi bi-arrow-up text-warning"></i>' : '<i class="bi bi-arrow-down text-warning"></i>')
+                    : '<i class="bi bi-arrow-down-up text-white-50" style="font-size: 9px;"></i>';
+
+                htmlHead += `<th onclick="ordenarPorColumna('${col.key}')" title="Clic para ordenar">${col.label} ${icono}</th>`;
+            });
+            htmlHead += '</tr>';
+
+            htmlHead += '<tr class="num-row">';
+            ESTRUCTURA_COLUMNAS.forEach(col => {
+                htmlHead += `<th>${col.pos}</th>`;
+            });
+            htmlHead += '</tr>';
+
+            thead.innerHTML = htmlHead;
+        }
+
+        function ordenarPorColumna(key) {
+            if (!key) return;
+
+            if (columnaOrdenActual === key) {
+                ordenAscendente = !ordenAscendente;
+            } else {
+                columnaOrdenActual = key;
+                ordenAscendente = true;
+            }
+
+            arregloGlobal.sort((a, b) => {
+                let valA = a[key] !== undefined && a[key] !== null ? String(a[key]).trim() : '';
+                let valB = b[key] !== undefined && b[key] !== null ? String(b[key]).trim() : '';
+
+                let numA = Number(valA);
+                let numB = Number(valB);
+
+                if (!isNaN(numA) && !isNaN(numB)) {
+                    return ordenAscendente ? numA - numB : numB - numA;
+                }
+
+                return ordenAscendente 
+                    ? valA.localeCompare(valB, 'es', { numeric: true }) 
+                    : valB.localeCompare(valA, 'es', { numeric: true });
+            });
+
+            dibujarEncabezados();
+            renderizarTabla(arregloGlobal);
+        }
+
+        function cargarDatosFirebase() {
+            database.ref('bd_madre').once('value').then(snapshot => {
+                let datos = snapshot.val();
+                arregloGlobal = datos ? (Array.isArray(datos) ? datos : Object.values(datos)) : [];
+                document.getElementById('lblTotalRegistros').textContent = `Total registros: ${arregloGlobal.length}`;
+                renderizarTabla(arregloGlobal);
+            });
+        }
+
+        function renderizarTabla(datos) {
+            const tbody = document.getElementById('cuerpoTabla');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            if (datos.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="${ESTRUCTURA_COLUMNAS.length}" class="text-muted py-4 fw-bold">No hay registros en la Base de Datos Principal.</td></tr>`;
+                return;
+            }
+
+            datos.forEach(item => {
+                let tr = document.createElement('tr');
+                let htmlRow = '';
+                ESTRUCTURA_COLUMNAS.forEach(col => {
+                    let valor = item[col.key] !== undefined && item[col.key] !== null ? item[col.key] : '';
+                    htmlRow += `<td>${valor}</td>`;
+                });
+                tr.innerHTML = htmlRow;
+                tbody.appendChild(tr);
+            });
+        }
+    </script>
 </body>
 </html>
