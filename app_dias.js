@@ -21,14 +21,14 @@ const db = getDatabase(app);
 // 2. CONFIGURACIÓN Y VARIABLES
 // ==========================================
 const COLUMNAS_REPORTE_DIAS = [
-    "MODULO", "DIA", "FECHA", "REMESA", "SEDES", 
-    "INICIAL", "FINAL", "TOTAL_DE_FOLIOS", "INSCRIPCIONES", 
-    "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSISION",
-    "CORR__DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", 
-    "TOTAL_DE_TRAMITES", "CANCELADOS", "TOTAL_DE_ANEXOS_POR_RECHAZO", 
-    "CPV_devuelta_entrega", "DISPONIBLES_AL_DIA_ANTERIOR", "RECIBIDAS", 
-    "ENTREGADAS", "RECIBO_Y_O_EXTRAVIO", "ANEXAS_A_FUAR", "DATOS_ERRONEOS", 
-    "FOTO_MAL_IMPRESA", "RETIRADAS_POR_OTRA_CAUSA", "DISPONIBLES"
+"Módulo", "Día", "Fecha", "Remesa", "Sedes",
+"Inicial", "Final", "Total_De_Folios", "Inscripciones",
+"Corrección_De_Datos_Personales", "Cambio_De_Domicilio", "Reposición",
+"Corr__De_Datos_Dirección", "Reincorporación", "Reemplazo", "Reimpresión",
+"Total_De_Trámites", "Cancelados", "Total_De_Anexos_Por_Rechazo",
+"Cpv_Devuelta_Entrega", "Disponibles_Al_Día_Anterior", "Recibidas",
+"Entregadas", "Recibo_Y_O_Extravío", "Anexas_A_Fuar", "Datos_Erróneos",
+"Foto_Mal_Impresa", "Retiradas_Por_Otra_Causa", "Disponibles"
 ];
 
 let bdMadreGlobal = [];
