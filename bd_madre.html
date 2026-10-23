@@ -57,10 +57,11 @@
                 <strong>BD Madre:</strong> Muestra todos los registros diarios almacenados en la nube.
             </div>
             <div class="d-flex align-items-center gap-2">
-                <button class="btn btn-sm btn-success fw-bold" onclick="exportarBDMadre()"><i class="bi bi-download"></i> Descargar Respaldo JSON</button>
+                <button class="btn btn-sm btn-success fw-bold" onclick="exportarBDMadre()"><i class="bi bi-download"></i> Descargar Respaldo</button>
                 <label class="btn btn-sm btn-warning fw-bold mb-0" style="cursor: pointer;">
-                    <i class="bi bi-upload"></i> Subir / Restaurar BD <input type="file" id="inputArchivoBD" accept=".json" style="display: none;" onchange="importarBDMadre(event)">
+                    <i class="bi bi-upload"></i> Subir / Restaurar <input type="file" id="inputArchivoBD" accept=".json" style="display: none;" onchange="importarBDMadre(event)">
                 </label>
+                <button class="btn btn-sm btn-danger fw-bold" onclick="vaciarBDMadre()"><i class="bi bi-trash-fill"></i> Vaciar BD</button>
                 <div id="semaforoConexion" class="badge bg-success">Conectado</div>
             </div>
         </div>
@@ -149,6 +150,16 @@
             document.body.appendChild(downloadAnchor);
             downloadAnchor.click();
             downloadAnchor.remove();
+        };
+
+        window.vaciarBDMadre = function() {
+            if (confirm("¡ATENCIÓN! ¿Estás completamente seguro de ELIMINAR Y VACIAR por completo toda la Base de Datos Principal (BD Madre)? Esta acción borrará todos los registros de la nube y no se puede deshacer.")) {
+                if (confirm("Confirma nuevamente: ¿Deseas vaciar toda la BD Madre?")) {
+                    database.ref('bd_madre').set(null)
+                        .then(() => alert("¡Base de datos vaciada con éxito!"))
+                        .catch(err => alert("Error al vaciar la base de datos: " + err.message));
+                }
+            }
         };
 
         window.importarBDMadre = function(event) {
