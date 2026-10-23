@@ -1,194 +1,143 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vaciado de Datos MAC - Sistema Principal</title>
-    
-    <!-- Bootstrap 5 CSS e Iconos -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-
-    <!-- Firebase SDK v8 -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-
-    <style>
-        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .header-banner { background: linear-gradient(135deg, #0dcaf0, #055160); color: white; padding: 18px 0; border-bottom: 5px solid #1b396b; margin-bottom: 15px; }
-        
-        /* Contenedor de Tabla con Scroll Horizontal */
-        .excel-container { width: 100%; max-height: 60vh; overflow-x: auto !important; overflow-y: auto; border: 1px solid #ced4da; background: white; border-radius: 6px; }
-        .excel-table { margin-bottom: 0; table-layout: auto !important; width: max-content; }
-        .excel-table thead th { 
-            position: sticky; top: 0; z-index: 3; font-size: 10px; font-weight: 700; background-color: #1b396b !important; 
-            color: white; text-align: center; vertical-align: middle; white-space: normal !important; word-wrap: break-word !important; 
-            min-width: 120px !important; max-width: 160px !important; padding: 6px 4px !important; line-height: 1.2; cursor: pointer;
-        }
-        /* CORREGIDO: top en 62px para evitar que la barra gris tape la fila de lunes */
-        .excel-table thead tr.num-row th { 
-            top: 25px; 
-            z-index: 2; 
-            background-color: #e9ecef !important; 
-            color: #212529 !important; 
-            font-size: 11px; 
-            padding: 3px !important; 
-            border-bottom: 2px solid #2d3436; 
-        }
-        
-        .excel-table td { padding: 4px 6px; border: 1px solid #ccc; text-align: center; vertical-align: middle; font-size: 11px; white-space: nowrap; }
-        .excel-table tr.fila-totales td { background-color: #d1e7dd !important; font-weight: 800; color: #0f5132; }
-        .excel-table td.col-dia { font-weight: 700; background-color: #f8f9fa; text-align: left; position: sticky; left: 0; z-index: 1; border-right: 2px solid #b2bec3; }
-
-        .caja-pegado { border: 2px dashed #0d6efd; background-color: #e7f1ff; color: #0d6efd; border-radius: 8px; padding: 14px; text-align: center; font-size: 1.1rem; font-weight: 700; cursor: pointer; user-select: none; }
-        .caja-pegado:hover, .caja-pegado:focus { background-color: #cfe2ff; border-color: #0a58ca; outline: none; }
-
-        .nav-tabs .nav-link { font-weight: 700; color: #1b396b; }
-        .nav-tabs .nav-link.active { background-color: #1b396b !important; color: white !important; }
-        .nav-tabs .nav-link.tab-totales.active { background-color: #ffc107 !important; color: #000 !important; }
-
-        .spin { animation: spin 1s linear infinite; }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema de Reportes MAC - MACs APP</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1b396b">
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      background-color: #f4f6f9;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 60px;
+      background-color: #1b396b;
+      color: white;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 45px;
+      background-color: #1b396b;
+      color: white;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+    }
+    .main-container {
+      margin-top: 60px;
+      margin-bottom: 45px;
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+    }
+  </style>
 </head>
-<body class="d-flex flex-column min-vh-100">
+<body>
+  <header>
+    <div class="d-flex align-items-center">
+      <i class="fas fa-chart-line fa-lg me-2"></i>
+      <span class="fw-bold">MACs APP v11.0</span>
+    </div>
+    <div>
+      <span class="badge bg-light text-dark">INE - 03 Junta Distrital Ejecutiva</span>
+    </div>
+  </header>
 
-    <!-- MENÚ DE NAVEGACIÓN PRINCIPAL -->
-    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #1b396b;">
-      <div class="container-fluid px-4">
-        <a class="navbar-brand fw-bold" href="index.html"><i class="bi bi-hdd-network"></i> SISTEMA MAC</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-          <ul class="navbar-nav ms-auto gap-2">
-            <li class="nav-item"><a class="nav-link active bg-primary rounded px-3 text-white fw-bold" href="index.html"><i class="bi bi-pencil-square"></i> Vaciado de Datos</a></li>
-            <li class="nav-item"><a class="nav-link text-light px-3" href="reporte_dias.html"><i class="bi bi-calendar3"></i> Reporte Días</a></li>
-            <li class="nav-item"><a class="nav-link text-light px-3" href="reporte_semanal.html"><i class="bi bi-calendar-week"></i> Reporte Semanal</a></li>
-            <li class="nav-item"><a class="nav-link text-light px-3" href="reporte_campana.html"><i class="bi bi-bar-chart-fill"></i> Reporte Campaña</a></li>
-            <li class="nav-item"><a class="nav-link text-light px-3" href="reporte_acumulado.html"><i class="bi bi-archive-fill"></i> Reporte Acumulado</a></li>
-            <li class="nav-item"><a class="nav-link text-light px-3" href="bd_madre.html"><i class="bi bi-database-fill"></i> BD Principal</a></li>
-          </ul>
+  <div class="main-container container">
+    <div class="row justify-content-center">
+      <div class="col-md-8 text-center mt-3">
+        <h2 class="text-primary mb-2">Sistema de Reportes Diarios - Módulos MAC</h2>
+        <p class="text-muted mb-3">Gestión integral de módulos (050351, 050353, 050354), vaciado, reportes diarios, acumulados y campaña de lunes a sábado.</p>
+      </div>
+    </div>
+    <div class="row g-3 justify-content-center mt-1">
+      <div class="col-md-3">
+        <div class="card shadow-sm h-100 border-primary">
+          <div class="card-body text-center d-flex flex-column justify-content-between">
+            <div>
+              <i class="fas fa-edit fa-2x text-primary mb-2"></i>
+              <h6 class="card-title fw-bold">Vaciado de Datos</h6>
+              <p class="card-text text-muted small">Captura y edición por módulo (050351, etc.).</p>
+            </div>
+            <a href="vaciado.html" class="btn btn-primary btn-sm mt-2"><i class="fas fa-arrow-right me-1"></i> Ingresar</a>
+          </div>
         </div>
       </div>
-    </nav>
-
-    <div class="header-banner text-center d-flex justify-content-center align-items-center">
-        <div>
-            <h1 class="fw-bold mb-0"><i class="bi bi-pencil-square"></i> Vaciado de BD Totales</h1>
-            <p class="lead mb-0">Gestión e importación de la base de datos general</p>
-        </div>
-    </div>
-
-    <div class="container-fluid px-4 flex-grow-1">
-        
-        <!-- BARRA DE CONTROLES E INICIALES -->
-        <div class="card shadow-sm mb-3 border-0">
-            <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3 bg-white rounded border">
-                
-                <div class="d-flex flex-wrap gap-3">
-                    <!-- RECTÁNGULO CAMPAÑA (Rosa) -->
-                    <div class="p-2 rounded shadow-sm" style="background-color: #ff99ff; border: 2px solid #ff4dff;">
-                        <span class="fw-bold text-dark d-block text-center mb-1" style="font-size: 11px;"><i class="bi bi-bar-chart-fill"></i> INICIALES CAMPAÑA (C)</span>
-                        <div class="d-flex gap-2">
-                            <input type="text" id="camp_50351" class="form-control form-control-sm text-center fw-bold" placeholder="50351" style="width: 75px;">
-                            <input type="text" id="camp_50353" class="form-control form-control-sm text-center fw-bold" placeholder="50353" style="width: 75px;">
-                            <input type="text" id="camp_50354" class="form-control form-control-sm text-center fw-bold" placeholder="50354" style="width: 75px;">
-                        </div>
-                    </div>
-
-                    <!-- RECTÁNGULO ACUMULADO (Rojo) -->
-                    <div class="p-2 rounded shadow-sm" style="background-color: #e63946; border: 2px solid #b71c1c;">
-                        <span class="fw-bold text-white d-block text-center mb-1" style="font-size: 11px;"><i class="bi bi-archive-fill"></i> INICIALES ACUMULADO (A)</span>
-                        <div class="d-flex gap-2">
-                            <input type="text" id="acum_50351" class="form-control form-control-sm text-center fw-bold" placeholder="50351" style="width: 75px;">
-                            <input type="text" id="acum_50353" class="form-control form-control-sm text-center fw-bold" placeholder="50353" style="width: 75px;">
-                            <input type="text" id="acum_50354" class="form-control form-control-sm text-center fw-bold" placeholder="50354" style="width: 75px;">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ACCIONES Y BOTONES DE CONTROL -->
-                <div class="d-flex align-items-center gap-2">
-                    <button class="btn btn-outline-danger fw-bold" onclick="vaciarMesaTrabajo()"><i class="bi bi-trash"></i> Limpiar Pantalla</button>
-                    <button class="btn btn-outline-secondary fw-bold" onclick="descargarRespaldoJSON()"><i class="bi bi-download"></i> Respaldo</button>
-                    
-                    <!-- BOTÓN GUARDAR EN BD MADRE -->
-                    <button class="btn btn-success fw-bold shadow-sm" id="btnGuardarMadre" onclick="guardarEnBaseMadre()"><i class="bi bi-cloud-arrow-up-fill"></i> Guardar en BD Madre</button>
-                </div>
+      <div class="col-md-3">
+        <div class="card shadow-sm h-100 border-success">
+          <div class="card-body text-center d-flex flex-column justify-content-between">
+            <div>
+              <i class="fas fa-table fa-2x text-success mb-2"></i>
+              <h6 class="card-title fw-bold">Reportes Diarios</h6>
+              <p class="card-text text-muted small">Tablas con 21 líneas visibles y scroll.</p>
             </div>
+            <a href="reportes.html" class="btn btn-success btn-sm mt-2"><i class="fas fa-arrow-right me-1"></i> Ingresar</a>
+          </div>
         </div>
-
-        <!-- PESTAÑAS DE NAVEGACIÓN -->
-        <ul class="nav nav-tabs fw-bold mb-2" id="tabsModulos">
-            <li class="nav-item">
-                <button class="nav-link active" id="btn-tab-050351" onclick="cambiarModulo('050351')"><i class="bi bi-laptop"></i> Módulo 050351</button>
-            </li>
-            <li class="nav-item">
-                <button class="nav-link" id="btn-tab-050353" onclick="cambiarModulo('050353')"><i class="bi bi-laptop"></i> Módulo 050353</button>
-            </li>
-            <li class="nav-item">
-                <button class="nav-link" id="btn-tab-050354" onclick="cambiarModulo('050354')"><i class="bi bi-laptop"></i> Módulo 050354</button>
-            </li>
-            <li class="nav-item">
-                <button class="nav-link tab-totales text-dark fw-bold" id="btn-tab-TOTALES" style="background-color: #ffc107;" onclick="cambiarModulo('TOTALES')">
-                    <i class="bi bi-calculator-fill"></i> Totales Generales
-                </button>
-            </li>
-        </ul>
-
-        <div class="card shadow-sm border-0 mb-3">
-            <div class="card-body bg-white rounded border">
-                
-                <div class="alert alert-info py-2 px-3 mb-2 fw-bold d-flex justify-content-between align-items-center">
-                    <span id="lblMensajeAyuda">Módulo <span id="lblModuloActivo">050351</span>: Pega los datos con Ctrl+V. Haz doble clic en un encabezado para cambiar su nombre.</span>
-                    <span id="semaforoConexion" class="badge bg-success text-white"><i class="bi bi-check-circle"></i> Conectado</span>
-                </div>
-
-                <!-- ACCIONES ESPECÍFICAS DE TOTALES GENERALES -->
-                <div id="panelAccionesTotales" class="alert alert-warning py-2 px-3 mb-3 d-none justify-content-between align-items-center">
-                    <span class="fw-bold fs-6">
-                        <i class="bi bi-info-circle-fill"></i> Vaciado Consolidado Remesa: <span id="lblRemesaNumero" class="badge bg-dark text-white fs-6">S/N</span>
-                    </span>
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-sm btn-success fw-bold" onclick="guardarEnBaseTotales()"><i class="bi bi-cloud-upload-fill"></i> Guardar en BD Totales</button>
-                        <a href="bdtotales.html" class="btn btn-sm btn-dark fw-bold"><i class="bi bi-box-arrow-up-right"></i> Ir a BD Totales</a>
-                    </div>
-                </div>
-
-                <!-- CAJA DE PEGADO -->
-                <div class="caja-pegado mb-3" id="areaPegado" tabindex="0">
-                    <i class="bi bi-clipboard-plus fs-4 d-block mb-1"></i>
-                    Clic aquí y Ctrl+V para pegar datos del Módulo <span id="lblModuloPegado">050351</span>
-                </div>
-
-                <!-- TABLA MATRIZ CON SCROLL HORIZONTAL -->
-                <div class="excel-container shadow-sm">
-                    <table class="excel-table table table-hover" id="tablaVaciado">
-                        <thead id="cabeceraVaciado"></thead>
-                        <tbody id="cuerpoVaciado"></tbody>
-                    </table>
-                </div>
-
+      </div>
+      <div class="col-md-3">
+        <div class="card shadow-sm h-100 border-info">
+          <div class="card-body text-center d-flex flex-column justify-content-between">
+            <div>
+              <i class="fas fa-chart-bar fa-2x text-info mb-2"></i>
+              <h6 class="card-title fw-bold">Reporte Acumulado</h6>
+              <p class="card-text text-muted small">Consolidado general de trámites.</p>
             </div>
+            <a href="acumulado.html" class="btn btn-info btn-sm text-white mt-2"><i class="fas fa-arrow-right me-1"></i> Ingresar</a>
+          </div>
         </div>
-
+      </div>
+      <div class="col-md-3">
+        <div class="card shadow-sm h-100 border-warning">
+          <div class="card-body text-center d-flex flex-column justify-content-between">
+            <div>
+              <i class="fas fa-bullhorn fa-2x text-warning mb-2"></i>
+              <h6 class="card-title fw-bold">Campaña</h6>
+              <p class="card-text text-muted small">Módulos, remesas y Lunes a Sábado.</p>
+            </div>
+            <a href="campana.html" class="btn btn-warning btn-sm mt-2"><i class="fas fa-arrow-right me-1"></i> Ingresar</a>
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <!-- OVERLAY DE CARGA -->
-    <div id="loadingOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; color: white;">
-        <div class="spinner-border text-info" style="width: 3.5rem; height: 3.5rem;" role="status"></div>
-        <h4 class="mt-3 fw-bold" id="lblOverlayTexto">Procesando y guardando datos...</h4>
-    </div>
+  <footer>
+    <span>Carrivers Desing &copy; 2026 - Instituto Nacional Electoral Coahuila</span>
+  </footer>
 
-    <footer class="text-center py-3 mt-auto text-white" style="background-color: #1b396b;">
-        <small>
-            &copy; 2026 Todos los derechos reservados.<br>
-            Desarrollado por <span class="text-info fw-bold">Carrivers Desing</span> para Módulos MAC.
-        </small>
-    </footer>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="app_vaciado.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then((reg) => console.log('Service Worker registrado', reg))
+          .catch((err) => console.log('Error SW', err));
+      });
+    }
+  </script>
 </body>
 </html>

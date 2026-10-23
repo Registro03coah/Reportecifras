@@ -1,0 +1,51 @@
+{
+  "dias_operativos": [
+    {
+      "dia": "Lunes",
+      "activo": true,
+      "horario": "08:00 - 20:00"
+    },
+    {
+      "dia": "Martes",
+      "activo": true,
+      "horario": "08:00 - 20:00"
+    },
+    {
+      "dia": "Miércoles",
+      "activo": true,
+      "horario": "08:00 - 20:00"
+    },
+    {
+      "dia": "Jueves",
+      "activo": true,
+      "horario": "08:00 - 20:00"
+    },
+    {
+      "dia": "Viernes",
+      "activo": true,
+      "horario": "08:00 - 20:00"
+    },
+    {
+      "dia": "Sábado",
+      "activo": true,
+      "horario": "09:00 - 14:00"
+    }
+  ],
+  "modulos": [
+    {
+      "id": "050351",
+      "nombre": "Módulo 01",
+      "sede": "Monclova Centro"
+    },
+    {
+      "id": "050353",
+      "nombre": "Módulo 03",
+      "sede": "Frontera"
+    },
+    {
+      "id": "050354",
+      "nombre": "Módulo 04",
+      "sede": "Castaños"
+    }
+  ]
+}

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reporte Acumulado - MACs APP</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1b396b">
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      background-color: #f4f6f9;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 60px;
+      background-color: #1b396b;
+      color: white;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 45px;
+      background-color: #1b396b;
+      color: white;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+    }
+    .main-container {
+      margin-top: 70px;
+      margin-bottom: 55px;
+      flex: 1;
+      overflow-y: auto;
+      padding: 15px;
+    }
+    .table-container-21 {
+      max-height: 580px;
+      overflow-y: auto;
+      overflow-x: auto;
+      background: white;
+      border: 1px solid #dee2e6;
+      border-radius: 0.375rem;
+    }
+    .table-container-21 table {
+      margin-bottom: 0;
+      white-space: nowrap;
+    }
+    .table-container-21 th {
+      position: sticky;
+      top: 0;
+      background-color: #1b396b;
+      color: white;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="d-flex align-items-center">
+      <a href="index.html" class="text-white me-3 text-decoration-none"><i class="fas fa-arrow-left"></i></a>
+      <span class="fw-bold">Reporte Acumulado</span>
+    </div>
+    <div>
+      <span class="badge bg-light text-dark">INE Coahuila</span>
+    </div>
+  </header>
+
+  <div class="main-container container-fluid">
+    <div class="card shadow-sm mb-3">
+      <div class="card-body py-2 bg-light d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+          <label for="filtroModuloAcumulado" class="fw-bold mb-0">Módulo:</label>
+          <select id="filtroModuloAcumulado" class="form-select form-select-sm" style="width: 150px;">
+            <option value="">Todos (050351, 53, 54)</option>
+            <option value="050351">050351</option>
+            <option value="050353">050353</option>
+            <option value="050354">050354</option>
+          </select>
+        </div>
+        <div>
+          <button class="btn btn-outline-primary btn-sm"><i class="fas fa-file-excel me-1"></i> Exportar Excel</button>
+          <button class="btn btn-outline-danger btn-sm"><i class="fas fa-file-pdf me-1"></i> Exportar PDF</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card shadow-sm">
+      <div class="card-header bg-white py-3">
+        <h5 class="mb-0 text-primary fw-bold"><i class="fas fa-chart-bar me-2"></i> Acumulado Consolidado (21 Líneas Visibles con Scroll)</h5>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-container-21">
+          <table class="table table-striped table-hover align-middle table-sm">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Módulo</th>
+                <th>Remesa</th>
+                <th>Periodo</th>
+                <th>Sedes</th>
+                <th>Total Folios Acumulados</th>
+                <th>Inscripciones</th>
+                <th>Corrección Datos</th>
+                <th>Cambio Domicilio</th>
+                <th>Reposición</th>
+                <th>Reincorporación</th>
+                <th>Reemplazo</th>
+                <th>Reimpresión</th>
+                <th>Total Trámites Acumulados</th>
+                <th>Cancelados</th>
+                <th>Estatus</th>
+              </tr>
+            </thead>
+            <tbody id="tablaAcumuladoBody">
+              <script>
+                const mods = ["050351", "050353", "050354"];
+                const sedes = ["Monclova Centro", "Frontera", "Castaños"];
+                for (let i = 1; i <= 25; i++) {
+                  let m = mods[(i - 1) % 3];
+                  let s = sedes[(i - 1) % 3];
+                  document.write(`
+                    <tr>
+                      <td>${i}</td>
+                      <td><strong>${m}</strong></td>
+                      <td>01</td>
+                      <td>2026-10-01 al 2026-10-22</td>
+                      <td>${s}</td>
+                      <td>${4500 + (i * 100)}</td>
+                      <td>${900 + (i * 10)}</td>
+                      <td>${250 + (i * 5)}</td>
+                      <td>${1400 + (i * 15)}</td>
+                      <td>${350 + (i * 4)}</td>
+                      <td>${150 + (i * 2)}</td>
+                      <td>${80 + i}</td>
+                      <td>${120 + i}</td>
+                      <td>${3250 + (i * 40)}</td>
+                      <td>${i * 2}</td>
+                      <td><span class="badge bg-success">Validado</span></td>
+                    </tr>
+                  `);
+                }
+              </script>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <span>Carrivers Desing &copy; 2026 - MACs APP v11.0</span>
+  </footer>
+
+  <script>
+    document.getElementById('filtroModuloAcumulado').addEventListener('change', function() {
+      const val = this.value;
+      const rows = document.querySelectorAll('#tablaAcumuladoBody tr');
+      rows.forEach(row => {
+        if (!val) {
+          row.style.display = '';
+        } else {
+          const modText = row.cells[1].textContent.trim();
+          if (modText === val) {
+            row.style.display = '';
+          } else {
+            row.style.display = 'none';
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>
