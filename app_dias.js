@@ -1,3 +1,6 @@
+// ==========================================
+// 1. IMPORTACIONES FIREBASE (Modular V10)
+// ==========================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
@@ -14,6 +17,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
+// ==========================================
+// 2. CONFIGURACIÓN Y VARIABLES
+// ==========================================
 const COLUMNAS_REPORTE_DIAS = [
     "MODULO", "DIA", "FECHA", "REMESA", "SEDES", 
     "INICIAL", "FINAL", "TOTAL_DE_FOLIOS", "INSCRIPCIONES", 
@@ -31,6 +37,9 @@ let anchosGuardados = JSON.parse(localStorage.getItem('anchosColumnasDias')) || 
 let columnaOrdenActual = ''; 
 let ordenAscendente = false; 
 
+// ==========================================
+// 3. SEMÁFORO DE CONEXIÓN FIREBASE
+// ==========================================
 const connectedRef = ref(db, ".info/connected");
 onValue(connectedRef, (snap) => {
     const semaforo = document.getElementById("semaforoConexion");
@@ -44,6 +53,9 @@ onValue(connectedRef, (snap) => {
     }
 });
 
+// ==========================================
+// 4. GENERADOR DE CABECERA (SIN LÍNEA DE NÚMEROS)
+// ==========================================
 function construirHeaderTabla() {
     const thead = document.getElementById('cabeceraTablaDias');
     if(!thead) return;
@@ -84,8 +96,29 @@ function construirHeaderTabla() {
     });
     
     thead.appendChild(trTitulos); 
-}
 
+    const observer = new ResizeObserver(entries => {
+        let cambiados = false;
+        for (let entry of entries) {
+            const colName = entry.target.getAttribute('data-col');
+            const newWidth = entry.borderBoxSize[0].inlineSize + 'px';
+            if(anchosGuardados[colName] !== newWidth) {
+                anchosGuardados[colName] = newWidth;
+                cambiados = true;
+            }
+        }
+        if(cambiados) {
+            localStorage.setItem('anchosColumnasDias', JSON.stringify(anchosGuardados));
+            actualizarStickyLeft();
+        }
+    });
+
+    const ths = trTitulos.querySelectorAll('th');
+    ths.forEach(th => observer.observe(th));
+}
+// ==========================================
+// 5. LECTURA Y ORDENAMIENTO INTELIGENTE
+// ==========================================
 function obtenerValorFila(fila, col) {
     if (col === "MODULO") return fila["MÓDULO"] || fila["Módulo"] || fila["Modulo"] || fila["MODULO"] || '';
     if (col === "DIA") return fila["DÍA"] || fila["Día"] || fila["Dia"] || fila["DIA"] || '';
@@ -135,6 +168,23 @@ function procesarYMostrarDatos() {
     };
 
     let datosOrdenados = [...bdMadreGlobal].sort((a, b) => {
+        if (columnaOrdenActual !== '') {
+            let valA = String(obtenerValorFila(a, columnaOrdenActual)).trim();
+            let valB = String(obtenerValorFila(b, columnaOrdenActual)).trim();
+            
+            let numA = parseFloat(valA);
+            let numB = parseFloat(valB);
+            
+            if (!isNaN(numA) && !isNaN(numB) && valA !== '' && valB !== '') {
+                if (numA < numB) return ordenAscendente ? -1 : 1;
+                if (numA > numB) return ordenAscendente ? 1 : -1;
+            } else {
+                let comp = valA.toUpperCase().localeCompare(valB.toUpperCase());
+                if (comp !== 0) return ordenAscendente ? comp : -comp;
+            }
+        }
+        
+        // ORDEN POR DEFECTO: Remesa (Mayor a Menor) -> Módulo (Ascendente) -> Día (Lunes a Domingo)
         let remA = String(obtenerValorFila(a, "REMESA")).trim();
         let remB = String(obtenerValorFila(b, "REMESA")).trim();
         if (remA !== remB) {
@@ -166,8 +216,13 @@ function procesarYMostrarDatos() {
         
         tbody.appendChild(tr);
     });
+
+    setTimeout(actualizarStickyLeft, 100);
 }
 
+// ==========================================
+// 6. FUNCIÓN PARA COPIAR A EXCEL
+// ==========================================
 window.copiarTablaExcel = function(tablaId) {
     const tabla = document.getElementById(tablaId);
     if (!tabla) return;
@@ -191,5 +246,6 @@ window.copiarTablaExcel = function(tablaId) {
     selection.removeAllRanges();
 };
 
+// Iniciar
 construirHeaderTabla();
 cargarDatosDias();

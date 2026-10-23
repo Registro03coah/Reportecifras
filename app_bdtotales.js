@@ -65,6 +65,70 @@ function obtenerClaveCanonica(key) {
     return key;
 }
 
+// MAPA DE ETIQUETAS VISUALES CON ACENTOS Y NOMBRE PROPIO
+const LABELS_VISUALES = {
+    "IDMAC": "IDMAC",
+    "REMESA": "Remesa",
+    "MODULO": "Módulo",
+    "INICIAL": "Inicial",
+    "FINAL": "Final",
+    "TOTAL_DE_FOLIOS": "Total de folios",
+    "NO_UTILIZADOS": "No utilizados",
+    "INSCRIPCIONES": "Inscripciones",
+    "CORRECCION_DE_DATOS_PERSONALES": "Corrección de datos personales",
+    "CAMBIO_DE_DOMICILIO": "Cambio de domicilio",
+    "REPOSISION": "Reposición",
+    "REPOSICION": "Reposición",
+    "CORR__DE_DATOS_DIRECCION": "Corr. de datos dirección",
+    "CORR_DE_DATOS_DIRECCION": "Corr. de datos dirección",
+    "REINCORPORACION": "Reincorporación",
+    "REEMPLAZO": "Reemplazo",
+    "TOTAL_DE_TRAMITES": "Total de trámites",
+    "RECHAZOS_DE_MAC_34": "34 Imagen inconsistente",
+    "34_IMAGEN_INCONSISTENTE": "34 Imagen inconsistente",
+    "RECHAZOS_DE_MAC_35": "35 Movimiento posterior",
+    "35_MOVIMIENTO_POSTERIOR": "35 Movimiento posterior",
+    "CANCELADOS": "Cancelados",
+    "TOTAL_DE_MOVIMIENTOS": "Total de movimientos",
+    "CIF_05": "Cif 05",
+    "CIF-05": "Cif 05",
+    "SOLICITUD_EXPEDICION": "Solicitud expedición",
+    "SOLICITUD_RECTIFICACION": "Solicitud de rectificación",
+    "DEMANDA_DE_JUICIO": "Demanda de juicio",
+    "INICIALES_A": "Iniciales A",
+    "INICIALES_S": "Iniciales S",
+    "INICIALES_C": "Iniciales C",
+    "ACTUALIZACION": "Actualización",
+    "ACTUALIZACIÓN": "Actualización",
+    "RECIBIDAS_DE_OTROS_TIPOS": "Recibidas de otros tipos",
+    "IMPORTADAS": "Importadas",
+    "EXPORTADAS": "Exportadas",
+    "ENTREGADAS": "Entregadas",
+    "ANEXAS_A_FUAR": "Anexas a fuar",
+    "RESGUARDO": "Resguardo",
+    "SOLICITU_DE_REIMPRESION": "Solicitud de reimpresión",
+    "SOLICITUD_DE_REIMPRESION": "Solicitud de reimpresión",
+    "REIMPRESION": "Reimpresión",
+    "RECIBO_Y_O_EXTRAVIO": "Recibo y/o extravío",
+    "RETIRADAS_POR_OTRA_CAUSA": "Retiradas por causa",
+    "SOBRANTES": "Sobrantes",
+    "DUPLICADO": "Duplicado",
+    "DISPONIBLES": "Disponibles",
+    "DISPONIBLES_DE_SOL_DE_EXP": "Disponibles de sol de exp",
+    "REIMPRE_FUERA_DEL_SISTEMA": "Reimpre fuera del sistema",
+    "CREDEN_DEVUELTAS_POR_TERCEROS": "Devueltas por terceros",
+    "CRED_PRODUCTO_DE_REGISTRO_DUPLICADO": "Cred producto de registro duplicado",
+    "CRED_PROD_CANJE_POR_NUEVA": "Cred prod canje por nueva",
+    "DIAS_TRABAJADOS": "Días trabajados",
+    "CONFIGURACION": "Configuración"
+};
+
+function obtenerNombreVisual(col) {
+    const norm = normalizarNombreColumna(col);
+    if (LABELS_VISUALES[norm]) return LABELS_VISUALES[norm];
+    return col.replace(/_/g, ' ').toLowerCase().replace(/^\w/, c => c.toUpperCase());
+}
+
 database.ref('bdtotales').on('value', (snapshot) => {
     let datos = snapshot.val();
     datosGlobalesBd = datos ? (Array.isArray(datos) ? datos : Object.values(datos)) : [];
@@ -287,8 +351,7 @@ function dibujarTablaBd(datosArreglo) {
     trHead += `<th class="text-white text-center" style="color: white !important; min-width: 100px; vertical-align: top;">ACCIONES</th>`;
 
     columnas.forEach(col => {
-        let nombreColumnaVisual = col.replace('CORR__DE_DATOS_DIRECCION', 'CORR._DE_DATOS_DIRECCION')
-                                     .replace('RECIBO_Y_O_EXTRAVIO', 'RECIBO_Y/O_EXTRAVIO');
+        let nombreColumnaVisual = obtenerNombreVisual(col);
         
         let iconoFlechita = '<i class="bi bi-arrow-down-up ms-1" style="font-size: 0.8em; color: rgba(255,255,255,0.4);"></i>';
         if (columnaOrdenActual === col) {
@@ -354,8 +417,7 @@ window.editarRegistroLinea = function(idmac) {
             valor = valor.split('T')[0];
         }
 
-        let nombreVisual = clave.replace('CORR__DE_DATOS_DIRECCION', 'CORR._DE_DATOS_DIRECCION')
-                                .replace('RECIBO_Y_O_EXTRAVIO', 'RECIBO_Y/O_EXTRAVIO');
+        let nombreVisual = obtenerNombreVisual(clave);
 
         const colDiv = document.createElement('div');
         colDiv.className = 'col-md-6 mb-3';

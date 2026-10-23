@@ -6,6 +6,11 @@
     <title>Base de Datos Principal - Sistema MAC</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <!-- Firebase SDK v8 -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
     <style>
         body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .header-banner { background: linear-gradient(135deg, #1b396b, #0dcaf0); color: white; padding: 20px 0; border-bottom: 5px solid #055160; margin-bottom: 20px; }
@@ -13,7 +18,7 @@
         .excel-table { margin-bottom: 0; table-layout: auto; }
         .excel-table thead th { 
             position: sticky; top: 0; z-index: 3; font-size: 11px; font-weight: 700; background-color: #1b396b !important; 
-            color: white !important; text-align: center; vertical-align: middle; padding: 8px 6px;
+            color: white !important; text-align: center; vertical-align: middle; padding: 8px 6px; white-space: normal;
         }
         .excel-table td { padding: 6px 8px; border: 1px solid #ccc; text-align: center; vertical-align: middle; font-size: 11px; white-space: nowrap; }
     </style>
@@ -47,13 +52,14 @@
     </div>
 
     <div class="container-fluid px-4 flex-grow-1">
-        <div class="alert alert-info shadow-sm">
+        <div class="alert alert-info shadow-sm d-flex justify-content-between align-items-center">
             <strong>BD Madre:</strong> Muestra todos los registros diarios almacenados en la nube.
+            <div id="semaforoConexion" class="badge bg-success">Conectado</div>
         </div>
         <div class="excel-container shadow-sm mb-3">
             <table class="excel-table table table-hover" id="tablaBdMadre">
-                <thead></thead>
-                <tbody></tbody>
+                <thead id="cabeceraBdMadre"></thead>
+                <tbody id="cuerpoBdMadre"></tbody>
             </table>
         </div>
     </div>
@@ -66,5 +72,57 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo",
+            authDomain: "cifrasmac.firebaseapp.com",
+            databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com",
+            projectId: "cifrasmac",
+            storageBucket: "cifrasmac.firebasestorage.app",
+            messagingSenderId: "916644687837",
+            appId: "1:916644687837:web:03d346cc48a071af1ed034"
+        };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        database.ref('bd_madre').on('value', (snapshot) => {
+            let data = snapshot.val();
+            let arr = data ? (Array.isArray(data) ? data : Object.values(data)) : [];
+            const thead = document.getElementById('cabeceraBdMadre');
+            const tbody = document.getElementById('cuerpoBdMadre');
+            if(!thead || !tbody) return;
+
+            thead.innerHTML = '';
+            tbody.innerHTML = '';
+
+            if (arr.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="100%" class="text-center py-4 text-muted">No hay registros en la BD Madre.</td></tr>';
+                return;
+            }
+
+            let keysSet = new Set();
+            arr.forEach(item => Object.keys(item).forEach(k => keysSet.add(k)));
+            let keys = Array.from(keysSet);
+
+            let trH = '<tr>';
+            keys.forEach(k => {
+                let visual = k.replace(/_/g, ' ').toUpperCase();
+                trH += `<th>${visual}</th>`;
+            });
+            trH += '</tr>';
+            thead.innerHTML = trH;
+
+            let htmlB = '';
+            arr.forEach(item => {
+                htmlB += '<tr>';
+                keys.forEach(k => {
+                    let val = item[k] !== undefined && item[k] !== null ? item[k] : '';
+                    htmlB += `<td>${val}</td>`;
+                });
+                htmlB += '</tr>';
+            });
+            tbody.innerHTML = htmlB;
+        });
+    </script>
 </body>
 </html>

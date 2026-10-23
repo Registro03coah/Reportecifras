@@ -1,3 +1,6 @@
+// ==========================================
+// 1. IMPORTACIONES Y CONFIGURACIÓN FIREBASE (REPORTE CAMPAÑA)
+// ==========================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, get, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
@@ -14,6 +17,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
+// COLUMNAS EXACTAS SEGÚN TU IMAGEN (CAMPAÑA)
 const COLUMNAS_CAMPANA_KEYS = [
     "ENT", "DTTO", "MODULO", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS", 
     "NO_UTILIZADOS", "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", 

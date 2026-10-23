@@ -49,7 +49,7 @@ function generarIdMac(remesa, modulo) {
     return `${modDigits}${numPart}${suffix}`;
 }
 
-// ESTRUCTURA DE 84 COLUMNAS
+// ESTRUCTURA DE 84 COLUMNAS (KEYS EN MINÚSCULAS Y LABELS TIPO NOMBRE PROPIO)
 let ESTRUCTURA_COLUMNAS = [
     { pos: 1, key: 'dia', label: 'Día' },
     { pos: 5, key: 'inicial', label: 'Inicial' },
@@ -149,6 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+// NAVEGACIÓN Y CAMBIO DE PESTAÑAS
 window.cambiarModulo = function(modulo) {
     moduloSeleccionado = modulo;
     
