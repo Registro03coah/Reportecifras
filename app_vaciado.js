@@ -142,7 +142,7 @@ const DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sáb
 document.addEventListener('DOMContentLoaded', () => {
     dibujarEncabezadosYNumeros();
     cargarDatosInicialesFirebase();
-    inicializarPersistenciaIniciales(); // <-- CARGA Y GUARDA AUTOMÁTICAMENTE LAS INICIALES
+    sincronizarInicialesFirebase(); // <-- CARGA Y GUARDA EN FIREBASE EN TIEMPO REAL
 
     const areaPegado = document.getElementById('areaPegado');
     if (areaPegado) {
@@ -150,23 +150,39 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// FUNCIÓN PARA QUE LAS INICIALES NUNCA SE BORREN AL REINICIAR LA PÁGINA
-function inicializarPersistenciaIniciales() {
+// FUNCIÓN PARA SINCRONIZAR LAS INICIALES DIRECTAMENTE EN FIREBASE
+function sincronizarInicialesFirebase() {
     const idsInputs = ['camp_50351', 'camp_50353', 'camp_50354', 'acum_50351', 'acum_50353', 'acum_50354'];
+    const refConfig = database.ref('config/iniciales');
 
+    // 1. Cargar desde Firebase al abrir la página
+    refConfig.on('value', snapshot => {
+        let datos = snapshot.val() || {};
+        idsInputs.forEach(id => {
+            const el = document.getElementById(id);
+            if (el && datos[id] !== undefined) {
+                // Solo actualizar si el usuario no está escribiendo activamente en ese campo
+                if (document.activeElement !== el) {
+                    el.value = datos[id];
+                }
+            }
+        });
+    });
+
+    // 2. Guardar en Firebase automáticamente cada vez que el usuario modifique un campo
     idsInputs.forEach(id => {
-        const inputElement = document.getElementById(id);
-        if (!inputElement) return;
+        const el = document.getElementById(id);
+        if (!el) return;
 
-        // Recuperar valor guardado previamente al abrir la página
-        const valorGuardado = localStorage.getItem('mac_init_' + id);
-        if (valorGuardado !== null) {
-            inputElement.value = valorGuardado;
-        }
-
-        // Guardar automáticamente cada vez que el usuario escriba o modifique algo
-        inputElement.addEventListener('input', () => {
-            localStorage.setItem('mac_init_' + id, inputElement.value);
+        el.addEventListener('change', () => {
+            let valoresActuales = {};
+            idsInputs.forEach(i => {
+                const inputNode = document.getElementById(i);
+                valoresActuales[i] = inputNode ? inputNode.value : '';
+            });
+            refConfig.set(valoresActuales).catch(err => {
+                console.error("Error al guardar iniciales en Firebase:", err);
+            });
         });
     });
 }
