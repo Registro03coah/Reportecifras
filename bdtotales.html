@@ -99,8 +99,6 @@
         database.ref('bdtotales').on('value', (snapshot) => {
             bdMadreDataGlobal = snapshot.val();
             let data = bdMadreDataGlobal;
-
-            let data = snapshot.val();
             let arr = data ? (Array.isArray(data) ? data : Object.values(data)) : [];
             const thead = document.getElementById('cabeceraBdMadre');
             const tbody = document.getElementById('cuerpoBdMadre');
@@ -120,7 +118,7 @@
 
             let trH = '<tr>';
             keys.forEach(k => {
-                let visual = k.replace(/_/g, ' ').toUpperCase();
+                let visual = k.toUpperCase();
                 trH += `<th>${visual}</th>`;
             });
             trH += '</tr>';
