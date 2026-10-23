@@ -3,56 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Base Principal MAC</title>
+    <title>Base de Datos Principal - Sistema MAC</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <!-- Firebase SDK v8 -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
     <style>
         body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .header-banner { background: linear-gradient(135deg, #1b396b, #0dcaf0); color: white; border-bottom: 4px solid #055160; }
-        .excel-container { width: 100%; max-height: 65vh; overflow: auto; border: 1px solid #ced4da; background: white; }
+        .header-banner { background: linear-gradient(135deg, #1b396b, #0dcaf0); color: white; padding: 20px 0; border-bottom: 5px solid #055160; margin-bottom: 20px; }
+        .excel-container { width: 100%; max-height: 65vh; overflow: auto; border: 1px solid #ced4da; background: white; border-radius: 6px; }
         .excel-table { margin-bottom: 0; table-layout: auto; }
-        .excel-table thead th { position: sticky; top: 0; z-index: 3; font-size: 10px; background-color: #1b396b !important; color: white; text-align: center; padding: 4px; }
-        .excel-table td { padding: 4px; border: 1px solid #ccc; text-align: center; font-size: 11px; white-space: nowrap; }
+        .excel-table thead th { 
+            position: sticky; top: 0; z-index: 3; font-size: 11px; font-weight: 700; background-color: #1b396b !important; 
+            color: white !important; text-align: center; vertical-align: middle; padding: 8px 6px; white-space: normal;
+        }
+        .excel-table td { padding: 6px 8px; border: 1px solid #ccc; text-align: center; vertical-align: middle; font-size: 11px; white-space: nowrap; }
     </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
-    <style>
-    .navbar-nav .nav-link { font-size: 11px !important; }
-    .navbar-brand { font-size: 14px !important; }
-    nav.navbar, .fixed-top-nav .navbar { padding: 2px 15px !important; }
-    .header-banner { padding: 10px 0 !important; margin-bottom: 15px !important; }
-    .header-banner h1 { font-size: 1.4rem !important; }
-    .header-banner p { font-size: 0.85rem !important; }
-</style>
-<nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #1b396b; width: 100%;">
-  <div class="container-fluid px-3">
-    <a class="navbar-brand fw-bold" href="https://registro03coah.github.io/mimenu/"><i class="bi bi-hdd-network"></i> SISTEMA MAC</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav ms-auto gap-2">
-        <li class="nav-item"><a class="nav-link text-light px-2" href="index.html"><i class="bi bi-pencil-square"></i> Vaciado de Datos</a></li>
-        <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_dias.html"><i class="bi bi-calendar3"></i> Reporte Días</a></li>
-        <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_semanal.html"><i class="bi bi-calendar-week"></i> Reporte Semanal</a></li>
-        <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_campana.html"><i class="bi bi-bar-chart-fill"></i> Reporte Campaña</a></li>
-        <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_acumulado.html"><i class="bi bi-archive-fill"></i> Reporte Acumulado</a></li>
-        <li class="nav-item"><a class="nav-link px-2" href="graficos.html" style="color: #ff66b2 !important; font-weight: bold;"><i class="bi bi-pie-chart-fill"></i> Gráficos</a></li>
-        <li class="nav-item"><a class="nav-link active bg-primary rounded px-2 text-white fw-bold" href="bd_madre.html"><i class="bi bi-database-fill"></i> BD Principal</a></li>
-        <li class="nav-item"><a class="nav-link text-light px-2" href="bdtotales.html"><i class="bi bi-database-fill-gear"></i> BD Totales</a></li>
-      </ul>
-    </div>
-  </div>
-</nav>
+
+    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #1b396b;">
+      <div class="container-fluid px-4">
+        <a class="navbar-brand fw-bold" href="index.html"><i class="bi bi-hdd-network"></i> SISTEMA MAC</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto gap-3">
+            <li class="nav-item"><a class="nav-link text-light px-3" href="index.html"><i class="bi bi-pencil-square"></i> Vaciado de Datos</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-3" href="reporte_dias.html"><i class="bi bi-calendar3"></i> Reporte Días</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-3" href="reporte_semanal.html"><i class="bi bi-calendar-week"></i> Reporte Semanal</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-3" href="reporte_campana.html"><i class="bi bi-bar-chart-fill"></i> Reporte Campaña</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-3" href="reporte_acumulado.html"><i class="bi bi-archive-fill"></i> Reporte Acumulado</a></li>
+            <li class="nav-item"><a class="nav-link active bg-primary rounded px-3 text-white fw-bold" href="bd_madre.html"><i class="bi bi-database-fill"></i> BD Principal</a></li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
     <div class="header-banner text-center d-flex justify-content-center align-items-center">
-        <div><h1 class="fw-bold mb-0"><i class="bi bi-database-fill"></i> Base de Datos Principal (BD Madre)</h1></div>
+        <div>
+            <h1 class="fw-bold mb-0"><i class="bi bi-database-fill"></i> Base de Datos Principal (BD Madre)</h1>
+            <p class="lead mb-0">Repositorio central de registros diarios de los módulos</p>
+        </div>
     </div>
+
     <div class="container-fluid px-4 flex-grow-1">
-        <div class="alert alert-info shadow-sm d-flex justify-content-between align-items-center p-2">
-            <span style="font-size:12px;"><strong>BD Madre:</strong> Muestra los registros diarios estándar (84 columnas, sin IDMAC).</span>
-            <div id="semaforoConexion" class="badge bg-success">Conectado</div>
+        <div class="alert alert-info shadow-sm d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div>
+                <strong>BD Madre:</strong> Muestra todos los registros diarios almacenados en la nube.
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-sm btn-success fw-bold" onclick="exportarBDMadre()"><i class="bi bi-download"></i> Descargar Respaldo JSON</button>
+                <label class="btn btn-sm btn-warning fw-bold mb-0" style="cursor: pointer;">
+                    <i class="bi bi-upload"></i> Subir / Restaurar BD <input type="file" id="inputArchivoBD" accept=".json" style="display: none;" onchange="importarBDMadre(event)">
+                </label>
+                <div id="semaforoConexion" class="badge bg-success">Conectado</div>
+            </div>
         </div>
         <div class="excel-container shadow-sm mb-3">
             <table class="excel-table table table-hover" id="tablaBdMadre">
@@ -61,14 +71,105 @@
             </table>
         </div>
     </div>
-    
-<footer class="text-center py-2 mt-auto text-white shadow-sm" style="background-color: #1b396b; width: 100%; position: relative; bottom: 0;">
-    <small>
-        &copy; 2026 Todos los derechos reservados. Desarrollado por <span class="text-info fw-bold">Carrivers Desing</span> para Módulos MAC. Versión 1.0.19
-    </small>
-</footer>
+
+    <footer class="text-center py-3 mt-auto text-white" style="background-color: #1b396b;">
+        <small>
+            &copy; 2026 Todos los derechos reservados.<br>
+            Desarrollado por <span class="text-info fw-bold">Carrivers Desing</span> para Módulos MAC.
+        </small>
+    </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="app_bdmadre.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo",
+            authDomain: "cifrasmac.firebaseapp.com",
+            databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com",
+            projectId: "cifrasmac",
+            storageBucket: "cifrasmac.firebasestorage.app",
+            messagingSenderId: "916644687837",
+            appId: "1:916644687837:web:03d346cc48a071af1ed034"
+        };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+
+        let bdMadreDataGlobal = null;
+        database.ref('bd_madre').on('value', (snapshot) => {
+            bdMadreDataGlobal = snapshot.val();
+            let data = bdMadreDataGlobal;
+
+            let data = snapshot.val();
+            let arr = data ? (Array.isArray(data) ? data : Object.values(data)) : [];
+            const thead = document.getElementById('cabeceraBdMadre');
+            const tbody = document.getElementById('cuerpoBdMadre');
+            if(!thead || !tbody) return;
+
+            thead.innerHTML = '';
+            tbody.innerHTML = '';
+
+            if (arr.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="100%" class="text-center py-4 text-muted">No hay registros en la BD Madre.</td></tr>';
+                return;
+            }
+
+            let keysSet = new Set();
+            arr.forEach(item => Object.keys(item).forEach(k => keysSet.add(k)));
+            let keys = Array.from(keysSet);
+
+            let trH = '<tr>';
+            keys.forEach(k => {
+                let visual = k.replace(/_/g, ' ').toUpperCase();
+                trH += `<th>${visual}</th>`;
+            });
+            trH += '</tr>';
+            thead.innerHTML = trH;
+
+            let htmlB = '';
+            arr.forEach(item => {
+                htmlB += '<tr>';
+                keys.forEach(k => {
+                    let val = item[k] !== undefined && item[k] !== null ? item[k] : '';
+                    htmlB += `<td>${val}</td>`;
+                });
+                htmlB += '</tr>';
+            });
+            tbody.innerHTML = htmlB;
+        });
+
+        window.exportarBDMadre = function() {
+            if (!bdMadreDataGlobal) {
+                alert("No hay datos para exportar.");
+                return;
+            }
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(bdMadreDataGlobal, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "bd_madre_respaldo.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        };
+
+        window.importarBDMadre = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const jsonData = JSON.parse(e.target.result);
+                    if (confirm("¿Estás seguro de reemplazar toda la Base de Datos Principal (BD Madre) con este respaldo? Esta acción no se puede deshacer.")) {
+                        database.ref('bd_madre').set(jsonData)
+                            .then(() => alert("¡Base de datos restaurada con éxito!"))
+                            .catch(err => alert("Error al subir la base de datos: " + err.message));
+                    }
+                } catch (err) {
+                    alert("El archivo no es un JSON válido.");
+                }
+                event.target.value = '';
+            };
+            reader.readAsText(file);
+        };
+    </script>
 </body>
 </html>
