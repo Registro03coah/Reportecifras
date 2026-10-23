@@ -1,0 +1,57 @@
+
+/* SOLUCIÓN AL EMPALME DE TEXTOS Y CELDAS */
+
+.table-responsive {
+    overflow-x: auto; /* Scroll horizontal activo */
+    width: 100%;
+    border-radius: 8px;
+    background-color: #fff;
+}
+
+table {
+    min-width: 2800px; /* Ancho forzado para que quepan todas las columnas sin apretarse */
+    border-collapse: collapse;
+    margin-bottom: 0;
+}
+
+/* ENCABEZADOS: Se permite multilínea */
+th {
+    white-space: normal !important; 
+    word-wrap: break-word;
+    min-width: 75px; 
+    max-width: 100px;
+    text-align: center;
+    vertical-align: middle !important;
+    font-size: 11px;
+    background-color: #e9ecef !important; /* Gris claro */
+    border: 1px solid #ced4da;
+}
+
+/* VALORES: Una sola línea (nowrap) para que sean legibles */
+td {
+    white-space: nowrap !important; /* <- Esto evita el empalme de los números */
+    padding: 8px 12px !important;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 13px;
+    border: 1px solid #ced4da;
+    color: #333;
+}
+
+/* Colores específicos según tu imagen */
+.col-orange {
+    background-color: #f6b26b !important; /* Naranja para folios */
+    color: #000;
+}
+
+.fila-numeros th {
+    background-color: #dee2e6 !important;
+    font-weight: bold;
+}
+
+/* Fila final de totales */
+.gran-total td {
+    font-weight: bold;
+    background-color: #d9ead3 !important; /* Verde claro similar a la foto */
+    color: #000;
+}

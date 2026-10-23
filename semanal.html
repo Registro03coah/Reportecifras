@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte Semanal - MACs APP v11.0</title>
+    <!-- Agregando Bootstrap 5 para PWA -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container-fluid mt-4 mb-5">
+        <h2 class="text-center mb-4" style="color: #1b396b; font-weight: bold;">Reporte Semanal de Movimientos</h2>
+        
+        <!-- Contenedor Responsive para evitar que se desborde la pantalla -->
+        <div class="table-responsive shadow-sm">
+            <table class="table table-hover" id="tablaSemanal">
+                <thead class="text-center align-middle">
+                    <tr>
+                        <th>ENT</th>
+                        <th>DTTO</th>
+                        <th>MODUL</th>
+                        <th class="col-orange">INICIAL</th>
+                        <th class="col-orange">FINAL</th>
+                        <th class="col-orange">TOTAL DE FOLIOS</th>
+                        <th>NO UTILIZA</th>
+                        <th>INSCRIP</th>
+                        <th>CORREC DE DATOS PERSON</th>
+                        <th>CAMBIO DE DOMICI</th>
+                        <th>REPOSI</th>
+                        <th>CORR DE DATOS DIRECCI</th>
+                        <th>REINCO</th>
+                        <th>REEMPL</th>
+                        <th>REIMPR</th>
+                        <th>TOTAL DE TRAMIT</th>
+                        <th>RECHAZ DE MAC 34</th>
+                        <th>RECHAZ DE MAC 35</th>
+                        <th>CANCEL</th>
+                        <th>TOTAL DE MOVIM</th>
+                        <th>CIF 05</th>
+                        <th>SOLICIT EXPEDI</th>
+                        <th>SOLICIT RECTIFI</th>
+                        <th>DEMAN DE JUICIO</th>
+                        <th>INICIALES</th>
+                        <th>ACTUAL</th>
+                        <th>RECIBID DE OTROS TIPOS</th>
+                        <th>IMPORT</th>
+                        <th>EXPORT</th>
+                        <th>ENTREG</th>
+                        <th>ANEX A FUAR</th>
+                    </tr>
+                    <!-- Fila de Indicadores Numéricos -->
+                    <tr class="fila-numeros">
+                        <th>45</th><th>46</th><th>47</th>
+                        <th class="col-orange">5</th><th class="col-orange">6</th><th class="col-orange">7</th>
+                        <th>-</th><th>8</th><th>9</th><th>10</th><th>11</th><th>12</th><th>13</th><th>14</th><th>15</th>
+                        <th>16</th><th>42</th><th>43</th><th>17</th><th>40</th><th>35</th><th>36</th><th>37</th><th>38</th>
+                        <th>78</th><th>21</th><th>22</th><th>63</th><th>64</th><th>23</th><th>25</th>
+                    </tr>
+                </thead>
+                <tbody id="cuerpoTablaSemanal">
+                    <!-- Los datos de los 3 módulos se inyectan dinámicamente aquí -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script src="semanal.js"></script>
+</body>
+</html>
