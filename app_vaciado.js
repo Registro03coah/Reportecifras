@@ -49,7 +49,7 @@ function generarIdMac(remesa, modulo) {
     return `${modDigits}${numPart}${suffix}`;
 }
 
-// ESTRUCTURA DE 84 COLUMNAS (KEYS EN MINÚSCULAS Y LABELS TIPO NOMBRE PROPIO)
+// ESTRUCTURA DE 84 COLUMNAS
 let ESTRUCTURA_COLUMNAS = [
     { pos: 1, key: 'dia', label: 'Día' },
     { pos: 5, key: 'inicial', label: 'Inicial' },
@@ -142,12 +142,34 @@ const DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sáb
 document.addEventListener('DOMContentLoaded', () => {
     dibujarEncabezadosYNumeros();
     cargarDatosInicialesFirebase();
+    inicializarPersistenciaIniciales(); // <-- CARGA Y GUARDA AUTOMÁTICAMENTE LAS INICIALES
 
     const areaPegado = document.getElementById('areaPegado');
     if (areaPegado) {
         areaPegado.addEventListener('paste', manejarPegadoClipboard);
     }
 });
+
+// FUNCIÓN PARA QUE LAS INICIALES NUNCA SE BORREN AL REINICIAR LA PÁGINA
+function inicializarPersistenciaIniciales() {
+    const idsInputs = ['camp_50351', 'camp_50353', 'camp_50354', 'acum_50351', 'acum_50353', 'acum_50354'];
+
+    idsInputs.forEach(id => {
+        const inputElement = document.getElementById(id);
+        if (!inputElement) return;
+
+        // Recuperar valor guardado previamente al abrir la página
+        const valorGuardado = localStorage.getItem('mac_init_' + id);
+        if (valorGuardado !== null) {
+            inputElement.value = valorGuardado;
+        }
+
+        // Guardar automáticamente cada vez que el usuario escriba o modifique algo
+        inputElement.addEventListener('input', () => {
+            localStorage.setItem('mac_init_' + id, inputElement.value);
+        });
+    });
+}
 
 // NAVEGACIÓN Y CAMBIO DE PESTAÑAS
 window.cambiarModulo = function(modulo) {
