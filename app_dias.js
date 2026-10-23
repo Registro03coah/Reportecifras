@@ -1,3 +1,85 @@
+
+const LABELS_VISUALES_GLOBAL = {
+    "IDMAC": "IDMAC",
+    "REMESA": "Remesa",
+    "MODULO": "Módulo",
+    "MODULOS": "Módulos",
+    "FECHA": "Fecha",
+    "DIA": "Día",
+    "DÍA": "Día",
+    "SEDES": "Sedes",
+    "SEDE": "Sede",
+    "INICIAL": "Inicial",
+    "FINAL": "Final",
+    "TOTAL_DE_FOLIOS": "Total de folios",
+    "NO_UTILIZADOS": "No utilizados",
+    "INSCRIPCIONES": "Inscripciones",
+    "CORRECCION_DE_DATOS_PERSONALES": "Corrección de datos personales",
+    "CAMBIO_DE_DOMICILIO": "Cambio de domicilio",
+    "REPOSISION": "Reposición",
+    "REPOSICION": "Reposición",
+    "CORR__DE_DATOS_DIRECCION": "Corr. de datos dirección",
+    "CORR_DE_DATOS_DIRECCION": "Corr. de datos dirección",
+    "REINCORPORACION": "Reincorporación",
+    "REEMPLAZO": "Reemplazo",
+    "REIMPRESION": "Reimpresión",
+    "TOTAL_DE_TRAMITES": "Total de trámites",
+    "CANCELADOS": "Cancelados",
+    "TOTAL_DE_ANEXOS_POR_RECHAZO": "Total de anexo de rechazo",
+    "CPV_DEVUELTA_ENTREGA": "CPV devuelta entrega",
+    "DISPONIBLES_AL_DIA_ANTERIOR": "Disponibles al día anterior",
+    "RECIBIDAS": "Recibidas",
+    "ENTREGADAS": "Entregadas",
+    "RECIBO_Y_O_EXTRAVIO": "Recibo y/o extravío",
+    "ANEXAS_A_FUAR": "Anexas a fuar",
+    "DATOS_ERRONEOS": "Datos erróneos",
+    "FOTO_MAL_IMPRESA": "Foto mal impresa",
+    "RETIRADAS_POR_OTRA_CAUSA": "Retiradas por causa",
+    "DISPONIBLES": "Disponibles",
+    "RECHAZOS_DE_MAC_34": "34 Imagen inconsistente",
+    "34_IMAGEN_INCONSISTENTE": "34 Imagen inconsistente",
+    "RECHAZOS_DE_MAC_35": "35 Movimiento posterior",
+    "35_MOVIMIENTO_POSTERIOR": "35 Movimiento posterior",
+    "TOTAL_DE_MOVIMIENTOS": "Total de movimientos",
+    "CIF_05": "Cif 05",
+    "CIF-05": "Cif 05",
+    "SOLICITUD_EXPEDICION": "Solicitud expedición",
+    "SOLICITUD_RECTIFICACION": "Solicitud de rectificación",
+    "DEMANDA_DE_JUICIO": "Demanda de juicio",
+    "INICIALES_A": "Iniciales A",
+    "INICIALES_S": "Iniciales S",
+    "INICIALES_C": "Iniciales C",
+    "ACTUALIZACION": "Actualización",
+    "ACTUALIZACIÓN": "Actualización",
+    "RECIBIDAS_DE_OTROS_TIPOS": "Recibidas de otros tipos",
+    "IMPORTADAS": "Importadas",
+    "EXPORTADAS": "Exportadas",
+    "RESGUARDO": "Resguardo",
+    "SOLICITU_DE_REIMPRESION": "Solicitud de reimpresión",
+    "SOLICITUD_DE_REIMPRESION": "Solicitud de reimpresión",
+    "SOBRANTES": "Sobrantes",
+    "DUPLICADO": "Duplicado",
+    "DUPLICADOS": "Duplicados",
+    "DISPONIBLES_DE_SOL_DE_EXP": "Disponibles de sol de exp",
+    "REIMPRE_FUERA_DEL_SISTEMA": "Reimpre fuera del sistema",
+    "CREDEN_DEVUELTAS_POR_TERCEROS": "Devueltas por terceros",
+    "CRED_PRODUCTO_DE_REGISTRO_DUPLICADO": "Cred producto de registro duplicado",
+    "CRED_PROD_CANJE_POR_NUEVA": "Cred prod canje por nueva",
+    "DIAS_TRABAJADOS": "Días trabajados",
+    "CONFIGURACION": "Configuración",
+    "ENT": "Ent",
+    "DTTO": "Dtto"
+};
+
+function obtenerNombreVisualGlobal(col) {
+    if (!col) return '';
+    let norm = String(col).trim().toUpperCase().normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").replace(/[^A-Z0-9]/g, "_");
+    if (LABELS_VISUALES_GLOBAL[norm]) return LABELS_VISUALES_GLOBAL[norm];
+    // Fallback proper case
+    let limpio = String(col).replace(/_/g, ' ').toLowerCase();
+    return limpio.charAt(0).toUpperCase() + limpio.slice(1);
+}
+
 // ==========================================
 // 1. IMPORTACIONES FIREBASE (Modular V10)
 // ==========================================
@@ -20,16 +102,85 @@ const db = getDatabase(app);
 // ==========================================
 // 2. CONFIGURACIÓN Y VARIABLES
 // ==========================================
-const COLUMNAS_REPORTE_DIAS = [
-"Módulo", "Día", "Fecha", "Remesa", "Sedes",
-"Inicial", "Final", "Total_De_Folios", "Inscripciones",
-"Corrección_De_Datos_Personales", "Cambio_De_Domicilio", "Reposición",
-"Corr__De_Datos_Dirección", "Reincorporación", "Reemplazo", "Reimpresión",
-"Total_De_Trámites", "Cancelados", "Total_De_Anexos_Por_Rechazo",
-"Cpv_Devuelta_Entrega", "Disponibles_Al_Día_Anterior", "Recibidas",
-"Entregadas", "Recibo_Y_O_Extravío", "Anexas_A_Fuar", "Datos_Erróneos",
-"Foto_Mal_Impresa", "Retiradas_Por_Otra_Causa", "Disponibles"
+
+const ESTRUCTURA_DIAS = [
+    { key: 'REMESA', num: 39 },
+    { key: 'MODULO', num: 47 },
+    { key: 'DIA', num: 1 },
+    { key: 'FECHA', num: 2 },
+    { key: 'SEDES', num: 4 },
+    { key: 'HORAS_TRABAJADAS', num: 3 },
+    { key: 'INICIAL', num: 5 },
+    { key: 'FINAL', num: 6 },
+    { key: 'TOTAL_DE_FOLIOS', num: 7 },
+    { key: 'INSCRIPCIONES', num: 8 },
+    { key: 'CORRECCION_DE_DATOS_PERSONALES', num: 9 },
+    { key: 'CAMBIO_DE_DOMICILIO', num: 10 },
+    { key: 'REPOSISION', num: 11 },
+    { key: 'CORR__DE_DATOS_DIRECCION', num: 12 },
+    { key: 'REINCORPORACION', num: 13 },
+    { key: 'REEMPLAZO', num: 14 },
+    { key: 'REIMPRESION', num: 15 },
+    { key: 'TOTAL_DE_TRAMITES', num: 16 },
+    { key: 'CANCELADOS', num: 17 },
+    { key: 'TOTAL_DE_ANEXOS_POR_RECHAZO', num: 18 },
+    { key: 'CPV_DEVUELTA_ENTREGA', num: 19 },
+    { key: 'DISPONIBLES_AL_DIA_ANTERIOR', num: 20 },
+    { key: 'ACTUALIZACION', num: 21 },
+    { key: 'RECIBIDAS_DE_OTROS_TIPOS', num: 22 },
+    { key: 'ENTREGADAS', num: 23 },
+    { key: 'RECIBO_Y_O_EXTRAVIO', num: 24 },
+    { key: 'ANEXAS_A_FUAR', num: 25 },
+    { key: 'DATOS_ERRONEOS', num: 26 },
+    { key: 'FOTO_MAL_IMPRESA', num: 27 },
+    { key: 'SOLICITU_DE_REIMPRESION', num: 28 },
+    { key: 'RETIRADAS_POR_OTRA_CAUSA', num: 29 },
+    { key: 'DISPONIBLES', num: 30 },
+    { key: 'CREDENCIALES_X_CANJE', num: 31 },
+    { key: 'FICHAS_ENTREGADAS', num: 32 },
+    { key: 'FICHAS_ATENDIDAS', num: 33 },
+    { key: 'DIAS_TRABAJADOS', num: 34 },
+    { key: 'CIF_05', num: 35 },
+    { key: 'SOLICITUD_EXPEDICION', num: 36 },
+    { key: 'SOLICITUD_RECTIFICACION', num: 37 },
+    { key: 'DEMANDA_DE_JUICIO', num: 38 },
+    { key: 'TOTAL_DE_MOVIMIENTOS', num: 40 },
+    { key: 'CREDEN_DEVUELTAS_POR_TERCEROS', num: 41 },
+    { key: 'RECHAZOS_DE_MAC_34', num: 42 },
+    { key: 'RECHAZOS_DE_MAC_35', num: 43 },
+    { key: 'CONFIGURACION', num: 44 },
+    { key: 'ENT', num: 45 },
+    { key: 'DTTO', num: 46 },
+    { key: 'RESGUARDO', num: 48 },
+    { key: 'SOLICITUD_DE_REIMPRESION', num: 49 },
+    { key: 'CPV_DEVUELTA_ENTREGA_2', num: 50 },
+    { key: 'SCRIPT_EJECUTADOS', num: 51 },
+    { key: 'FOLIO_NEC', num: 52 },
+    { key: 'NUMERO_DE_TRAMITES_APLICADOS', num: 53 },
+    { key: 'NUMERO_DE_FICHAS_REQUISITADAS', num: 54 },
+    { key: 'NUMERO_DE_ARCHIVOS_DE_TRANSACCION_ACEPTADOS', num: 55 },
+    { key: 'TOTAL_DE_ARCHIVOS_DE_TRANSACCION_PROCESADOS', num: 56 },
+    { key: 'CREDENCIALES_RECIBIDAS', num: 57 },
+    { key: 'CREDENCIALES_INCONSISTENTES', num: 58 },
+    { key: 'CREDENCIALES_EN_RESGUARDO', num: 59 },
+    { key: 'CREDENCIALES_TOTALES_EN_SIIRFE_DISPONIBLES_PARA_ENTREGA', num: 60 },
+    { key: 'TOTAL_DE_CREDENCIALES_ENTREGADAS', num: 61 },
+    { key: 'TOTAL_DE_CREDENCIALES_SOLICITADAS', num: 62 },
+    { key: 'IMPORTADAS', num: 63 },
+    { key: 'EXPORTADAS', num: 64 },
+    { key: 'REPOSICIONES_REIMPRESIONES', num: 65 },
+    { key: 'MAL_IMPRESA', num: 66 },
+    { key: 'ERROR_EN_CARTOGRAFIA', num: 67 },
+    { key: 'DEFUNCION', num: 68 },
+    { key: 'SUSPENSION', num: 69 },
+    { key: 'DUPLICADO', num: 70 },
+    { key: 'ERROR_EN_NUM_DE_EMISION', num: 71 },
+    { key: 'PERDIDA_DE_VIGENCIA', num: 72 },
+    { key: 'MOV_POST', num: 73 },
+    { key: 'ANEXAS_A_SOLICITUD', num: 74 },
+    { key: 'OTRAS_BAJAS', num: 75 }
 ];
+
 
 let bdMadreGlobal = [];
 let anchosGuardados = JSON.parse(localStorage.getItem('anchosColumnasDias')) || {};
@@ -62,23 +213,16 @@ function construirHeaderTabla() {
     thead.innerHTML = "";
     
     let trTitulos = document.createElement('tr');
+    let trNumeros = document.createElement('tr');
+    trNumeros.className = 'num-row';
     
-    COLUMNAS_REPORTE_DIAS.forEach((col) => {
+    ESTRUCTURA_DIAS.forEach((colObj) => {
+        let col = colObj.key;
+        
         let thT = document.createElement('th');
         thT.setAttribute('data-col', col);
-        
-        let nombreVisual = col.replace('CORR__DE_DATOS_DIRECCION', 'CORR. DE DATOS DIRECCION')
-                              .replace('RECIBO_Y_O_EXTRAVIO', 'RECIBO Y/O EXTRAVIO')
-                              .replace('TOTAL_DE_ANEXOS_POR_RECHAZO', 'TOTAL DE ANEXO DE RECHAZO')
-                              .replace('RETIRADAS_POR_OTRA_CAUSA', 'RETIRADAS POR CAUSA')
-                              .replace(/_/g, ' '); 
-        
-        if (col === "SEDES") nombreVisual = "SEDE DE OPERACIÓN DE MÓDULO";
-
+        let nombreVisual = obtenerNombreVisualGlobal(col);
         thT.innerText = nombreVisual;
-        thT.style.height = "55px"; 
-        thT.style.verticalAlignment = "middle";
-        thT.style.fontSize = "11px";
         
         if (anchosGuardados[col]) {
             thT.style.width = anchosGuardados[col];
@@ -89,15 +233,18 @@ function construirHeaderTabla() {
             if(col === "TOTAL_DE_FOLIOS" || col === "TOTAL_DE_TRAMITES") thT.style.minWidth = "120px";
             if(col === "SEDES") thT.style.minWidth = "140px";
         }
-
         if(col === "INICIAL" || col === "FINAL" || col === "TOTAL_DE_FOLIOS") thT.classList.add('bg-folios');
         
         trTitulos.appendChild(thT); 
+        
+        let thNum = document.createElement('th');
+        thNum.innerText = colObj.num;
+        trNumeros.appendChild(thNum);
     });
     
     thead.appendChild(trTitulos); 
-
-    const observer = new ResizeObserver(entries => {
+    thead.appendChild(trNumeros);
+const observer = new ResizeObserver(entries => {
         let cambiados = false;
         for (let entry of entries) {
             const colName = entry.target.getAttribute('data-col');
@@ -208,7 +355,8 @@ function procesarYMostrarDatos() {
     datosOrdenados.forEach(fila => {
         let tr = document.createElement('tr');
         
-        COLUMNAS_REPORTE_DIAS.forEach(col => {
+        ESTRUCTURA_DIAS.forEach(colObj => {
+            let col = colObj.key;
             let td = document.createElement('td');
             td.innerText = obtenerValorFila(fila, col);
             tr.appendChild(td);
