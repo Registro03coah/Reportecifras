@@ -142,7 +142,6 @@ const DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sáb
 document.addEventListener('DOMContentLoaded', () => {
     dibujarEncabezadosYNumeros();
     cargarDatosInicialesFirebase();
-    sincronizarInicialesFirebase();
 
     const areaPegado = document.getElementById('areaPegado');
     if (areaPegado) {
@@ -150,41 +149,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// FUNCIÓN PARA SINCRONIZAR LAS INICIALES EN FIREBASE
-function sincronizarInicialesFirebase() {
-    const idsInputs = ['camp_50351', 'camp_50353', 'camp_50354', 'acum_50351', 'acum_50353', 'acum_50354'];
-    const refConfig = database.ref('config/iniciales');
-
-    refConfig.on('value', snapshot => {
-        let datos = snapshot.val() || {};
-        idsInputs.forEach(id => {
-            const el = document.getElementById(id);
-            if (el && datos[id] !== undefined) {
-                if (document.activeElement !== el) {
-                    el.value = datos[id];
-                }
-            }
-        });
-    });
-
-    idsInputs.forEach(id => {
-        const el = document.getElementById(id);
-        if (!el) return;
-
-        el.addEventListener('change', () => {
-            let valoresActuales = {};
-            idsInputs.forEach(i => {
-                const inputNode = document.getElementById(i);
-                valoresActuales[i] = inputNode ? inputNode.value : '';
-            });
-            refConfig.set(valoresActuales).catch(err => {
-                console.error("Error al guardar iniciales en Firebase:", err);
-            });
-        });
-    });
-}
-
-// NAVEGACIÓN Y CAMBIO DE PESTAÑAS
 window.cambiarModulo = function(modulo) {
     moduloSeleccionado = modulo;
     
@@ -417,7 +381,6 @@ window.guardarEnBaseMadre = function() {
     });
 };
 
-// GUARDAR EN BD TOTALES (INCLUYE INYECCIÓN AUTOMÁTICA DE INICIALES C Y A)
 window.guardarEnBaseTotales = function() {
     const overlay = document.getElementById('loadingOverlay');
     const txtOverlay = document.getElementById('lblOverlayTexto');
@@ -437,14 +400,6 @@ window.guardarEnBaseTotales = function() {
             copiaTotales['IDMAC'] = generarIdMac(rem, modKey);
             copiaTotales['modulo'] = modKey;
             copiaTotales['MODULO'] = modKey;
-
-            // INYECTAR DINÁMICAMENTE LOS VALORES DE CAMPAÑA Y ACUMULADO DE LOS INPUTS SUPERIORES
-            let inputCamp = document.getElementById('camp_' + modKey);
-            let inputAcum = document.getElementById('acum_' + modKey);
-
-            copiaTotales['iniciales_c'] = inputCamp ? inputCamp.value.trim() : '';
-            copiaTotales['iniciales_a'] = inputAcum ? inputAcum.value.trim() : '';
-
             filasTotalesA_Guardar.push(copiaTotales);
         }
     });

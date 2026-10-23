@@ -1,6 +1,3 @@
-// =========================================================
-// 1. CONFIGURACIÓN E INICIALIZACIÓN DE FIREBASE (cifrasmac)
-// =========================================================
 const firebaseConfig = {
     apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo",
     authDomain: "cifrasmac.firebaseapp.com",
@@ -25,16 +22,11 @@ let columnaOrdenActual = 'REMESA';
 let ordenAscendente = false; 
 let idmacEdicionActual = null;
 
-// =========================================================
-// NUEVA FÓRMULA IDMAC: [2 DÍGITOS MÓDULO] + [4 DÍGITOS REMESA] + [SUFIJO -BIS]
-// =========================================================
 function generarIdMac(remesa, modulo) {
-    // 1. Módulo: últimos 2 dígitos (ej. "0301" -> "01", "050351" -> "51")
     let modStr = String(modulo || '').replace(/\D/g, '');
     let modDigits = modStr.length >= 2 ? modStr.slice(-2) : modStr.padStart(2, '0');
     if (!modDigits) modDigits = '00';
 
-    // 2. Remesa: últimos 4 dígitos con ceros a la izquierda + sufijo (-bis, -bis2, -Bis, etc.)
     let remStr = String(remesa || '').trim();
     let remMatch = remStr.match(/(\d+)\s*(-?\s*bis\d*)?/i);
     let numPart = '0000';
@@ -73,18 +65,12 @@ function obtenerClaveCanonica(key) {
     return key;
 }
 
-// =========================================================
-// 2. LECTURA EN TIEMPO REAL DESDE BDTO TALES
-// =========================================================
 database.ref('bdtotales').on('value', (snapshot) => {
     let datos = snapshot.val();
     datosGlobalesBd = datos ? (Array.isArray(datos) ? datos : Object.values(datos)) : [];
     ejecutarOrdenamiento(datosGlobalesBd);
 });
 
-// =========================================================
-// 3. EVENTOS LISTENERS (SUBIR JSON Y BUSCADOR)
-// =========================================================
 document.addEventListener('DOMContentLoaded', () => {
     const btnSubir = document.getElementById('btnSubirTotales');
     const fileInput = document.getElementById('fileInputTotales');
@@ -182,9 +168,6 @@ function procesarArchivoJson(e) {
     reader.readAsText(file);
 }
 
-// =========================================================
-// 4. ORDENAMIENTO DE FILAS: REMESA -> MÓDULO -> DÍA
-// =========================================================
 function ejecutarOrdenamiento(arregloA_Ordenar) {
     if(!arregloA_Ordenar || arregloA_Ordenar.length === 0) {
         dibujarTablaBd([]);
@@ -238,9 +221,6 @@ window.cambiarOrden = function(columnaClick) {
     ejecutarOrdenamiento(datosEnPantalla);
 };
 
-// =========================================================
-// 5. PATRÓN DE COLUMNAS BD TOTALES
-// =========================================================
 const ordenDeseadoPatronBdTotales = [
     "IDMAC", "REMESA", "MODULO", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS", "NO_UTILIZADOS",
     "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO",
@@ -264,9 +244,6 @@ function obtenerIndiceOrdenBdTotales(columnaOriginal) {
     return idx !== -1 ? idx : 9999;
 }
 
-// =========================================================
-// 6. CONSTRUCCIÓN DE LA TABLA EN PANTALLA
-// =========================================================
 function dibujarTablaBd(datosArreglo) {
     datosEnPantalla = datosArreglo; 
     const thead = document.getElementById('cabeceraBdTotales');
@@ -289,8 +266,6 @@ function dibujarTablaBd(datosArreglo) {
                 obj[cleanKey] = item[k];
             }
         });
-        
-        // Recalcular IDMAC con la nueva fórmula
         obj['IDMAC'] = generarIdMac(obj['REMESA'], obj['MODULO']);
         return obj;
     });
@@ -343,11 +318,9 @@ function dibujarTablaBd(datosArreglo) {
 
         columnas.forEach(col => {
             let valorCelda = fila[col] !== undefined && fila[col] !== null ? fila[col] : '';
-
             if (typeof valorCelda === 'string' && valorCelda.includes('T00:00:00')) {
                 valorCelda = valorCelda.split('T')[0];
             }
-
             htmlCuerpo += `<td class="align-middle">${valorCelda}</td>`;
         });
         htmlCuerpo += '</tr>';
@@ -355,9 +328,6 @@ function dibujarTablaBd(datosArreglo) {
     tbody.innerHTML = htmlCuerpo;
 }
 
-// =========================================================
-// 7. EDICIÓN EN VENTANA FLOTANTE (MODAL COMPLETO)
-// =========================================================
 window.editarRegistroLinea = function(idmac) {
     idmacEdicionActual = idmac;
     const registro = datosGlobalesBd.find(item => {
@@ -376,7 +346,6 @@ window.editarRegistroLinea = function(idmac) {
     if (!contenedor) return;
 
     contenedor.innerHTML = '';
-
     let llaves = Object.keys(registro);
 
     llaves.forEach(clave => {
@@ -396,7 +365,7 @@ window.editarRegistroLinea = function(idmac) {
             </label>
             <div class="input-group">
                 <input type="text" class="form-control campo-dinamico-totales" data-clave="${clave}" value="${valor}">
-                <button class="btn btn-outline-danger" type="button" onclick="eliminarCampoFormulario(this)" title="Eliminar este campo de este registro">
+                <button class="btn btn-outline-danger" type="button" onclick="eliminarCampoFormulario(this)" title="Eliminar este campo">
                     <i class="bi bi-trash"></i>
                 </button>
             </div>
@@ -442,7 +411,6 @@ window.guardarEdicionTotales = function() {
         nuevoRegistro[clave] = valor;
     });
 
-    // Recalcular IDMAC por si se modificó Módulo o Remesa
     const rem = nuevoRegistro['REMESA'] || nuevoRegistro['Remesa'] || '';
     const mod = nuevoRegistro['MODULO'] || nuevoRegistro['Modulo'] || '';
     nuevoRegistro['IDMAC'] = generarIdMac(rem, mod);
@@ -461,9 +429,6 @@ window.guardarEdicionTotales = function() {
         });
 };
 
-// =========================================================
-// 8. FUNCIONES GLOBALES DE ADMINISTRACIÓN
-// =========================================================
 window.vaciarBaseTotales = function() {
     if (confirm("🚨 ¿ESTÁS COMPLETAMENTE SEGURO?\n\nEsto borrará TODOS los registros de BDTO TALES en la nube.")) {
         database.ref('bdtotales').remove()

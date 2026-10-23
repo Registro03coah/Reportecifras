@@ -1,6 +1,3 @@
-// ==========================================
-// 1. IMPORTACIONES Y CONFIGURACIÓN FIREBASE (REPORTE ACUMULADO)
-// ==========================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, get, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
@@ -17,7 +14,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// COLUMNAS EXACTAS SEGÚN TU IMAGEN (ACUMULADO) - Suma de Reposición y Reimpresión incluida
 const COLUMNAS_ACUMULADO_KEYS = [
     "ENT", "DTTO", "MODULO", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS", 
     "NO_UTILIZADOS", "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", 
@@ -30,9 +26,6 @@ const COLUMNAS_ACUMULADO_KEYS = [
     "CRED_PRODUCTO_DE_REGISTRO_DUPLICADO", "CRED_PROD_CANJE_POR_NUEVA", "DIAS_TRABAJADOS", "CONFIGURACION"
 ];
 
-// ==========================================
-// 2. CONFIGURACIÓN DE HISTORIAL DE FOLIOS
-// ==========================================
 const HISTORIAL_ROJOS = {
     "50351": [
         { i: "2605035100001", f: "2605035108668" },
@@ -150,7 +143,6 @@ function renderTablaAcumulado() {
     MODULOS_ORDEN.forEach(modNombre => {
         let registrosMod = modulosMap[modNombre].sort((a, b) => String(a['REMESA']).localeCompare(String(b['REMESA'])));
         
-        // --- FILA NEGRA ---
         let trNegra = document.createElement('tr');
         let maxFinal = 0;
         registrosMod.forEach(r => {
@@ -176,7 +168,6 @@ function renderTablaAcumulado() {
             } else if (colKey === "CONFIGURACION") {
                 td.innerText = registrosMod.length > 0 ? (registrosMod[registrosMod.length - 1][colKey] || "0") : "0";
             } else if (colKey === "REPOSISION_REIMPRESIONES") {
-                // SUMATORIA EXCLUSIVA PARA ACUMULADO
                 let sumaCol = 0;
                 registrosMod.forEach(reg => {
                     let r1 = parseFloat(reg["REPOSISION"] || 0);
@@ -197,7 +188,6 @@ function renderTablaAcumulado() {
         });
         tbody.appendChild(trNegra);
 
-        // --- FILAS ROJAS ---
         let historial = HISTORIAL_ROJOS[modNombre] || [];
         historial.forEach(rango => {
             let trRoja = document.createElement('tr');
