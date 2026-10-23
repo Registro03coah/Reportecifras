@@ -94,6 +94,7 @@
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
+
         let bdMadreDataGlobal = null;
         database.ref('bd_madre').on('value', (snapshot) => {
             bdMadreDataGlobal = snapshot.val();
@@ -117,7 +118,7 @@
 
             let trH = '<tr>';
             keys.forEach(k => {
-                let visual = k.replace(/_/g, ' ').toUpperCase();
+                let visual = k.toUpperCase();
                 trH += `<th>${visual}</th>`;
             });
             trH += '</tr>';
