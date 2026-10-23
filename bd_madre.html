@@ -94,13 +94,10 @@
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-
         let bdMadreDataGlobal = null;
         database.ref('bd_madre').on('value', (snapshot) => {
             bdMadreDataGlobal = snapshot.val();
             let data = bdMadreDataGlobal;
-
-            let data = snapshot.val();
             let arr = data ? (Array.isArray(data) ? data : Object.values(data)) : [];
             const thead = document.getElementById('cabeceraBdMadre');
             const tbody = document.getElementById('cuerpoBdMadre');
