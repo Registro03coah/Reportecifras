@@ -118,7 +118,6 @@ function obtenerValorFila(fila, colObj) {
     return '';
 }
 
-// Función para encontrar la remesa con el número mayor (más reciente)
 function obtenerUltimaRemesa(datos) {
     if (!datos || datos.length === 0) return null;
     let remesas = new Set();
@@ -194,7 +193,6 @@ document.addEventListener("DOMContentLoaded", () => {
         inputBuscador.addEventListener('keyup', (e) => {
             const textoFiltro = e.target.value.toLowerCase().trim();
             if (textoFiltro === "") {
-                // Al limpiar, regresa a mostrar SOLAMENTE la última remesa (número mayor)
                 const ultimaRemesa = obtenerUltimaRemesa(bdTotalesGlobal);
                 if (ultimaRemesa) {
                     const filtrados = bdTotalesGlobal.filter(fila => {
@@ -209,7 +207,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
             
-            // Si el usuario escribe algo, busca en toda la base
             const filtrados = bdTotalesGlobal.filter(fila => {
                 return ESTRUCTURA_SEMANAL.some(colObj => {
                     let val = String(obtenerValorFila(fila, colObj)).toLowerCase();
@@ -237,14 +234,18 @@ onValue(ref(db, ".info/connected"), (snap) => {
     }
 });
 
-// Lectura de bd_totales
+// Lectura de bd_totales con depuración
 onValue(ref(db, 'bd_totales'), (snapshot) => {
+    console.log("🔍 Intentando leer 'bd_totales' desde Firebase...");
     if (snapshot.exists()) { 
         const data = snapshot.val();
+        console.log("📦 Datos recibidos en bd_totales:", data);
         bdTotalesGlobal = Array.isArray(data) ? data : Object.values(data); 
+        console.log("📊 Total de registros cargados:", bdTotalesGlobal.length);
         
-        // Al cargar los datos de Firebase, mostrar por defecto la remesa más alta (número mayor)
         const ultimaRemesa = obtenerUltimaRemesa(bdTotalesGlobal);
+        console.log("🏷️ Última remesa detectada:", ultimaRemesa);
+        
         if (ultimaRemesa) {
             const datosUltimaRemesa = bdTotalesGlobal.filter(fila => {
                 const objRemesa = ESTRUCTURA_SEMANAL.find(c => c.key === 'Remesa') || { key: 'Remesa', num: 39 };
@@ -256,7 +257,10 @@ onValue(ref(db, 'bd_totales'), (snapshot) => {
             procesarYMostrarDatos(bdTotalesGlobal);
         }
     } else {
+        console.warn("⚠️ La ruta 'bd_totales' está vacía o no existe en Firebase.");
         bdTotalesGlobal = [];
         procesarYMostrarDatos(bdTotalesGlobal);
     }
+}, (error) => {
+    console.error("❌ Error de lectura en Firebase:", error);
 });
