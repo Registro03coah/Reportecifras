@@ -14,7 +14,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// Estructura de columnas (puedes ajustarla si la base totales usa las mismas o un orden similar)
 const ESTRUCTURA_SEMANAL = [ 
     { key: 'Remesa', num: 39 }, { key: 'Módulo', num: 47 }, { key: 'Día', num: 1 }, { key: 'Fecha', num: 2 }, 
     { key: 'Sedes', num: 4 }, { key: 'Horas_trabajadas', num: 3 }, { key: 'Inicial', num: 5 }, { key: 'Final', num: 6 }, 
@@ -119,37 +118,59 @@ function obtenerValorFila(fila, colObj) {
     return '';
 }
 
-function actualizarContadores(datosMostrados) {
+// Función para encontrar la remesa con el número mayor (más reciente)
+function obtenerUltimaRemesa(datos) {
+    if (!datos || datos.length === 0) return null;
+    let remesas = new Set();
+    const objRemesa = ESTRUCTURA_SEMANAL.find(c => c.key === 'Remesa') || { key: 'Remesa', num: 39 };
+    
+    datos.forEach(fila => {
+        let val = obtenerValorFila(fila, objRemesa);
+        if (val !== undefined && val !== null && String(val).trim() !== "") {
+            remesas.add(String(val).trim());
+        }
+    });
+
+    if (remesas.size === 0) return null;
+
+    let listaRemesas = Array.from(remesas);
+    listaRemesas.sort((a, b) => {
+        let numA = parseFloat(a);
+        let numB = parseFloat(b);
+        if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+        return a.localeCompare(b);
+    });
+
+    return listaRemesas[listaRemesas.length - 1];
+}
+
+function actualizarContadoresGlobales() {
     const lblLineas = document.getElementById('lblTotalLineas');
     const lblRemesas = document.getElementById('lblTotalRemesas');
     
-    const total = Array.isArray(datosMostrados) ? datosMostrados.length : 0;
-    
-    if (lblLineas) lblLineas.innerText = total;
+    if (lblLineas) lblLineas.innerText = bdTotalesGlobal.length;
 
     if (lblRemesas) {
         const remesasUnicas = new Set();
-        if (Array.isArray(datosMostrados)) {
-            datosMostrados.forEach(fila => {
-                const objRemesa = ESTRUCTURA_SEMANAL.find(c => c.key === 'Remesa') || { key: 'Remesa', num: 39 };
-                let valRemesa = obtenerValorFila(fila, objRemesa);
-                if (valRemesa !== undefined && valRemesa !== null && String(valRemesa).trim() !== "") {
-                    remesasUnicas.add(String(valRemesa).trim());
-                }
-            });
-        }
+        bdTotalesGlobal.forEach(fila => {
+            const objRemesa = ESTRUCTURA_SEMANAL.find(c => c.key === 'Remesa') || { key: 'Remesa', num: 39 };
+            let valRemesa = obtenerValorFila(fila, objRemesa);
+            if (valRemesa !== undefined && valRemesa !== null && String(valRemesa).trim() !== "") {
+                remesasUnicas.add(String(valRemesa).trim());
+            }
+        });
         lblRemesas.innerText = remesasUnicas.size;
     }
 }
 
-function procesarYMostrarDatos(datosAProcesar = bdTotalesGlobal) {
+function procesarYMostrarDatos(datosAProcesar) {
     const tbody = document.getElementById('cuerpoTablaSemanal'); 
     if(!tbody) return;
     tbody.innerHTML = "";
     
-    actualizarContadores(datosAProcesar);
+    actualizarContadoresGlobales();
     
-    if (datosAProcesar.length === 0) return;
+    if (!datosAProcesar || datosAProcesar.length === 0) return;
     
     datosAProcesar.forEach(fila => {
         let tr = document.createElement('tr');
@@ -166,16 +187,29 @@ function procesarYMostrarDatos(datosAProcesar = bdTotalesGlobal) {
     });
 }
 
-// Buscador en tiempo real
+// Configuración del Buscador
 document.addEventListener("DOMContentLoaded", () => {
     const inputBuscador = document.getElementById('inputBuscadorSemanal');
     if (inputBuscador) {
         inputBuscador.addEventListener('keyup', (e) => {
             const textoFiltro = e.target.value.toLowerCase().trim();
             if (textoFiltro === "") {
-                procesarYMostrarDatos(bdTotalesGlobal);
+                // Al limpiar, regresa a mostrar SOLAMENTE la última remesa (número mayor)
+                const ultimaRemesa = obtenerUltimaRemesa(bdTotalesGlobal);
+                if (ultimaRemesa) {
+                    const filtrados = bdTotalesGlobal.filter(fila => {
+                        const objRemesa = ESTRUCTURA_SEMANAL.find(c => c.key === 'Remesa') || { key: 'Remesa', num: 39 };
+                        let val = obtenerValorFila(fila, objRemesa);
+                        return String(val).trim() === String(ultimaRemesa);
+                    });
+                    procesarYMostrarDatos(filtrados);
+                } else {
+                    procesarYMostrarDatos(bdTotalesGlobal);
+                }
                 return;
             }
+            
+            // Si el usuario escribe algo, busca en toda la base
             const filtrados = bdTotalesGlobal.filter(fila => {
                 return ESTRUCTURA_SEMANAL.some(colObj => {
                     let val = String(obtenerValorFila(fila, colObj)).toLowerCase();
@@ -187,10 +221,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-// Inicializar cabecera
+// Construir la cabecera fija de inmediato para que la tabla nunca desaparezca
 construirHeaderTabla();
 
-// Conexión de Firebase para la ruta bd_totales
+// Conexión Firebase
 onValue(ref(db, ".info/connected"), (snap) => {
     const sem = document.getElementById("semaforoConexion");
     if(!sem) return;
@@ -203,12 +237,24 @@ onValue(ref(db, ".info/connected"), (snap) => {
     }
 });
 
-// Lectura de la base de datos total (bd_totales)
+// Lectura de bd_totales
 onValue(ref(db, 'bd_totales'), (snapshot) => {
     if (snapshot.exists()) { 
         const data = snapshot.val();
         bdTotalesGlobal = Array.isArray(data) ? data : Object.values(data); 
-        procesarYMostrarDatos(bdTotalesGlobal); 
+        
+        // Al cargar los datos de Firebase, mostrar por defecto la remesa más alta (número mayor)
+        const ultimaRemesa = obtenerUltimaRemesa(bdTotalesGlobal);
+        if (ultimaRemesa) {
+            const datosUltimaRemesa = bdTotalesGlobal.filter(fila => {
+                const objRemesa = ESTRUCTURA_SEMANAL.find(c => c.key === 'Remesa') || { key: 'Remesa', num: 39 };
+                let val = obtenerValorFila(fila, objRemesa);
+                return String(val).trim() === String(ultimaRemesa);
+            });
+            procesarYMostrarDatos(datosUltimaRemesa);
+        } else {
+            procesarYMostrarDatos(bdTotalesGlobal);
+        }
     } else {
         bdTotalesGlobal = [];
         procesarYMostrarDatos(bdTotalesGlobal);
