@@ -122,18 +122,28 @@ function actualizarContadores(datosMostrados) {
     const lblLineas = document.getElementById('lblTotalLineas');
     const lblRemesas = document.getElementById('lblTotalRemesas');
     
-    if (lblLineas) lblLineas.innerText = datosMostrados.length;
+    const total = Array.isArray(datosMostrados) ? datosMostrados.length : 0;
+    
+    if (lblLineas) {
+        lblLineas.innerText = total;
+    } else {
+        console.warn("⚠️ No se encontró el elemento HTML con id 'lblTotalLineas'");
+    }
 
     if (lblRemesas) {
         const remesasUnicas = new Set();
-        datosMostrados.forEach(fila => {
-            const objRemesa = ESTRUCTURA_DIAS.find(c => c.key === 'Remesa') || { key: 'Remesa', num: 39 };
-            let valRemesa = obtenerValorFila(fila, objRemesa);
-            if (valRemesa !== undefined && valRemesa !== null && String(valRemesa).trim() !== "") {
-                remesasUnicas.add(String(valRemesa).trim());
-            }
-        });
+        if (Array.isArray(datosMostrados)) {
+            datosMostrados.forEach(fila => {
+                const objRemesa = ESTRUCTURA_DIAS.find(c => c.key === 'Remesa') || { key: 'Remesa', num: 39 };
+                let valRemesa = obtenerValorFila(fila, objRemesa);
+                if (valRemesa !== undefined && valRemesa !== null && String(valRemesa).trim() !== "") {
+                    remesasUnicas.add(String(valRemesa).trim());
+                }
+            });
+        }
         lblRemesas.innerText = remesasUnicas.size;
+    } else {
+        console.warn("⚠️ No se encontró el elemento HTML con id 'lblTotalRemesas'");
     }
 }
 
@@ -202,9 +212,13 @@ onValue(ref(db, 'bd_madre'), (snapshot) => {
     if (snapshot.exists()) { 
         const data = snapshot.val();
         bdMadreGlobal = Array.isArray(data) ? data : Object.values(data); 
-        procesarYMostrarDatos(bdMadreGlobal); 
+        console.log("✅ Datos cargados en bdMadreGlobal:", bdMadreGlobal.length);
+        procesarYMostrarDatos(bdMadneGlobal || bdMadreGlobal); 
     } else {
+        console.warn("⚠️ La ruta bd_madre está vacía o no existe en Firebase.");
         bdMadreGlobal = [];
         procesarYMostrarDatos(bdMadreGlobal);
     }
+}, (error) => {
+    console.error("❌ Error al conectar con Firebase:", error);
 });
