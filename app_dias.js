@@ -101,16 +101,12 @@ function obtenerValorFila(fila, colObj) {
     const key = colObj.key;
     const num = colObj.num;
 
-    // 1. Buscar por clave exacta
     if (fila[key] !== undefined && fila[key] !== null) return fila[key];
-    
-    // 2. Buscar por número de columna numérico o string
     if (num !== undefined) {
         if (fila[num] !== undefined && fila[num] !== null) return fila[num];
         if (fila[String(num)] !== undefined && fila[String(num)] !== null) return fila[String(num)];
     }
 
-    // 3. Búsqueda flexible ignorando mayúsculas, acentos y guiones
     const cleanKey = key.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[_./]/g, '');
     const foundKey = Object.keys(fila).find(k => {
         const cleanK = k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[_./]/g, '');
@@ -122,13 +118,35 @@ function obtenerValorFila(fila, colObj) {
     return '';
 }
 
-function procesarYMostrarDatos() {
+function actualizarContadores(datosMostrados) {
+    const lblLineas = document.getElementById('lblTotalLineas');
+    const lblRemesas = document.getElementById('lblTotalRemesas');
+    
+    if (lblLineas) lblLineas.innerText = datosMostrados.length;
+
+    if (lblRemesas) {
+        const remesasUnicas = new Set();
+        datosMostrados.forEach(fila => {
+            const objRemesa = ESTRUCTURA_DIAS.find(c => c.key === 'Remesa') || { key: 'Remesa', num: 39 };
+            let valRemesa = obtenerValorFila(fila, objRemesa);
+            if (valRemesa !== undefined && valRemesa !== null && String(valRemesa).trim() !== "") {
+                remesasUnicas.add(String(valRemesa).trim());
+            }
+        });
+        lblRemesas.innerText = remesasUnicas.size;
+    }
+}
+
+function procesarYMostrarDatos(datosAProcesar = bdMadreGlobal) {
     const tbody = document.getElementById('cuerpoTablaDias'); 
     if(!tbody) return;
     tbody.innerHTML = "";
-    if (bdMadreGlobal.length === 0) return;
     
-    bdMadreGlobal.forEach(fila => {
+    actualizarContadores(datosAProcesar);
+    
+    if (datosAProcesar.length === 0) return;
+    
+    datosAProcesar.forEach(fila => {
         let tr = document.createElement('tr');
         ESTRUCTURA_DIAS.forEach(colObj => {
             let td = document.createElement('td');
@@ -142,6 +160,27 @@ function procesarYMostrarDatos() {
         tbody.appendChild(tr);
     });
 }
+
+// Lógica del buscador en tiempo real
+document.addEventListener("DOMContentLoaded", () => {
+    const inputBuscador = document.getElementById('inputBuscadorDias');
+    if (inputBuscador) {
+        inputBuscador.addEventListener('keyup', (e) => {
+            const textoFiltro = e.target.value.toLowerCase().trim();
+            if (textoFiltro === "") {
+                procesarYMostrarDatos(bdMadreGlobal);
+                return;
+            }
+            const filtrados = bdMadreGlobal.filter(fila => {
+                return ESTRUCTURA_DIAS.some(colObj => {
+                    let val = String(obtenerValorFila(fila, colObj)).toLowerCase();
+                    return val.includes(textoFiltro);
+                });
+            });
+            procesarYMostrarDatos(filtrados);
+        });
+    }
+});
 
 // Inicialización de la cabecera
 construirHeaderTabla();
@@ -163,11 +202,9 @@ onValue(ref(db, 'bd_madre'), (snapshot) => {
     if (snapshot.exists()) { 
         const data = snapshot.val();
         bdMadreGlobal = Array.isArray(data) ? data : Object.values(data); 
-        console.log("Datos cargados correctamente:", bdMadreGlobal.length);
-        procesarYMostrarDatos(); 
+        procesarYMostrarDatos(bdMadreGlobal); 
     } else {
-        console.warn("La ruta bd_madre está vacía en Firebase.");
         bdMadreGlobal = [];
-        procesarYMostrarDatos();
+        procesarYMostrarDatos(bdMadreGlobal);
     }
 });
