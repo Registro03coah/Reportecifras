@@ -38,7 +38,8 @@ const ESTRUCTURA_SEMANAL = [
     { key: 'Total_de_credenciales_solicitadas', num: 62 }, { key: 'Importadas', num: 63 }, { key: 'Exportadas', num: 64 }, 
     { key: 'Reposiciones_reimpresiones', num: 65 }, { key: 'Mal_impresa', num: 66 }, { key: 'Error_en_cartografía', num: 67 }, 
     { key: 'Defunción', num: 68 }, { key: 'Suspensión', num: 69 }, { key: 'Duplicado', num: 70 }, { key: 'Error_en_núm._de_emisión', num: 71 }, 
-    { key: 'Pérdida_de_vigencia', num: 72 }, { key: 'Mov_post', num: 73 }, { key: 'Anexas_a_solicitud', num: 74 }, { key: 'Otras_bajas', num: 75 } 
+    { key: 'Pérdida_de_vigencia', num: 72 }, { key: 'Mov_post', num: 73 }, { key: 'Anexas_a_solicitud', num: 74 }, { key: 'Otras_bajas', num: 75 },
+    { key: 'Iniciales_C', num: 76 }, { key: 'Iniciales_A', num: 77 }, { key: 'Iniciales_S', num: 78 }, { key: 'IDMAC', num: 79 }
 ];
 
 let bdTotalesGlobal = [];
@@ -143,22 +144,34 @@ function obtenerUltimaRemesa(datos) {
     return listaRemesas[listaRemesas.length - 1];
 }
 
-function actualizarContadoresGlobales() {
-    const lblLineas = document.getElementById('lblTotalLineas');
-    const lblRemesas = document.getElementById('lblTotalRemesas');
+function actualizarContadoresGlobales(datosMostrados) {
+    const contadorInfo = document.getElementById('contadorInfo');
+    const totalLineas = bdTotalesGlobal.length;
     
-    if (lblLineas) lblLineas.innerText = bdTotalesGlobal.length;
+    const remesasUnicasTotales = new Set();
+    bdTotalesGlobal.forEach(fila => {
+        const objRemesa = ESTRUCTURA_SEMANAL.find(c => c.key === 'Remesa') || { key: 'Remesa', num: 39 };
+        let valRemesa = obtenerValorFila(fila, objRemesa);
+        if (valRemesa !== undefined && valRemesa !== null && String(valRemesa).trim() !== "") {
+            remesasUnicasTotales.add(String(valRemesa).trim());
+        }
+    });
 
-    if (lblRemesas) {
-        const remesasUnicas = new Set();
-        bdTotalesGlobal.forEach(fila => {
-            const objRemesa = ESTRUCTURA_SEMANAL.find(c => c.key === 'Remesa') || { key: 'Remesa', num: 39 };
-            let valRemesa = obtenerValorFila(fila, objRemesa);
-            if (valRemesa !== undefined && valRemesa !== null && String(valRemesa).trim() !== "") {
-                remesasUnicas.add(String(valRemesa).trim());
-            }
-        });
-        lblRemesas.innerText = remesasUnicas.size;
+    let remesaActual = "N/A";
+    if (datosMostrados && datosMostrados.length > 0) {
+        const objRemesa = ESTRUCTURA_SEMANAL.find(c => c.key === 'Remesa') || { key: 'Remesa', num: 39 };
+        let primeraRemesaMostrada = obtenerValorFila(datosMostrados[0], objRemesa);
+        if (primeraRemesaMostrada !== undefined && primeraRemesaMostrada !== null && String(primeraRemesaMostrada).trim() !== "") {
+            remesaActual = String(primeraRemesaMostrada).trim();
+        }
+    }
+
+    if (contadorInfo) {
+        contadorInfo.innerHTML = `
+            <i class="bi bi-collection-fill text-info"></i> Líneas: <span>${totalLineas}</span> | 
+            <i class="bi bi-tags-fill text-warning"></i> Remesas: <span>${remesasUnicasTotales.size}</span> | 
+            <i class="bi bi-star-fill text-success"></i> Remesa Actual: <span>${remesaActual}</span>
+        `;
     }
 }
 
@@ -167,7 +180,7 @@ function procesarYMostrarDatos(datosAProcesar) {
     if(!tbody) return;
     tbody.innerHTML = "";
     
-    actualizarContadoresGlobales();
+    actualizarContadoresGlobales(datosAProcesar);
     
     if (!datosAProcesar || datosAProcesar.length === 0) return;
     
@@ -221,7 +234,7 @@ document.addEventListener("DOMContentLoaded", () => {
 // Construir la cabecera fija de inmediato para que la tabla nunca desaparezca
 construirHeaderTabla();
 
-// Conexión Firebase
+// Conexión Firebase Semáforo
 onValue(ref(db, ".info/connected"), (snap) => {
     const sem = document.getElementById("semaforoConexion");
     if(!sem) return;
@@ -234,18 +247,14 @@ onValue(ref(db, ".info/connected"), (snap) => {
     }
 });
 
-// Lectura de bd_totales con depuración
-onValue(ref(db, 'bd_totales'), (snapshot) => {
-    console.log("🔍 Intentando leer 'bd_totales' desde Firebase...");
-    if (snapshot.exists()) { 
+// Lectura de la base de datos exacta 'bdtotales'
+onValue(ref(db, 'bdtotales'), (snapshot) => {
+    if (snapshot.exists()) {
         const data = snapshot.val();
-        console.log("📦 Datos recibidos en bd_totales:", data);
-        bdTotalesGlobal = Array.isArray(data) ? data : Object.values(data); 
-        console.log("📊 Total de registros cargados:", bdTotalesGlobal.length);
+        bdTotalesGlobal = Array.isArray(data) ? data : Object.values(data);
+        console.log("✅ Datos cargados correctamente de 'bdtotales':", bdTotalesGlobal.length);
         
         const ultimaRemesa = obtenerUltimaRemesa(bdTotalesGlobal);
-        console.log("🏷️ Última remesa detectada:", ultimaRemesa);
-        
         if (ultimaRemesa) {
             const datosUltimaRemesa = bdTotalesGlobal.filter(fila => {
                 const objRemesa = ESTRUCTURA_SEMANAL.find(c => c.key === 'Remesa') || { key: 'Remesa', num: 39 };
@@ -257,10 +266,10 @@ onValue(ref(db, 'bd_totales'), (snapshot) => {
             procesarYMostrarDatos(bdTotalesGlobal);
         }
     } else {
-        console.warn("⚠️ La ruta 'bd_totales' está vacía o no existe en Firebase.");
+        console.warn("⚠️ La ruta 'bdtotales' está vacía o no existe en Firebase.");
         bdTotalesGlobal = [];
         procesarYMostrarDatos(bdTotalesGlobal);
     }
 }, (error) => {
-    console.error("❌ Error de lectura en Firebase:", error);
+    console.error("❌ Error al leer 'bdtotales':", error);
 });
