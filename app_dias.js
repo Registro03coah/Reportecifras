@@ -1,12 +1,20 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-const firebaseConfig = { apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo", authDomain: "cifrasmac.firebaseapp.com", databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com", projectId: "cifrasmac", storageBucket: "cifrasmac.firebasestorage.app", messagingSenderId: "916644687837", appId: "1:916644687837:web:03d346cc48a071af1ed034" };
+const firebaseConfig = { 
+    apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo", 
+    authDomain: "cifrasmac.firebaseapp.com", 
+    databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com", 
+    projectId: "cifrasmac", 
+    storageBucket: "cifrasmac.firebasestorage.app", 
+    messagingSenderId: "916644687837", 
+    appId: "1:916644687837:web:03d346cc48a071af1ed034" 
+};
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-const ESTRUCTURA_DIAS = [
+const ESTRUCTURA_DIAS = [ 
     { key: 'Remesa', num: 39 }, { key: 'Módulo', num: 47 }, { key: 'Día', num: 1 }, { key: 'Fecha', num: 2 }, 
     { key: 'Sedes', num: 4 }, { key: 'Horas_trabajadas', num: 3 }, { key: 'Inicial', num: 5 }, { key: 'Final', num: 6 }, 
     { key: 'Total_de_folios', num: 7 }, { key: 'Inscripciones', num: 8 }, { key: 'Corrección_de_datos_personales', num: 9 }, 
@@ -30,13 +38,36 @@ const ESTRUCTURA_DIAS = [
     { key: 'Total_de_credenciales_solicitadas', num: 62 }, { key: 'Importadas', num: 63 }, { key: 'Exportadas', num: 64 }, 
     { key: 'Reposiciones_reimpresiones', num: 65 }, { key: 'Mal_impresa', num: 66 }, { key: 'Error_en_cartografía', num: 67 }, 
     { key: 'Defunción', num: 68 }, { key: 'Suspensión', num: 69 }, { key: 'Duplicado', num: 70 }, { key: 'Error_en_núm._de_emisión', num: 71 }, 
-    { key: 'Pérdida_de_vigencia', num: 72 }, { key: 'Mov_post', num: 73 }, { key: 'Anexas_a_solicitud', num: 74 }, { key: 'Otras_bajas', num: 75 }
+    { key: 'Pérdida_de_vigencia', num: 72 }, { key: 'Mov_post', num: 73 }, { key: 'Anexas_a_solicitud', num: 74 }, { key: 'Otras_bajas', num: 75 } 
 ];
 
 let bdMadreGlobal = [];
 let anchosGuardados = JSON.parse(localStorage.getItem('anchosColumnasDias')) || {};
 
-// 1. PRIMERO DEFINIMOS LAS FUNCIONES
+window.copiarTablaExcel = function(tablaId) {
+    const tabla = document.getElementById(tablaId);
+    if (!tabla) return;
+    const clone = tabla.cloneNode(true);
+    const totales = clone.querySelectorAll('.fila-totales');
+    totales.forEach(t => t.remove()); 
+    const div = document.createElement('div');
+    div.appendChild(clone);
+    document.body.appendChild(div);
+    const range = document.createRange();
+    range.selectNode(clone);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+    try {
+        document.execCommand('copy');
+        alert("¡Tabla copiada sin la fila de totales! Lista para pegar en Excel.");
+    } catch (err) {
+        alert("Error al intentar copiar.");
+    }
+    document.body.removeChild(div);
+    selection.removeAllRanges();
+};
+
 function construirHeaderTabla() {
     const thead = document.getElementById('cabeceraTablaDias'); 
     if(!thead) return;
@@ -65,14 +96,30 @@ function construirHeaderTabla() {
     thead.appendChild(trN);
 }
 
-function obtenerValorFila(fila, col) {
+function obtenerValorFila(fila, colObj) {
     if (!fila) return '';
-    if (col === "Módulo" || col === "Modulo") return fila["MODULO"] || fila["Módulo"] || fila["Modulo"] || '';
-    if (col === "Día" || col === "Dia") return fila["DIA"] || fila["Día"] || fila["Dia"] || '';
-    if (col === "Fecha") return fila["FECHA"] || fila["Fecha"] || '';
-    if (col === "Remesa") return fila["REMESA"] || fila["Remesa"] || '';
-    if (col === "Sedes") return fila["SEDE_DE_OPERACIÓN_DE_MÓDULO"] || fila["SEDES"] || fila["Sedes"] || '';
-    return fila[col] !== undefined && fila[col] !== null ? fila[col] : '';
+    const key = colObj.key;
+    const num = colObj.num;
+
+    // 1. Buscar por clave exacta
+    if (fila[key] !== undefined && fila[key] !== null) return fila[key];
+    
+    // 2. Buscar por número de columna numérico o string
+    if (num !== undefined) {
+        if (fila[num] !== undefined && fila[num] !== null) return fila[num];
+        if (fila[String(num)] !== undefined && fila[String(num)] !== null) return fila[String(num)];
+    }
+
+    // 3. Búsqueda flexible ignorando mayúsculas, acentos y guiones
+    const cleanKey = key.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[_./]/g, '');
+    const foundKey = Object.keys(fila).find(k => {
+        const cleanK = k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[_./]/g, '');
+        return cleanK === cleanKey;
+    });
+
+    if (foundKey && fila[foundKey] !== undefined && fila[foundKey] !== null) return fila[foundKey];
+
+    return '';
 }
 
 function procesarYMostrarDatos() {
@@ -85,8 +132,10 @@ function procesarYMostrarDatos() {
         let tr = document.createElement('tr');
         ESTRUCTURA_DIAS.forEach(colObj => {
             let td = document.createElement('td');
-            let val = obtenerValorFila(fila, colObj.key);
-            if(typeof val === 'string' && val.includes('T00:00:00')) val = val.split('T')[0];
+            let val = obtenerValorFila(fila, colObj);
+            if(typeof val === 'string' && val.includes('T00:00:00')) {
+                val = val.split('T')[0];
+            }
             td.innerText = val;
             tr.appendChild(td);
         });
@@ -94,17 +143,18 @@ function procesarYMostrarDatos() {
     });
 }
 
-// 2. DESPUÉS EJECUTAMOS Y ESCUCHAMOS FIREBASE
+// Inicialización de la cabecera
 construirHeaderTabla();
 
+// Conexión de Firebase
 onValue(ref(db, ".info/connected"), (snap) => {
     const sem = document.getElementById("semaforoConexion");
     if(!sem) return;
     if (snap.val() === true) { 
-        sem.className = "badge bg-success text-white fs-6 px-3 py-2 rounded-pill"; 
+        sem.className = "badge bg-success text-white fs-6 px-3 py-2 rounded-pill online-glow"; 
         sem.innerHTML = 'ONLINE'; 
     } else { 
-        sem.className = "badge bg-danger text-white fs-6 px-3 py-2 rounded-pill"; 
+        sem.className = "badge bg-danger text-white fs-6 px-3 py-2 rounded-pill offline-glow"; 
         sem.innerHTML = 'OFFLINE'; 
     }
 });
@@ -113,6 +163,11 @@ onValue(ref(db, 'bd_madre'), (snapshot) => {
     if (snapshot.exists()) { 
         const data = snapshot.val();
         bdMadreGlobal = Array.isArray(data) ? data : Object.values(data); 
+        console.log("Datos cargados correctamente:", bdMadreGlobal.length);
         procesarYMostrarDatos(); 
+    } else {
+        console.warn("La ruta bd_madre está vacía en Firebase.");
+        bdMadreGlobal = [];
+        procesarYMostrarDatos();
     }
 });
