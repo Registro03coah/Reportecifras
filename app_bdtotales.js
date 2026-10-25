@@ -102,12 +102,12 @@ function ejecutarOrdenamiento(arr) {
         let rA = parseInt(a.REMESA || 0, 10); 
         let rB = parseInt(b.REMESA || 0, 10);
         
-        // 1. Remesa de MAYOR A MENOR (descendente)
+        // 1. Remesa de mayor a menor
         if (rA !== rB) {
             return rB - rA; 
         }
 
-        // 2. Módulos estrictos en orden (050351, 050353, 050354)
+        // 2. Módulos en orden estricto (050351, 050353, 050354)
         let mA = String(a.MODULO || '').trim();
         let mB = String(b.MODULO || '').trim();
         let prioA = prioridadModulos[mA] || 99;
