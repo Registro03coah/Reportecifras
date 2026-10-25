@@ -11,7 +11,7 @@ const database = firebase.database();
 let datosGlobalesBd = []; 
 let datosEnPantalla = []; 
 let columnaOrdenActual = 'REMESA'; 
-let ordenAscendente = true; 
+let ordenAscendente = false; 
 let idmacEdicionActual = null;
 
 // Control visual del semáforo de conexión Online/Offline
@@ -88,12 +88,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// ORDENAMIENTO ESTRICTO: Remesa ascendente y módulos en orden 050351 -> 050353 -> 050354
+// ORDENAMIENTO ESTRICTO: Remesa descendente (mayor a menor) y módulos en orden 050351 -> 050353 -> 050354
 function ejecutarOrdenamiento(arr) {
     if(!arr || arr.length === 0) { dibujarTabla([]); return; }
     let o = [...arr];
 
-    // Mapa de prioridad para los módulos
     const prioridadModulos = {
         '050351': 1, '50351': 1,
         '050353': 2, '50353': 2,
@@ -104,8 +103,8 @@ function ejecutarOrdenamiento(arr) {
         let rA = String(a.REMESA || '').trim(); 
         let rB = String(b.REMESA || '').trim();
         
-        // 1. Ordenar por Remesa ascendente (numérico)
-        let compRemesa = rA.localeCompare(rB, undefined, {numeric: true});
+        // 1. Ordenar por Remesa descendente (de mayor a menor)
+        let compRemesa = rB.localeCompare(rA, undefined, {numeric: true});
         if(compRemesa !== 0) return compRemesa;
 
         // 2. Si es la misma remesa, ordenar estrictamente por los módulos definidos (050351, 050353, 050354)
@@ -118,7 +117,6 @@ function ejecutarOrdenamiento(arr) {
             return prioA - prioB;
         }
 
-        // Si hay otros módulos, orden alfabético/numérico normal
         return mA.localeCompare(mB, undefined, {numeric: true});
     });
 
@@ -127,7 +125,7 @@ function ejecutarOrdenamiento(arr) {
 
 window.cambiarOrden = function(col) { 
     if (columnaOrdenActual === col) ordenAscendente = !ordenAscendente; 
-    else { columnaOrdenActual = col; ordenAscendente = true; } 
+    else { columnaOrdenActual = col; ordenAscendente = false; } 
     ejecutarOrdenamiento(datosEnPantalla); 
 };
 
