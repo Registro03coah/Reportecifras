@@ -213,7 +213,7 @@ onValue(ref(db, 'bd_madre'), (snapshot) => {
         const data = snapshot.val();
         bdMadreGlobal = Array.isArray(data) ? data : Object.values(data); 
         console.log("✅ Datos cargados en bdMadreGlobal:", bdMadreGlobal.length);
-        procesarYMostrarDatos(bdMadneGlobal || bdMadreGlobal); 
+      procesarYMostrarDatos(bdMadreGlobal);
     } else {
         console.warn("⚠️ La ruta bd_madre está vacía o no existe en Firebase.");
         bdMadreGlobal = [];
