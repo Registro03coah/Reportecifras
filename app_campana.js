@@ -11,12 +11,12 @@ const MAPA_NUMEROS = { "DIA": 1, "FECHA": 2, "HORAS_TRABAJADAS": 3, "SEDES": 4, 
 
 function obtenerNumeroColumna(key) { return MAPA_NUMEROS[key] || '-'; }
 
+// Copiar tabla completa (incluyendo totales) a Excel
 window.copiarTablaExcel = function(tablaId) {
     const tabla = document.getElementById(tablaId);
     if (!tabla) return;
     const clone = tabla.cloneNode(true);
-    const totales = clone.querySelectorAll('.fila-totales');
-    totales.forEach(t => t.remove()); 
+    
     const div = document.createElement('div');
     div.appendChild(clone);
     document.body.appendChild(div);
@@ -27,7 +27,7 @@ window.copiarTablaExcel = function(tablaId) {
     selection.addRange(range);
     try {
         document.execCommand('copy');
-        alert("¡Tabla copiada sin la fila de totales! Lista para pegar en Excel.");
+        alert("¡Tabla copiada al 100% con la fila de totales incluida! Lista para pegar en Excel.");
     } catch (err) {
         alert("Error al intentar copiar.");
     }
@@ -38,7 +38,6 @@ window.copiarTablaExcel = function(tablaId) {
 let bdtotalesGlobal = []; 
 let bdMadreGlobal = [];
 
-// Control de conexión visual corregido a Verde / Rojo
 onValue(ref(db, ".info/connected"), (s) => { 
     let sem = document.getElementById("semaforoConexion"); 
     if(!sem) return;
@@ -62,9 +61,19 @@ function construirHeaderTabla() {
     COLUMNAS_CAMPANA_KEYS.forEach(col => {
         let th = document.createElement('th'); 
         th.innerText = col.replace(/_/g, ' '); 
-        th.style.minWidth = ['MODULO','ENT','DTTO'].includes(col) ? "70px" : "90px";
+        
+        // Asignar anchos suficientes para evitar encimamientos
+        if(['INICIAL', 'FINAL'].includes(col)) {
+            th.style.minWidth = "170px";
+        } else if(['MODULO','ENT','DTTO'].includes(col)) {
+            th.style.minWidth = "70px";
+        } else {
+            th.style.minWidth = "95px";
+        }
+
         if(['INICIAL','FINAL','TOTAL_DE_FOLIOS'].includes(col)) th.classList.add('bg-folios');
         trT.appendChild(th);
+        
         let thN = document.createElement('th'); 
         thN.innerText = obtenerNumeroColumna(col); 
         trN.appendChild(thN);
