@@ -45,7 +45,6 @@ function generarIdMac(remesa, modulo) {
     return `${modDigits}${numPart}${suffix}`;
 }
 
-// ORDEN EXACTO SOLICITADO (Con REMESA inmediatamente después de MODULO)
 const ordenDeseado = [
     'ENT', 'DTTO', 'MODULO', 'REMESA', 'INICIAL', 'FINAL', 'TOTAL_DE_FOLIOS', 'INSCRIPCIONES', 
     'CORRECCION_DE_DATOS_PERSONALES', 'CAMBIO_DE_DOMICILIO', 'REPOSISION', 'REIMPRESION', 
@@ -88,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// ORDENAMIENTO ESTRICTO: Remesa descendente (mayor a menor) y módulos en orden 050351 -> 050353 -> 050354
+// ORDENAMIENTO ESTRICTO: Remesa de mayor a menor y módulos en orden 050351 -> 050353 -> 050354
 function ejecutarOrdenamiento(arr) {
     if(!arr || arr.length === 0) { dibujarTabla([]); return; }
     let o = [...arr];
@@ -100,14 +99,15 @@ function ejecutarOrdenamiento(arr) {
     };
 
     o.sort((a, b) => {
-        let rA = String(a.REMESA || '').trim(); 
-        let rB = String(b.REMESA || '').trim();
+        let rA = parseInt(a.REMESA || 0, 10); 
+        let rB = parseInt(b.REMESA || 0, 10);
         
-        // 1. Ordenar por Remesa descendente (de mayor a menor)
-        let compRemesa = rB.localeCompare(rA, undefined, {numeric: true});
-        if(compRemesa !== 0) return compRemesa;
+        // 1. Remesa de MAYOR A MENOR (descendente)
+        if (rA !== rB) {
+            return rB - rA; 
+        }
 
-        // 2. Si es la misma remesa, ordenar estrictamente por los módulos definidos (050351, 050353, 050354)
+        // 2. Módulos estrictos en orden (050351, 050353, 050354)
         let mA = String(a.MODULO || '').trim();
         let mB = String(b.MODULO || '').trim();
         let prioA = prioridadModulos[mA] || 99;
