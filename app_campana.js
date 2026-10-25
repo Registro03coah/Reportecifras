@@ -20,9 +20,15 @@ function renderTabla() {
         return !isNaN(rNum) && rNum >= rIni && rNum <= rFin; 
     });
 
-    // 1. Renderizar estrictamente las 3 líneas de los módulos en orden
-    ['050351','050353','050354'].forEach(mod => {
-        let regs = registros.filter(r => String(r.MODULO || '').trim() === mod).sort((a, b) => parseInt(a.REMESA, 10) - parseInt(b.REMESA, 10));
+    // 1. Renderizar estrictamente las 3 líneas de los módulos en orden (robusto contra ceros a la izquierda)
+    ['050351','050353','050354'].forEach(modTarget => {
+        let modNumTarget = parseInt(modTarget, 10);
+        
+        let regs = registros.filter(r => {
+            let rMod = parseInt(r.MODULO, 10);
+            return !isNaN(rMod) && rMod === modNumTarget;
+        }).sort((a, b) => parseInt(a.REMESA, 10) - parseInt(b.REMESA, 10));
+
         if(regs.length === 0) return;
 
         let tr = document.createElement('tr');
@@ -32,7 +38,7 @@ function renderTabla() {
         COLUMNAS_CAMPANA_KEYS.forEach(col => {
             let td = document.createElement('td');
             if(col === 'MODULO') {
-                td.innerText = mod;
+                td.innerText = modTarget;
             } else if(col === 'INICIAL') {
                 td.innerText = pR['INICIAL'] || "0";
             } else if(col === 'FINAL') {
