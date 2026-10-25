@@ -94,7 +94,7 @@
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        // ORDEN EXACTO BASADO EN EL REPORTE SEMANAL
+        // ORDEN EXACTO DEL REPORTE SEMANAL
         const ordenSemanalDeseado = [
             'ent', 'dtto', 'modulo', 'inicial', 'final', 'total_de_folios', 'inscripciones', 
             'correccion_de_datos_personales', 'cambio_de_domicilio', 'reposision', 'reimpresion', 
@@ -107,6 +107,20 @@
             'disponibles', 'duplicado', 'disponibles_al_día_anterior', 'dias_trabajados', 'configuracion', 
             'sript_ejecutado_vigencia', 'remesa', 'DIA', 'FECHA', 'IDMAC', 'SEDES'
         ];
+
+        // Función inteligente para extraer el valor sin importar mayúsculas, minúsculas o acentos
+        function obtenerValorFila(fila, colKey) {
+            if (!fila) return '';
+            if (fila[colKey] !== undefined && fila[colKey] !== null) return fila[colKey];
+            
+            const cleanTarget = colKey.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[_./-]/g, '');
+            const foundKey = Object.keys(fila).find(k => {
+                const cleanK = k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[_./-]/g, '');
+                return cleanK === cleanTarget;
+            });
+            if (foundKey && fila[foundKey] !== undefined && fila[foundKey] !== null) return fila[foundKey];
+            return '';
+        }
 
         let bdMadreDataGlobal = null;
         database.ref('bdtotales').on('value', (snapshot) => {
@@ -125,20 +139,25 @@
                 return;
             }
 
-            let keysSet = new Set();
-            arr.forEach(item => Object.keys(item).forEach(k => keysSet.add(k)));
-            let allKeys = Array.from(keysSet);
-
-            // Ordenar columnas: primero las del orden semanal (ignorando mayúsculas/minúsculas), y el resto al final
-            let keys = allKeys.sort((a, b) => {
-                let indexA = ordenSemanalDeseado.findIndex(k => k.toLowerCase() === a.toLowerCase());
-                let indexB = ordenSemanalDeseado.findIndex(k => k.toLowerCase() === b.toLowerCase());
-
-                if (indexA !== -1 && indexB !== -1) return indexA - indexB;
-                if (indexA !== -1) return -1;
-                if (indexB !== -1) return 1;
-                return a.localeCompare(b);
+            // Construir la lista de columnas únicas evitando duplicados por diferencias de mayúsculas/minúsculas
+            let keysMap = new Map(); // clave normalizada -> nombre oficial a mostrar
+            
+            // 1. Agregar primero las del orden semanal deseado
+            ordenSemanalDeseado.forEach(k => {
+                keysMap.set(k.toLowerCase().trim(), k);
             });
+
+            // 2. Agregar cualquier otro campo adicional que exista en Firebase al final
+            arr.forEach(item => {
+                Object.keys(item).forEach(k => {
+                    let kLower = k.toLowerCase().trim();
+                    if (!keysMap.has(kLower)) {
+                        keysMap.set(kLower, k);
+                    }
+                });
+            });
+
+            let keys = Array.from(keysMap.values());
 
             let trH = '<tr>';
             keys.forEach(k => {
@@ -152,7 +171,7 @@
             arr.forEach(item => {
                 htmlB += '<tr>';
                 keys.forEach(k => {
-                    let val = item[k] !== undefined && item[k] !== null ? item[k] : '';
+                    let val = obtenerValorFila(item, k);
                     if(typeof val === 'string' && val.includes('T00:00:00')) val = val.split('T')[0];
                     htmlB += `<td>${val}</td>`;
                 });
