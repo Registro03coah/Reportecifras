@@ -11,8 +11,21 @@ const database = firebase.database();
 let datosGlobalesBd = []; 
 let datosEnPantalla = []; 
 let columnaOrdenActual = 'REMESA'; 
-let ordenAscendente = false; 
+let ordenAscendente = true; 
 let idmacEdicionActual = null;
+
+// Control visual del semáforo de conexión Online/Offline
+database.ref(".info/connected").on("value", (snap) => {
+    let sem = document.getElementById("semaforoConexion");
+    if(!sem) return;
+    if (snap.val() === true) {
+        sem.className = "badge bg-success text-white ms-auto";
+        sem.innerHTML = '<i class="bi bi-check-circle"></i> ONLINE';
+    } else {
+        sem.className = "badge bg-danger text-white ms-auto";
+        sem.innerHTML = '<i class="bi bi-x-circle"></i> OFFLINE';
+    }
+});
 
 function generarIdMac(remesa, modulo) {
     let modStr = String(modulo || '').replace(/\D/g, ''); 
@@ -32,8 +45,9 @@ function generarIdMac(remesa, modulo) {
     return `${modDigits}${numPart}${suffix}`;
 }
 
+// ORDEN EXACTO SOLICITADO (Con REMESA inmediatamente después de MODULO)
 const ordenDeseado = [
-    'ENT', 'DTTO', 'MODULO', 'INICIAL', 'FINAL', 'TOTAL_DE_FOLIOS', 'INSCRIPCIONES', 
+    'ENT', 'DTTO', 'MODULO', 'REMESA', 'INICIAL', 'FINAL', 'TOTAL_DE_FOLIOS', 'INSCRIPCIONES', 
     'CORRECCION_DE_DATOS_PERSONALES', 'CAMBIO_DE_DOMICILIO', 'REPOSISION', 'REIMPRESION', 
     'CORR__DE_DATOS_DIRECCION', 'REINCORPORACION', 'REEMPLAZO', 'TOTAL_DE_TRAMITES', 
     'RECHAZOS_DE_MAC_34', 'RECHAZOS_DE_MAC_35', 'CANCELADOS', 'TOTAL_DE_MOVIMIENTOS', 
@@ -42,7 +56,7 @@ const ordenDeseado = [
     'RECIBIDAS_DE_OTROS_TIPOS', 'IMPORTADAS', 'EXPORTADAS', 'ENTREGADAS', 'RECIBO_Y_O_EXTRAVIO', 
     'CPV_DEVUELA_ENTREGA', 'RESGUARDO', 'SOLICITUD_DE_REIMPRESION', 'RETIRADAS_POR_OTRA_CAUSA', 
     'DISPONIBLES', 'DUPLICADO', 'DISPONIBLES_AL_DÍA_ANTERIOR', 'DIAS_TRABAJADOS', 'CONFIGURACION', 
-    'SRIPT_EJECUTADO_VIGENCIA', 'REMESA', 'DIA', 'FECHA', 'IDMAC', 'SEDES',
+    'SRIPT_EJECUTADO_VIGENCIA', 'DIA', 'FECHA', 'IDMAC', 'SEDES',
     '34_IMAGEN_INCONSISTENTE', '35_MOVIMIENTO_POSTERIOR', 'ANEXAS_A_FUAR', 'ANEXAS_A_SOLICITUD', 
     'CARTOGRAFIA_SOLICITUD', 'CRED_PROD_CANJE_POR_NUEVA', 'CRED_PRODUCTO_DE_REGISTRO_DUPLICADO', 
     'DATOS_ERRONEOS', 'DEFUNCION', 'DEVUELTAS_POR_TERCEROS', 'DISPONIBLES_DE_SOL_DE_EXP', 
@@ -74,23 +88,46 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+// ORDENAMIENTO ESTRICTO: Remesa ascendente y módulos en orden 050351 -> 050353 -> 050354
 function ejecutarOrdenamiento(arr) {
     if(!arr || arr.length === 0) { dibujarTabla([]); return; }
     let o = [...arr];
+
+    // Mapa de prioridad para los módulos
+    const prioridadModulos = {
+        '050351': 1, '50351': 1,
+        '050353': 2, '50353': 2,
+        '050354': 3, '50354': 3
+    };
+
     o.sort((a, b) => {
         let rA = String(a.REMESA || '').trim(); 
         let rB = String(b.REMESA || '').trim();
-        if(rA !== rB) return rB.localeCompare(rA, undefined, {numeric: true});
-        let mA = String(a.MODULO || '').trim(); 
+        
+        // 1. Ordenar por Remesa ascendente (numérico)
+        let compRemesa = rA.localeCompare(rB, undefined, {numeric: true});
+        if(compRemesa !== 0) return compRemesa;
+
+        // 2. Si es la misma remesa, ordenar estrictamente por los módulos definidos (050351, 050353, 050354)
+        let mA = String(a.MODULO || '').trim();
         let mB = String(b.MODULO || '').trim();
+        let prioA = prioridadModulos[mA] || 99;
+        let prioB = prioridadModulos[mB] || 99;
+
+        if (prioA !== prioB) {
+            return prioA - prioB;
+        }
+
+        // Si hay otros módulos, orden alfabético/numérico normal
         return mA.localeCompare(mB, undefined, {numeric: true});
     });
+
     dibujarTabla(o);
 }
 
 window.cambiarOrden = function(col) { 
     if (columnaOrdenActual === col) ordenAscendente = !ordenAscendente; 
-    else { columnaOrdenActual = col; ordenAscendente = false; } 
+    else { columnaOrdenActual = col; ordenAscendente = true; } 
     ejecutarOrdenamiento(datosEnPantalla); 
 };
 
@@ -207,11 +244,9 @@ window.abrirModalNuevoRegistro = function() {
     const contenedor = document.getElementById('contenedorInputsNuevo');
     contenedor.innerHTML = '';
 
-    // Obtener las columnas estándar actuales para estructurar el formulario nuevo
     let colSet = new Set();
     datosGlobalesBd.forEach(i => Object.keys(i).forEach(k => colSet.add(k.toUpperCase().trim())));
     if (colSet.size === 0) {
-        // Columnas por defecto si la base estuviera totalmente vacía
         ['ENT', 'DTTO', 'MODULO', 'REMESA', 'INICIAL', 'FINAL', 'TOTAL_DE_FOLIOS'].forEach(c => colSet.add(c));
     }
     let columnas = Array.from(colSet).sort((a, b) => obtenerIndiceOrden(a) - obtenerIndiceOrden(b));
@@ -241,16 +276,12 @@ window.guardarNuevoRegistroManual = function() {
         nuevoObj[campo] = valor;
     });
 
-    // Validar campos mínimos requeridos
     if (!nuevoObj['REMESA'] || !nuevoObj['MODULO']) {
         alert("Atención: Los campos 'REMESA' y 'MODULO' son obligatorios para crear el registro.");
         return;
     }
 
-    // Generar IDMAC automático
     nuevoObj['IDMAC'] = generarIdMac(nuevoObj['REMESA'], nuevoObj['MODULO']);
-
-    // Agregar al arreglo global
     datosGlobalesBd.push(nuevoObj);
 
     database.ref('bdtotales').set(datosGlobalesBd)
@@ -268,7 +299,44 @@ window.guardarNuevoRegistroManual = function() {
 };
 
 // ==========================================
-// BORRAR REGISTRO
+// SUBIR, DESCARGAR Y VACIAR RESPALDOS JSON
+// ==========================================
+window.subirRespaldoTotalesJSON = function(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const contenido = JSON.parse(e.target.result);
+            const datosNuevos = Array.isArray(contenido) ? contenido : Object.values(contenido);
+            if(confirm(`¿Deseas fusionar/subir ${datosNuevos.length} registros a la BD Totales en Firebase?`)) {
+                database.ref('bdtotales').set(datosNuevos)
+                .then(() => {
+                    alert("¡Respaldo JSON subido y cargado con éxito en Firebase!");
+                    document.getElementById('inputSubirJson').value = '';
+                })
+                .catch(() => alert("Error al subir el archivo a Firebase."));
+            } else {
+                document.getElementById('inputSubirJson').value = '';
+            }
+        } catch(err) {
+            alert("El archivo JSON no es válido.");
+            document.getElementById('inputSubirJson').value = '';
+        }
+    };
+    reader.readAsText(file);
+};
+
+window.vaciarBdTotales = function() {
+    if(confirm("⚠️ ¿Estás COMPLETAMENTE SEGURO de vaciar toda la Base de Datos Totales? Esta acción borrará todos los registros en la nube.")) {
+        database.ref('bdtotales').remove()
+        .then(() => alert("La base de datos ha sido vaciada."))
+        .catch(() => alert("Error al intentar vaciar la base de datos."));
+    }
+};
+
+// ==========================================
+// BORRAR REGISTRO INDIVIDUAL
 // ==========================================
 window.borrarRegistro = function(id) {
     if(confirm(`¿Estás seguro de eliminar el registro con ID ${id}?`)) {
