@@ -13,7 +13,7 @@
         header.fixed-top-nav { position: fixed; top: 0; left: 0; width: 100%; z-index: 1030; background-color: #1b396b; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .main-container-scroll { margin-top: 55px; margin-bottom: 40px; flex: 1; overflow-y: auto; overflow-x: hidden; padding: 15px 20px; }
         .header-banner { background: linear-gradient(135deg, #0dcaf0, #055160); color: white; padding: 10px 0; border-bottom: 4px solid #1b396b; margin-bottom: 10px; border-radius: 6px; }
-        .excel-container { width: 100%; max-height: calc(21 * 32px + 50px); overflow-x: auto !important; overflow-y: auto !important; border: 1px solid #ced4da; background: white; border-radius: 6px; }
+        .excel-container { width: 100%; min-height: 400px; max-height: calc(21 * 32px + 50px); overflow-x: auto !important; overflow-y: auto !important; border: 1px solid #ced4da; background: white; border-radius: 6px; }
         .excel-table { margin-bottom: 0; table-layout: auto !important; width: max-content; border-collapse: separate; border-spacing: 0; }
         .excel-table thead th { position: sticky; top: 0; z-index: 3; font-size: 11px; font-weight: 700; background-color: #1b396b !important; color: white; text-align: center; vertical-align: middle; white-space: normal !important; word-wrap: break-word !important; min-width: 120px !important; max-width: 160px !important; padding: 6px 4px !important; line-height: 1.2; cursor: pointer; height: 50px; }
         .excel-table thead tr.num-row th { position: sticky; top: 50px; z-index: 2; background-color: #e9ecef !important; color: #212529 !important; font-size: 11px; padding: 3px !important; border-bottom: 2px solid #2d3436; height: 25px; }
@@ -120,7 +120,7 @@
                     Clic aquí y Ctrl+V para pegar datos del Módulo 050354
                 </div>
 
-                <!-- CONTENEDORES DE TABLAS: El 050351 se muestra por defecto sin d-none -->
+                <!-- CONTENEDORES DE TABLAS (IDs correctos que busca el JS) -->
                 <div class="excel-container shadow-sm" id="container_050351">
                     <table class="excel-table table table-hover" id="tablaCaptura_050351">
                         <thead></thead>
