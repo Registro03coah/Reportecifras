@@ -22,7 +22,7 @@ const ESTRUCTURA_SEMANAL = [
     { key: 'Inicial', num: 5 },
     { key: 'Final', num: 6 },
     { key: 'Total_de_folios', num: 7 },
-    { key: 'no_utilizados', num: 00 },
+    { key: 'no_utilizados', num: 88 },
     { key: 'Inscripciones', num: 8 },
     { key: 'Corrección_de_datos_personales', num: 9 },
     { key: 'Cambio_de_domicilio', num: 10 },
