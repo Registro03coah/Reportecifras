@@ -94,6 +94,19 @@
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
+        // ORDEN EXACTO BASADO EN EL REPORTE SEMANAL
+        const ordenSemanalDeseado = [
+            'ent', 'dtto', 'modulo', 'inicial', 'final', 'total_de_folios', 'inscripciones', 
+            'correccion_de_datos_personales', 'cambio_de_domicilio', 'reposision', 'reimpresion', 
+            'corr__de_datos_direccion', 'reincorporacion', 'reemplazo', 'total_de_tramites', 
+            'rechazos_de_mac_34', 'rechazos_de_mac_35', 'cancelados', 'total_de_movimientos', 
+            'cif-05', 'creden_devueltas_por_terceros', 'solicitud_expedicion', 'solicitud_rectificacion', 
+            'demanda_de_juicio', 'iniciales_c', 'iniciales_a', 'iniciales_s', 'actualización', 
+            'recibidas_de_otros_tipos', 'importadas', 'exportadas', 'entregadas', 'recibo_y_o_extravio', 
+            'CPV_devuelta_entrega', 'resguardo', 'solicitud_de_reimpresion', 'retiradas_por_otra_causa', 
+            'disponibles', 'duplicado', 'disponibles_al_día_anterior', 'dias_trabajados', 'configuracion', 
+            'sript_ejecutado_vigencia', 'remesa', 'DIA', 'FECHA', 'IDMAC', 'SEDES'
+        ];
 
         let bdMadreDataGlobal = null;
         database.ref('bdtotales').on('value', (snapshot) => {
@@ -108,17 +121,28 @@
             tbody.innerHTML = '';
 
             if (arr.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="100%" class="text-center py-4 text-muted">No hay registros en la BD Madre.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="100%" class="text-center py-4 text-muted">No hay registros en la BD Totales.</td></tr>';
                 return;
             }
 
             let keysSet = new Set();
             arr.forEach(item => Object.keys(item).forEach(k => keysSet.add(k)));
-            let keys = Array.from(keysSet);
+            let allKeys = Array.from(keysSet);
+
+            // Ordenar columnas: primero las del orden semanal (ignorando mayúsculas/minúsculas), y el resto al final
+            let keys = allKeys.sort((a, b) => {
+                let indexA = ordenSemanalDeseado.findIndex(k => k.toLowerCase() === a.toLowerCase());
+                let indexB = ordenSemanalDeseado.findIndex(k => k.toLowerCase() === b.toLowerCase());
+
+                if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+                if (indexA !== -1) return -1;
+                if (indexB !== -1) return 1;
+                return a.localeCompare(b);
+            });
 
             let trH = '<tr>';
             keys.forEach(k => {
-                let visual = k.toUpperCase();
+                let visual = k.toUpperCase().replace(/_/g, ' ');
                 trH += `<th>${visual}</th>`;
             });
             trH += '</tr>';
@@ -129,6 +153,7 @@
                 htmlB += '<tr>';
                 keys.forEach(k => {
                     let val = item[k] !== undefined && item[k] !== null ? item[k] : '';
+                    if(typeof val === 'string' && val.includes('T00:00:00')) val = val.split('T')[0];
                     htmlB += `<td>${val}</td>`;
                 });
                 htmlB += '</tr>';
