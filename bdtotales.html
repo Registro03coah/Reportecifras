@@ -6,292 +6,112 @@
     <title>Base de Datos Totales - Sistema MAC</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-
-    <!-- Firebase SDK v8 -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-
     <style>
         body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .header-banner { background: linear-gradient(135deg, #1b396b, #0dcaf0); color: white; padding: 20px 0; border-bottom: 5px solid #055160; margin-bottom: 20px; }
-        .excel-container { width: 100%; max-height: 65vh; overflow: auto; border: 1px solid #ced4da; background: white; border-radius: 6px; }
-        .excel-table { margin-bottom: 0; table-layout: auto; }
-        .excel-table thead th { 
-            position: sticky; top: 0; z-index: 3; font-size: 11px; font-weight: 700; background-color: #1b396b !important; 
-            color: white !important; text-align: center; vertical-align: middle; padding: 8px 6px; white-space: normal;
-        }
-        .excel-table td { padding: 6px 8px; border: 1px solid #ccc; text-align: center; vertical-align: middle; font-size: 11px; white-space: nowrap; }
+        .header-banner { background: linear-gradient(135deg, #0dcaf0, #055160); color: white; border-bottom: 4px solid #1b396b; padding: 15px 0; margin-bottom: 15px; }
+        .excel-container { width: 100%; max-height: 65vh; overflow: auto; border: 1px solid #ddd; background: white; margin-bottom: 15px; }
+        .excel-table { margin-bottom: 0; width: max-content; border-collapse: separate; border-spacing: 0; }
+        .excel-table thead th { position: sticky; top: 0; z-index: 3; font-size: 10px; text-transform: uppercase; background-color: #1b396b; color: white; height: 45px; text-align: center; vertical-align: middle; padding: 6px 10px; border: 1px solid #ccc; cursor: pointer; }
+        .excel-table td { padding: 6px 10px; border: 1px solid #ccc; text-align: center; vertical-align: middle; font-size: 11px; white-space: nowrap; }
     </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
 
-    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #1b396b;">
-      <div class="container-fluid px-4">
-        <a class="navbar-brand fw-bold" href="index.html"><i class="bi bi-hdd-network"></i> SISTEMA MAC</a>
+    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #1b396b; width: 100%;">
+      <div class="container-fluid px-3">
+        <a class="navbar-brand fw-bold" href="https://registro03coah.github.io/mimenu/"><i class="bi bi-hdd-network"></i> SISTEMA MAC</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
           <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
-          <ul class="navbar-nav ms-auto gap-3">
-            <li class="nav-item"><a class="nav-link text-light px-3" href="index.html"><i class="bi bi-pencil-square"></i> Vaciado de Datos</a></li>
-            <li class="nav-item"><a class="nav-link text-light px-3" href="reporte_dias.html"><i class="bi bi-calendar3"></i> Reporte Días</a></li>
-            <li class="nav-item"><a class="nav-link text-light px-3" href="reporte_semanal.html"><i class="bi bi-calendar-week"></i> Reporte Semanal</a></li>
-            <li class="nav-item"><a class="nav-link text-light px-3" href="reporte_campana.html"><i class="bi bi-bar-chart-fill"></i> Reporte Campaña</a></li>
-            <li class="nav-item"><a class="nav-link text-light px-3" href="reporte_acumulado.html"><i class="bi bi-archive-fill"></i> Reporte Acumulado</a></li>
-            <li class="nav-item"><a class="nav-link active bg-primary rounded px-3 text-white fw-bold" href="bdtotales.html"><i class="bi bi-database-fill"></i> BD Principal</a></li>
+          <ul class="navbar-nav ms-auto gap-2">
+            <li class="nav-item"><a class="nav-link text-light px-2" href="index.html"><i class="bi bi-pencil-square"></i> Vaciado de Datos</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_dias.html"><i class="bi bi-calendar3"></i> Reporte Días</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_semanal.html"><i class="bi bi-calendar-week"></i> Reporte Semanal</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_campana.html"><i class="bi bi-bar-chart-fill"></i> Reporte Campaña</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_acumulado.html"><i class="bi bi-archive-fill"></i> Reporte Acumulado</a></li>
+            <li class="nav-item"><a class="nav-link px-2" href="graficos.html" style="color: #ff66b2 !important; font-weight: bold;"><i class="bi bi-pie-chart-fill"></i> Gráficos</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-2" href="bd_madre.html"><i class="bi bi-database-fill"></i> BD Principal</a></li>
+            <li class="nav-item"><a class="nav-link active bg-primary rounded px-2 text-white fw-bold" href="bdtotales.html"><i class="bi bi-database-fill-gear"></i> BD Totales</a></li>
           </ul>
         </div>
       </div>
     </nav>
 
-    <div class="header-banner text-center d-flex justify-content-center align-items-center">
-        <div>
-            <h1 class="fw-bold mb-0"><i class="bi bi-database-fill"></i> Base de Datos de Totales (BD Totales)</h1>
-            <p class="lead mb-0">Repositorio central de totales generales remesa a remesa</p>
-        </div>
+    <div class="header-banner text-center">
+        <h1 class="fw-bold mb-0"><i class="bi bi-database-fill-gear"></i> Base de Datos Totales (BD Totales)</h1>
     </div>
 
     <div class="container-fluid px-4 flex-grow-1">
-        <div class="alert alert-info shadow-sm d-flex flex-wrap justify-content-between align-items-center gap-2">
-            <div>
-                <strong>BD Totales:</strong> Muestra todos los registros almacenados en la nube ordenados por remesa y módulos específicos.
-            </div>
-            <div class="d-flex align-items-center gap-2 flex-wrap">
-                <!-- Buscador por Remesa o IDMAC -->
-                <div class="input-group input-group-sm" style="width: 220px;">
-                    <span class="input-group-text bg-white text-secondary"><i class="bi bi-search"></i></span>
-                    <input type="text" id="buscadorBdTotales" class="form-control" placeholder="Buscar Remesa / IDMAC...">
-                </div>
-
-                <button class="btn btn-sm btn-success fw-bold" onclick="exportarBDMadre()"><i class="bi bi-download"></i> Descargar Respaldo</button>
-                <label class="btn btn-sm btn-warning fw-bold mb-0" style="cursor: pointer;">
-                    <i class="bi bi-upload"></i> Subir / Restaurar <input type="file" id="inputArchivoBD" accept=".json" style="display: none;" onchange="importarBDMadre(event)">
-                </label>
-                <button class="btn btn-sm btn-danger fw-bold" onclick="vaciarBDMadre()"><i class="bi bi-trash-fill"></i> Vaciar BD</button>
-                <div id="semaforoConexion" class="badge bg-success">Conectado</div>
+        <div class="card shadow-sm mb-3">
+            <div class="card-body d-flex gap-3 align-items-center bg-light p-2 flex-wrap">
+                <span class="fw-bold text-primary" style="font-size:12px;"><i class="bi bi-search"></i> Buscar ID/Remesa:</span>
+                <input type="text" id="buscadorBdTotales" class="form-control form-control-sm w-auto" placeholder="Escribe para filtrar...">
+                
+                <!-- Botón para Agregar Registro Manual -->
+                <button class="btn btn-success btn-sm fw-bold" onclick="abrirModalNuevoRegistro()"><i class="bi bi-plus-circle"></i> Nuevo Registro Manual</button>
+                
+                <button class="btn btn-sm btn-secondary fw-bold ms-auto" onclick="descargarRespaldoTotalesJSON()"><i class="bi bi-download"></i> Respaldo JSON</button>
             </div>
         </div>
-        <div class="excel-container shadow-sm mb-3">
-            <table class="excel-table table table-hover" id="tablaBdMadre">
-                <thead id="cabeceraBdMadre"></thead>
-                <tbody id="cuerpoBdMadre"></tbody>
+        
+        <div class="excel-container shadow-sm rounded border-info">
+            <table class="excel-table table table-hover" id="tablaBdTotales">
+                <thead id="cabeceraBdTotales"></thead>
+                <tbody id="cuerpoBdTotales"></tbody>
             </table>
         </div>
     </div>
 
-    <footer class="text-center py-3 mt-auto text-white" style="background-color: #1b396b;">
-        <small>
-            &copy; 2026 Todos los derechos reservados.<br>
-            Desarrollado por <span class="text-info fw-bold">Carrivers Desing</span> para Módulos MAC.
-        </small>
+    <!-- Modal de Edición de Registros -->
+    <div class="modal fade" id="modalEditarBdTotales" tabindex="-1" aria-labelledby="modalEditarLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title fw-bold" id="modalEditarLabel"><i class="bi bi-pencil-square"></i> Editar Registro MAC</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="formEditarBdTotales">
+              <div id="contenedorInputsEdicion" class="row g-3"></div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-success btn-sm fw-bold" onclick="guardarEdicionBdTotales()"><i class="bi bi-floppy"></i> Guardar Cambios</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de Nuevo Registro Manual -->
+    <div class="modal fade" id="modalNuevoBdTotales" tabindex="-1" aria-labelledby="modalNuevoLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header bg-success text-white">
+            <h5 class="modal-title fw-bold" id="modalNuevoLabel"><i class="bi bi-plus-circle-fill"></i> Crear Nuevo Registro Manual</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="formNuevoBdTotales">
+              <div id="contenedorInputsNuevo" class="row g-3"></div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-success btn-sm fw-bold" onclick="guardarNuevoRegistroManual()"><i class="bi bi-floppy"></i> Guardar Registro</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="text-center py-2 mt-auto text-white shadow-sm" style="background-color: #1b396b; width: 100%;">
+        <small>&copy; 2026 Todos los derechos reservados. Desarrollado por <span class="text-info fw-bold">Carrivers Desing</span> para Módulos MAC. Versión 1.0.19</small>
     </footer>
 
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo",
-            authDomain: "cifrasmac.firebaseapp.com",
-            databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com",
-            projectId: "cifrasmac",
-            storageBucket: "cifrasmac.firebasestorage.app",
-            messagingSenderId: "916644687837",
-            appId: "1:916644687837:web:03d346cc48a071af1ed034"
-        };
-        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-
-        // ORDEN EXACTO ACTUALIZADO
-        const ordenSemanalDeseado = [
-            'IDMAC', 'remesa', 'ent', 'dtto', 'modulo', 'inicial', 'final', 'total_de_folios', 'inscripciones', 
-            'correccion_de_datos_personales', 'cambio_de_domicilio', 'reposision', 'reimpresion', 
-            'corr__de_datos_direccion', 'reincorporacion', 'reemplazo', 'total_de_tramites', 
-            'rechazos_de_mac_34', 'rechazos_de_mac_35', 'cancelados', 'total_de_movimientos', 
-            'cif-05', 'creden_devueltas_por_terceros', 'solicitud_expedicion', 'solicitud_rectificacion', 
-            'demanda_de_juicio', 'iniciales_c', 'iniciales_a', 'iniciales_s', 'actualización', 
-            'recibidas_de_otros_tipos', 'importadas', 'exportadas', 'entregadas', 'recibo_y_o_extravio', 
-            'CPV_devuelta_entrega', 'resguardo', 'solicitud_de_reimpresion', 'retiradas_por_otra_causa', 
-            'disponibles', 'duplicado', 'disponibles_al_día_anterior', 'dias_trabajados', 'configuracion', 
-            'sript_ejecutado_vigencia', 'DIA', 'FECHA', 'SEDES'
-        ];
-
-        function obtenerValorFila(fila, colKey) {
-            if (!fila) return '';
-            if (fila[colKey] !== undefined && fila[colKey] !== null) return fila[colKey];
-            
-            const cleanTarget = colKey.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[_./-]/g, '');
-            const foundKey = Object.keys(fila).find(k => {
-                const cleanK = k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[_./-]/g, '');
-                return cleanK === cleanTarget;
-            });
-            if (foundKey && fila[foundKey] !== undefined && fila[foundKey] !== null) return fila[foundKey];
-            return '';
-        }
-
-        function generarIdMac(remesa, modulo) {
-            let modStr = String(modulo || '').replace(/\D/g, ''); 
-            let modDigits = modStr.length >= 2 ? modStr.slice(-2) : modStr.padStart(2, '0');
-            if (!modDigits) modDigits = '00';
-            let remStr = String(remesa || '').trim(); 
-            let remMatch = remStr.match(/(\d+)\s*(-?\s*bis\d*)?/i);
-            let numPart = '0000'; 
-            let suffix = '';
-            if (remMatch) { 
-                numPart = remMatch[1].length >= 4 ? remMatch[1].slice(-4) : remMatch[1].padStart(4, '0'); 
-                if (remMatch[2]) { 
-                    suffix = remMatch[2].replace(/\s+/g, ''); 
-                    if (!suffix.startsWith('-')) suffix = '-' + suffix; 
-                } 
-            }
-            return `${modDigits}${numPart}${suffix}`;
-        }
-
-        let bdMadreDataGlobal = [];
-
-        function renderizarTabla(arrDatos) {
-            const thead = document.getElementById('cabeceraBdMadre');
-            const tbody = document.getElementById('cuerpoBdMadre');
-            if(!thead || !tbody) return;
-
-            thead.innerHTML = '';
-            tbody.innerHTML = '';
-
-            if (arrDatos.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="100%" class="text-center py-4 text-muted">No se encontraron registros.</td></tr>';
-                return;
-            }
-
-            let keysMap = new Map();
-            ordenSemanalDeseado.forEach(k => keysMap.set(k.toLowerCase().trim(), k));
-            arrDatos.forEach(item => {
-                let rem = obtenerValorFila(item, 'remesa');
-                let mod = obtenerValorFila(item, 'modulo');
-                item['IDMAC'] = item['IDMAC'] || generarIdMac(rem, mod);
-
-                Object.keys(item).forEach(k => {
-                    let kLower = k.toLowerCase().trim();
-                    if (!keysMap.has(kLower)) keysMap.set(kLower, k);
-                });
-            });
-
-            let keys = Array.from(keysMap.values());
-
-            let trH = '<tr>';
-            keys.forEach(k => {
-                let visual = k.toUpperCase().replace(/_/g, ' ');
-                trH += `<th>${visual}</th>`;
-            });
-            trH += '</tr>';
-            thead.innerHTML = trH;
-
-            let htmlB = '';
-            arrDatos.forEach(item => {
-                htmlB += '<tr>';
-                keys.forEach(k => {
-                    let val = obtenerValorFila(item, k);
-                    if(typeof val === 'string' && val.includes('T00:00:00')) val = val.split('T')[0];
-                    htmlB += `<td>${val}</td>`;
-                });
-                htmlB += '</tr>';
-            });
-            tbody.innerHTML = htmlB;
-        }
-
-        function procesarYFiltrar(filtroTexto = '') {
-            let arr = [...bdMadreDataGlobal];
-
-            if (filtroTexto !== '') {
-                arr = arr.filter(item => {
-                    let remesa = String(obtenerValorFila(item, 'remesa')).toLowerCase();
-                    let idmac = String(obtenerValorFila(item, 'IDMAC')).toLowerCase();
-                    return remesa.includes(filtroTexto) || idmac.includes(filtroTexto);
-                });
-            }
-
-            const modulosPrioritarios = ['050351', '050353', '050354'];
-            function obtenerIndiceModulo(mod) {
-                let m = String(mod || '').trim();
-                let idx = modulosPrioritarios.indexOf(m);
-                return idx !== -1 ? idx : 9999;
-            }
-
-            arr.sort((a, b) => {
-                let rA = String(obtenerValorFila(a, 'remesa') || '').trim();
-                let rB = String(obtenerValorFila(b, 'remesa') || '').trim();
-
-                let numA = parseFloat(rA);
-                let numB = parseFloat(rB);
-                if (!isNaN(numA) && !isNaN(numB)) {
-                    if (numA !== numB) return numB - numA; // Remesa descendente
-                } else {
-                    let compRemesa = rB.localeCompare(rA, undefined, {numeric: true});
-                    if (compRemesa !== 0) return compRemesa;
-                }
-
-                let mA = String(obtenerValorFila(a, 'modulo') || '').trim();
-                let mB = String(obtenerValorFila(b, 'modulo') || '').trim();
-                let idxA = obtenerIndiceModulo(mA);
-                let idxB = obtenerIndiceModulo(mB);
-
-                if (idxA !== idxB) {
-                    return idxA - idxB; // Orden específico de módulos (050351 -> 050353 -> 050354)
-                }
-                return mA.localeCompare(mB, undefined, {numeric: true});
-            });
-
-            renderizarTabla(arr);
-        }
-
-        database.ref('bdtotales').on('value', (snapshot) => {
-            let data = snapshot.val();
-            bdMadreDataGlobal = data ? (Array.isArray(data) ? data : Object.values(data)) : [];
-            
-            const inputBuscador = document.getElementById('buscadorBdTotales');
-            let textoActual = inputBuscador ? inputBuscador.value.toLowerCase().trim() : '';
-            procesarYFiltrar(textoActual);
-        });
-
-        document.addEventListener("DOMContentLoaded", () => {
-            const inputBuscador = document.getElementById('buscadorBdTotales');
-            if (inputBuscador) {
-                inputBuscador.addEventListener('input', (e) => {
-                    procesarYFiltrar(e.target.value.toLowerCase().trim());
-                });
-            }
-        });
-
-        window.exportarBDMadre = function() {
-            if (!bdMadreDataGlobal || bdMadreDataGlobal.length === 0) {
-                alert("No hay datos para exportar.");
-                return;
-            }
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(bdMadreDataGlobal, null, 2));
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", "bdtotales_respaldo.json");
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
-        };
-
-        window.importarBDMadre = function(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const jsonData = JSON.parse(e.target.result);
-                    if (confirm("¿Estás seguro de reemplazar toda la Base de Datos de Totales con este respaldo?")) {
-                        database.ref('bdtotales').set(jsonData)
-                            .then(() => alert("¡Base de datos restaurada con éxito!"))
-                            .catch(err => alert("Error: " + err.message));
-                    }
-                } catch (err) {
-                    alert("El archivo no es un JSON válido.");
-                }
-                event.target.value = '';
-            };
-            reader.readAsText(file);
-        };
-    </script>
+    <script src="app_bdtotales.js"></script>
 </body>
 </html>
