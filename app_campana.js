@@ -102,14 +102,30 @@ function renderTabla() {
     let rIniVal = document.getElementById('inputCampanaInicio').value.trim();
     let rFinVal = document.getElementById('inputCampanaFin').value.trim();
 
-    let remesasDisponibles = [...new Set(dataF.map(x => parseInt(x.REMESA, 10)).filter(x => !isNaN(x)))].sort((a, b) => a - b);
+    // Función auxiliar para limpiar acentos y comparar llaves de forma flexible
+    function limpiarStr(str) {
+        return String(str || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
+    }
+
+    function obtenerValorFlexible(objetoRegistro, claveBuscada) {
+        if (!objetoRegistro) return "";
+        if (objetoRegistro[claveBuscada] !== undefined) return objetoRegistro[claveBuscada];
+
+        let claveLimpiada = limpiarStr(claveBuscada);
+        let llaveEncontrada = Object.keys(objetoRegistro).find(k => limpiarStr(k) === claveLimpiada);
+        
+        if (llaveEncontrada !== undefined) return objetoRegistro[llaveEncontrada];
+        return "";
+    }
+
+    let remesasDisponibles = [...new Set(dataF.map(x => parseInt(obtenerValorFlexible(x, 'REMESA'), 10)).filter(x => !isNaN(x)))].sort((a, b) => a - b);
     if(remesasDisponibles.length === 0) return;
 
     let rIni = rIniVal !== "" ? parseInt(rIniVal, 10) : remesasDisponibles[0];
     let rFin = rFinVal !== "" ? parseInt(rFinVal, 10) : remesasDisponibles[remesasDisponibles.length - 1];
 
     let registros = dataF.filter(f => { 
-        let rNum = parseInt(f.REMESA, 10); 
+        let rNum = parseInt(obtenerValorFlexible(f, 'REMESA'), 10); 
         return !isNaN(rNum) && rNum >= rIni && rNum <= rFin; 
     });
 
@@ -118,9 +134,9 @@ function renderTabla() {
         let modNumTarget = parseInt(modTarget, 10);
         
         let regs = registros.filter(r => {
-            let rMod = parseInt(r.MODULO, 10);
+            let rMod = parseInt(obtenerValorFlexible(r, 'MODULO'), 10);
             return !isNaN(rMod) && rMod === modNumTarget;
-        }).sort((a, b) => parseInt(a.REMESA, 10) - parseInt(b.REMESA, 10));
+        }).sort((a, b) => parseInt(obtenerValorFlexible(a, 'REMESA'), 10) - parseInt(obtenerValorFlexible(b, 'REMESA'), 10));
 
         if(regs.length === 0) return;
 
@@ -133,19 +149,20 @@ function renderTabla() {
             if(col === 'MODULO') {
                 td.innerText = modTarget;
             } else if(col === 'INICIAL') {
-                td.innerText = pR['INICIAL'] || "0";
+                td.innerText = obtenerValorFlexible(pR, 'INICIAL') || "0";
             } else if(col === 'FINAL') {
-                td.innerText = uR['FINAL'] || "0";
+                td.innerText = obtenerValorFlexible(uR, 'FINAL') || "0";
             } else if(col === 'INICIALES_C') {
-                td.innerText = pR['INICIALES_C'] || "0";
+                td.innerText = obtenerValorFlexible(pR, 'INICIALES_C') || "0";
             } else if(col === 'CONFIGURACION') {
-                td.innerText = uR['CONFIGURACION'] || "0";
+                td.innerText = obtenerValorFlexible(uR, 'CONFIGURACION') || "0";
             } else if(['ENT', 'DTTO'].includes(col)) {
-                td.innerText = pR[col] || "";
+                td.innerText = obtenerValorFlexible(pR, col) || "";
             } else { 
                 let s = 0; 
                 regs.forEach(r => {
-                    let v = parseFloat(r[col] || 0); 
+                    let valRaw = obtenerValorFlexible(r, col);
+                    let v = parseFloat(valRaw || 0); 
                     if(!isNaN(v)) s += v;
                 }); 
                 td.innerText = s; 
@@ -169,7 +186,8 @@ function renderTabla() {
         } else { 
             let s = 0; 
             registros.forEach(r => {
-                let v = parseFloat(r[col] || 0); 
+                let valRaw = obtenerValorFlexible(r, col);
+                let v = parseFloat(valRaw || 0); 
                 if(!isNaN(v)) s += v;
             }); 
             td.innerText = s; 
@@ -200,7 +218,19 @@ Promise.all([get(ref(db, 'bd_madre')), get(ref(db, 'bdtotales'))]).then(([sM, sT
     if(sM.exists()) bdMadreGlobal = (Array.isArray(sM.val()) ? sM.val() : Object.values(sM.val())).map(normalizarObj);
     if(sT.exists()) bdtotalesGlobal = (Array.isArray(sT.val()) ? sT.val() : Object.values(sT.val())).map(normalizarObj);
     
-    let todasRemesas = [...new Set([...bdtotalesGlobal, ...bdMadreGlobal].map(x => parseInt(x.REMESA, 10)).filter(x => !isNaN(x)))].sort((a, b) => a - b);
+    function limpiarStr(str) {
+        return String(str || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
+    }
+    function obtenerValorFlexible(objetoRegistro, claveBuscada) {
+        if (!objetoRegistro) return "";
+        if (objetoRegistro[claveBuscada] !== undefined) return objetoRegistro[claveBuscada];
+        let claveLimpiada = limpiarStr(claveBuscada);
+        let llaveEncontrada = Object.keys(objetoRegistro).find(k => limpiarStr(k) === claveLimpiada);
+        if (llaveEncontrada !== undefined) return objetoRegistro[llaveEncontrada];
+        return "";
+    }
+
+    let todasRemesas = [...new Set([...bdtotalesGlobal, ...bdMadreGlobal].map(x => parseInt(obtenerValorFlexible(x, 'REMESA'), 10)).filter(x => !isNaN(x)))].sort((a, b) => a - b);
     if(todasRemesas.length > 0 && !localStorage.getItem('campIni')) {
         document.getElementById('inputCampanaInicio').value = todasRemesas[0];
         localStorage.setItem('campIni', todasRemesas[0]);
