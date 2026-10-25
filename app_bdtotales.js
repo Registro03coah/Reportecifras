@@ -32,9 +32,7 @@ function generarIdMac(remesa, modulo) {
     return `${modDigits}${numPart}${suffix}`;
 }
 
-// ORDEN EXACTO DE SEMANAL AL PRINCIPIO, Y LOS DEMÁS CAMPOS EXTRA DE FIREBASE AL FINAL
 const ordenDeseado = [
-    // --- Orden exacto del Reporte Semanal ---
     'ENT', 'DTTO', 'MODULO', 'INICIAL', 'FINAL', 'TOTAL_DE_FOLIOS', 'INSCRIPCIONES', 
     'CORRECCION_DE_DATOS_PERSONALES', 'CAMBIO_DE_DOMICILIO', 'REPOSISION', 'REIMPRESION', 
     'CORR__DE_DATOS_DIRECCION', 'REINCORPORACION', 'REEMPLAZO', 'TOTAL_DE_TRAMITES', 
@@ -42,11 +40,9 @@ const ordenDeseado = [
     'CIF-05', 'CREDEN_DEVUELTAS_POR_TERCEROS', 'SOLICITUD_EXPEDICION', 'SOLICITUD_RECTIFICACION', 
     'DEMANDA_DE_JUICIO', 'INICIALES_C', 'INICIALES_A', 'INICIALES_S', 'ACTUALIZACIÓN', 
     'RECIBIDAS_DE_OTROS_TIPOS', 'IMPORTADAS', 'EXPORTADAS', 'ENTREGADAS', 'RECIBO_Y_O_EXTRAVIO', 
-    'CPV_DEVUELTA_ENTREGA', 'RESGUARDO', 'SOLICITUD_DE_REIMPRESION', 'RETIRADAS_POR_OTRA_CAUSA', 
+    'CPV_DEVUELA_ENTREGA', 'RESGUARDO', 'SOLICITUD_DE_REIMPRESION', 'RETIRADAS_POR_OTRA_CAUSA', 
     'DISPONIBLES', 'DUPLICADO', 'DISPONIBLES_AL_DÍA_ANTERIOR', 'DIAS_TRABAJADOS', 'CONFIGURACION', 
     'SRIPT_EJECUTADO_VIGENCIA', 'REMESA', 'DIA', 'FECHA', 'IDMAC', 'SEDES',
-    
-    // --- Campos adicionales que Firebase contiene y se ubicarán al final ---
     '34_IMAGEN_INCONSISTENTE', '35_MOVIMIENTO_POSTERIOR', 'ANEXAS_A_FUAR', 'ANEXAS_A_SOLICITUD', 
     'CARTOGRAFIA_SOLICITUD', 'CRED_PROD_CANJE_POR_NUEVA', 'CRED_PRODUCTO_DE_REGISTRO_DUPLICADO', 
     'DATOS_ERRONEOS', 'DEFUNCION', 'DEVUELTAS_POR_TERCEROS', 'DISPONIBLES_DE_SOL_DE_EXP', 
@@ -116,8 +112,6 @@ function dibujarTabla(arr) {
 
     let colSet = new Set(); 
     datosNorm.forEach(i => Object.keys(i).forEach(k => colSet.add(k)));
-    
-    // Ordenar columnas aplicando la jerarquía de ordenDeseado (lo de semanal primero, el resto al final)
     let columnas = Array.from(colSet).sort((a, b) => obtenerIndiceOrden(a) - obtenerIndiceOrden(b));
     
     let trH = '<tr><th class="text-white text-center">ACCIONES</th>';
@@ -140,13 +134,149 @@ function dibujarTabla(arr) {
     tbody.innerHTML = htmlB;
 }
 
-window.borrarRegistro = function(id) {
-    if(confirm(`¿Eliminar registro ${id}?`)) {
-        database.ref('bdtotales').set(datosGlobalesBd.filter(i => (i.IDMAC || generarIdMac(i.REMESA, i.MODULO)) !== id))
-        .then(() => alert("Eliminado."))
-        .catch(() => alert("Error al eliminar."));
+// ==========================================
+// EDICIÓN DE REGISTROS EXISTENTES
+// ==========================================
+window.editarRegistro = function(id) {
+    let registroOriginal = datosGlobalesBd.find(i => String(i.IDMAC || generarIdMac(i.REMESA, i.MODULO)) === String(id));
+    if (!registroOriginal) { alert("No se encontró el registro para editar."); return; }
+
+    idmacEdicionActual = id;
+    const contenedor = document.getElementById('contenedorInputsEdicion');
+    contenedor.innerHTML = '';
+
+    let registroNorm = {};
+    for (let k in registroOriginal) { registroNorm[k.toUpperCase().trim()] = registroOriginal[k]; }
+
+    let colSet = new Set();
+    datosGlobalesBd.forEach(i => Object.keys(i).forEach(k => colSet.add(k.toUpperCase().trim())));
+    let columnas = Array.from(colSet).sort((a, b) => obtenerIndiceOrden(a) - obtenerIndiceOrden(b));
+
+    columnas.forEach(col => {
+        let valorValido = registroNorm[col] !== undefined ? registroNorm[col] : '';
+        let esLectura = (col === 'IDMAC'); 
+
+        let divCol = document.createElement('div');
+        divCol.className = 'col-md-4';
+        divCol.innerHTML = `
+            <label class="form-label fw-bold text-secondary" style="font-size: 11px;">${col.replace(/_/g, ' ')}</label>
+            <input type="text" class="form-control form-control-sm input-editable-campo" data-campo="${col}" value="${valorValido}" ${esLectura ? 'readonly bg-light' : ''}>
+        `;
+        contenedor.appendChild(divCol);
+    });
+
+    const modalEl = document.getElementById('modalEditarBdTotales');
+    if (modalEl) { new bootstrap.Modal(modalEl).show(); }
+};
+
+window.guardarEdicionBdTotales = function() {
+    if (!idmacEdicionActual) return;
+    const inputs = document.querySelectorAll('.input-editable-campo');
+    let indexRegistro = datosGlobalesBd.findIndex(i => String(i.IDMAC || generarIdMac(i.REMESA, i.MODULO)) === String(idmacEdicionActual));
+    
+    if (indexRegistro === -1) { alert("Error: No se localizó el índice del registro."); return; }
+
+    inputs.forEach(inp => {
+        let campo = inp.getAttribute('data-campo');
+        let valor = inp.value.trim();
+        datosGlobalesBd[indexRegistro][campo] = valor;
+    });
+
+    let remActualizada = datosGlobalesBd[indexRegistro]['REMESA'] || datosGlobalesBd[indexRegistro]['remesa'] || '';
+    let modActualizado = datosGlobalesBd[indexRegistro]['MODULO'] || datosGlobalesBd[indexRegistro]['modulo'] || '';
+    datosGlobalesBd[indexRegistro]['IDMAC'] = generarIdMac(remActualizada, modActualizado);
+
+    database.ref('bdtotales').set(datosGlobalesBd)
+        .then(() => {
+            alert("¡Registro actualizado y guardado correctamente en la nube!");
+            const modalEl = document.getElementById('modalEditarBdTotales');
+            let modalBootstrap = bootstrap.Modal.getInstance(modalEl);
+            if (modalBootstrap) modalBootstrap.hide();
+            ejecutarOrdenamiento(datosGlobalesBd);
+        })
+        .catch((error) => {
+            console.error("Error al actualizar en Firebase:", error);
+            alert("Hubo un error al guardar los cambios en Firebase.");
+        });
+};
+
+// ==========================================
+// CREAR NUEVO REGISTRO MANUALMENTE
+// ==========================================
+window.abrirModalNuevoRegistro = function() {
+    const contenedor = document.getElementById('contenedorInputsNuevo');
+    contenedor.innerHTML = '';
+
+    // Obtener las columnas estándar actuales para estructurar el formulario nuevo
+    let colSet = new Set();
+    datosGlobalesBd.forEach(i => Object.keys(i).forEach(k => colSet.add(k.toUpperCase().trim())));
+    if (colSet.size === 0) {
+        // Columnas por defecto si la base estuviera totalmente vacía
+        ['ENT', 'DTTO', 'MODULO', 'REMESA', 'INICIAL', 'FINAL', 'TOTAL_DE_FOLIOS'].forEach(c => colSet.add(c));
     }
-}
+    let columnas = Array.from(colSet).sort((a, b) => obtenerIndiceOrden(a) - obtenerIndiceOrden(b));
+
+    columnas.forEach(col => {
+        let esLectura = (col === 'IDMAC');
+        let divCol = document.createElement('div');
+        divCol.className = 'col-md-4';
+        divCol.innerHTML = `
+            <label class="form-label fw-bold text-success" style="font-size: 11px;">${col.replace(/_/g, ' ')}</label>
+            <input type="text" class="form-control form-control-sm input-nuevo-campo" data-campo="${col}" value="" ${esLectura ? 'readonly bg-light placeholder="Se genera automático"' : ''}>
+        `;
+        contenedor.appendChild(divCol);
+    });
+
+    const modalEl = document.getElementById('modalNuevoBdTotales');
+    if (modalEl) { new bootstrap.Modal(modalEl).show(); }
+};
+
+window.guardarNuevoRegistroManual = function() {
+    const inputs = document.querySelectorAll('.input-nuevo-campo');
+    let nuevoObj = {};
+
+    inputs.forEach(inp => {
+        let campo = inp.getAttribute('data-campo');
+        let valor = inp.value.trim();
+        nuevoObj[campo] = valor;
+    });
+
+    // Validar campos mínimos requeridos
+    if (!nuevoObj['REMESA'] || !nuevoObj['MODULO']) {
+        alert("Atención: Los campos 'REMESA' y 'MODULO' son obligatorios para crear el registro.");
+        return;
+    }
+
+    // Generar IDMAC automático
+    nuevoObj['IDMAC'] = generarIdMac(nuevoObj['REMESA'], nuevoObj['MODULO']);
+
+    // Agregar al arreglo global
+    datosGlobalesBd.push(nuevoObj);
+
+    database.ref('bdtotales').set(datosGlobalesBd)
+        .then(() => {
+            alert("¡Nuevo registro creado y guardado con éxito en Firebase!");
+            const modalEl = document.getElementById('modalNuevoBdTotales');
+            let modalBootstrap = bootstrap.Modal.getInstance(modalEl);
+            if (modalBootstrap) modalBootstrap.hide();
+            ejecutarOrdenamiento(datosGlobalesBd);
+        })
+        .catch((error) => {
+            console.error("Error al guardar nuevo registro en Firebase:", error);
+            alert("Hubo un error al crear el registro en la nube.");
+        });
+};
+
+// ==========================================
+// BORRAR REGISTRO
+// ==========================================
+window.borrarRegistro = function(id) {
+    if(confirm(`¿Estás seguro de eliminar el registro con ID ${id}?`)) {
+        database.ref('bdtotales').set(datosGlobalesBd.filter(i => (i.IDMAC || generarIdMac(i.REMESA, i.MODULO)) !== id))
+        .then(() => alert("Registro eliminado correctamente."))
+        .catch(() => alert("Error al eliminar el registro."));
+    }
+};
 
 window.descargarRespaldoTotalesJSON = function() {
     const jsonString = JSON.stringify(datosGlobalesBd, null, 2);
@@ -159,4 +289,4 @@ window.descargarRespaldoTotalesJSON = function() {
     a.click(); 
     document.body.removeChild(a); 
     URL.revokeObjectURL(url);
-}
+};
