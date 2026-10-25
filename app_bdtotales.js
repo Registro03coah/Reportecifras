@@ -27,7 +27,6 @@ database.ref(".info/connected").on("value", (snap) => {
     }
 });
 
-// Función auxiliar para leer propiedades sin importar si están en mayúsculas o minúsculas
 function getProp(obj, key) {
     if (!obj) return '';
     let foundKey = Object.keys(obj).find(k => k.toUpperCase().trim() === key.toUpperCase().trim());
@@ -79,6 +78,15 @@ function obtenerIndiceOrden(k) {
     return idx !== -1 ? idx : 9999; 
 }
 
+// Función robusta que extrae TODAS las columnas existentes en todo el conjunto de datos (garantizando los 85+ campos)
+function obtenerTodasLasColumnas() {
+    let colSet = new Set(ordenDeseado);
+    datosGlobalesBd.forEach(i => {
+        Object.keys(i).forEach(k => colSet.add(k.toUpperCase().trim()));
+    });
+    return Array.from(colSet).sort((a, b) => obtenerIndiceOrden(a) - obtenerIndiceOrden(b));
+}
+
 database.ref('bdtotales').on('value', (snap) => {
     let datos = snap.val(); 
     datosGlobalesBd = datos ? (Array.isArray(datos) ? datos : Object.values(datos)) : [];
@@ -121,7 +129,6 @@ function ejecutarOrdenamiento(arr) {
         let numA = parseInt(rAStr, 10) || 0;
         let numB = parseInt(rBStr, 10) || 0;
         
-        // 1. Remesa principal de MAYOR A MENOR (descendente: numB - numA)
         if (numA !== numB) {
             return numB - numA; 
         }
@@ -130,7 +137,6 @@ function ejecutarOrdenamiento(arr) {
             return rBStr.localeCompare(rAStr);
         }
 
-        // 2. Módulos en orden estricto ascendente (050351, 050353, 050354)
         let mA = String(getProp(a, 'MODULO')).trim();
         let mB = String(getProp(b, 'MODULO')).trim();
         let prioA = prioridadModulos[mA] || 99;
@@ -161,16 +167,7 @@ function dibujarTabla(arr) {
     tbody.innerHTML = '';
     if(arr.length === 0) return;
     
-    let datosNorm = arr.map(i => {
-        let obj = {}; 
-        for(let k in i) obj[k.toUpperCase().trim()] = i[k];
-        obj['IDMAC'] = generarIdMac(getProp(i, 'REMESA'), getProp(i, 'MODULO')); 
-        return obj;
-    });
-
-    let colSet = new Set(); 
-    datosNorm.forEach(i => Object.keys(i).forEach(k => colSet.add(k)));
-    let columnas = Array.from(colSet).sort((a, b) => obtenerIndiceOrden(a) - obtenerIndiceOrden(b));
+    let columnas = obtenerTodasLasColumnas();
     
     let trH = '<tr><th class="text-white text-center">ACCIONES</th>';
     columnas.forEach(col => { 
@@ -180,10 +177,12 @@ function dibujarTabla(arr) {
     thead.innerHTML = trH;
     
     let htmlB = '';
-    datosNorm.forEach(fila => {
-        htmlB += `<tr><td class="text-center align-middle" style="white-space:nowrap;"><button class="btn btn-sm btn-warning py-0 px-1 me-1" onclick="editarRegistro('${fila.IDMAC}')"><i class="bi bi-pencil-square"></i></button><button class="btn btn-sm btn-danger py-0 px-1" onclick="borrarRegistro('${fila.IDMAC}')"><i class="bi bi-trash"></i></button></td>`;
+    arr.forEach(fila => {
+        let idMacFila = getProp(fila, 'IDMAC') || generarIdMac(getProp(fila, 'REMESA'), getProp(fila, 'MODULO'));
+        htmlB += `<tr><td class="text-center align-middle" style="white-space:nowrap;"><button class="btn btn-sm btn-warning py-0 px-1 me-1" onclick="editarRegistro('${idMacFila}')"><i class="bi bi-pencil-square"></i></button><button class="btn btn-sm btn-danger py-0 px-1" onclick="borrarRegistro('${idMacFila}')"><i class="bi bi-trash"></i></button></td>`;
+        
         columnas.forEach(col => {
-            let val = fila[col] !== undefined ? fila[col] : '';
+            let val = getProp(fila, col);
             if(typeof val === 'string' && val.includes('T00:00:00')) val = val.split('T')[0];
             htmlB += `<td>${val}</td>`;
         });
@@ -209,15 +208,10 @@ window.editarRegistro = function(id) {
     const contenedor = document.getElementById('contenedorInputsEdicion');
     contenedor.innerHTML = '';
 
-    let registroNorm = {};
-    for (let k in registroOriginal) { registroNorm[k.toUpperCase().trim()] = registroOriginal[k]; }
-
-    let colSet = new Set();
-    datosGlobalesBd.forEach(i => Object.keys(i).forEach(k => colSet.add(k.toUpperCase().trim())));
-    let columnas = Array.from(colSet).sort((a, b) => obtenerIndiceOrden(a) - obtenerIndiceOrden(b));
+    let columnas = obtenerTodasLasColumnas();
 
     columnas.forEach(col => {
-        let valorValido = registroNorm[col] !== undefined ? registroNorm[col] : '';
+        let valorValido = getProp(registroOriginal, col);
         let esLectura = (col === 'IDMAC'); 
 
         let divCol = document.createElement('div');
@@ -266,7 +260,7 @@ window.guardarEdicionBdTotales = function() {
         })
         .catch((error) => {
             console.error("Error al actualizar en Firebase:", error);
-            alert("Hubo un error al guardar los cambios en Firebase.");
+            alert("Hubo an error al guardar los cambios en Firebase.");
         });
 };
 
@@ -277,12 +271,7 @@ window.abrirModalNuevoRegistro = function() {
     const contenedor = document.getElementById('contenedorInputsNuevo');
     contenedor.innerHTML = '';
 
-    let colSet = new Set();
-    datosGlobalesBd.forEach(i => Object.keys(i).forEach(k => colSet.add(k.toUpperCase().trim())));
-    if (colSet.size === 0) {
-        ['ENT', 'DTTO', 'MODULO', 'REMESA', 'INICIAL', 'FINAL', 'TOTAL_DE_FOLIOS'].forEach(c => colSet.add(c));
-    }
-    let columnas = Array.from(colSet).sort((a, b) => obtenerIndiceOrden(a) - obtenerIndiceOrden(b));
+    let columnas = obtenerTodasLasColumnas();
 
     columnas.forEach(col => {
         let esLectura = (col === 'IDMAC');
