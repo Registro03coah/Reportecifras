@@ -179,6 +179,30 @@ function sincronizarTotales() {
     detectarRemesa();
 }
 
+// Cargar Iniciales desde Firebase al iniciar la app en cualquier máquina
+function cargarInicialesDesdeNube() {
+    const dbRefActual = ref(db, 'vaciado_actual');
+    get(dbRefActual).then((snapshot) => {
+        if (snapshot.exists()) {
+            const data = snapshot.val();
+            MODULOS.forEach(mod => {
+                if (data[mod]) {
+                    if (data[mod].iniciales_C !== undefined) {
+                        const inputCamp = document.getElementById(`camp_${mod}`);
+                        if (inputCamp) inputCamp.value = data[mod].iniciales_C;
+                    }
+                    if (data[mod].iniciales_A !== undefined) {
+                        const inputAcum = document.getElementById(`acum_${mod}`);
+                        if (inputAcum) inputAcum.value = data[mod].iniciales_A;
+                    }
+                }
+            });
+        }
+    }).catch((error) => {
+        console.error("Error al cargar iniciales desde la nube:", error);
+    });
+}
+
 // Inicialización de tablas y eventos por módulo
 MODULOS.forEach(mod => {
     generarEncabezados(`#tablaCaptura_${mod}`, false);
@@ -221,6 +245,9 @@ MODULOS.forEach(mod => {
 generarEncabezados('#tablaCaptura_totales', true);
 generarCuerpoTotales();
 
+// Sincronizar iniciales desde Firebase al arrancar
+cargarInicialesDesdeNube();
+
 // Función global para alternar pestañas
 window.cambiarModulo = function(mod) {
     ["050351", "050353", "050354", "TOTALES"].forEach(m => {
@@ -229,25 +256,16 @@ window.cambiarModulo = function(mod) {
         const pasteZone = document.getElementById(`pasteZone_${m}`);
         
         if (btn) {
-            if (m === mod) {
-                btn.classList.add('active');
-            } else {
-                btn.classList.remove('active');
-            }
+            if (m === mod) btn.classList.add('active');
+            else btn.classList.remove('active');
         }
         if (container) {
-            if (m === mod) {
-                container.classList.remove('d-none');
-            } else {
-                container.classList.add('d-none');
-            }
+            if (m === mod) container.classList.remove('d-none');
+            else container.classList.add('d-none');
         }
         if (pasteZone) {
-            if (m === mod && m !== 'TOTALES') {
-                pasteZone.classList.remove('d-none');
-            } else {
-                pasteZone.classList.add('d-none');
-            }
+            if (m === mod && m !== 'TOTALES') pasteZone.classList.remove('d-none');
+            else pasteZone.classList.add('d-none');
         }
     });
 
@@ -270,10 +288,10 @@ window.cambiarModulo = function(mod) {
 };
 
 // ==========================================
-// 3. LIMPIAR TABLAS
+// 3. LIMPIAR TABLAS (Solo limpia la tabla, NO toca iniciales)
 // ==========================================
 document.getElementById('btnBorrar').addEventListener('click', () => {
-    if(confirm("¿Estás seguro de que deseas limpiar todas las tablas? (Se borrarán los datos en pantalla, no en la BD)")) {
+    if(confirm("¿Estás seguro de que deseas limpiar las tablas de captura? (Las iniciales se mantendrán intactas)")) {
         MODULOS.forEach(mod => {
             const tbody = document.querySelector(`#tablaCaptura_${mod} tbody`);
             if (tbody) tbody.querySelectorAll('input:not([readonly])').forEach(inp => inp.value = "");
@@ -287,7 +305,7 @@ document.getElementById('btnBorrar').addEventListener('click', () => {
 });
 
 // ==========================================
-// 4. BOTÓN UNIFICADO: GUARDAR BASES
+// 4. BOTÓN UNIFICADO: GUARDAR BASES (Guarda Tablas + Iniciales C y A en la Nube)
 // ==========================================
 document.getElementById('btnGuardarBD').addEventListener('click', () => {
     const remesaActual = document.getElementById('hiddenRemesaVal').value.trim() || document.getElementById('inputRemesa').innerText.trim();
@@ -297,10 +315,9 @@ document.getElementById('btnGuardarBD').addEventListener('click', () => {
         return;
     }
 
-    const tablasNombres = [...MODULOS, "totales"];
     let datosAGuardar = {};
     
-    tablasNombres.forEach(mod => {
+    MODULOS.forEach(mod => {
         const tablaEl = document.querySelector(`#tablaCaptura_${mod}`);
         if (!tablaEl) return;
         const filas = tablaEl.querySelectorAll('tbody tr');
@@ -313,7 +330,16 @@ document.getElementById('btnGuardarBD').addEventListener('click', () => {
             });
             datosTabla.push(filaArray);
         });
-        datosAGuardar[mod] = datosTabla;
+
+        // Capturar los valores actuales de los inputs de iniciales para guardarlos en la nube
+        const inicialC = document.getElementById(`camp_${mod}`) ? document.getElementById(`camp_${mod}`).value : "";
+        const inicialA = document.getElementById(`acum_${mod}`) ? document.getElementById(`acum_${mod}`).value : "";
+
+        datosAGuardar[mod] = {
+            tabla: datosTabla,
+            iniciales_C: inicialC,
+            iniciales_A: inicialA
+        };
     });
 
     let registrosTotalesParaBD = [];
@@ -332,9 +358,7 @@ document.getElementById('btnGuardarBD').addEventListener('click', () => {
                 const input = td.querySelector('input');
                 let valorCelda = input ? input.value.trim() : "";
                 
-                if (colIdx === 0) {
-                    textoModuloCelda = valorCelda;
-                }
+                if (colIdx === 0) textoModuloCelda = valorCelda;
 
                 let claveColumna = NOMBRES_ESTANDAR_BD[colIdx] || `Col_${colIdx + 1}`;
                 objFilaTotal[claveColumna] = valorCelda;
@@ -348,6 +372,10 @@ document.getElementById('btnGuardarBD').addEventListener('click', () => {
 
             objFilaTotal["MODULO"] = numeroModuloLimpio;
             objFilaTotal["REMESA"] = remesaActual;
+
+            // Adjuntar iniciales C y A al registro consolidado
+            objFilaTotal["iniciales_C"] = document.getElementById(`camp_${numeroModuloLimpio}`) ? document.getElementById(`camp_${numeroModuloLimpio}`).value : "";
+            objFilaTotal["iniciales_A"] = document.getElementById(`acum_${numeroModuloLimpio}`) ? document.getElementById(`acum_${numeroModuloLimpio}`).value : "";
 
             delete objFilaTotal.DIA;
             delete objFilaTotal.FECHA;
@@ -383,7 +411,7 @@ document.getElementById('btnGuardarBD').addEventListener('click', () => {
             return set(dbRefTotales, fusionFinalTotales);
         })
     ]).then(() => {
-        alert(`¡Éxito! Ambas bases se guardaron correctamente:\n- Información de los módulos guardada en Campañas y BD Madre.\n- Totales consolidados guardados en BD Totales (con IDMAC) para la Remesa: ${remesaActual}.`);
+        alert(`¡Éxito! Las tablas y las iniciales (C y A) se guardaron correctamente en la Nube (Firebase) para la Remesa: ${remesaActual}.`);
     }).catch((error) => {
         console.error("Error al guardar en Firebase:", error);
         alert("Hubo un error al guardar los datos en la nube.");
