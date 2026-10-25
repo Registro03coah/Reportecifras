@@ -54,9 +54,15 @@
     <div class="container-fluid px-4 flex-grow-1">
         <div class="alert alert-info shadow-sm d-flex flex-wrap justify-content-between align-items-center gap-2">
             <div>
-                <strong>BD Totales:</strong> Muestra todos los registros diarios almacenados en la nube.
+                <strong>BD Totales:</strong> Muestra todos los registros almacenados en la nube ordenados por remesa y módulos específicos.
             </div>
-            <div class="d-flex align-items-center gap-2">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <!-- Buscador por Remesa o IDMAC -->
+                <div class="input-group input-group-sm" style="width: 220px;">
+                    <span class="input-group-text bg-white text-secondary"><i class="bi bi-search"></i></span>
+                    <input type="text" id="buscadorBdTotales" class="form-control" placeholder="Buscar Remesa / IDMAC...">
+                </div>
+
                 <button class="btn btn-sm btn-success fw-bold" onclick="exportarBDMadre()"><i class="bi bi-download"></i> Descargar Respaldo</button>
                 <label class="btn btn-sm btn-warning fw-bold mb-0" style="cursor: pointer;">
                     <i class="bi bi-upload"></i> Subir / Restaurar <input type="file" id="inputArchivoBD" accept=".json" style="display: none;" onchange="importarBDMadre(event)">
@@ -94,7 +100,7 @@
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        // ORDEN EXACTO DEL REPORTE SEMANAL
+        // ORDEN EXACTO ACTUALIZADO
         const ordenSemanalDeseado = [
             'IDMAC', 'remesa', 'ent', 'dtto', 'modulo', 'inicial', 'final', 'total_de_folios', 'inscripciones', 
             'correccion_de_datos_personales', 'cambio_de_domicilio', 'reposision', 'reimpresion', 
@@ -108,7 +114,6 @@
             'sript_ejecutado_vigencia', 'DIA', 'FECHA', 'SEDES'
         ];
 
-        // Función inteligente para extraer el valor sin importar mayúsculas, minúsculas o acentos
         function obtenerValorFila(fila, colKey) {
             if (!fila) return '';
             if (fila[colKey] !== undefined && fila[colKey] !== null) return fila[colKey];
@@ -122,11 +127,27 @@
             return '';
         }
 
-        let bdMadreDataGlobal = null;
-        database.ref('bdtotales').on('value', (snapshot) => {
-            bdMadreDataGlobal = snapshot.val();
-            let data = bdMadreDataGlobal;
-            let arr = data ? (Array.isArray(data) ? data : Object.values(data)) : [];
+        function generarIdMac(remesa, modulo) {
+            let modStr = String(modulo || '').replace(/\D/g, ''); 
+            let modDigits = modStr.length >= 2 ? modStr.slice(-2) : modStr.padStart(2, '0');
+            if (!modDigits) modDigits = '00';
+            let remStr = String(remesa || '').trim(); 
+            let remMatch = remStr.match(/(\d+)\s*(-?\s*bis\d*)?/i);
+            let numPart = '0000'; 
+            let suffix = '';
+            if (remMatch) { 
+                numPart = remMatch[1].length >= 4 ? remMatch[1].slice(-4) : remMatch[1].padStart(4, '0'); 
+                if (remMatch[2]) { 
+                    suffix = remMatch[2].replace(/\s+/g, ''); 
+                    if (!suffix.startsWith('-')) suffix = '-' + suffix; 
+                } 
+            }
+            return `${modDigits}${numPart}${suffix}`;
+        }
+
+        let bdMadreDataGlobal = [];
+
+        function renderizarTabla(arrDatos) {
             const thead = document.getElementById('cabeceraBdMadre');
             const tbody = document.getElementById('cuerpoBdMadre');
             if(!thead || !tbody) return;
@@ -134,26 +155,21 @@
             thead.innerHTML = '';
             tbody.innerHTML = '';
 
-            if (arr.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="100%" class="text-center py-4 text-muted">No hay registros en la BD Totales.</td></tr>';
+            if (arrDatos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="100%" class="text-center py-4 text-muted">No se encontraron registros.</td></tr>';
                 return;
             }
 
-            // Construir la lista de columnas únicas evitando duplicados por diferencias de mayúsculas/minúsculas
-            let keysMap = new Map(); // clave normalizada -> nombre oficial a mostrar
-            
-            // 1. Agregar primero las del orden semanal deseado
-            ordenSemanalDeseado.forEach(k => {
-                keysMap.set(k.toLowerCase().trim(), k);
-            });
+            let keysMap = new Map();
+            ordenSemanalDeseado.forEach(k => keysMap.set(k.toLowerCase().trim(), k));
+            arrDatos.forEach(item => {
+                let rem = obtenerValorFila(item, 'remesa');
+                let mod = obtenerValorFila(item, 'modulo');
+                item['IDMAC'] = item['IDMAC'] || generarIdMac(rem, mod);
 
-            // 2. Agregar cualquier otro campo adicional que exista en Firebase al final
-            arr.forEach(item => {
                 Object.keys(item).forEach(k => {
                     let kLower = k.toLowerCase().trim();
-                    if (!keysMap.has(kLower)) {
-                        keysMap.set(kLower, k);
-                    }
+                    if (!keysMap.has(kLower)) keysMap.set(kLower, k);
                 });
             });
 
@@ -168,7 +184,7 @@
             thead.innerHTML = trH;
 
             let htmlB = '';
-            arr.forEach(item => {
+            arrDatos.forEach(item => {
                 htmlB += '<tr>';
                 keys.forEach(k => {
                     let val = obtenerValorFila(item, k);
@@ -178,10 +194,73 @@
                 htmlB += '</tr>';
             });
             tbody.innerHTML = htmlB;
+        }
+
+        function procesarYFiltrar(filtroTexto = '') {
+            let arr = [...bdMadreDataGlobal];
+
+            if (filtroTexto !== '') {
+                arr = arr.filter(item => {
+                    let remesa = String(obtenerValorFila(item, 'remesa')).toLowerCase();
+                    let idmac = String(obtenerValorFila(item, 'IDMAC')).toLowerCase();
+                    return remesa.includes(filtroTexto) || idmac.includes(filtroTexto);
+                });
+            }
+
+            const modulosPrioritarios = ['050351', '050353', '050354'];
+            function obtenerIndiceModulo(mod) {
+                let m = String(mod || '').trim();
+                let idx = modulosPrioritarios.indexOf(m);
+                return idx !== -1 ? idx : 9999;
+            }
+
+            arr.sort((a, b) => {
+                let rA = String(obtenerValorFila(a, 'remesa') || '').trim();
+                let rB = String(obtenerValorFila(b, 'remesa') || '').trim();
+
+                let numA = parseFloat(rA);
+                let numB = parseFloat(rB);
+                if (!isNaN(numA) && !isNaN(numB)) {
+                    if (numA !== numB) return numB - numA; // Remesa descendente
+                } else {
+                    let compRemesa = rB.localeCompare(rA, undefined, {numeric: true});
+                    if (compRemesa !== 0) return compRemesa;
+                }
+
+                let mA = String(obtenerValorFila(a, 'modulo') || '').trim();
+                let mB = String(obtenerValorFila(b, 'modulo') || '').trim();
+                let idxA = obtenerIndiceModulo(mA);
+                let idxB = obtenerIndiceModulo(mB);
+
+                if (idxA !== idxB) {
+                    return idxA - idxB; // Orden específico de módulos (050351 -> 050353 -> 050354)
+                }
+                return mA.localeCompare(mB, undefined, {numeric: true});
+            });
+
+            renderizarTabla(arr);
+        }
+
+        database.ref('bdtotales').on('value', (snapshot) => {
+            let data = snapshot.val();
+            bdMadreDataGlobal = data ? (Array.isArray(data) ? data : Object.values(data)) : [];
+            
+            const inputBuscador = document.getElementById('buscadorBdTotales');
+            let textoActual = inputBuscador ? inputBuscador.value.toLowerCase().trim() : '';
+            procesarYFiltrar(textoActual);
+        });
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const inputBuscador = document.getElementById('buscadorBdTotales');
+            if (inputBuscador) {
+                inputBuscador.addEventListener('input', (e) => {
+                    procesarYFiltrar(e.target.value.toLowerCase().trim());
+                });
+            }
         });
 
         window.exportarBDMadre = function() {
-            if (!bdMadreDataGlobal) {
+            if (!bdMadreDataGlobal || bdMadreDataGlobal.length === 0) {
                 alert("No hay datos para exportar.");
                 return;
             }
@@ -201,10 +280,10 @@
             reader.onload = function(e) {
                 try {
                     const jsonData = JSON.parse(e.target.result);
-                    if (confirm("¿Estás seguro de reemplazar toda la Base de Datos de Totales (BD Totales) con este respaldo? Esta acción no se puede deshacer.")) {
+                    if (confirm("¿Estás seguro de reemplazar toda la Base de Datos de Totales con este respaldo?")) {
                         database.ref('bdtotales').set(jsonData)
                             .then(() => alert("¡Base de datos restaurada con éxito!"))
-                            .catch(err => alert("Error al subir la base de datos: " + err.message));
+                            .catch(err => alert("Error: " + err.message));
                     }
                 } catch (err) {
                     alert("El archivo no es un JSON válido.");
