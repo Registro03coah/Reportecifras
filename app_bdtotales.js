@@ -10,7 +10,7 @@ const database = firebase.database();
 
 let datosGlobalesBd = []; 
 let datosEnPantalla = []; 
-let columnaOrdenActual = 'REMESA'; 
+let columnaOrdenActual = 'IDMAC'; 
 let ordenAscendente = false; 
 let idmacEdicionActual = null;
 
@@ -87,37 +87,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// ORDENAMIENTO ESTRICTO: Remesa de mayor a menor y módulos en orden 050351 -> 050353 -> 050354
+// ORDENAMIENTO POR IDMAC (De mayor a menor, manteniendo las -bis juntas a su remesa correspondiente)
 function ejecutarOrdenamiento(arr) {
     if(!arr || arr.length === 0) { dibujarTabla([]); return; }
     let o = [...arr];
 
-    const prioridadModulos = {
-        '050351': 1, '50351': 1,
-        '050353': 2, '50353': 2,
-        '050354': 3, '50354': 3
-    };
-
     o.sort((a, b) => {
-        let rA = parseInt(a.REMESA || 0, 10); 
-        let rB = parseInt(b.REMESA || 0, 10);
+        let idA = String(a.IDMAC || generarIdMac(a.REMESA, a.MODULO)).trim();
+        let idB = String(b.IDMAC || generarIdMac(b.REMESA, b.MODULO)).trim();
         
-        // 1. Remesa de mayor a menor
-        if (rA !== rB) {
-            return rB - rA; 
-        }
-
-        // 2. Módulos en orden estricto (050351, 050353, 050354)
-        let mA = String(a.MODULO || '').trim();
-        let mB = String(b.MODULO || '').trim();
-        let prioA = prioridadModulos[mA] || 99;
-        let prioB = prioridadModulos[mB] || 99;
-
-        if (prioA !== prioB) {
-            return prioA - prioB;
-        }
-
-        return mA.localeCompare(mB, undefined, {numeric: true});
+        // Orden alfabético/numérico inverso (de mayor a menor por IDMAC)
+        return idB.localeCompare(idA, undefined, {numeric: true});
     });
 
     dibujarTabla(o);
