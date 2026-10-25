@@ -64,7 +64,7 @@ const ordenDeseado = [
     'CAMBIO_DE_DOMICILIO',
     'REPOSICION',
     'REIMPRESION',
-    'REPOSISION_REIMPRESIONES',
+    'REPOSICION_REIMPRESIONES',
     'CORR_DE_DATOS_DIRECCION',
     'REINCORPORACION',
     'REEMPLAZO',
@@ -129,9 +129,8 @@ const ordenDeseado = [
     'ANEXAS_A_SOLICITUD',
     'OTRAS_BAJAS',
     'TOTAL_DE_ANEXO_DE_RECHAZO',
-    'RETIRADA_POR_OTRA_CAUSA',
-    'SEDES'
-];
+    'RETIRADAS_POR_CAUSA',
+    ];
 
 function obtenerIndiceOrden(k) { 
     let idx = ordenDeseado.indexOf(k.toUpperCase().trim()); 
