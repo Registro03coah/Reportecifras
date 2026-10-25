@@ -27,6 +27,13 @@ database.ref(".info/connected").on("value", (snap) => {
     }
 });
 
+// Función auxiliar para leer propiedades sin importar si están en mayúsculas o minúsculas
+function getProp(obj, key) {
+    if (!obj) return '';
+    let foundKey = Object.keys(obj).find(k => k.toUpperCase().trim() === key.toUpperCase().trim());
+    return foundKey !== undefined ? obj[foundKey] : '';
+}
+
 function generarIdMac(remesa, modulo) {
     let modStr = String(modulo || '').replace(/\D/g, ''); 
     let modDigits = modStr.length >= 2 ? modStr.slice(-2) : modStr.padStart(2, '0');
@@ -86,14 +93,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if(t === '') { ejecutarOrdenamiento(datosGlobalesBd); return; }
         
         let filtrados = datosGlobalesBd.filter(i => {
-            let registroConId = { ...i, IDMAC: i.IDMAC || generarIdMac(i.REMESA, i.MODULO) };
+            let rem = getProp(i, 'REMESA');
+            let mod = getProp(i, 'MODULO');
+            let idMacGen = generarIdMac(rem, mod);
+            let registroConId = { ...i, IDMAC: getProp(i, 'IDMAC') || idMacGen };
             return Object.values(registroConId).some(val => String(val || '').toLowerCase().includes(t));
         });
         ejecutarOrdenamiento(filtrados);
     });
 });
 
-// ORDENAMIENTO ESTRICTO CORREGIDO: Remesa de mayor a menor (descendente) y módulos en orden 050351 -> 050353 -> 050354
+// ORDENAMIENTO ESTRICTO: Remesa de mayor a menor y módulos en orden 050351 -> 050353 -> 050354
 function ejecutarOrdenamiento(arr) {
     if(!arr || arr.length === 0) { dibujarTabla([]); return; }
     let o = [...arr];
@@ -105,8 +115,8 @@ function ejecutarOrdenamiento(arr) {
     };
 
     o.sort((a, b) => {
-        let rAStr = String(a.REMESA || '').trim();
-        let rBStr = String(b.REMESA || '').trim();
+        let rAStr = String(getProp(a, 'REMESA')).trim();
+        let rBStr = String(getProp(b, 'REMESA')).trim();
         
         let numA = parseInt(rAStr, 10) || 0;
         let numB = parseInt(rBStr, 10) || 0;
@@ -121,8 +131,8 @@ function ejecutarOrdenamiento(arr) {
         }
 
         // 2. Módulos en orden estricto ascendente (050351, 050353, 050354)
-        let mA = String(a.MODULO || '').trim();
-        let mB = String(b.MODULO || '').trim();
+        let mA = String(getProp(a, 'MODULO')).trim();
+        let mB = String(getProp(b, 'MODULO')).trim();
         let prioA = prioridadModulos[mA] || 99;
         let prioB = prioridadModulos[mB] || 99;
 
@@ -154,7 +164,7 @@ function dibujarTabla(arr) {
     let datosNorm = arr.map(i => {
         let obj = {}; 
         for(let k in i) obj[k.toUpperCase().trim()] = i[k];
-        obj['IDMAC'] = generarIdMac(obj['REMESA'], obj['MODULO']); 
+        obj['IDMAC'] = generarIdMac(getProp(i, 'REMESA'), getProp(i, 'MODULO')); 
         return obj;
     });
 
@@ -186,7 +196,13 @@ function dibujarTabla(arr) {
 // EDICIÓN DE REGISTROS EXISTENTES
 // ==========================================
 window.editarRegistro = function(id) {
-    let registroOriginal = datosGlobalesBd.find(i => String(i.IDMAC || generarIdMac(i.REMESA, i.MODULO)) === String(id));
+    let registroOriginal = datosGlobalesBd.find(i => {
+        let r = getProp(i, 'REMESA');
+        let m = getProp(i, 'MODULO');
+        let computedId = getProp(i, 'IDMAC') || generarIdMac(r, m);
+        return String(computedId) === String(id);
+    });
+
     if (!registroOriginal) { alert("No se encontró el registro para editar."); return; }
 
     idmacEdicionActual = id;
@@ -220,7 +236,13 @@ window.editarRegistro = function(id) {
 window.guardarEdicionBdTotales = function() {
     if (!idmacEdicionActual) return;
     const inputs = document.querySelectorAll('.input-editable-campo');
-    let indexRegistro = datosGlobalesBd.findIndex(i => String(i.IDMAC || generarIdMac(i.REMESA, i.MODULO)) === String(idmacEdicionActual));
+    
+    let indexRegistro = datosGlobalesBd.findIndex(i => {
+        let r = getProp(i, 'REMESA');
+        let m = getProp(i, 'MODULO');
+        let computedId = getProp(i, 'IDMAC') || generarIdMac(r, m);
+        return String(computedId) === String(idmacEdicionActual);
+    });
     
     if (indexRegistro === -1) { alert("Error: No se localizó el índice del registro."); return; }
 
@@ -230,8 +252,8 @@ window.guardarEdicionBdTotales = function() {
         datosGlobalesBd[indexRegistro][campo] = valor;
     });
 
-    let remActualizada = datosGlobalesBd[indexRegistro]['REMESA'] || datosGlobalesBd[indexRegistro]['remesa'] || '';
-    let modActualizado = datosGlobalesBd[indexRegistro]['MODULO'] || datosGlobalesBd[indexRegistro]['modulo'] || '';
+    let remActualizada = getProp(datosGlobalesBd[indexRegistro], 'REMESA');
+    let modActualizado = getProp(datosGlobalesBd[indexRegistro], 'MODULO');
     datosGlobalesBd[indexRegistro]['IDMAC'] = generarIdMac(remActualizada, modActualizado);
 
     database.ref('bdtotales').set(datosGlobalesBd)
@@ -287,12 +309,15 @@ window.guardarNuevoRegistroManual = function() {
         nuevoObj[campo] = valor;
     });
 
-    if (!nuevoObj['REMESA'] || !nuevoObj['MODULO']) {
+    let remNueva = getProp(nuevoObj, 'REMESA');
+    let modNuevo = getProp(nuevoObj, 'MODULO');
+
+    if (!remNueva || !modNuevo) {
         alert("Atención: Los campos 'REMESA' y 'MODULO' son obligatorios para crear el registro.");
         return;
     }
 
-    nuevoObj['IDMAC'] = generarIdMac(nuevoObj['REMESA'], nuevoObj['MODULO']);
+    nuevoObj['IDMAC'] = generarIdMac(remNueva, modNuevo);
     datosGlobalesBd.push(nuevoObj);
 
     database.ref('bdtotales').set(datosGlobalesBd)
@@ -351,7 +376,12 @@ window.vaciarBdTotales = function() {
 // ==========================================
 window.borrarRegistro = function(id) {
     if(confirm(`¿Estás seguro de eliminar el registro con ID ${id}?`)) {
-        database.ref('bdtotales').set(datosGlobalesBd.filter(i => (i.IDMAC || generarIdMac(i.REMESA, i.MODULO)) !== id))
+        database.ref('bdtotales').set(datosGlobalesBd.filter(i => {
+            let r = getProp(i, 'REMESA');
+            let m = getProp(i, 'MODULO');
+            let computedId = getProp(i, 'IDMAC') || generarIdMac(r, m);
+            return String(computedId) !== String(id);
+        }))
         .then(() => alert("Registro eliminado correctamente."))
         .catch(() => alert("Error al eliminar el registro."));
     }
