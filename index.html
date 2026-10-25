@@ -29,14 +29,6 @@
 </head>
 <body>
     <header class="fixed-top-nav">
-        <style>
-            .navbar-nav .nav-link { font-size: 11px !important; }
-            .navbar-brand { font-size: 14px !important; }
-            nav.navbar, .fixed-top-nav .navbar { padding: 2px 15px !important; }
-            .header-banner { padding: 10px 0 !important; margin-bottom: 15px !important; }
-            .header-banner h1 { font-size: 1.4rem !important; }
-            .header-banner p { font-size: 0.85rem !important; }
-        </style>
         <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #1b396b; width: 100%;">
           <div class="container-fluid px-3">
             <a class="navbar-brand fw-bold" href="https://registro03coah.github.io/mimenu/"><i class="bi bi-hdd-network"></i> SISTEMA MAC</a>
@@ -112,7 +104,6 @@
                 <div id="panelAccionesTotales" class="alert alert-warning py-2 px-3 mb-2 d-none justify-content-between align-items-center" style="font-size: 13px;">
                     <span class="fw-bold"><i class="bi bi-info-circle-fill"></i> Vaciado Consolidado Remesa: <span id="inputRemesa" class="badge bg-dark text-white">S/N</span></span>
                 </div>
-                <!-- Input oculto para conservar compatibilidad con la detección de remesa -->
                 <input type="hidden" id="hiddenRemesaVal" value="">
 
                 <!-- Zonas de Pegado por Módulo -->
@@ -129,7 +120,7 @@
                     Clic aquí y Ctrl+V para pegar datos del Módulo 050354
                 </div>
 
-                <!-- Contenedores de Tablas por Módulo y Totales -->
+                <!-- Contenedores de Tablas por Módulo y Totales (Cada uno con su ID exacto) -->
                 <div class="excel-container shadow-sm" id="container_050351">
                     <table class="excel-table table table-hover" id="tablaCaptura_050351">
                         <thead></thead>
