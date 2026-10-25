@@ -4,7 +4,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-// ¡AQUÍ ESTÁ LA CORRECCIÓN! Usando las credenciales de 'cifrasmac'
 const firebaseConfig = {
     apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo",
     authDomain: "cifrasmac.firebaseapp.com",
@@ -44,29 +43,15 @@ const ENCABEZADOS = [
     "MOV_POST", "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS"
 ];
 
-const NOMBRES_ESTANDAR_BD = [
-    "DIA", "FECHA", "Horas_trabajadas", "SEDES", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
-    "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSISION",
-    "CORR_DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES",
-    "CANCELADOS", "TOTAL_DE_ANEXO_DE_RECHAZO", "CPV_devuelta_entrega", "DISPONIBLES_AL_DIA_ANTERIOR",
-    "RECIBIDAS", "RECIBIDAS_DE_OTROS_TIPOS", "ENTREGADAS", "RECIBO_YO_EXTRAVIO", "ANEXAS_A_FUAR",
-    "DATOS_ERRONEOS", "FOTO_MAL_IMPRESA", "REIMPRESION_2", "RETIRADAS_POR_CAUSA", "DISPONIBLES",
-    "credenciales_x_canje", "fichas_Entregadas", "fichas_atendidas", "Dias_trabajados",
-    "SOLICITUD_EXPEDICION_REPATRIADOS", "SOLICITUD_EXPEDICION_ORDINARIA", "SOLICITU_DE_RECTIFICACION",
-    "DEMANDA_DE_JUICIO", "REMESA", "Total_de_movimientos", "DEVUELTAS_POR_TERCEROS",
-    "34_Imagen_inconsistente", "35_Movimiento_posterior", "CONFIGURACION", "ENT", "DTTO",
-    "MODULO", "RESGUARDO", "SOLICITUD_DE_REIMPRESION", "CPV_devuelta_entrega_2", "script_ejecutado",
-    "FOLIO_NEC", "cartografia", "lotes_de_credenciales", "registradas_por_dia", "faltantes", "observaciones",
-    "sin_nombre1", "sin_nombre2", "sin_nombre3", "MAC_QUE_RECIBE", "MAC_QUE_ENTREGA",
-    "IMPORTADAS", "EXPORTADAS", "REPOSISION_REIMPRESIONES", "MAL_IMPRESA", "ERROR_EN_CARTOGRAFIA",
-    "DEFUNCION", "SUSPENSION", "DUPLICADO", "ERROR_EN_NUM_DE_EMISION", "PERDIDA_DE_VIGENCIA",
-    "MOV_POST", "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS"
-];
+const NOMBRES_ESTANDAR_BD = [...ENCABEZADOS];
 
 function generarEncabezados(selectorTabla, isTotales = false) {
     const thead = document.querySelector(`${selectorTabla} thead`);
+    if (!thead) return;
+    thead.innerHTML = "";
     let trTitulos = document.createElement('tr');
     let trNumeros = document.createElement('tr');
+    trNumeros.className = "num-row";
     
     for(let i = 1; i <= TOTAL_COLUMNAS; i++) {
         let thT = document.createElement('th');
@@ -88,12 +73,6 @@ function generarEncabezados(selectorTabla, isTotales = false) {
         
         if(i >= 5 && i <= 7) thT.classList.add('bg-folios');
         if(i >= 19 && i <= 30) thT.classList.add('bg-retiradas');
-        if(i === 16) thT.style.backgroundColor = "#92d050"; 
-        if(i === 17) thT.style.backgroundColor = "red"; 
-        if(i === 18) thT.style.backgroundColor = "yellow"; 
-        if(i >= 58 && i <= 60) thT.style.backgroundColor = "#e8e8f4"; 
-        if(i === 61 || i === 62) thT.style.backgroundColor = "#9b9649"; 
-        if(i === 63 || i === 64) thT.style.backgroundColor = "yellow"; 
         
         thN.innerText = i; thN.className = "table-light";
         
@@ -108,17 +87,20 @@ function generarEncabezados(selectorTabla, isTotales = false) {
 
 function generarCuerpoCaptura(selectorTabla) {
     const tbody = document.querySelector(`${selectorTabla} tbody`);
+    if (!tbody) return;
+    tbody.innerHTML = "";
     DIAS.forEach((dia) => {
         let tr = document.createElement('tr');
         if (dia === "LINEA TOTALES") tr.classList.add('fila-totales');
         for(let c = 1; c <= TOTAL_COLUMNAS; c++) {
             let td = document.createElement('td');
             if(c === 1) {
-                td.innerHTML = `<input type="text" value="${dia}" readonly tabindex="-1">`;
+                td.className = "col-dia";
+                td.innerHTML = `<input type="text" value="${dia}" readonly tabindex="-1" class="form-control form-control-sm border-0 bg-transparent fw-bold">`;
             } else if (dia === "LINEA TOTALES" && (c === 2 || c === 4)) {
-                td.innerHTML = `<input type="text" readonly tabindex="-1">`;
+                td.innerHTML = `<input type="text" readonly tabindex="-1" class="form-control form-control-sm border-0 bg-transparent">`;
             } else {
-                td.innerHTML = `<input type="text" value="">`;
+                td.innerHTML = `<input type="text" value="" class="form-control form-control-sm border-0 text-center">`;
             }
             tr.appendChild(td);
         }
@@ -128,6 +110,8 @@ function generarCuerpoCaptura(selectorTabla) {
 
 function generarCuerpoTotales() {
     const tbody = document.querySelector(`#tablaCaptura_totales tbody`);
+    if (!tbody) return;
+    tbody.innerHTML = "";
     const filasConcentrado = ["050351", "050353", "050354", "GRAN TOTAL"];
     filasConcentrado.forEach((fila) => {
         let tr = document.createElement('tr');
@@ -135,12 +119,13 @@ function generarCuerpoTotales() {
         for(let c = 1; c <= TOTAL_COLUMNAS; c++) {
             let td = document.createElement('td');
             if(c === 1) {
+                td.className = "col-dia";
                 let textoFila = (fila === "GRAN TOTAL") ? fila : `Totales MAC ${fila}`;
-                td.innerHTML = `<input type="text" value="${textoFila}" readonly tabindex="-1">`;
+                td.innerHTML = `<input type="text" value="${textoFila}" readonly tabindex="-1" class="form-control form-control-sm border-0 bg-transparent fw-bold">`;
             } else if (c === 2 || c === 4) {
-                td.innerHTML = `<input type="text" readonly tabindex="-1">`;
+                td.innerHTML = `<input type="text" readonly tabindex="-1" class="form-control form-control-sm border-0 bg-transparent">`;
             } else {
-                td.innerHTML = `<input type="text" id="totales-${fila}-col-${c}" readonly tabindex="-1" value="0">`;
+                td.innerHTML = `<input type="text" id="totales-${fila}-col-${c}" readonly tabindex="-1" value="0" class="form-control form-control-sm border-0 text-center fw-bold">`;
             }
             if(c >= 2 && c <= 4) td.style.display = "none";
             tr.appendChild(td);
@@ -153,6 +138,7 @@ function detectarRemesa() {
     let remesaDetectada = "";
     for(let mod of MODULOS) {
         const tbody = document.querySelector(`#tablaCaptura_${mod} tbody`);
+        if (!tbody) continue;
         const filas = tbody.querySelectorAll('tr');
         for(let i=0; i<7; i++) {
             let inp = filas[i].querySelectorAll('td')[38].querySelector('input');
@@ -164,7 +150,9 @@ function detectarRemesa() {
         if(remesaDetectada) break;
     }
     const inputRemesa = document.getElementById('inputRemesa');
-    if(inputRemesa) inputRemesa.value = remesaDetectada;
+    if(inputRemesa) inputRemesa.innerText = remesaDetectada || "S/N";
+    const hiddenRemesa = document.getElementById('hiddenRemesaVal');
+    if(hiddenRemesa) hiddenRemesa.value = remesaDetectada;
 }
 
 function sincronizarTotales() {
@@ -173,8 +161,9 @@ function sincronizarTotales() {
         let granTotalColumna = 0;
         
         MODULOS.forEach(mod => {
-            // Toma la fila 8 (índice 7) que es la que acabas de pegar desde Excel con los totales correctos
-            const filaTotalMod = document.querySelector(`#tablaCaptura_${mod} tbody`).querySelectorAll('tr')[7]; 
+            const tbodyMod = document.querySelector(`#tablaCaptura_${mod} tbody`);
+            if (!tbodyMod) return;
+            const filaTotalMod = tbodyMod.querySelectorAll('tr')[7]; 
             const inputMod = filaTotalMod.querySelectorAll('td')[c-1].querySelector('input');
             let valorStr = inputMod.value.trim().replace(/,/g, '');
             let valorNum = isNaN(parseFloat(valorStr)) ? 0 : parseFloat(valorStr);
@@ -190,43 +179,95 @@ function sincronizarTotales() {
     detectarRemesa();
 }
 
+// Inicialización de tablas y eventos por módulo
 MODULOS.forEach(mod => {
     generarEncabezados(`#tablaCaptura_${mod}`, false);
     generarCuerpoCaptura(`#tablaCaptura_${mod}`);
     
     const tbodyMod = document.querySelector(`#tablaCaptura_${mod} tbody`);
-    
-    tbodyMod.addEventListener('input', () => {
-        sincronizarTotales();
-    });
-    
-    document.getElementById(`pasteZone_${mod}`).addEventListener('paste', (e) => {
-        e.preventDefault();
-        const rows = (e.clipboardData || window.clipboardData).getData('Text').split('\n');
-        const tableRows = tbodyMod.querySelectorAll('tr');
-        let rowOffset = 0;
-        
-        rows.forEach((row, rowIndex) => {
-            if (row.trim() === '') return;
-            const columns = row.split('\t');
-            if(rowIndex === 0 && (columns[0].toUpperCase().includes("DIA") || columns[0] == "1" || columns[0].toUpperCase().includes("DÍA"))) { rowOffset++; return; }
-            const targetRow = tableRows[rowIndex - rowOffset];
-            if (targetRow) {
-                targetRow.querySelectorAll('input').forEach((input, colIndex) => {
-                    // Ahora permite que la columna pegue su valor incluso en la línea de totales
-                    if (columns[colIndex] !== undefined && !input.hasAttribute('readonly')) {
-                        input.value = columns[colIndex].trim();
-                    }
-                });
-            }
+    if (tbodyMod) {
+        tbodyMod.addEventListener('input', () => {
+            sincronizarTotales();
         });
-        alert(`Datos pegados con éxito en la tabla del Módulo ${mod}.`);
-        sincronizarTotales(); 
-    });
+    }
+    
+    const pasteZone = document.getElementById(`pasteZone_${mod}`);
+    if (pasteZone) {
+        pasteZone.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const rows = (e.clipboardData || window.clipboardData).getData('Text').split('\n');
+            const tableRows = tbodyMod.querySelectorAll('tr');
+            let rowOffset = 0;
+            
+            rows.forEach((row, rowIndex) => {
+                if (row.trim() === '') return;
+                const columns = row.split('\t');
+                if(rowIndex === 0 && (columns[0].toUpperCase().includes("DIA") || columns[0] == "1" || columns[0].toUpperCase().includes("DÍA"))) { rowOffset++; return; }
+                const targetRow = tableRows[rowIndex - rowOffset];
+                if (targetRow) {
+                    targetRow.querySelectorAll('input').forEach((input, colIndex) => {
+                        if (columns[colIndex] !== undefined && !input.hasAttribute('readonly')) {
+                            input.value = columns[colIndex].trim();
+                        }
+                    });
+                }
+            });
+            alert(`Datos pegados con éxito en la tabla del Módulo ${mod}.`);
+            sincronizarTotales(); 
+        });
+    }
 });
 
 generarEncabezados('#tablaCaptura_totales', true);
 generarCuerpoTotales();
+
+// Función global de cambio de pestañas
+window.cambiarModulo = function(mod) {
+    ["050351", "050353", "050354", "TOTALES"].forEach(m => {
+        const btn = document.getElementById(`btn-tab-${m}`);
+        const container = document.getElementById(`container_${m}`);
+        const pasteZone = document.getElementById(`pasteZone_${m}`);
+        
+        if (btn) {
+            if (m === mod) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        }
+        if (container) {
+            if (m === mod) {
+                container.classList.remove('d-none');
+            } else {
+                container.classList.add('d-none');
+            }
+        }
+        if (pasteZone) {
+            if (m === mod && m !== 'TOTALES') {
+                pasteZone.classList.remove('d-none');
+            } else {
+                pasteZone.classList.add('d-none');
+            }
+        }
+    });
+
+    const lblModuloActivo = document.getElementById('lblModuloActivo');
+    const lblModuloPegado = document.getElementById('lblModuloPegado');
+    const panelAccionesTotales = document.getElementById('panelAccionesTotales');
+    
+    if (lblModuloActivo) lblModuloActivo.innerText = mod;
+    if (lblModuloPegado) lblModuloPegado.innerText = mod;
+    
+    if (panelAccionesTotales) {
+        if (mod === 'TOTALES') {
+            panelAccionesTotales.classList.remove('d-none');
+            panelAccionesTotales.classList.add('d-flex');
+        } else {
+            panelAccionesTotales.classList.add('d-none');
+            panelAccionesTotales.classList.remove('d-flex');
+        }
+    }
+};
 
 // ==========================================
 // 3. LIMPIAR TABLAS
@@ -235,20 +276,23 @@ document.getElementById('btnBorrar').addEventListener('click', () => {
     if(confirm("¿Estás seguro de que deseas limpiar todas las tablas? (Se borrarán los datos en pantalla, no en la BD)")) {
         MODULOS.forEach(mod => {
             const tbody = document.querySelector(`#tablaCaptura_${mod} tbody`);
-            tbody.querySelectorAll('input:not([readonly])').forEach(inp => inp.value = "");
+            if (tbody) tbody.querySelectorAll('input:not([readonly])').forEach(inp => inp.value = "");
         });
         sincronizarTotales();
-        document.getElementById('inputRemesa').value = "";
+        const inputRemesa = document.getElementById('inputRemesa');
+        if (inputRemesa) inputRemesa.innerText = "S/N";
+        const hiddenRemesa = document.getElementById('hiddenRemesaVal');
+        if (hiddenRemesa) hiddenRemesa.value = "";
     }
 });
 
 // ==========================================
-// 4. BOTÓN UNIFICADO: GUARDAR EN CAMPAÑAS Y EN BD TOTALES CON IDMAC
+// 4. BOTÓN UNIFICADO: GUARDAR BASES (BD MADRE / CAMPAÑAS Y BD TOTALES)
 // ==========================================
 document.getElementById('btnGuardarBD').addEventListener('click', () => {
-    const remesaActual = document.getElementById('inputRemesa').value.trim();
+    const remesaActual = document.getElementById('hiddenRemesaVal').value.trim() || document.getElementById('inputRemesa').innerText.trim();
     
-    if(!remesaActual) {
+    if(!remesaActual || remesaActual === "S/N") {
         alert("Atención: No se ha detectado el número de Remesa en la columna 39. Por favor, asegúrate de que al menos un día capturado tenga el número de remesa.");
         return;
     }
@@ -257,7 +301,9 @@ document.getElementById('btnGuardarBD').addEventListener('click', () => {
     let datosAGuardar = {};
     
     tablasNombres.forEach(mod => {
-        const filas = document.querySelector(`#tablaCaptura_${mod} tbody`).querySelectorAll('tr');
+        const tablaEl = document.querySelector(`#tablaCaptura_${mod}`);
+        if (!tablaEl) return;
+        const filas = tablaEl.querySelectorAll('tbody tr');
         let datosTabla = [];
         filas.forEach(fila => {
             let filaArray = [];
@@ -337,7 +383,7 @@ document.getElementById('btnGuardarBD').addEventListener('click', () => {
             return set(dbRefTotales, fusionFinalTotales);
         })
     ]).then(() => {
-        alert(`¡Éxito! Información guardada correctamente:\n- Respaldada en Campañas.\n- Consolidada en BD Totales (con IDMAC) para la Remesa: ${remesaActual}.`);
+        alert(`¡Éxito! Ambas bases se guardaron correctamente:\n- Información de los módulos guardada en Campañas y BD Madre.\n- Totales consolidados guardados en BD Totales (con IDMAC) para la Remesa: ${remesaActual}.`);
     }).catch((error) => {
         console.error("Error al guardar en Firebase:", error);
         alert("Hubo un error al guardar los datos en la nube.");
