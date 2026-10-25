@@ -221,7 +221,7 @@ MODULOS.forEach(mod => {
 generarEncabezados('#tablaCaptura_totales', true);
 generarCuerpoTotales();
 
-// Función global de cambio de pestañas
+// Función global indispensable para alternar pestañas y mostrar las tablas correspondientes
 window.cambiarModulo = function(mod) {
     ["050351", "050353", "050354", "TOTALES"].forEach(m => {
         const btn = document.getElementById(`btn-tab-${m}`);
@@ -287,7 +287,7 @@ document.getElementById('btnBorrar').addEventListener('click', () => {
 });
 
 // ==========================================
-// 4. BOTÓN UNIFICADO: GUARDAR BASES (BD MADRE / CAMPAÑAS Y BD TOTALES)
+// 4. BOTÓN UNIFICADO: GUARDAR BASES
 // ==========================================
 document.getElementById('btnGuardarBD').addEventListener('click', () => {
     const remesaActual = document.getElementById('hiddenRemesaVal').value.trim() || document.getElementById('inputRemesa').innerText.trim();
