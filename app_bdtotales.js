@@ -10,7 +10,7 @@ const database = firebase.database();
 
 let datosGlobalesBd = []; 
 let datosEnPantalla = []; 
-let columnaOrdenActual = 'IDMAC'; 
+let columnaOrdenActual = 'REMESA'; 
 let ordenAscendente = false; 
 let idmacEdicionActual = null;
 
@@ -78,26 +78,62 @@ database.ref('bdtotales').on('value', (snap) => {
     ejecutarOrdenamiento(datosGlobalesBd);
 });
 
+// Buscador Multicampo Arreglado (busca en cualquier texto, remesa, módulo o ID)
 document.addEventListener('DOMContentLoaded', () => {
     const b = document.getElementById('buscadorBdTotales');
     if(b) b.addEventListener('input', e => {
         let t = e.target.value.toLowerCase().trim();
         if(t === '') { ejecutarOrdenamiento(datosGlobalesBd); return; }
-        ejecutarOrdenamiento(datosGlobalesBd.filter(i => String(i.IDMAC || generarIdMac(i.REMESA, i.MODULO)).toLowerCase().includes(t) || String(i.REMESA).toLowerCase().includes(t)));
+        
+        let filtrados = datosGlobalesBd.filter(i => {
+            let id = String(i.IDMAC || generarIdMac(i.REMESA, i.MODULO)).toLowerCase();
+            let rem = String(i.REMESA || '').toLowerCase();
+            let mod = String(i.MODULO || '').toLowerCase();
+            return id.includes(t) || rem.includes(t) || mod.includes(t);
+        });
+        ejecutarOrdenamiento(filtrados);
     });
 });
 
-// ORDENAMIENTO POR IDMAC (De mayor a menor, manteniendo las -bis juntas a su remesa correspondiente)
+// ORDENAMIENTO ESTRICTO: Remesa de mayor a menor y módulos en orden 050351 -> 050353 -> 050354 (manteniendo los -bis juntos)
 function ejecutarOrdenamiento(arr) {
     if(!arr || arr.length === 0) { dibujarTabla([]); return; }
     let o = [...arr];
 
+    const prioridadModulos = {
+        '050351': 1, '50351': 1,
+        '050353': 2, '50353': 2,
+        '050354': 3, '50354': 3
+    };
+
     o.sort((a, b) => {
-        let idA = String(a.IDMAC || generarIdMac(a.REMESA, a.MODULO)).trim();
-        let idB = String(b.IDMAC || generarIdMac(b.REMESA, b.MODULO)).trim();
+        let rAStr = String(a.REMESA || '').trim();
+        let rBStr = String(b.REMESA || '').trim();
         
-        // Orden alfabético/numérico inverso (de mayor a menor por IDMAC)
-        return idB.localeCompare(idA, undefined, {numeric: true});
+        let numA = parseInt(rAStr, 10) || 0;
+        let numB = parseInt(rBStr, 10) || 0;
+        
+        // 1. Remesa principal de mayor a menor
+        if (numA !== numB) {
+            return numB - numA; 
+        }
+
+        // Si la remesa numérica es igual, asegurarnos de que si una tiene -bis y la otra no, queden ordenadas
+        if (rAStr !== rBStr) {
+            return rBStr.localeCompare(rAStr);
+        }
+
+        // 2. Módulos en orden estricto (050351, 050353, 050354)
+        let mA = String(a.MODULO || '').trim();
+        let mB = String(b.MODULO || '').trim();
+        let prioA = prioridadModulos[mA] || 99;
+        let prioB = prioridadModulos[mB] || 99;
+
+        if (prioA !== prioB) {
+            return prioA - prioB;
+        }
+
+        return mA.localeCompare(mB, undefined, {numeric: true});
     });
 
     dibujarTabla(o);
