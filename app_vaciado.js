@@ -1,6 +1,9 @@
-// =========================================================
-// CONFIGURACIÓN DE FIREBASE (cifrasmac)
-// =========================================================
+// ==========================================
+// 1. IMPORTACIONES FIREBASE
+// ==========================================
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
 const firebaseConfig = {
     apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo",
     authDomain: "cifrasmac.firebaseapp.com",
@@ -11,450 +14,381 @@ const firebaseConfig = {
     appId: "1:916644687837:web:03d346cc48a071af1ed034"
 };
 
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-} else {
-    firebase.app();
-}
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
-const database = firebase.database();
+// ==========================================
+// 2. CONFIGURACIÓN DE TABLAS Y ENCABEZADOS
+// ==========================================
+const TOTAL_COLUMNAS = 75;
+const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo", "LINEA TOTALES"];
+const MODULOS = ["050351", "050353", "050354"];
 
-let moduloSeleccionado = '050351';
-let datosMesaTrabajo = {
-    '050351': [],
-    '050353': [],
-    '050354': []
-};
-
-// HELPER: CÁLCULO DE IDMAC PARA BDTOTALES
-function generarIdMac(remesa, modulo) {
-    let modStr = String(modulo || '').replace(/\D/g, '');
-    let modDigits = modStr.length >= 2 ? modStr.slice(-2) : modStr.padStart(2, '0');
-    if (!modDigits) modDigits = '00';
-
-    let remStr = String(remesa || '').trim();
-    let remMatch = remStr.match(/(\d+)\s*(-?\s*bis\d*)?/i);
-    let numPart = '0000';
-    let suffix = '';
-
-    if (remMatch) {
-        let n = remMatch[1];
-        numPart = n.length >= 4 ? n.slice(-4) : n.padStart(4, '0');
-        if (remMatch[2]) {
-            suffix = remMatch[2].replace(/\s+/g, '');
-            if (!suffix.startsWith('-')) suffix = '-' + suffix;
-        }
-    }
-
-    return `${modDigits}${numPart}${suffix}`;
-}
-
-// ESTRUCTURA DE 84 COLUMNAS (KEYS EN MINÚSCULAS Y LABELS TIPO NOMBRE PROPIO)
-let ESTRUCTURA_COLUMNAS = [
-    { pos: 1, key: 'DIA', label: 'Día' },
-    { pos: 2, key: 'FECHA', label: 'Fecha' },
-    { pos: 3, key: 'HORAS_TRABAJADAS', label: 'Horas' },
-    { pos: 4, key: 'SEDES', label: 'Sede' },
-    { pos: 5, key: 'INICIAL', label: 'Inicial' },
-    { pos: 6, key: 'FINAL', label: 'Final' },
-    { pos: 7, key: 'TOTAL_DE_FOLIOS', label: 'Total' },
-    { pos: 8, key: 'INSCRIPCIONES', label: 'Inscrip.' },
-    { pos: 9, key: 'CORRECCION_DE_DATOS_PERSONALES', label: 'Corr._Datos' },
-    { pos: 10, key: 'CAMBIO_DE_DOMICILIO', label: 'Cambio_Dom.' },
-    { pos: 11, key: 'REPOSISION', label: 'Reposición' },
-    { pos: 12, key: 'CORR__DE_DATOS_DIRECCION', label: 'Corr._De_Datos_Direccion' },
-    { pos: 13, key: 'REINCORPORACION', label: 'Reincorp.' },
-    { pos: 14, key: 'REEMPLAZO', label: 'Reemplazo' },
-    { pos: 15, key: 'REIMPRESION', label: 'Reimpresion' },
-    { pos: 16, key: 'TOTAL_DE_TRAMITES', label: 'Total_Tramites' },
-    { pos: 17, key: 'CANCELADOS', label: 'Cancelados' },
-    { pos: 18, key: 'TOTAL_DE_ANEXOS_POR_RECHAZO', label: 'Total_Anexo_Rechazo' },
-    { pos: 19, key: 'CPV_DEVUELTA_ENTREGA', label: 'Cpv_Devuelta_Entrega' },
-    { pos: 20, key: 'DISPONIBLES_AL_DIA_ANTERIOR', label: 'Disponibles_Al_Dia_Anterior_(Iniciales)' },
-    { pos: 21, key: 'ACTUALIZACION', label: 'Recibidas_Actualizacion' },
-    { pos: 22, key: 'RECIBIDAS_DE_OTROS_TIPOS', label: 'Recibidas_Otros_Tipos' },
-    { pos: 23, key: 'ENTREGADAS', label: 'Entregadas' },
-    { pos: 24, key: 'RECIBO_Y_O_EXTRAVIO', label: 'Recibo_Y/O_Extravio' },
-    { pos: 25, key: 'ANEXAS_A_FUAR', label: 'Anexas_A_Fuar' },
-    { pos: 26, key: 'DATOS_ERRONEOS', label: 'Datos_Erroneos' },
-    { pos: 27, key: 'FOTO_MAL_IMPRESA', label: 'Foto_Mal_Impresa' },
-    { pos: 28, key: 'SOLICITU_DE_REIMPRESION', label: 'Reimpresion' },
-    { pos: 29, key: 'RETIRADAS_POR_OTRA_CAUSA', label: 'Retiradas_Por_Causa' },
-    { pos: 30, key: 'DISPONIBLES', label: 'Disponibles' },
-    { pos: 31, key: 'CREDENCIALES_X_CANJE', label: 'Credenciales_X_Canje' },
-    { pos: 32, key: 'FICHAS_ENTREGADAS', label: 'Fichas_Entregadas' },
-    { pos: 33, key: 'FICHAS_ATENDIDAS', label: 'Fichas_Atendidas' },
-    { pos: 34, key: 'DIAS_TRABAJADOS', label: 'Dias_Trabajados' },
-    { pos: 35, key: 'CIF_05', label: 'Solicitud_Expedición' },
-    { pos: 36, key: 'SOLICITUD_EXPEDICION', label: 'Solicitud_Expedición_Ordinaria' },
-    { pos: 37, key: 'SOLICITUD_RECTIFICACION', label: 'Solicitu_De_Rectificación' },
-    { pos: 38, key: 'DEMANDA_DE_JUICIO', label: 'Demanda_De_Juicio' },
-    { pos: 39, key: 'REMESA', label: 'Remesa' },
-    { pos: 40, key: 'TOTAL_DE_MOVIMIENTOS', label: 'Total_De_Movimientos' },
-    { pos: 41, key: 'CREDEN_DEVUELTAS_POR_TERCEROS', label: 'Devueltas_Por_Terceros' },
-    { pos: 42, key: 'RECHAZOS_DE_MAC_34', label: '34_Imagen_Inconsistente' },
-    { pos: 43, key: 'RECHAZOS_DE_MAC_35', label: '35_Movimiento_Posterior' },
-    { pos: 44, key: 'CONFIGURACION', label: 'Configuracion' },
-    { pos: 45, key: 'ENT', label: 'Ent' },
-    { pos: 46, key: 'DTTO', label: 'Dtto' },
-    { pos: 47, key: 'MODULO', label: 'Modulo' },
-    { pos: 48, key: 'RESGUARDO', label: 'Resguardo' },
-    { pos: 49, key: 'SOLICITUD_DE_REIMPRESION', label: 'Solicitud_De_Reimpresion' },
-    { pos: 50, key: 'CPV_DEVUELTA_ENTREGA_2', label: 'Cpv_Devuelta_Entrega' },
-    { pos: 51, key: 'SCRIPT_EJECUTADOS', label: 'Script_Ejecutados' },
-    { pos: 52, key: 'FOLIO_NEC', label: 'Folio_Nec' },
-    { pos: 53, key: 'NUMERO_DE_TRAMITES_APLICADOS', label: 'Número_De_Trámites_Aplicados' },
-    { pos: 54, key: 'NUMERO_DE_FICHAS_REQUISITADAS', label: 'Número_De_Fichas_Requisitadas' },
-    { pos: 55, key: 'NUMERO_DE_ARCHIVOS_DE_TRANSACCION_ACEPTADOS', label: 'Número_De_Archivos_De_Transacción_Aceptados' },
-    { pos: 56, key: 'TOTAL_DE_ARCHIVOS_DE_TRANSACCION_PROCESADOS', label: 'Total_De_Archivos_De_Transacción_Procesados' },
-    { pos: 57, key: 'CREDENCIALES_RECIBIDAS', label: 'Credenciales_Recibidas' },
-    { pos: 58, key: 'CREDENCIALES_INCONSISTENTES', label: 'Credenciales_Inconsistentes' },
-    { pos: 59, key: 'CREDENCIALES_EN_RESGUARDO', label: 'Credenciales_En_Resguardo' },
-    { pos: 60, key: 'CREDENCIALES_TOTALES_EN_SIIRFE_DISPONIBLES_PARA_ENTREGA', label: 'Credenciales_Totales_En_Siirfe_Disponibles_Para_Entrega' },
-    { pos: 61, key: 'TOTAL_DE_CREDENCIALES_ENTREGADAS', label: 'Total_De_Credenciales_Entregadas' },
-    { pos: 62, key: 'TOTAL_DE_CREDENCIALES_SOLICITADAS', label: 'Total_De_Credenciales_Solicitadas' },
-    { pos: 63, key: 'IMPORTADAS', label: 'Importadas' },
-    { pos: 64, key: 'EXPORTADAS', label: 'Exportadas' },
-    { pos: 65, key: 'REPOSICIONES_REIMPRESIONES', label: 'Reposiciones_+_Reimpresiones' },
-    { pos: 66, key: 'MAL_IMPRESA', label: 'Mal_Impresa' },
-    { pos: 67, key: 'ERROR_EN_CARTOGRAFIA', label: 'Error_En_Cartografia' },
-    { pos: 68, key: 'DEFUNCION', label: 'Defuncion' },
-    { pos: 69, key: 'SUSPENSION', label: 'Suspension' },
-    { pos: 70, key: 'DUPLICADO', label: 'Duplicado' },
-    { pos: 71, key: 'ERROR_EN_NUM_DE_EMISION', label: 'Error_En_Num._De_Emision' },
-    { pos: 72, key: 'PERDIDA_DE_VIGENCIA', label: 'Perdida_De_Vigencia' },
-    { pos: 73, key: 'MOV_POST', label: 'Mov.post.' },
-    { pos: 74, key: 'ANEXAS_A_SOLICITUD', label: 'Anexas_A_Solicitud' },
-    { pos: 75, key: 'OTRAS_BAJAS', label: 'Otras_Bajas' }
+const ENCABEZADOS = [
+    "DIA", "FECHA", "Horas_trabajadas", "SEDES", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
+    "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSISION",
+    "CORR_DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES",
+    "CANCELADOS", "TOTAL_DE_ANEXO_DE_RECHAZO", "CPV_devuelta_entrega", "DISPONIBLES_AL_DIA_ANTERIOR",
+    "RECIBIDAS", "RECIBIDAS_DE_OTROS_TIPOS", "ENTREGADAS", "RECIBO_YO_EXTRAVIO", "ANEXAS_A_FUAR",
+    "DATOS_ERRONEOS", "FOTO_MAL_IMPRESA", "REIMPRESION_2", "RETIRADAS_POR_CAUSA", "DISPONIBLES",
+    "credenciales_x_canje", "fichas_Entregadas", "fichas_atendidas", "Dias_trabajados",
+    "SOLICITUD_EXPEDICION_REPATRIADOS", "SOLICITUD_EXPEDICION_ORDINARIA", "SOLICITU_DE_RECTIFICACION",
+    "DEMANDA_DE_JUICIO", "REMESA", "Total_de_movimientos", "DEVUELTAS_POR_TERCEROS",
+    "34_Imagen_inconsistente", "35_Movimiento_posterior", "CONFIGURACION", "ENT", "DTTO",
+    "MODULO", "RESGUARDO", "SOLICITUD_DE_REIMPRESION", "CPV_devuelta_entrega_2", "script_ejecutado",
+    "FOLIO_NEC", "cartografia", "lotes_de_credenciales", "registradas_por_dia", "faltantes", "observaciones",
+    "sin_nombre1", "sin_nombre2", "sin_nombre3", "MAC_QUE_RECIBE", "MAC_QUE_ENTREGA",
+    "IMPORTADAS", "EXPORTADAS", "REPOSISION_REIMPRESIONES", "MAL_IMPRESA", "ERROR_EN_CARTOGRAFIA",
+    "DEFUNCION", "SUSPENSION", "DUPLICADO", "ERROR_EN_NUM_DE_EMISION", "PERDIDA_DE_VIGENCIA",
+    "MOV_POST", "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS"
 ];
 
-const DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo', 'LINEA TOTALES'];
+const NOMBRES_ESTANDAR_BD = [...ENCABEZADOS];
 
-document.addEventListener('DOMContentLoaded', () => {
-    dibujarEncabezadosYNumeros();
-    cargarDatosInicialesFirebase();
+function generarEncabezados(selectorTabla, isTotales = false) {
+    const thead = document.querySelector(`${selectorTabla} thead`);
+    if (!thead) return;
+    thead.innerHTML = "";
+    let trTitulos = document.createElement('tr');
+    let trNumeros = document.createElement('tr');
+    trNumeros.className = "num-row";
+    
+    for(let i = 1; i <= TOTAL_COLUMNAS; i++) {
+        let thT = document.createElement('th');
+        let thN = document.createElement('th');
+        
+        let tituloStr = ENCABEZADOS[i-1] || `Columna ${i}`;
+        if(isTotales && i === 1) tituloStr = "MODULO";
+        
+        thT.innerText = tituloStr;
+        
+        let anchoCelda = "45px"; 
+        if(i === 1) anchoCelda = "110px"; 
+        else if(i === 2) anchoCelda = "70px"; 
+        else if(i === 4) anchoCelda = "85px"; 
+        else if(i === 5 || i === 6) anchoCelda = "105px"; 
+        else if(i === 61 || i === 62) anchoCelda = "80px"; 
+        
+        thT.style.width = anchoCelda; thT.style.minWidth = anchoCelda; thT.style.maxWidth = anchoCelda;
+        
+        if(i >= 5 && i <= 7) thT.classList.add('bg-folios');
+        if(i >= 19 && i <= 30) thT.classList.add('bg-retiradas');
+        
+        thN.innerText = i; thN.className = "table-light";
+        
+        if(isTotales && i >= 2 && i <= 4) {
+            thT.style.display = "none"; thN.style.display = "none";
+        }
+        
+        trTitulos.appendChild(thT); trNumeros.appendChild(thN);
+    }
+    thead.appendChild(trTitulos); thead.appendChild(trNumeros);
+}
 
-    const areaPegado = document.getElementById('areaPegado');
-    if (areaPegado) {
-        areaPegado.addEventListener('paste', manejarPegadoClipboard);
+function generarCuerpoCaptura(selectorTabla) {
+    const tbody = document.querySelector(`${selectorTabla} tbody`);
+    if (!tbody) return;
+    tbody.innerHTML = "";
+    DIAS.forEach((dia) => {
+        let tr = document.createElement('tr');
+        if (dia === "LINEA TOTALES") tr.classList.add('fila-totales');
+        for(let c = 1; c <= TOTAL_COLUMNAS; c++) {
+            let td = document.createElement('td');
+            if(c === 1) {
+                td.className = "col-dia";
+                td.innerHTML = `<input type="text" value="${dia}" readonly tabindex="-1" class="form-control form-control-sm border-0 bg-transparent fw-bold">`;
+            } else if (dia === "LINEA TOTALES" && (c === 2 || c === 4)) {
+                td.innerHTML = `<input type="text" readonly tabindex="-1" class="form-control form-control-sm border-0 bg-transparent">`;
+            } else {
+                td.innerHTML = `<input type="text" value="" class="form-control form-control-sm border-0 text-center">`;
+            }
+            tr.appendChild(td);
+        }
+        tbody.appendChild(tr);
+    });
+}
+
+function generarCuerpoTotales() {
+    const tbody = document.querySelector(`#tablaCaptura_totales tbody`);
+    if (!tbody) return;
+    tbody.innerHTML = "";
+    const filasConcentrado = ["050351", "050353", "050354", "GRAN TOTAL"];
+    filasConcentrado.forEach((fila) => {
+        let tr = document.createElement('tr');
+        if (fila === "GRAN TOTAL") tr.classList.add('fila-totales');
+        for(let c = 1; c <= TOTAL_COLUMNAS; c++) {
+            let td = document.createElement('td');
+            if(c === 1) {
+                td.className = "col-dia";
+                let textoFila = (fila === "GRAN TOTAL") ? fila : `Totales MAC ${fila}`;
+                td.innerHTML = `<input type="text" value="${textoFila}" readonly tabindex="-1" class="form-control form-control-sm border-0 bg-transparent fw-bold">`;
+            } else if (c === 2 || c === 4) {
+                td.innerHTML = `<input type="text" readonly tabindex="-1" class="form-control form-control-sm border-0 bg-transparent">`;
+            } else {
+                td.innerHTML = `<input type="text" id="totales-${fila}-col-${c}" readonly tabindex="-1" value="0" class="form-control form-control-sm border-0 text-center fw-bold">`;
+            }
+            if(c >= 2 && c <= 4) td.style.display = "none";
+            tr.appendChild(td);
+        }
+        tbody.appendChild(tr);
+    });
+}
+
+function detectarRemesa() {
+    let remesaDetectada = "";
+    for(let mod of MODULOS) {
+        const tbody = document.querySelector(`#tablaCaptura_${mod} tbody`);
+        if (!tbody) continue;
+        const filas = tbody.querySelectorAll('tr');
+        for(let i=0; i<7; i++) {
+            let inp = filas[i].querySelectorAll('td')[38].querySelector('input');
+            if(inp && inp.value.trim() !== "" && inp.value.trim() !== "0") {
+                remesaDetectada = inp.value.trim();
+                break;
+            }
+        }
+        if(remesaDetectada) break;
+    }
+    const inputRemesa = document.getElementById('inputRemesa');
+    if(inputRemesa) inputRemesa.innerText = remesaDetectada || "S/N";
+    const hiddenRemesa = document.getElementById('hiddenRemesaVal');
+    if(hiddenRemesa) hiddenRemesa.value = remesaDetectada;
+}
+
+function sincronizarTotales() {
+    for(let c = 3; c <= TOTAL_COLUMNAS; c++) {
+        if(c === 4) continue; 
+        let granTotalColumna = 0;
+        
+        MODULOS.forEach(mod => {
+            const tbodyMod = document.querySelector(`#tablaCaptura_${mod} tbody`);
+            if (!tbodyMod) return;
+            const filaTotalMod = tbodyMod.querySelectorAll('tr')[7]; 
+            const inputMod = filaTotalMod.querySelectorAll('td')[c-1].querySelector('input');
+            let valorStr = inputMod.value.trim().replace(/,/g, '');
+            let valorNum = isNaN(parseFloat(valorStr)) ? 0 : parseFloat(valorStr);
+            
+            let inputDestino = document.getElementById(`totales-${mod}-col-${c}`);
+            if (inputDestino) inputDestino.value = valorNum === 0 && valorStr !== "0" ? valorStr || "0" : valorNum;
+            if(!isNaN(valorNum)) granTotalColumna += valorNum;
+        });
+        
+        let inputGranTotal = document.getElementById(`totales-GRAN TOTAL-col-${c}`);
+        if(inputGranTotal) inputGranTotal.value = granTotalColumna;
+    }
+    detectarRemesa();
+}
+
+// Inicialización de tablas y eventos por módulo
+MODULOS.forEach(mod => {
+    generarEncabezados(`#tablaCaptura_${mod}`, false);
+    generarCuerpoCaptura(`#tablaCaptura_${mod}`);
+    
+    const tbodyMod = document.querySelector(`#tablaCaptura_${mod} tbody`);
+    if (tbodyMod) {
+        tbodyMod.addEventListener('input', () => {
+            sincronizarTotales();
+        });
+    }
+    
+    const pasteZone = document.getElementById(`pasteZone_${mod}`);
+    if (pasteZone) {
+        pasteZone.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const rows = (e.clipboardData || window.clipboardData).getData('Text').split('\n');
+            const tableRows = tbodyMod.querySelectorAll('tr');
+            let rowOffset = 0;
+            
+            rows.forEach((row, rowIndex) => {
+                if (row.trim() === '') return;
+                const columns = row.split('\t');
+                if(rowIndex === 0 && (columns[0].toUpperCase().includes("DIA") || columns[0] == "1" || columns[0].toUpperCase().includes("DÍA"))) { rowOffset++; return; }
+                const targetRow = tableRows[rowIndex - rowOffset];
+                if (targetRow) {
+                    targetRow.querySelectorAll('input').forEach((input, colIndex) => {
+                        if (columns[colIndex] !== undefined && !input.hasAttribute('readonly')) {
+                            input.value = columns[colIndex].trim();
+                        }
+                    });
+                }
+            });
+            alert(`Datos pegados con éxito en la tabla del Módulo ${mod}.`);
+            sincronizarTotales(); 
+        });
     }
 });
 
-// NAVEGACIÓN Y CAMBIO DE PESTAÑAS
-window.cambiarModulo = function(modulo) {
-    moduloSeleccionado = modulo;
-    
-    document.querySelectorAll('#tabsModulos .nav-link').forEach(btn => btn.classList.remove('active'));
-    const btnActivo = document.getElementById(`btn-tab-${modulo}`);
-    if (btnActivo) btnActivo.classList.add('active');
+generarEncabezados('#tablaCaptura_totales', true);
+generarCuerpoTotales();
 
-    const panelTotales = document.getElementById('panelAccionesTotales');
-    const areaPegado = document.getElementById('areaPegado');
-    const btnGuardarMadre = document.getElementById('btnGuardarMadre');
-    const lblAyuda = document.getElementById('lblMensajeAyuda');
-    const lblPegado = document.getElementById('lblModuloPegado');
-
-    dibujarEncabezadosYNumeros();
-
-    if (modulo === 'TOTALES') {
-        if (panelTotales) { panelTotales.classList.remove('d-none'); panelTotales.classList.add('d-flex'); }
-        if (areaPegado) areaPegado.classList.add('d-none');
-        if (btnGuardarMadre) btnGuardarMadre.classList.add('d-none');
+// Función global para alternar pestañas
+window.cambiarModulo = function(mod) {
+    ["050351", "050353", "050354", "TOTALES"].forEach(m => {
+        const btn = document.getElementById(`btn-tab-${m}`);
+        const container = document.getElementById(`container_${m}`);
+        const pasteZone = document.getElementById(`pasteZone_${m}`);
         
-        if (lblAyuda) {
-            lblAyuda.innerHTML = '<b>Vista Totales Generales:</b> Consolidado de los 3 módulos listos para sincronizar.';
+        if (btn) {
+            if (m === mod) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
         }
-        
-        renderizarVistaTotalesGenerales();
-    } else {
-        if (panelTotales) { panelTotales.classList.remove('d-flex'); panelTotales.classList.add('d-none'); }
-        if (areaPegado) areaPegado.classList.remove('d-none');
-        if (btnGuardarMadre) btnGuardarMadre.classList.remove('d-none');
-
-        if (lblPegado) lblPegado.textContent = modulo;
-        if (lblAyuda) {
-            lblAyuda.innerHTML = `Módulo <b>${modulo}</b>: Pega los datos con Ctrl+V. Haz doble clic en un encabezado para cambiar su nombre.`;
+        if (container) {
+            if (m === mod) {
+                container.classList.remove('d-none');
+            } else {
+                container.classList.add('d-none');
+            }
         }
-        
-        renderizarFilasEnPantalla(datosMesaTrabajo[moduloSeleccionado] || []);
-    }
-};
-
-function dibujarEncabezadosYNumeros() {
-    const thead = document.getElementById('cabeceraVaciado');
-    if (!thead) return;
-
-    let htmlHead = '<tr>';
-    ESTRUCTURA_COLUMNAS.forEach((col, idx) => {
-        let textoMostrar = col.label;
-        if (moduloSeleccionado === 'TOTALES' && idx === 0) {
-            textoMostrar = 'MODULO';
+        if (pasteZone) {
+            if (m === mod && m !== 'TOTALES') {
+                pasteZone.classList.remove('d-none');
+            } else {
+                pasteZone.classList.add('d-none');
+            }
         }
-
-        htmlHead += `<th ondblclick="editarNombreEncabezado(${idx})" title="Doble clic para editar nombre de columna">${textoMostrar}</th>`;
     });
-    htmlHead += '</tr>';
 
-    htmlHead += '<tr class="num-row">';
-    ESTRUCTURA_COLUMNAS.forEach(col => {
-        htmlHead += `<th>${col.pos}</th>`;
-    });
-    htmlHead += '</tr>';
-
-    thead.innerHTML = htmlHead;
-}
-
-window.editarNombreEncabezado = function(indexColumna) {
-    let actual = ESTRUCTURA_COLUMNAS[indexColumna];
-    let nuevoNombre = prompt(`Editar nombre de columna #${actual.pos}:`, actual.label);
+    const lblModuloActivo = document.getElementById('lblModuloActivo');
+    const lblModuloPegado = document.getElementById('lblModuloPegado');
+    const panelAccionesTotales = document.getElementById('panelAccionesTotales');
     
-    if (nuevoNombre && nuevoNombre.trim() !== '') {
-        nuevoNombre = nuevoNombre.trim().toUpperCase().replace(/\s+/g, '_');
-        ESTRUCTURA_COLUMNAS[indexColumna].label = nuevoNombre;
-        ESTRUCTURA_COLUMNAS[indexColumna].key = nuevoNombre.toLowerCase();
-        dibujarEncabezadosYNumeros();
-        
-        if (moduloSeleccionado === 'TOTALES') {
-            renderizarVistaTotalesGenerales();
+    if (lblModuloActivo) lblModuloActivo.innerText = mod;
+    if (lblModuloPegado) lblModuloPegado.innerText = mod;
+    
+    if (panelAccionesTotales) {
+        if (mod === 'TOTALES') {
+            panelAccionesTotales.classList.remove('d-none');
+            panelAccionesTotales.classList.add('d-flex');
         } else {
-            renderizarFilasEnPantalla(datosMesaTrabajo[moduloSeleccionado] || []);
+            panelAccionesTotales.classList.add('d-none');
+            panelAccionesTotales.classList.remove('d-flex');
         }
     }
 };
 
-function renderizarFilasEnPantalla(filasDatos) {
-    const tbody = document.getElementById('cuerpoVaciado');
-    if (!tbody) return;
-
-    tbody.innerHTML = '';
-
-    DIAS_SEMANA.forEach((diaNombre, indexFila) => {
-        let esTotales = indexFila === 7;
-        let itemFila = filasDatos.find(f => String(f.dia || f.DIA || '').toLowerCase() === diaNombre.toLowerCase()) || {};
-
-        let tr = document.createElement('tr');
-        if (esTotales) tr.className = 'fila-totales';
-
-        let htmlRow = '';
-        ESTRUCTURA_COLUMNAS.forEach((col, idxCol) => {
-            if (idxCol === 0) {
-                htmlRow += `<td class="col-dia">${diaNombre}</td>`;
-            } else {
-                let valor = itemFila[col.key] !== undefined && itemFila[col.key] !== null ? itemFila[col.key] : '';
-                htmlRow += `<td>${valor}</td>`;
-            }
+// ==========================================
+// 3. LIMPIAR TABLAS
+// ==========================================
+document.getElementById('btnBorrar').addEventListener('click', () => {
+    if(confirm("¿Estás seguro de que deseas limpiar todas las tablas? (Se borrarán los datos en pantalla, no en la BD)")) {
+        MODULOS.forEach(mod => {
+            const tbody = document.querySelector(`#tablaCaptura_${mod} tbody`);
+            if (tbody) tbody.querySelectorAll('input:not([readonly])').forEach(inp => inp.value = "");
         });
-
-        tr.innerHTML = htmlRow;
-        tbody.appendChild(tr);
-    });
-}
-
-function renderizarVistaTotalesGenerales() {
-    const tbody = document.getElementById('cuerpoVaciado');
-    const lblRemesa = document.getElementById('lblRemesaNumero');
-    if (!tbody) return;
-
-    tbody.innerHTML = '';
-
-    const modulosList = ['050351', '050353', '050354'];
-    let remesaDetectada = '';
-
-    modulosList.forEach(modKey => {
-        let filas = datosMesaTrabajo[modKey] || [];
-        let filaTotales = filas.find(f => String(f.dia || f.DIA || '').toLowerCase() === 'linea totales') || {};
-
-        if (!remesaDetectada && (filaTotales['remesa'] || filaTotales['REMESA'])) {
-            remesaDetectada = filaTotales['remesa'] || filaTotales['REMESA'];
-        }
-
-        let tr = document.createElement('tr');
-        tr.className = 'fila-totales';
-
-        let htmlRow = '';
-        ESTRUCTURA_COLUMNAS.forEach((col, idxCol) => {
-            if (idxCol === 0) {
-                htmlRow += `<td class="col-dia">${modKey}</td>`;
-            } else {
-                let valor = filaTotales[col.key] !== undefined && filaTotales[col.key] !== null ? filaTotales[col.key] : '';
-                htmlRow += `<td>${valor}</td>`;
-            }
-        });
-
-        tr.innerHTML = htmlRow;
-        tbody.appendChild(tr);
-    });
-
-    if (lblRemesa) {
-        lblRemesa.textContent = remesaDetectada || 'S/N';
+        sincronizarTotales();
+        const inputRemesa = document.getElementById('inputRemesa');
+        if (inputRemesa) inputRemesa.innerText = "S/N";
+        const hiddenRemesa = document.getElementById('hiddenRemesaVal');
+        if (hiddenRemesa) hiddenRemesa.value = "";
     }
-}
+});
 
-function manejarPegadoClipboard(e) {
-    if (moduloSeleccionado === 'TOTALES') return;
-
-    e.preventDefault();
-    let textoPegado = (e.clipboardData || window.clipboardData).getData('text');
-    if (!textoPegado || textoPegado.trim() === '') return;
-
-    let lineas = textoPegado.trim().split(/\r?\n/);
-    let nuevasFilas = [];
-
-    lineas.forEach((linea, idxLinea) => {
-        if (idxLinea >= 8) return;
-
-        let valores = linea.split('\t');
-        let objetoFila = {};
-
-        ESTRUCTURA_COLUMNAS.forEach((colDef) => {
-            let indexClipboard = colDef.pos - 1;
-            let valorCelda = valores[indexClipboard] !== undefined ? valores[indexClipboard].trim() : '';
-
-            if (colDef.pos === 1) {
-                objetoFila[colDef.key] = DIAS_SEMANA[idxLinea] || valorCelda;
-            } else {
-                objetoFila[colDef.key] = valorCelda;
-            }
-        });
-
-        objetoFila['modulo'] = moduloSeleccionado;
-        objetoFila['MODULO'] = moduloSeleccionado;
-        nuevasFilas.push(objetoFila);
-    });
-
-    datosMesaTrabajo[moduloSeleccionado] = nuevasFilas;
-    renderizarFilasEnPantalla(nuevasFilas);
-}
-
-window.guardarEnBaseMadre = function() {
-    const overlay = document.getElementById('loadingOverlay');
-    const txtOverlay = document.getElementById('lblOverlayTexto');
-    if (txtOverlay) txtOverlay.textContent = 'Guardando en Base Madre...';
-    if (overlay) overlay.style.display = 'flex';
-
-    let filasA_Guardar = [];
-
-    Object.keys(datosMesaTrabajo).forEach(modKey => {
-        let filasMod = datosMesaTrabajo[modKey];
-        filasMod.forEach(fila => {
-            let diaLwr = String(fila.dia || fila.DIA || '').toLowerCase();
-            if (diaLwr !== 'linea totales' && diaLwr !== 'totales' && diaLwr !== '') {
-                filasA_Guardar.push(fila);
-            }
-        });
-    });
-
-    if (filasA_Guardar.length === 0) {
-        if (overlay) overlay.style.display = 'none';
-        alert("No hay registros diarios para guardar en Base Madre.");
+// ==========================================
+// 4. BOTÓN UNIFICADO: GUARDAR BASES
+// ==========================================
+document.getElementById('btnGuardarBD').addEventListener('click', () => {
+    const remesaActual = document.getElementById('hiddenRemesaVal').value.trim() || document.getElementById('inputRemesa').innerText.trim();
+    
+    if(!remesaActual || remesaActual === "S/N") {
+        alert("Atención: No se ha detectado el número de Remesa en la columna 39. Por favor, asegúrate de que al menos un día capturado tenga el número de remesa.");
         return;
     }
 
-    database.ref('bd_madre').once('value').then(snapshot => {
-        let datosBase = snapshot.val();
-        let arregloBase = datosBase ? (Array.isArray(datosBase) ? datosBase : Object.values(datosBase)) : [];
-
-        let modulosActualizados = Object.keys(datosMesaTrabajo).filter(m => datosMesaTrabajo[m].length > 0);
-
-        let arregloFiltrado = arregloBase.filter(item => {
-            let modItem = String(item.modulo || item.MODULO || item.MÓDULO || item.Módulo || '');
-            return !modulosActualizados.includes(modItem);
-        });
-
-        let arregloFinal = [...arregloFiltrado, ...filasA_Guardar];
-
-        database.ref('bd_madre').set(arregloFinal).then(() => {
-            if (overlay) overlay.style.display = 'none';
-            alert("¡Registros diarios guardados con éxito en Base Madre!");
-        }).catch(err => {
-            if (overlay) overlay.style.display = 'none';
-            alert("Error al guardar en Firebase: " + err.message);
-        });
-    });
-};
-
-window.guardarEnBaseTotales = function() {
-    const overlay = document.getElementById('loadingOverlay');
-    const txtOverlay = document.getElementById('lblOverlayTexto');
-    if (txtOverlay) txtOverlay.textContent = 'Guardando en BD Totales...';
-    if (overlay) overlay.style.display = 'flex';
-
-    const modulosList = ['050351', '050353', '050354'];
-    let filasTotalesA_Guardar = [];
-
-    modulosList.forEach(modKey => {
-        let filas = datosMesaTrabajo[modKey] || [];
-        let filaTotales = filas.find(f => String(f.dia || f.DIA || '').toLowerCase() === 'linea totales');
-
-        if (filaTotales) {
-            let copiaTotales = { ...filaTotales };
-            const rem = copiaTotales['remesa'] || copiaTotales['REMESA'] || '';
-            copiaTotales['IDMAC'] = generarIdMac(rem, modKey);
-            copiaTotales['modulo'] = modKey;
-            copiaTotales['MODULO'] = modKey;
-            filasTotalesA_Guardar.push(copiaTotales);
-        }
-    });
-
-    if (filasTotalesA_Guardar.length === 0) {
-        if (overlay) overlay.style.display = 'none';
-        alert("No se encontraron líneas de totales para guardar en BD Totales.");
-        return;
-    }
-
-    database.ref('bdtotales').once('value').then(snapshot => {
-        let datosBase = snapshot.val();
-        let arregloBase = datosBase ? (Array.isArray(datosBase) ? datosBase : Object.values(datosBase)) : [];
-
-        let mapaRegistros = new Map();
-
-        arregloBase.forEach(item => {
-            const r = item.remesa || item.REMESA || item.Remesa || '';
-            const m = item.modulo || item.MODULO || item.Modulo || '';
-            const id = item.IDMAC || generarIdMac(r, m);
-            if (id && id !== '000000') mapaRegistros.set(id, item);
-        });
-
-        filasTotalesA_Guardar.forEach(itemNuevo => {
-            mapaRegistros.set(itemNuevo.IDMAC, itemNuevo);
-        });
-
-        const arregloFinal = Array.from(mapaRegistros.values());
-
-        database.ref('bdtotales').set(arregloFinal).then(() => {
-            if (overlay) overlay.style.display = 'none';
-            alert("¡Líneas de Totales registradas y guardadas correctamente en BD Totales!");
-        }).catch(err => {
-            if (overlay) overlay.style.display = 'none';
-            alert("Error al guardar en BD Totales: " + err.message);
-        });
-    });
-};
-
-function cargarDatosInicialesFirebase() {
-    database.ref('bd_madre').once('value').then(snapshot => {
-        let datos = snapshot.val();
-        let arregloGlobal = datos ? (Array.isArray(datos) ? datos : Object.values(datos)) : [];
-
-        ['050351', '050353', '050354'].forEach(m => {
-            datosMesaTrabajo[m] = arregloGlobal.filter(item => {
-                let modItem = String(item.modulo || item.MODULO || item.MÓDULO || item.Módulo || item.Modulo || '');
-                return modItem === m;
+    const tablasNombres = [...MODULOS, "totales"];
+    let datosAGuardar = {};
+    
+    tablasNombres.forEach(mod => {
+        const tablaEl = document.querySelector(`#tablaCaptura_${mod}`);
+        if (!tablaEl) return;
+        const filas = tablaEl.querySelectorAll('tbody tr');
+        let datosTabla = [];
+        filas.forEach(fila => {
+            let filaArray = [];
+            fila.querySelectorAll('td').forEach(td => {
+                const input = td.querySelector('input');
+                filaArray.push(input ? input.value : "");
             });
+            datosTabla.push(filaArray);
         });
-
-        renderizarFilasEnPantalla(datosMesaTrabajo[moduloSeleccionado] || []);
+        datosAGuardar[mod] = datosTabla;
     });
-}
 
-window.vaciarMesaTrabajo = function() {
-    if (confirm("¿Deseas limpiar la pantalla actual? (Los datos no guardados se perderán)")) {
-        if (moduloSeleccionado === 'TOTALES') {
-            datosMesaTrabajo = { '050351': [], '050353': [], '050354': [] };
-            renderizarVistaTotalesGenerales();
-        } else {
-            datosMesaTrabajo[moduloSeleccionado] = [];
-            renderizarFilasEnPantalla([]);
+    let registrosTotalesParaBD = [];
+    const tbodyTotales = document.querySelector('#tablaCaptura_totales tbody');
+    
+    if (tbodyTotales) {
+        const filasTotales = tbodyTotales.querySelectorAll('tr');
+        for (let i = 0; i < 3; i++) {
+            const filaModulo = filasTotales[i];
+            if (!filaModulo) continue;
+
+            let objFilaTotal = {};
+            let textoModuloCelda = "";
+
+            filaModulo.querySelectorAll('td').forEach((td, colIdx) => {
+                const input = td.querySelector('input');
+                let valorCelda = input ? input.value.trim() : "";
+                
+                if (colIdx === 0) {
+                    textoModuloCelda = valorCelda;
+                }
+
+                let claveColumna = NOMBRES_ESTANDAR_BD[colIdx] || `Col_${colIdx + 1}`;
+                objFilaTotal[claveColumna] = valorCelda;
+            });
+
+            let numeroModuloLimpio = textoModuloCelda.replace(/[^0-9]/g, '');
+            if (!numeroModuloLimpio) {
+                const modulosFijo = ["050351", "050353", "050354"];
+                numeroModuloLimpio = modulosFijo[i];
+            }
+
+            objFilaTotal["MODULO"] = numeroModuloLimpio;
+            objFilaTotal["REMESA"] = remesaActual;
+
+            delete objFilaTotal.DIA;
+            delete objFilaTotal.FECHA;
+
+            const ultimos3Mod = String(numeroModuloLimpio).slice(-3);
+            let remStr = String(remesaActual).trim();
+            let r = remStr;
+            
+            if (/^\d{4}/.test(remStr)) {
+                r = remStr.substring(4); 
+            } else if (!remStr.includes('-')) {
+                r = remStr.slice(-2);
+            }
+            
+            objFilaTotal.IDMAC = `${ultimos3Mod}${r}`;
+            registrosTotalesParaBD.push(objFilaTotal);
         }
     }
-};
+
+    const dbRefActual = ref(db, 'vaciado_actual');
+    const dbRefHistorial = ref(db, `historial_campanas/${remesaActual}`);
+    const dbRefTotales = ref(db, 'bdtotales');
+
+    Promise.all([
+        set(dbRefActual, datosAGuardar),
+        set(dbRefHistorial, datosAGuardar),
+        get(dbRefTotales).then((snapshot) => {
+            let actualTotales = snapshot.val() || [];
+            actualTotales = Array.isArray(actualTotales) ? actualTotales : Object.values(actualTotales);
+
+            let totalesFiltrados = actualTotales.filter(item => String(item.REMESA) !== String(remesaActual));
+            const fusionFinalTotales = [...totalesFiltrados, ...registrosTotalesParaBD];
+            return set(dbRefTotales, fusionFinalTotales);
+        })
+    ]).then(() => {
+        alert(`¡Éxito! Ambas bases se guardaron correctamente:\n- Información de los módulos guardada en Campañas y BD Madre.\n- Totales consolidados guardados en BD Totales (con IDMAC) para la Remesa: ${remesaActual}.`);
+    }).catch((error) => {
+        console.error("Error al guardar en Firebase:", error);
+        alert("Hubo un error al guardar los datos en la nube.");
+    });
+});
+
+// Forzar la visualización inicial del módulo 050351 al cargar
+cambiarModulo('050351');
