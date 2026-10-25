@@ -78,7 +78,7 @@ database.ref('bdtotales').on('value', (snap) => {
     ejecutarOrdenamiento(datosGlobalesBd);
 });
 
-// Buscador Multicampo Arreglado (busca en cualquier texto, remesa, módulo o ID)
+// Buscador Global Multicampo
 document.addEventListener('DOMContentLoaded', () => {
     const b = document.getElementById('buscadorBdTotales');
     if(b) b.addEventListener('input', e => {
@@ -86,16 +86,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if(t === '') { ejecutarOrdenamiento(datosGlobalesBd); return; }
         
         let filtrados = datosGlobalesBd.filter(i => {
-            let id = String(i.IDMAC || generarIdMac(i.REMESA, i.MODULO)).toLowerCase();
-            let rem = String(i.REMESA || '').toLowerCase();
-            let mod = String(i.MODULO || '').toLowerCase();
-            return id.includes(t) || rem.includes(t) || mod.includes(t);
+            let registroConId = { ...i, IDMAC: i.IDMAC || generarIdMac(i.REMESA, i.MODULO) };
+            return Object.values(registroConId).some(val => String(val || '').toLowerCase().includes(t));
         });
         ejecutarOrdenamiento(filtrados);
     });
 });
 
-// ORDENAMIENTO ESTRICTO: Remesa de mayor a menor y módulos en orden 050351 -> 050353 -> 050354 (manteniendo los -bis juntos)
+// ORDENAMIENTO ESTRICTO CORREGIDO: Remesa de mayor a menor (descendente) y módulos en orden 050351 -> 050353 -> 050354
 function ejecutarOrdenamiento(arr) {
     if(!arr || arr.length === 0) { dibujarTabla([]); return; }
     let o = [...arr];
@@ -113,17 +111,16 @@ function ejecutarOrdenamiento(arr) {
         let numA = parseInt(rAStr, 10) || 0;
         let numB = parseInt(rBStr, 10) || 0;
         
-        // 1. Remesa principal de mayor a menor
+        // 1. Remesa principal de MAYOR A MENOR (descendente: numB - numA)
         if (numA !== numB) {
             return numB - numA; 
         }
 
-        // Si la remesa numérica es igual, asegurarnos de que si una tiene -bis y la otra no, queden ordenadas
         if (rAStr !== rBStr) {
             return rBStr.localeCompare(rAStr);
         }
 
-        // 2. Módulos en orden estricto (050351, 050353, 050354)
+        // 2. Módulos en orden estricto ascendente (050351, 050353, 050354)
         let mA = String(a.MODULO || '').trim();
         let mB = String(b.MODULO || '').trim();
         let prioA = prioridadModulos[mA] || 99;
