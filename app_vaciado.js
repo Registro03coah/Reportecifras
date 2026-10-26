@@ -94,6 +94,7 @@ function inicializarEncabezadosYTablas() {
         if (!tbody) return;
         tbody.innerHTML = "";
         
+        // 7 días de la semana
         const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
         dias.forEach(dia => {
             let tr = document.createElement('tr');
@@ -114,19 +115,20 @@ function inicializarEncabezadosYTablas() {
             tbody.appendChild(tr);
         });
 
+        // 8ava fila: LÍNEA TOTALES (Ahora completamente editable y receptora de pegado)
         let trTot = document.createElement('tr');
-        trTot.className = "fila-totales fw-bold bg-secondary text-white";
+        trTot.className = "fila-totales fw-bold";
         for (let i = 0; i < TOTAL_COLUMNAS; i++) {
             let td = document.createElement('td');
             if (i === 0) {
                 td.innerText = "LÍNEA TOTALES";
-                td.className = "text-center col-dia";
+                td.className = "text-center col-dia bg-success text-white";
             } else {
                 let input = document.createElement('input');
                 input.type = "text";
-                input.className = "form-control form-control-sm text-center p-0 border-0 bg-transparent text-white fw-bold";
+                input.className = "form-control form-control-sm text-center p-0 border-0 bg-transparent fw-bold";
                 input.value = "0";
-                input.readOnly = true;
+                // Ya no es readOnly para que el usuario pueda editarlo libremente o recibir datos pegados
                 td.appendChild(input);
             }
             trTot.appendChild(td);
@@ -217,7 +219,7 @@ window.cambiarModulo = function(mod) {
 };
 
 // ==========================================
-// CONFIGURACIÓN ROBUSTA DE PEGADO (PORTAPAPELES)
+// CONFIGURACIÓN DE PEGADO (INCLUYENDO LÍNEA TOTALES)
 // ==========================================
 function configurarPegadoPortapapeles() {
     MODULOS.forEach(mod => {
@@ -237,22 +239,21 @@ function configurarPegadoPortapapeles() {
             let rowOffset = 0;
 
             filasPegadas.forEach((rowStr, rIdx) => {
-                if (rIdx + rowOffset >= 7) return;
+                // Permite procesar hasta 8 filas (7 días + 1 línea de totales)
+                if (rIdx + rowOffset >= 8) return;
                 let targetRow = trs[rIdx + rowOffset];
                 if (!targetRow) return;
 
                 let celdasDatos = rowStr.split('\t');
                 
-                // Si la primera celda es el encabezado "DIA", saltamos esa línea
+                // Si la primera línea es el encabezado, saltarla
                 if (rIdx === 0 && (celdasDatos[0].toUpperCase().includes("DIA") || celdasDatos[0].toUpperCase().includes("DÍA"))) {
                     rowOffset++;
                     return;
                 }
 
-                let editableInputs = targetRow.querySelectorAll('input:not([readonly])');
-                
-                // Detectar si el portapapeles incluye la columna 1 (Día) o empieza directo en la Columna 2 (Fecha)
-                let startIndex = (celdasDatos.length >= TOTAL_COLUMNAS || celdasDatos[0].toLowerCase().includes('lunes') || celdasDatos[0].toLowerCase().includes('martes')) ? 1 : 0;
+                let editableInputs = targetRow.querySelectorAll('input');
+                let startIndex = (celdasDatos.length >= TOTAL_COLUMNAS || celdasDatos[0].toLowerCase().includes('lunes') || celdasDatos[0].toLowerCase().includes('martes') || celdasDatos[0].toLowerCase().includes('línea')) ? 1 : 0;
 
                 editableInputs.forEach((input, cIdx) => {
                     let valorCelda = celdasDatos[cIdx + startIndex];
@@ -262,32 +263,13 @@ function configurarPegadoPortapapeles() {
                 });
             });
 
-            recalcularTotalesModulo(mod);
             sincronizarTotales();
         };
 
-        // Escuchar el evento paste tanto en la caja de pegado como en el contenedor de la tabla
         if (pasteZone) pasteZone.addEventListener('paste', ejecutarPegado);
         if (container) container.addEventListener('paste', ejecutarPegado);
         tbody.addEventListener('paste', ejecutarPegado);
     });
-}
-
-function recalcularTotalesModulo(mod) {
-    const tbody = document.querySelector(`#tablaCaptura_${mod} tbody`);
-    if (!tbody) return;
-    const filas = tbody.querySelectorAll('tr');
-    
-    for (let c = 1; c < TOTAL_COLUMNAS; c++) {
-        let suma = 0;
-        for (let r = 0; r < 7; r++) {
-            let input = filas[r].querySelectorAll('td')[c].querySelector('input');
-            let val = parseFloat(input ? input.value : 0) || 0;
-            suma += val;
-        }
-        let inputTotal = filas[7].querySelectorAll('td')[c].querySelector('input');
-        if (inputTotal) inputTotal.value = suma;
-    }
 }
 
 function calcularTotalesGenerales() {
@@ -307,6 +289,14 @@ function calcularTotalesGenerales() {
             if (inputDestino) inputDestino.value = valOrigen;
         }
     });
+}
+
+function sincronizarTotales() {
+    // Función auxiliar para mantener la sincronización con la pestaña de totales generales
+    const tablaTotalesEl = document.querySelector('#tablaCaptura_totales');
+    if (tablaTotalesEl && !document.getElementById('container_TOTALES').classList.contains('d-none')) {
+        calcularTotalesGenerales();
+    }
 }
 
 function cargarDatosDesdeFirebase() {
@@ -332,7 +322,6 @@ function cargarDatosDesdeFirebase() {
                                 });
                             }
                         });
-                        recalcularTotalesModulo(mod);
                     }
                 }
             });
