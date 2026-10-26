@@ -14,7 +14,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// ESTRUCTURA DE COLUMNAS DE LA BD PRINCIPAL (EMPATADA Y LIMPIA PARA FIREBASE)
+// ESTRUCTURA ESTRICTA ORDENADA POR NUMERACIÓN CONSECUTIVA (1 al 75)
 const ESTRUCTURA_BD_MADRE = [ 
     { key: 'IDMAC', num: 0 },
     { key: 'DIA', num: 1 }, 
@@ -97,7 +97,6 @@ const ESTRUCTURA_BD_MADRE = [
 let bdMadreGlobal = [];
 let anchosGuardados = JSON.parse(localStorage.getItem('anchosColumnasBdMadre')) || {};
 
-// Copiar tabla a Excel
 window.copiarTablaExcel = function(tablaId) {
     const tabla = document.getElementById(tablaId);
     if (!tabla) return;
@@ -123,13 +122,16 @@ window.copiarTablaExcel = function(tablaId) {
 };
 
 function construirHeaderTabla() {
-    const thead = document.getElementById('cabeceraTablaBdMadre'); 
+    // Buscamos el thead de forma flexible para asegurarnos de que pinte en la tabla correcta
+    const thead = document.getElementById('cabeceraTablaBdMadre') || document.querySelector('table thead'); 
     if(!thead) return;
     thead.innerHTML = "";
+    
     let trT = document.createElement('tr'); 
     let trN = document.createElement('tr'); 
     trN.className = 'num-row';
-     
+    
+    // Forzar estrictamente el orden de ESTRUCTURA_BD_MADRE
     ESTRUCTURA_BD_MADRE.forEach((colObj) => {
         let th = document.createElement('th'); 
         th.setAttribute('data-col', colObj.key);
@@ -141,11 +143,12 @@ function construirHeaderTabla() {
             th.style.minWidth = "90px"; 
         }
         trT.appendChild(th);
-         
+        
         let thN = document.createElement('th'); 
         thN.innerText = colObj.num; 
         trN.appendChild(thN);
     });
+    
     thead.appendChild(trT); 
     thead.appendChild(trN);
 }
@@ -169,18 +172,15 @@ function obtenerValorFila(fila, colObj) {
 
     if (foundKey && fila[foundKey] !== undefined && fila[foundKey] !== null) return fila[foundKey];
 
-    return '0'; // Rellenar celdas faltantes con 0 por defecto
+    return '0';
 }
 
 function actualizarContadores(datosMostrados) {
     const lblLineas = document.getElementById('lblTotalLineas');
     const lblRemesas = document.getElementById('lblTotalRemesas');
-     
+    
     const total = Array.isArray(datosMostrados) ? datosMostrados.length : 0;
-     
-    if (lblLineas) {
-        lblLineas.innerText = total;
-    }
+    if (lblLineas) lblLineas.innerText = total;
 
     if (lblRemesas) {
         const remesasUnicas = new Set();
@@ -198,19 +198,20 @@ function actualizarContadores(datosMostrados) {
 }
 
 function procesarYMostrarDatos(datosAProcesar = bdMadreGlobal) {
-    const tbody = document.getElementById('cuerpoTablaBdMadre'); 
+    const tbody = document.getElementById('cuerpoTablaBdMadre') || document.querySelector('table tbody'); 
     if(!tbody) return;
     tbody.innerHTML = "";
-     
+    
     actualizarContadores(datosAProcesar);
-     
+    
     if (datosAProcesar.length === 0) {
         tbody.innerHTML = `<tr><td colspan="${ESTRUCTURA_BD_MADRE.length}" class="text-center text-muted py-4 fw-bold">⚠️ No hay registros disponibles en la BD Principal (bd_madre).</td></tr>`;
         return;
     }
-     
+    
     datosAProcesar.forEach(fila => {
         let tr = document.createElement('tr');
+        // Recorrer estrictamente el arreglo ESTRUCTURA_BD_MADRE para mantener el orden consecutivo
         ESTRUCTURA_BD_MADRE.forEach(colObj => {
             let td = document.createElement('td');
             let val = obtenerValorFila(fila, colObj);
@@ -224,8 +225,9 @@ function procesarYMostrarDatos(datosAProcesar = bdMadreGlobal) {
     });
 }
 
-// Buscador en tiempo real
 document.addEventListener("DOMContentLoaded", () => {
+    construirHeaderTabla();
+
     const inputBuscador = document.getElementById('inputBuscadorBdMadre') || document.getElementById('inputBuscadorDias');
     if (inputBuscador) {
         inputBuscador.addEventListener('keyup', (e) => {
@@ -244,9 +246,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 });
-
-// Inicialización de la cabecera
-construirHeaderTabla();
 
 // Semáforo de conexión Firebase
 onValue(ref(db, ".info/connected"), (snap) => {
@@ -267,10 +266,12 @@ onValue(ref(db, 'bd_madre'), (snapshot) => {
         const data = snapshot.val();
         bdMadreGlobal = Array.isArray(data) ? data : Object.values(data); 
         console.log("✅ Datos cargados en bdMadreGlobal:", bdMadreGlobal.length);
+        construirHeaderTabla();
         procesarYMostrarDatos(bdMadreGlobal);
     } else {
         console.warn("⚠️ La ruta bd_madre está vacía o no existe en Firebase.");
         bdMadreGlobal = [];
+        construirHeaderTabla();
         procesarYMostrarDatos(bdMadreGlobal);
     }
 }, (error) => {
