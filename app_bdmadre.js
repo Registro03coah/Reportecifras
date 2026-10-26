@@ -35,7 +35,7 @@ const ESTRUCTURA_BD_MADRE = [
     { key: 'TOTAL_DE_TRAMITES', num: 16 }, 
     { key: 'CANCELADOS', num: 17 }, 
     { key: 'TOTAL_DE_ANEXO_DE_RECHAZO', num: 18 }, 
-    { key: 'CPV_DEVUELTA_ENTREGA', num: 19 }, 
+    { key: 'CRED_PROD_CANJE_POR_NUEVA', num: 19 }, 
     { key: 'DISPONIBLES_AL_DIA_ANTERIOR', num: 20 }, 
     { key: 'RECIBIDAS', num: 21 }, 
     { key: 'RECIBIDAS_DE_OTROS_TIPOS', num: 22 }, 
