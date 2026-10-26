@@ -39,6 +39,9 @@ const NOMBRES_ESTANDAR_BD = [
     "ERROR_EN_NUM_DE_EMISION", "PERDIDA_DE_VIGENCIA", "MOV_POST", "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS"
 ];
 
+// Índice de la columna REMESA (Columna 38 en base 0)
+const INDEX_COLUMNA_REMESA = 38;
+
 document.addEventListener("DOMContentLoaded", () => {
     inicializarEncabezadosYTablas();
     configurarTabs();
@@ -114,7 +117,7 @@ function inicializarEncabezadosYTablas() {
             tbody.appendChild(tr);
         });
 
-        // 8ava fila: LÍNEA TOTALES (Editable y receptora de pegado)
+        // 8ava fila: LÍNEA TOTALES
         let trTot = document.createElement('tr');
         trTot.className = "fila-totales fw-bold";
         for (let i = 0; i < TOTAL_COLUMNAS; i++) {
@@ -208,6 +211,12 @@ window.cambiarModulo = function(mod) {
         if (mod === 'TOTALES') {
             panelAccionesTotales.classList.remove('d-none');
             panelAccionesTotales.classList.add('d-flex');
+            
+            // Detectar automáticamente la remesa desde la columna de la tabla del primer módulo
+            const remesaDetectada = obtenerRemesaDesdeTablas() || "S/N";
+            const spanRemesa = document.getElementById('inputRemesa');
+            if (spanRemesa) spanRemesa.innerText = remesaDetectada;
+
             calcularTotalesGenerales();
         } else {
             panelAccionesTotales.classList.add('d-none');
@@ -215,6 +224,27 @@ window.cambiarModulo = function(mod) {
         }
     }
 };
+
+// ==========================================
+// FUNCIÓN PARA EXTRAER LA REMESA DE LA TABLA
+// ==========================================
+function obtenerRemesaDesdeTablas() {
+    for (let mod of MODULOS) {
+        const tbody = document.querySelector(`#tablaCaptura_${mod} tbody`);
+        if (!tbody) continue;
+        const primerasFilas = tbody.querySelectorAll('tr');
+        for (let r = 0; r < 7; r++) {
+            if (!primerasFilas[r]) continue;
+            const inputs = primerasFilas[r].querySelectorAll('input');
+            // La columna REMESA está en el índice 38 (restando 1 porque el índice 0 de inputs es la columna Fecha)
+            const inputRemesa = inputs[INDEX_COLUMNA_REMESA - 1];
+            if (inputRemesa && inputRemesa.value.trim() !== "" && inputRemesa.value.trim() !== "0") {
+                return inputRemesa.value.trim();
+            }
+        }
+    }
+    return null;
+}
 
 // ==========================================
 // CONFIGURACIÓN DE PEGADO
@@ -325,8 +355,13 @@ function cargarDatosDesdeFirebase() {
 }
 
 function guardarBasesEnFirebase() {
-    // Lee directamente el número de remesa del nuevo campo superior global
-    const remesaActual = document.getElementById('inputRemesaGlobal')?.value.trim() || "39";
+    // Extrae automáticamente la Remesa directamente de la columna 38 de las tablas
+    const remesaActual = obtenerRemesaDesdeTablas() || "S/N";
+    
+    if (remesaActual === "S/N") {
+        alert("Aviso: No se detectó ningún número de remesa en la columna REMESA de las tablas. Asegúrate de incluirlo.");
+    }
+
     const anioActual = new Date().getFullYear().toString().slice(-2); 
     
     let datosAGuardar = {};
