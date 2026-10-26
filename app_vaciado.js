@@ -17,7 +17,7 @@ const db = getDatabase(app);
 const MODULOS = ["050351", "050353", "050354"];
 const TOTAL_COLUMNAS = 75;
 
-// NOMBRES ESTÁNDAR OFICIALES DE LAS 75 COLUMNAS (CORREGIDOS SEGÚN TU IMAGEN)
+// NOMBRES ESTÁNDAR OFICIALES DE LAS 75 COLUMNAS
 const NOMBRES_ESTANDAR_BD = [
     "DIA", "FECHA", "HORAS_TRABAJADAS", "SEDES", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
     "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSICION",
@@ -50,13 +50,13 @@ document.addEventListener("DOMContentLoaded", () => {
         btnGuardar.addEventListener('click', guardarBasesEnFirebase);
     }
 
-    const btnLimpiar = document.getElementById('btnLimpiarBD');
+    const btnLimpiar = document.getElementById('btnBorrar');
     if (btnLimpiar) {
         btnLimpiar.addEventListener('click', limpiarFormulario);
     }
 });
 
-function construirHeaderTabla(tableEl) {
+function construirHeaderTabla(tableEl, isTotales = false) {
     if (!tableEl) return;
     let thead = tableEl.querySelector('thead');
     if (!thead) {
@@ -71,12 +71,13 @@ function construirHeaderTabla(tableEl) {
 
     NOMBRES_ESTANDAR_BD.forEach((nombreCol, idx) => {
         let th = document.createElement('th');
-        th.innerText = nombreCol.replace(/_/g, ' ');
+        let tituloStr = isTotales && idx === 0 ? "MODULO" : nombreCol.replace(/_/g, ' ');
+        th.innerText = tituloStr;
         th.style.minWidth = "90px";
         trT.appendChild(th);
 
         let thN = document.createElement('th');
-        thN.innerText = idx === 0 ? "DÍA" : idx;
+        thN.innerText = idx === 0 ? (isTotales ? "MOD" : "DÍA") : idx;
         trN.appendChild(thN);
     });
 
@@ -87,7 +88,7 @@ function construirHeaderTabla(tableEl) {
 function inicializarEncabezadosYTablas() {
     MODULOS.forEach(mod => {
         const tablaEl = document.querySelector(`#tablaCaptura_${mod}`);
-        if (tablaEl) construirHeaderTabla(tablaEl);
+        if (tablaEl) construirHeaderTabla(tablaEl, false);
 
         const tbody = document.querySelector(`#tablaCaptura_${mod} tbody`);
         if (!tbody) return;
@@ -100,7 +101,7 @@ function inicializarEncabezadosYTablas() {
                 let td = document.createElement('td');
                 if (i === 0) {
                     td.innerText = dia;
-                    td.className = "fw-bold bg-light text-center";
+                    td.className = "fw-bold bg-light text-center col-dia";
                 } else {
                     let input = document.createElement('input');
                     input.type = "text";
@@ -118,8 +119,8 @@ function inicializarEncabezadosYTablas() {
         for (let i = 0; i < TOTAL_COLUMNAS; i++) {
             let td = document.createElement('td');
             if (i === 0) {
-                td.innerText = "LÍNEA TOTALI";
-                td.className = "text-center";
+                td.innerText = "LÍNEA TOTALES";
+                td.className = "text-center col-dia";
             } else {
                 let input = document.createElement('input');
                 input.type = "text";
@@ -134,7 +135,7 @@ function inicializarEncabezadosYTablas() {
     });
 
     const tablaTotalesEl = document.querySelector('#tablaCaptura_totales');
-    if (tablaTotalesEl) construirHeaderTabla(tablaTotalesEl);
+    if (tablaTotalesEl) construirHeaderTabla(tablaTotalesEl, true);
 
     const tbodyTotales = document.querySelector('#tablaCaptura_totales tbody');
     if (tbodyTotales) {
@@ -145,7 +146,7 @@ function inicializarEncabezadosYTablas() {
                 let td = document.createElement('td');
                 if (i === 0) {
                     td.innerText = `Módulo ${mod}`;
-                    td.className = "fw-bold bg-light text-center";
+                    td.className = "fw-bold bg-light text-center col-dia";
                 } else {
                     let input = document.createElement('input');
                     input.type = "text";
@@ -173,6 +174,57 @@ function configurarTabs() {
     });
 }
 
+// ==========================================
+// FUNCIÓN GLOBAL PARA CAMBIAR DE MÓDULO (EXPUESTA A WINDOW)
+// ==========================================
+window.cambiarModulo = function(mod) {
+    ["050351", "050353", "050354", "TOTALES"].forEach(m => {
+        const btn = document.getElementById(`btn-tab-${m}`);
+        const container = document.getElementById(`container_${m}`);
+        const pasteZone = document.getElementById(`pasteZone_${m}`);
+        
+        if (btn) {
+            if (m === mod) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        }
+        if (container) {
+            if (m === mod) {
+                container.classList.remove('d-none');
+            } else {
+                container.classList.add('d-none');
+            }
+        }
+        if (pasteZone) {
+            if (m === mod && m !== 'TOTALES') {
+                pasteZone.classList.remove('d-none');
+            } else {
+                pasteZone.classList.add('d-none');
+            }
+        }
+    });
+
+    const lblModuloActivo = document.getElementById('lblModuloActivo');
+    const lblModuloPegado = document.getElementById('lblModuloPegado');
+    const panelAccionesTotales = document.getElementById('panelAccionesTotales');
+    
+    if (lblModuloActivo) lblModuloActivo.innerText = mod;
+    if (lblModuloPegado) lblModuloPegado.innerText = mod;
+    
+    if (panelAccionesTotales) {
+        if (mod === 'TOTALES') {
+            panelAccionesTotales.classList.remove('d-none');
+            panelAccionesTotales.classList.add('d-flex');
+            calcularTotalesGenerales();
+        } else {
+            panelAccionesTotales.classList.add('d-none');
+            panelAccionesTotales.classList.remove('d-flex');
+        }
+    }
+};
+
 function configurarPegadoPortapapeles() {
     MODULOS.forEach(mod => {
         const tbody = document.querySelector(`#tablaCaptura_${mod} tbody`);
@@ -196,7 +248,7 @@ function configurarPegadoPortapapeles() {
                 let inputs = targetRow.querySelectorAll('input');
 
                 inputs.forEach((input, cIdx) => {
-                    let val = celdasDatos[cIdx] !== undefined ? celdasDatos[cIdx].trim() : "";
+                    let val = celdasDatos[cIdx + 1] !== undefined ? celdasDatos[cIdx + 1].trim() : (celdasDatos[cIdx] !== undefined ? celdasDatos[cIdx].trim() : "");
                     if (val !== "") {
                         input.value = val;
                     }
