@@ -14,31 +14,83 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
+// ESTRUCTURA ACTUALIZADA CON LOS NOMBRES ESTÁNDAR Y SIN ACENTOS (EMPATADA CON EL VACIADO)
 const ESTRUCTURA_DIAS = [ 
-    { key: 'Remesa', num: 39 }, { key: 'Módulo', num: 47 }, { key: 'Día', num: 1 }, { key: 'Fecha', num: 2 }, 
-    { key: 'Sedes', num: 4 }, { key: 'Horas_trabajadas', num: 3 }, { key: 'Inicial', num: 5 }, { key: 'Final', num: 6 }, 
-    { key: 'Total_de_folios', num: 7 }, { key: 'Inscripciones', num: 8 }, { key: 'Corrección_de_datos_personales', num: 9 }, 
-    { key: 'Cambio_de_domicilio', num: 10 }, { key: 'Reposición', num: 11 }, { key: 'Corr._de_datos_dirección', num: 12 }, 
-    { key: 'Reincorporación', num: 13 }, { key: 'Reemplazo', num: 14 }, { key: 'Reimpresión', num: 15 }, 
-    { key: 'Total_de_trámites', num: 16 }, { key: 'Cancelados', num: 17 }, { key: 'Total_de_anexos_por_rechazo', num: 18 }, 
-    { key: 'CPV_devuelta_entrega', num: 19 }, { key: 'Disponibles_al_día_anterior', num: 20 }, { key: 'Actualización', num: 21 }, 
-    { key: 'Recibidas_de_otros_tipos', num: 22 }, { key: 'Entregadas', num: 23 }, { key: 'Recibo_y/o_extravío', num: 24 }, 
-    { key: 'Anexas_a_fuar', num: 25 }, { key: 'Datos_erróneos', num: 26 }, { key: 'Foto_mal_impresa', num: 27 }, 
-    { key: 'Solicitud_de_reimpresión', num: 28 }, { key: 'Retiradas_por_otra_causa', num: 29 }, { key: 'Disponibles', num: 30 }, 
-    { key: 'Credenciales_x_canje', num: 31 }, { key: 'Fichas_entregadas', num: 32 }, { key: 'Fichas_atendidas', num: 33 }, 
-    { key: 'Días_trabajados', num: 34 }, { key: 'Cif_05', num: 35 }, { key: 'Solicitud_expedición', num: 36 }, 
-    { key: 'Solicitud_rectificación', num: 37 }, { key: 'Demanda_de_juicio', num: 38 }, { key: 'Total_de_movimientos', num: 40 }, 
-    { key: 'Creden._devueltas_por_terceros', num: 41 }, { key: 'Rechazos_de_MAC_34', num: 42 }, { key: 'Rechazos_de_MAC_35', num: 43 }, 
-    { key: 'Configuración', num: 44 }, { key: 'Ent', num: 45 }, { key: 'Dtto', num: 46 }, { key: 'Resguardo', num: 48 }, 
-    { key: 'Solicitud_de_reimpresión', num: 49 }, { key: 'CPV_devuelta_entrega_2', num: 50 }, { key: 'Script_ejecutados', num: 51 }, 
-    { key: 'Folio_NEC', num: 52 }, { key: 'Número_de_trámites_aplicados', num: 53 }, { key: 'Número_de_fichas_requisitadas', num: 54 }, 
-    { key: 'Número_de_archivos_de_transacción_aceptados', num: 55 }, { key: 'Total_de_archivos_de_transacción_procesados', num: 56 }, 
-    { key: 'Credenciales_recibidas', num: 57 }, { key: 'Credenciales_inconsistentes', num: 58 }, { key: 'Credenciales_en_resguardo', num: 59 }, 
-    { key: 'Credenciales_totales_en_SIIRFE_disponibles_para_entrega', num: 60 }, { key: 'Total_de_credenciales_entregadas', num: 61 }, 
-    { key: 'Total_de_credenciales_solicitadas', num: 62 }, { key: 'Importadas', num: 63 }, { key: 'Exportadas', num: 64 }, 
-    { key: 'Reposiciones_reimpresiones', num: 65 }, { key: 'Mal_impresa', num: 66 }, { key: 'Error_en_cartografía', num: 67 }, 
-    { key: 'Defunción', num: 68 }, { key: 'Suspensión', num: 69 }, { key: 'Duplicado', num: 70 }, { key: 'Error_en_núm._de_emisión', num: 71 }, 
-    { key: 'Pérdida_de_vigencia', num: 72 }, { key: 'Mov_post', num: 73 }, { key: 'Anexas_a_solicitud', num: 74 }, { key: 'Otras_bajas', num: 75 } 
+    { key: 'REMESA', num: 39 }, 
+    { key: 'MODULO', num: 47 }, 
+    { key: 'DIA', num: 1 }, 
+    { key: 'FECHA', num: 2 }, 
+    { key: 'Horas_trabajadas', num: 3 }, 
+    { key: 'SEDES', num: 4 }, 
+    { key: 'INICIAL', num: 5 }, 
+    { key: 'FINAL', num: 6 }, 
+    { key: 'TOTAL_DE_FOLIOS', num: 7 }, 
+    { key: 'INSCRIPCIONES', num: 8 }, 
+    { key: 'CORRECCION_DE_DATOS_PERSONALES', num: 9 }, 
+    { key: 'CAMBIO_DE_DOMICILIO', num: 10 }, 
+    { key: 'REPOSISION', num: 11 }, 
+    { key: 'CORR_DE_DATOS_DIRECCION', num: 12 }, 
+    { key: 'REINCORPORACION', num: 13 }, 
+    { key: 'REEMPLAZO', num: 14 }, 
+    { key: 'REIMPRESION', num: 15 }, 
+    { key: 'TOTAL_DE_TRAMITES', num: 16 }, 
+    { key: 'CANCELADOS', num: 17 }, 
+    { key: 'TOTAL_DE_ANEXO_DE_RECHAZO', num: 18 }, 
+    { key: 'CPV_devuelta_entrega', num: 19 }, 
+    { key: 'DISPONIBLES_AL_DIA_ANTERIOR', num: 20 }, 
+    { key: 'RECIBIDAS', num: 21 }, 
+    { key: 'RECIBIDAS_DE_OTROS_TIPOS', num: 22 }, 
+    { key: 'ENTREGADAS', num: 23 }, 
+    { key: 'RECIBO_YO_EXTRAVIO', num: 24 }, 
+    { key: 'ANEXAS_A_FUAR', num: 25 }, 
+    { key: 'DATOS_ERRONEOS', num: 26 }, 
+    { key: 'FOTO_MAL_IMPRESA', num: 27 }, 
+    { key: 'REIMPRESION_2', num: 28 }, 
+    { key: 'RETIRADAS_POR_CAUSA', num: 29 }, 
+    { key: 'DISPONIBLES', num: 30 }, 
+    { key: 'credenciales_x_canje', num: 31 }, 
+    { key: 'fichas_Entregadas', num: 32 }, 
+    { key: 'fichas_atendidas', num: 33 }, 
+    { key: 'Dias_trabajados', num: 34 }, 
+    { key: 'SOLICITUD_EXPEDICION_REPATRIADOS', num: 35 }, 
+    { key: 'SOLICITUD_EXPEDICION_ORDINARIA', num: 36 }, 
+    { key: 'SOLICITU_DE_RECTIFICACION', num: 37 }, 
+    { key: 'DEMANDA_DE_JUICIO', num: 38 }, 
+    { key: 'Total_de_movimientos', num: 40 }, 
+    { key: 'DEVUELTAS_POR_TERCEROS', num: 41 }, 
+    { key: '34_Imagen_inconsistente', num: 42 }, 
+    { key: '35_Movimiento_posterior', num: 43 }, 
+    { key: 'CONFIGURACION', num: 44 }, 
+    { key: 'ENT', num: 45 }, 
+    { key: 'DTTO', num: 46 }, 
+    { key: 'RESGUARDO', num: 48 }, 
+    { key: 'SOLICITUD_DE_REIMPRESION', num: 49 }, 
+    { key: 'CPV_devuelta_entrega_2', num: 50 }, 
+    { key: 'script_ejecutado', num: 51 }, 
+    { key: 'FOLIO_NEC', num: 52 }, 
+    { key: 'cartografia', num: 53 }, 
+    { key: 'lotes_de_credenciales', num: 54 }, 
+    { key: 'registradas_por_dia', num: 55 }, 
+    { key: 'faltantes', num: 56 }, 
+    { key: 'observaciones', num: 57 }, 
+    { key: 'sin_nombre1', num: 58 }, 
+    { key: 'sin_nombre2', num: 59 }, 
+    { key: 'sin_nombre3', num: 60 }, 
+    { key: 'MAC_QUE_RECIBE', num: 61 }, 
+    { key: 'MAC_QUE_ENTREGA', num: 62 }, 
+    { key: 'IMPORTADAS', num: 63 }, 
+    { key: 'EXPORTADAS', num: 64 }, 
+    { key: 'REPOSISION_REIMPRESIONES', num: 65 }, 
+    { key: 'MAL_IMPRESA', num: 66 }, 
+    { key: 'ERROR_EN_CARTOGRAFIA', num: 67 }, 
+    { key: 'DEFUNCION', num: 68 }, 
+    { key: 'SUSPENSION', num: 69 }, 
+    { key: 'DUPLICADO', num: 70 }, 
+    { key: 'ERROR_EN_NUM_DE_EMISION', num: 71 }, 
+    { key: 'PERDIDA_DE_VIGENCIA', num: 72 }, 
+    { key: 'MOV_POST', num: 73 }, 
+    { key: 'ANEXAS_A_SOLICITUD', num: 74 }, 
+    { key: 'OTRAS_BAJAS', num: 75 } 
 ];
 
 let bdMadreGlobal = [];
@@ -75,7 +127,7 @@ function construirHeaderTabla() {
     let trT = document.createElement('tr'); 
     let trN = document.createElement('tr'); 
     trN.className = 'num-row';
-    
+     
     ESTRUCTURA_DIAS.forEach((colObj) => {
         let th = document.createElement('th'); 
         th.setAttribute('data-col', colObj.key);
@@ -87,7 +139,7 @@ function construirHeaderTabla() {
             th.style.minWidth = "90px"; 
         }
         trT.appendChild(th);
-        
+         
         let thN = document.createElement('th'); 
         thN.innerText = colObj.num; 
         trN.appendChild(thN);
@@ -121,20 +173,18 @@ function obtenerValorFila(fila, colObj) {
 function actualizarContadores(datosMostrados) {
     const lblLineas = document.getElementById('lblTotalLineas');
     const lblRemesas = document.getElementById('lblTotalRemesas');
-    
+     
     const total = Array.isArray(datosMostrados) ? datosMostrados.length : 0;
-    
+     
     if (lblLineas) {
         lblLineas.innerText = total;
-    } else {
-        console.warn("⚠️ No se encontró el elemento HTML con id 'lblTotalLineas'");
     }
 
     if (lblRemesas) {
         const remesasUnicas = new Set();
         if (Array.isArray(datosMostrados)) {
             datosMostrados.forEach(fila => {
-                const objRemesa = ESTRUCTURA_DIAS.find(c => c.key === 'Remesa') || { key: 'Remesa', num: 39 };
+                const objRemesa = ESTRUCTURA_DIAS.find(c => c.key === 'REMESA') || { key: 'REMESA', num: 39 };
                 let valRemesa = obtenerValorFila(fila, objRemesa);
                 if (valRemesa !== undefined && valRemesa !== null && String(valRemesa).trim() !== "") {
                     remesasUnicas.add(String(valRemesa).trim());
@@ -142,8 +192,6 @@ function actualizarContadores(datosMostrados) {
             });
         }
         lblRemesas.innerText = remesasUnicas.size;
-    } else {
-        console.warn("⚠️ No se encontró el elemento HTML con id 'lblTotalRemesas'");
     }
 }
 
@@ -151,11 +199,11 @@ function procesarYMostrarDatos(datosAProcesar = bdMadreGlobal) {
     const tbody = document.getElementById('cuerpoTablaDias'); 
     if(!tbody) return;
     tbody.innerHTML = "";
-    
+     
     actualizarContadores(datosAProcesar);
-    
+     
     if (datosAProcesar.length === 0) return;
-    
+     
     datosAProcesar.forEach(fila => {
         let tr = document.createElement('tr');
         ESTRUCTURA_DIAS.forEach(colObj => {
@@ -164,7 +212,7 @@ function procesarYMostrarDatos(datosAProcesar = bdMadreGlobal) {
             if(typeof val === 'string' && val.includes('T00:00:00')) {
                 val = val.split('T')[0];
             }
-            td.innerText = val;
+            td.innerText = val !== undefined && val !== null ? val : '';
             tr.appendChild(td);
         });
         tbody.appendChild(tr);
@@ -213,7 +261,7 @@ onValue(ref(db, 'bd_madre'), (snapshot) => {
         const data = snapshot.val();
         bdMadreGlobal = Array.isArray(data) ? data : Object.values(data); 
         console.log("✅ Datos cargados en bdMadreGlobal:", bdMadreGlobal.length);
-      procesarYMostrarDatos(bdMadreGlobal);
+        procesarYMostrarDatos(bdMadreGlobal);
     } else {
         console.warn("⚠️ La ruta bd_madre está vacía o no existe en Firebase.");
         bdMadreGlobal = [];
