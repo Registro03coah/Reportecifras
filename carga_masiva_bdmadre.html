@@ -1,94 +1,259 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Carga Masiva BD Principal - Sistema MAC</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <!-- SheetJS para leer archivos Excel (.xlsx/.xls) de forma nativa -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <style>
-        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .header-banner { background: linear-gradient(135deg, #1b396b, #0d6efd); color: white; border-bottom: 4px solid #146c43; padding: 15px 0; margin-bottom: 15px; }
-        .preview-container { width: 100%; max-height: 50vh; overflow: auto; border: 1px solid #ddd; background: white; margin-bottom: 15px; }
-        .table th { background-color: #1b396b; color: white; font-size: 11px; text-transform: uppercase; position: sticky; top: 0; z-index: 2; }
-        .table td { font-size: 11px; white-space: nowrap; }
-    </style>
-</head>
-<body class="d-flex flex-column min-vh-100">
+// Configuración de Firebase
+const firebaseConfig = {
+    apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo",
+    authDomain: "cifrasmac.firebaseapp.com",
+    databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com",
+    projectId: "cifrasmac",
+    storageBucket: "cifrasmac.firebasestorage.app",
+    messagingSenderId: "916644687837",
+    appId: "1:916644687837:web:03d346cc48a071af1ed034"
+};
 
-    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #1b396b; width: 100%;">
-      <div class="container-fluid px-3">
-        <a class="navbar-brand fw-bold" href="bd_madre.html"><i class="bi bi-arrow-left"></i> Volver a BD Principal</a>
-      </div>
-    </nav>
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+const database = firebase.database();
 
-    <div class="header-banner text-center">
-        <h1 class="fw-bold mb-0"><i class="bi bi-database-fill-add"></i> Carga Masiva - BD Principal (bd_madre)</h1>
-        <p class="mb-0 text-light" style="font-size: 13px;">Pega tus registros desde Excel o sube tu archivo para guardarlos en la BD Principal de Firebase.</p>
-    </div>
+// Lista oficial de las 75 columnas estándar (con IDMAC al inicio)
+const NOMBRES_ESTANDAR_BD = [
+    "IDMAC", "DIA", "FECHA", "HORAS_TRABAJADAS", "SEDES", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
+    "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSICION",
+    "CORR_DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES",
+    "CANCELADOS", "TOTAL_DE_ANEXOS_POR_RECHAZO", "CRED_PROD_CANJE_POR_NUEVA", "DISPONIBLES_AL_DIA_ANTERIOR", "ACTUALIZACION",
+    "RECIBIDAS_DE_OTROS_TIPOS", "ENTREGADAS", "ROBO_Y_O_EXTRAVIO", "ANEXAS_A_FUAR", "DATOS_ERRONEOS",
+    "FOTO_MAL_IMPRESA", "SOLICITUD_DE_REIMPRESION", "RETIRADAS_POR_CAUSA", "DISPONIBLES_TOTAL", "CPV_DEVUELA_ENTREGA_2",
+    "FICHAS_ENTREGADAS", "FICHAS_ATENDIDAS", "DIAS_TRABAJADOS", "SOLICITUD_EXPEDICION_ORDINARIA",
+    "SOLICITUD_EXPEDICION_REPATRIADOS", "SOLICITUD_DE_RECTIFICACION",
+    "DEMANDA_DE_JUICIO", "REMESA", "TOTAL_DE_MOVIMIENTOS", "CREDEN_DEVUELTAS_POR_TERCEROS",
+    "34_Imagen_Inconsistente", "35_Movimiento_Posterior", "CONFIGURACION", "ENT", "DTTO", "MODULO",
+    "RESGUARDO", "SOLICITUD_DE_REIMPRESION_2", "CPV_DEVUELA_ENTREGA_2", "SCRIPT_EJECUTADO",
+    "FOLIO_NEC", "NUMERO_DE_TRAMITES_APLICADOS", "NUMERO_DE_FICHAS_REQUISITADAS",
+    "NUMERO_DE_ARCHIVOS_DE_TRANSACCION_ACEPTADOS", "TOTAL_DE_ARCHIVOS_DE_TRANSACCION_PROCESADOS",
+    "RECIBIDAS", "CREDENCIALES_INCONSISTENTES", "RESGUARDO_2",
+    "CREDENCIALES_TOTALES_EN_SIIRFE_DISPONIBLES_PARA_ENTREGA", "TOTAL_DE_CREDENCIALES_ENTREGADAS",
+    "TOTAL_DE_CREDENCIALES_SOLICITADAS", "IMPORTADAS", "EXPORTADAS", "REPOSISION_REIMPRESIONES",
+    "MAL_IMPRESA", "ERROR_EN_CARTOGRAFIA", "DEFUNCION", "SUSPENSION", "DUPLICADO",
+    "ERROR_EN_NUM_DE_EMISION", "PERDIDA_DE_VIGENCIA", "MOV_POST", "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS"
+];
 
-    <div class="container-fluid px-4 flex-grow-1">
-        
-        <!-- Panel de Control de Carga -->
-        <div class="card shadow-sm mb-3">
-            <div class="card-body bg-light p-3 d-flex gap-3 align-items-center flex-wrap">
+let datosProcesadosGlobal = [];
+
+function getClaveLimpia(nombreOriginal) {
+    return String(nombreOriginal)
+        .toUpperCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[.#$ /\[\]]/g, "_")
+        .replace(/_+/g, "_")
+        .trim();
+}
+
+// Función para generar el IDMAC con el formato solicitado: [últimos 2 del módulo] + [últimos 4 de la remesa] + [ddmm de la fecha]
+function generarIdMacCustom(mod, remesa, fechaStr) {
+    const mod2 = String(mod || "00").slice(-2);
+    const rem4 = String(remesa || "0000").slice(-4).padStart(4, '0');
+    
+    let ddmm = "0000";
+    if (fechaStr) {
+        let limpia = String(fechaStr).trim();
+        if (limpia.includes('/')) {
+            let partes = limpia.split('/');
+            if (partes.length >= 2) {
+                let d = partes[0].padStart(2, '0');
+                let m = partes[1].padStart(2, '0');
+                ddmm = d + m;
+            }
+        } else if (limpia.includes('-')) {
+            let partes = limpia.split('-');
+            if (partes.length >= 3) {
+                if (partes[0].length === 4) { // Formato YYYY-MM-DD
+                    let m = partes[1].padStart(2, '0');
+                    let d = partes[2].padStart(2, '0');
+                    ddmm = d + m;
+                } else { // Formato DD-MM-YYYY
+                    let d = partes[0].padStart(2, '0');
+                    let m = partes[1].padStart(2, '0');
+                    ddmm = d + m;
+                }
+            }
+        }
+    }
+    return `${mod2}${rem4}${ddmm}`;
+}
+
+// Procesar archivo Excel (.xlsx / .xls) o JSON
+window.procesarArchivoExcel = function(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    
+    if (file.name.endsWith('.json')) {
+        reader.onload = function(e) {
+            try {
+                const jsonContent = JSON.parse(e.target.result);
+                datosProcesadosGlobal = Array.isArray(jsonContent) ? jsonContent : Object.values(jsonContent);
+                normalizarYMostrarPreview(datosProcesadosGlobal);
+            } catch (err) {
+                alert("El archivo JSON no es válido.");
+            }
+        };
+        reader.readAsText(file);
+    } else {
+        reader.onload = function(e) {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
                 
-                <!-- Opción A: Subir archivo Excel (.xlsx) o JSON -->
-                <div>
-                    <label class="form-label fw-bold text-dark mb-1" style="font-size: 12px;">1. Subir Archivo Excel o JSON:</label>
-                    <input type="file" id="inputArchivoExcel" class="form-control form-control-sm" accept=".xlsx, .xls, .json" onchange="procesarArchivoExcel(event)">
-                </div>
+                // Convertir a JSON utilizando la primera fila como encabezados
+                const jsonRows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+                datosProcesadosGlobal = jsonRows;
+                normalizarYMostrarPreview(datosProcesadosGlobal);
+            } catch (err) {
+                alert("Error al leer el archivo Excel: " + err.message);
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+};
 
-                <!-- Opción B: Botón de Vaciado Total -->
-                <div class="ms-auto">
-                    <button class="btn btn-danger btn-sm fw-bold px-3 py-2" onclick="vaciarBdMadreFirebase()">
-                        <i class="bi bi-skull-fill"></i> Borrar TODO Firebase (BD Principal)
-                    </button>
-                </div>
+// Procesar pegado directo desde el portapapeles (Ctrl+V en el Textarea)
+window.procesarPegadoPortapapeles = function(event) {
+    setTimeout(() => {
+        const texto = document.getElementById('textoPegadoExcel').value;
+        if (!texto.trim()) return;
 
-            </div>
-        </div>
+        const lineas = texto.split('\n').filter(l => l.trim() !== '');
+        if (lineas.length < 2) {
+            alert("El texto pegado debe incluir al menos la fila de encabezados y una fila de datos.");
+            return;
+        }
 
-        <!-- Panel de Pegado Directo (Copia desde Excel y pega aquí) -->
-        <div class="card shadow-sm mb-3">
-            <div class="card-header bg-primary text-white fw-bold py-2" style="font-size: 13px;">
-                <i class="bi bi-clipboard-fill"></i> O pega los datos copiados directamente de Excel (con encabezados):
-            </div>
-            <div class="card-body p-2">
-                <textarea id="textoPegadoExcel" class="form-control font-monospace" rows="4" placeholder="Selecciona tus celdas en Excel (incluyendo los títulos de las columnas), cópialas (Ctrl+C) y pégalas aquí (Ctrl+V)..." onpaste="procesarPegadoPortapapeles(event)"></textarea>
-                <div class="form-text text-muted" style="font-size: 11px;">Al pegar o seleccionar el archivo, verás la vista previa abajo antes de guardarlos en la nube.</div>
-            </div>
-        </div>
+        const encabezados = lineas[0].split('\t').map(h => h.trim());
+        let filasObjetos = [];
 
-        <!-- Vista Previa de los Datos Listos para Subir -->
-        <div class="card shadow-sm">
-            <div class="card-header bg-secondary text-white fw-bold py-2 d-flex justify-content-between align-items-center" style="font-size: 13px;">
-                <span><i class="bi bi-table"></i> Vista Previa (<span id="contadorRegistrosPreview">0</span> registros listos)</span>
-                <button id="btnGuardarFirebase" class="btn btn-success btn-sm fw-bold px-4" onclick="subirDatosABdMadre()" disabled>
-                    <i class="bi bi-cloud-upload-fill"></i> Guardar Todo en BD Principal
-                </button>
-            </div>
-            <div class="card-body p-0">
-                <div class="preview-container">
-                    <table class="table table-bordered table-striped mb-0" id="tablaPreview">
-                        <thead id="headPreview"></thead>
-                        <tbody id="bodyPreview"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+        for (let i = 1; i < lineas.length; i++) {
+            const celdas = lineas[i].split('\t');
+            let obj = {};
+            encabezados.forEach((cabecera, idx) => {
+                obj[cabecera] = celdas[idx] !== undefined ? celdas[idx].trim() : "";
+            });
+            filasObjetos.push(obj);
+        }
 
-    </div>
+        datosProcesadosGlobal = filasObjetos;
+        normalizarYMostrarPreview(datosProcesadosGlobal);
+    }, 100);
+};
 
-    <footer class="text-center py-2 mt-auto text-white shadow-sm" style="background-color: #1b396b; width: 100%;">
-        <small>&copy; 2026 Desarrollado por <span class="text-info fw-bold">Carrivers Desing</span> para Módulos MAC.</small>
-    </footer>
+// Normalizar registros, calcular IDMAC personalizado y poblar la vista previa
+function normalizarYMostrarPreview(arrRegistros) {
+    const headPreview = document.getElementById('headPreview');
+    const bodyPreview = document.getElementById('bodyPreview');
+    const contador = document.getElementById('contadorRegistrosPreview');
+    const btnGuardar = document.getElementById('btnGuardarFirebase');
 
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-    <script src="carga_masiva_bdmadre.js"></script>
-</body>
-</html>
+    headPreview.innerHTML = '';
+    bodyPreview.innerHTML = '';
+
+    if (!arrRegistros || arrRegistros.length === 0) {
+        contador.innerText = "0";
+        btnGuardar.disabled = true;
+        return;
+    }
+
+    // Normalizar cada registro asegurando las 75 columnas y el IDMAC correcto
+    datosProcesadosGlobal = arrRegistros.map(item => {
+        let itemNormalizado = {};
+        
+        // Extraer valores clave existentes con flexibilidad de mayúsculas/minúsculas
+        let modVal = "";
+        let remVal = "";
+        let fecVal = "";
+
+        Object.keys(item).forEach(k => {
+            let kClean = getClaveLimpia(k);
+            if (kClean === "MODULO") modVal = item[k];
+            if (kClean === "REMESA") remVal = item[k];
+            if (kClean === "FECHA") fecVal = item[k];
+        });
+
+        // Generar IDMAC con la estructura solicitada
+        itemNormalizado["IDMAC"] = generarIdMacCustom(modVal, remVal, fecVal);
+
+        // Mapear el resto de las columnas estándar
+        NOMBRES_ESTANDAR_BD.forEach(col => {
+            if (col === "IDMAC") return; // Ya asignado
+            let encontradaClave = Object.keys(item).find(k => getClaveLimpia(k) === getClaveLimpia(col));
+            itemNormalizado[col] = encontradaClave !== undefined && item[encontradaClave] !== null ? String(item[encontradaClave]) : "0";
+        });
+
+        return itemNormalizado;
+    });
+
+    // Construir la tabla de vista previa
+    let trH = '<tr>';
+    NOMBRES_ESTANDAR_BD.forEach(col => {
+        trH += `<th>${col.replace(/_/g, ' ')}</th>`;
+    });
+    trH += '</tr>';
+    headPreview.innerHTML = trH;
+
+    let htmlB = '';
+    datosProcesadosGlobal.forEach(item => {
+        htmlB += '<tr>';
+        NOMBRES_ESTANDAR_BD.forEach(col => {
+            htmlB += `<td>${item[col] !== undefined ? item[col] : ''}</td>`;
+        });
+        htmlB += '</tr>';
+    });
+    bodyPreview.innerHTML = htmlB;
+
+    contador.innerText = datosProcesadosGlobal.length;
+    btnGuardar.disabled = false;
+}
+
+// Subir datos validados a Firebase (BD Principal / bd_madre)
+window.subirDatosABdMadre = function() {
+    if (!datosProcesadosGlobal || datosProcesadosGlobal.length === 0) {
+        alert("No hay datos para guardar.");
+        return;
+    }
+
+    if (confirm(`¿Estás seguro de subir y fusionar ${datosProcesadosGlobal.length} registros en la Base de Datos Principal (BD Madre)?`)) {
+        const dbRef = database.ref('bd_madre');
+
+        dbRef.once('value').then((snapshot) => {
+            let existente = snapshot.val() || [];
+            existente = Array.isArray(existente) ? existente : Object.values(existente);
+
+            // Fusionar manteniendo los datos nuevos
+            const fusionFinal = [...existente, ...datosProcesadosGlobal];
+
+            dbRef.set(fusionFinal)
+                .then(() => {
+                    alert("¡Carga masiva completada con éxito en la BD Principal!");
+                    window.location.href = "bd_madre.html";
+                })
+                .catch(err => {
+                    alert("Error al guardar en Firebase: " + err.message);
+                });
+        });
+    }
+};
+
+// Vaciar por completo la BD Principal en Firebase
+window.vaciarBdMadreFirebase = function() {
+    if (confirm("¡ADVERTENCIA EXTREMA! Vas a borrar TODOS los registros existentes en la BD Principal de Firebase. ¿Deseas continuar?")) {
+        if (confirm("Confirma nuevamente: Se eliminará toda la información de la BD Madre.")) {
+            database.ref('bd_madre').set(null)
+                .then(() => {
+                    alert("Se ha vaciado toda la BD Principal correctamente.");
+                    location.reload();
+                })
+                .catch(err => alert("Error al vaciar: " + err.message));
+        }
+    }
+};
