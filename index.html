@@ -11,18 +11,26 @@
     <style>
         html, body { height: 100%; margin: 0; display: flex; flex-direction: column; background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; }
         header.fixed-top-nav { position: fixed; top: 0; left: 0; width: 100%; z-index: 1030; background-color: #1b396b; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .main-container-scroll { margin-top: 55px; margin-bottom: 40px; flex: 1; overflow-y: auto; overflow-x: hidden; padding: 15px 20px; }
-        .header-banner { background: linear-gradient(135deg, #0dcaf0, #055160); color: white; padding: 10px 0; border-bottom: 4px solid #1b396b; margin-bottom: 10px; border-radius: 6px; }
-        .excel-container { width: 100%; min-height: 400px; max-height: calc(21 * 32px + 50px); overflow-x: auto !important; overflow-y: auto !important; border: 1px solid #ced4da; background: white; border-radius: 6px; }
+        
+        /* Barra de menú superior más pequeña y compacta */
+        header.fixed-top-nav .navbar { padding-top: 2px !important; padding-bottom: 2px !important; min-height: 38px; }
+        header.fixed-top-nav .navbar-brand { font-size: 13px !important; padding-top: 2px; padding-bottom: 2px; }
+        header.fixed-top-nav .nav-link { font-size: 11px !important; padding-top: 2px !important; padding-bottom: 2px !important; }
+        
+        .main-container-scroll { margin-top: 42px; margin-bottom: 35px; flex: 1; overflow-y: auto; overflow-x: hidden; padding: 10px 15px; }
+        .header-banner { background: linear-gradient(135deg, #0dcaf0, #055160); color: white; padding: 6px 0; border-bottom: 3px solid #1b396b; margin-bottom: 8px; border-radius: 6px; }
+        .header-banner h1 { font-size: 1.25rem; }
+        .header-banner p { font-size: 0.85rem; }
+        .excel-container { width: 100%; min-height: 350px; max-height: calc(21 * 32px + 40px); overflow-x: auto !important; overflow-y: auto !important; border: 1px solid #ced4da; background: white; border-radius: 6px; }
         .excel-table { margin-bottom: 0; table-layout: auto !important; width: max-content; border-collapse: separate; border-spacing: 0; }
-        .excel-table thead th { position: sticky; top: 0; z-index: 3; font-size: 11px; font-weight: 700; background-color: #1b396b !important; color: white; text-align: center; vertical-align: middle; white-space: normal !important; word-wrap: break-word !important; min-width: 120px !important; max-width: 160px !important; padding: 6px 4px !important; line-height: 1.2; cursor: pointer; height: 50px; }
-        .excel-table thead tr.num-row th { position: sticky; top: 50px; z-index: 2; background-color: #e9ecef !important; color: #212529 !important; font-size: 11px; padding: 3px !important; border-bottom: 2px solid #2d3436; height: 25px; }
-        .excel-table td { padding: 4px 6px; border: 1px solid #ccc; text-align: center; vertical-align: middle; font-size: 11px; white-space: nowrap; }
+        .excel-table thead th { position: sticky; top: 0; z-index: 3; font-size: 11px; font-weight: 700; background-color: #1b396b !important; color: white; text-align: center; vertical-align: middle; white-space: normal !important; word-wrap: break-word !important; min-width: 120px !important; max-width: 160px !important; padding: 5px 4px !important; line-height: 1.2; cursor: pointer; height: 45px; }
+        .excel-table thead tr.num-row th { position: sticky; top: 45px; z-index: 2; background-color: #e9ecef !important; color: #212529 !important; font-size: 11px; padding: 2px !important; border-bottom: 2px solid #2d3436; height: 22px; }
+        .excel-table td { padding: 3px 5px; border: 1px solid #ccc; text-align: center; vertical-align: middle; font-size: 11px; white-space: nowrap; }
         .excel-table tr.fila-totales td { background-color: #d1e7dd !important; font-weight: 800; color: #0f5132; }
         .excel-table td.col-dia { font-weight: 700; background-color: #f8f9fa; text-align: left; position: sticky; left: 0; z-index: 4; border-right: 2px solid #b2bec3; }
-        .caja-pegado { border: 2px dashed #0d6efd; background-color: #e7f1ff; color: #0d6efd; border-radius: 8px; padding: 10px; text-align: center; font-size: 1rem; font-weight: 700; cursor: pointer; user-select: none; }
+        .caja-pegado { border: 2px dashed #0d6efd; background-color: #e7f1ff; color: #0d6efd; border-radius: 6px; padding: 6px; text-align: center; font-size: 0.9rem; font-weight: 700; cursor: pointer; user-select: none; }
         .caja-pegado:hover, .caja-pegado:focus { background-color: #cfe2ff; border-color: #0a58ca; outline: none; }
-        .nav-tabs .nav-link { font-weight: 700; color: #1b396b; font-size: 12px; cursor: pointer; }
+        .nav-tabs .nav-link { font-weight: 700; color: #1b396b; font-size: 12px; cursor: pointer; padding: 4px 10px; }
         .nav-tabs .nav-link.active { background-color: #1b396b !important; color: white !important; }
         .nav-tabs .nav-link.tab-totales.active { background-color: #ffc107 !important; color: #000 !important; }
     </style>
@@ -59,30 +67,29 @@
             </div>
         </div>
         
-        <div class="card shadow-sm mb-3 border-0">
-            <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3 bg-white rounded border py-2">
-                <div class="d-flex flex-wrap gap-3">
-                    <div class="p-2 rounded shadow-sm" style="background-color: #ff99ff; border: 2px solid #ff4dff;">
-                        <span class="fw-bold text-dark d-block text-center mb-1" style="font-size: 11px;"><i class="bi bi-bar-chart-fill"></i> INICIALES CAMPAÑA (C)</span>
-                        <div class="d-flex gap-2">
-                            <input type="text" id="camp_050351" class="form-control form-control-sm text-center fw-bold" placeholder="050351" style="width: 80px;">
-                            <input type="text" id="camp_050353" class="form-control form-control-sm text-center fw-bold" placeholder="050353" style="width: 80px;">
-                            <input type="text" id="camp_050354" class="form-control form-control-sm text-center fw-bold" placeholder="050354" style="width: 80px;">
+        <div class="card shadow-sm mb-2 border-0">
+            <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3 bg-white rounded border py-1 px-2">
+                <div class="d-flex flex-wrap gap-2">
+                    <div class="p-1 rounded shadow-sm" style="background-color: #ff99ff; border: 2px solid #ff4dff;">
+                        <span class="fw-bold text-dark d-block text-center mb-1" style="font-size: 10px;"><i class="bi bi-bar-chart-fill"></i> INICIALES CAMPAÑA (C)</span>
+                        <div class="d-flex gap-1">
+                            <input type="text" id="camp_050351" class="form-control form-control-sm text-center fw-bold py-0" placeholder="050351" style="width: 75px; font-size: 11px;">
+                            <input type="text" id="camp_050353" class="form-control form-control-sm text-center fw-bold py-0" placeholder="050353" style="width: 75px; font-size: 11px;">
+                            <input type="text" id="camp_050354" class="form-control form-control-sm text-center fw-bold py-0" placeholder="050354" style="width: 75px; font-size: 11px;">
                         </div>
                     </div>
-                    <div class="p-2 rounded shadow-sm" style="background-color: #e63946; border: 2px solid #b71c1c;">
-                        <span class="fw-bold text-white d-block text-center mb-1" style="font-size: 11px;"><i class="bi bi-archive-fill"></i> INICIALES ACUMULADO (A)</span>
-                        <div class="d-flex gap-2">
-                            <input type="text" id="acum_050351" class="form-control form-control-sm text-center fw-bold" placeholder="050351" style="width: 80px;">
-                            <input type="text" id="acum_050353" class="form-control form-control-sm text-center fw-bold" placeholder="050353" style="width: 80px;">
-                            <input type="text" id="acum_050354" class="form-control form-control-sm text-center fw-bold" placeholder="050354" style="width: 80px;">
+                    <div class="p-1 rounded shadow-sm" style="background-color: #e63946; border: 2px solid #b71c1c;">
+                        <span class="fw-bold text-white d-block text-center mb-1" style="font-size: 10px;"><i class="bi bi-archive-fill"></i> INICIALES ACUMULADO (A)</span>
+                        <div class="d-flex gap-1">
+                            <input type="text" id="acum_050351" class="form-control form-control-sm text-center fw-bold py-0" placeholder="050351" style="width: 75px; font-size: 11px;">
+                            <input type="text" id="acum_050353" class="form-control form-control-sm text-center fw-bold py-0" placeholder="050353" style="width: 75px; font-size: 11px;">
+                            <input type="text" id="acum_050354" class="form-control form-control-sm text-center fw-bold py-0" placeholder="050354" style="width: 75px; font-size: 11px;">
                         </div>
                     </div>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                    <button class="btn btn-outline-danger btn-sm fw-bold" id="btnBorrar"><i class="bi bi-trash"></i> Limpiar</button>
-                    <!-- BOTÓN UNIFICADO: Guardar Bases -->
-                    <button class="btn btn-success btn-sm fw-bold shadow-sm" id="btnGuardarBD"><i class="bi bi-cloud-arrow-up-fill"></i> Guardar Bases</button>
+                    <button class="btn btn-outline-danger btn-sm fw-bold py-1" id="btnBorrar"><i class="bi bi-trash"></i> Limpiar</button>
+                    <button class="btn btn-success btn-sm fw-bold shadow-sm py-1" id="btnGuardarBD"><i class="bi bi-cloud-arrow-up-fill"></i> Guardar Bases</button>
                 </div>
             </div>
         </div>
@@ -96,31 +103,31 @@
 
         <div class="card shadow-sm border-0 mb-3">
             <div class="card-body bg-white rounded border p-2">
-                <div class="alert alert-info py-2 px-3 mb-2 fw-bold d-flex justify-content-between align-items-center" style="font-size: 13px;">
+                <div class="alert alert-info py-1 px-2 mb-2 fw-bold d-flex justify-content-between align-items-center" style="font-size: 12px;">
                     <span id="lblMensajeAyuda">Módulo <span id="lblModuloActivo">050351</span>: Pega los datos con Ctrl+V. Haz doble clic en un encabezado para cambiar su nombre.</span>
                     <span id="semaforoConexion" class="badge bg-success text-white"><i class="bi bi-check-circle"></i> Conectado</span>
                 </div>
                 
-                <div id="panelAccionesTotales" class="alert alert-warning py-2 px-3 mb-2 d-none justify-content-between align-items-center" style="font-size: 13px;">
+                <div id="panelAccionesTotales" class="alert alert-warning py-1 px-2 mb-2 d-none justify-content-between align-items-center" style="font-size: 12px;">
                     <span class="fw-bold"><i class="bi bi-info-circle-fill"></i> Vaciado Consolidado Remesa: <span id="inputRemesa" class="badge bg-dark text-white">S/N</span></span>
                 </div>
                 <input type="hidden" id="hiddenRemesaVal" value="">
 
                 <!-- Zonas de Pegado por Módulo -->
                 <div class="caja-pegado mb-2" id="pasteZone_050351" tabindex="0">
-                    <i class="bi bi-clipboard-plus fs-5 d-block mb-0"></i>
+                    <i class="bi bi-clipboard-plus fs-6 d-block mb-0"></i>
                     Clic aquí y Ctrl+V para pegar datos del Módulo <span id="lblModuloPegado">050351</span>
                 </div>
                 <div class="caja-pegado mb-2 d-none" id="pasteZone_050353" tabindex="0">
-                    <i class="bi bi-clipboard-plus fs-5 d-block mb-0"></i>
+                    <i class="bi bi-clipboard-plus fs-6 d-block mb-0"></i>
                     Clic aquí y Ctrl+V para pegar datos del Módulo 050353
                 </div>
                 <div class="caja-pegado mb-2 d-none" id="pasteZone_050354" tabindex="0">
-                    <i class="bi bi-clipboard-plus fs-5 d-block mb-0"></i>
+                    <i class="bi bi-clipboard-plus fs-6 d-block mb-0"></i>
                     Clic aquí y Ctrl+V para pegar datos del Módulo 050354
                 </div>
 
-                <!-- CONTENEDORES DE TABLAS (IDs correctos que busca el JS) -->
+                <!-- CONTENEDORES DE TABLAS -->
                 <div class="excel-container shadow-sm" id="container_050351">
                     <table class="excel-table table table-hover" id="tablaCaptura_050351">
                         <thead></thead>
@@ -149,7 +156,7 @@
         </div>
     </div>
     
-    <footer class="text-center py-2 mt-auto text-white shadow-sm" style="background-color: #1b396b; width: 100%; position: fixed; z-index: 1030; bottom: 0;">
+    <footer class="text-center py-1 mt-auto text-white shadow-sm" style="background-color: #1b396b; width: 100%; position: fixed; z-index: 1030; bottom: 0; font-size: 11px;">
         <small>
             &copy; 2026 Todos los derechos reservados. Desarrollado por <span class="text-info fw-bold">Carrivers Desing</span> para Módulos MAC. Versión 1.0.19
         </small>
