@@ -54,7 +54,7 @@
     <div class="container-fluid px-4 flex-grow-1">
         <div class="alert alert-info shadow-sm d-flex flex-wrap justify-content-between align-items-center gap-2">
             <div>
-                <strong>BD Madre:</strong> Muestra todos los registros diarios almacenados en la nube.
+                <strong>BD Madre:</strong> Muestra todos los registros diarios almacenados en la nube ordenados por sus columnas oficiales.
             </div>
             <div class="d-flex align-items-center gap-2">
                 <button class="btn btn-sm btn-success fw-bold" onclick="exportarBDMadre()"><i class="bi bi-download"></i> Descargar Respaldo</button>
@@ -94,6 +94,37 @@
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
+        // Lista oficial de las 75 columnas estándar
+        const NOMBRES_ESTANDAR_BD = [
+            "DIA", "FECHA", "HORAS_TRABAJADAS", "SEDES", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
+            "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSICION",
+            "CORR_DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES",
+            "CANCELADOS", "TOTAL_DE_ANEXOS_POR_RECHAZO", "CRED_PROD_CANJE_POR_NUEVA", "DISPONIBLES_AL_DIA_ANTERIOR", "ACTUALIZACION",
+            "RECIBIDAS_DE_OTROS_TIPOS", "ENTREGADAS", "ROBO_Y_O_EXTRAVIO", "ANEXAS_A_FUAR", "DATOS_ERRONEOS",
+            "FOTO_MAL_IMPRESA", "SOLICITUD_DE_REIMPRESION", "RETIRADAS_POR_CAUSA", "DISPONIBLES_TOTAL", "CPV_DEVUELA_ENTREGA_2",
+            "FICHAS_ENTREGADAS", "FICHAS_ATENDIDAS", "DIAS_TRABAJADOS", "SOLICITUD_EXPEDICION_ORDINARIA",
+            "SOLICITUD_EXPEDICION_REPATRIADOS", "SOLICITUD_DE_RECTIFICACION",
+            "DEMANDA_DE_JUICIO", "REMESA", "TOTAL_DE_MOVIMIENTOS", "CREDEN_DEVUELTAS_POR_TERCEROS",
+            "34_Imagen_Inconsistente", "35_Movimiento_Posterior", "CONFIGURACION", "ENT", "DTTO", "MODULO",
+            "RESGUARDO", "SOLICITUD_DE_REIMPRESION_2", "CPV_DEVUELA_ENTREGA_2", "SCRIPT_EJECUTADO",
+            "FOLIO_NEC", "NUMERO_DE_TRAMITES_APLICADOS", "NUMERO_DE_FICHAS_REQUISITADAS",
+            "NUMERO_DE_ARCHIVOS_DE_TRANSACCION_ACEPTADOS", "TOTAL_DE_ARCHIVOS_DE_TRANSACCION_PROCESADOS",
+            "RECIBIDAS", "CREDENCIALES_INCONSISTENTES", "RESGUARDO_2",
+            "CREDENCIALES_TOTALES_EN_SIIRFE_DISPONIBLES_PARA_ENTREGA", "TOTAL_DE_CREDENCIALES_ENTREGADAS",
+            "TOTAL_DE_CREDENCIALES_SOLICITADAS", "IMPORTADAS", "EXPORTADAS", "REPOSISION_REIMPRESIONES",
+            "MAL_IMPRESA", "ERROR_EN_CARTOGRAFIA", "DEFUNCION", "SUSPENSION", "DUPLICADO",
+            "ERROR_EN_NUM_DE_EMISION", "PERDIDA_DE_VIGENCIA", "MOV_POST", "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS"
+        ];
+
+        function getClaveLimpia(nombreOriginal) {
+            return String(nombreOriginal)
+                .toUpperCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .replace(/[.#$ /\[\]]/g, "_")
+                .replace(/_+/g, "_")
+                .trim();
+        }
 
         let bdMadreDataGlobal = null;
         database.ref('bd_madre').on('value', (snapshot) => {
@@ -112,29 +143,48 @@
                 return;
             }
 
-            let keysSet = new Set();
-            arr.forEach(item => Object.keys(item).forEach(k => keysSet.add(k)));
-            let keys = Array.from(keysSet);
-
-            let trH = '<tr>';
-            keys.forEach(k => {
-                let visual = k.toUpperCase();
+            // Construir encabezados en orden estricto + Columna de ACCIONES
+            let trH = '<tr><th style="background-color: #1b396b; color: white; position: sticky; top: 0; z-index: 4; text-align: center; vertical-align: middle;">ACCIONES</th>';
+            NOMBRES_ESTANDAR_BD.forEach(k => {
+                let visual = k.replace(/_/g, ' ').toUpperCase();
                 trH += `<th>${visual}</th>`;
             });
             trH += '</tr>';
             thead.innerHTML = trH;
 
+            // Rellenar filas respetando estrictamente el orden
             let htmlB = '';
-            arr.forEach(item => {
+            arr.forEach((item, index) => {
                 htmlB += '<tr>';
-                keys.forEach(k => {
-                    let val = item[k] !== undefined && item[k] !== null ? item[k] : '';
+                // Botón de eliminar renglón individual
+                htmlB += `<td><button class="btn btn-danger btn-sm py-0 px-1" onclick="eliminarRegistroBdMadre(${index})" title="Eliminar registro"><i class="bi bi-trash"></i></button></td>`;
+                
+                NOMBRES_ESTANDAR_BD.forEach(k => {
+                    let cleanKey = getClaveLimpia(k);
+                    let val = item[cleanKey] !== undefined && item[cleanKey] !== null ? item[cleanKey] : (item[k] !== undefined ? item[k] : '');
                     htmlB += `<td>${val}</td>`;
                 });
                 htmlB += '</tr>';
             });
             tbody.innerHTML = htmlB;
         });
+
+        // Función global para eliminar un registro individual de Firebase
+        window.eliminarRegistroBdMadre = function(index) {
+            if (confirm("¿Estás seguro de eliminar este registro de la Base de Datos Principal?")) {
+                const dbRef = database.ref('bd_madre');
+                dbRef.once('value').then((snapshot) => {
+                    let data = snapshot.val() || [];
+                    data = Array.isArray(data) ? data : Object.values(data);
+                    
+                    data.splice(index, 1);
+
+                    dbRef.set(data).then(() => {
+                        alert("Registro eliminado correctamente.");
+                    }).catch(err => alert("Error al eliminar el registro: " + err.message));
+                });
+            }
+        };
 
         window.exportarBDMadre = function() {
             if (!bdMadreDataGlobal) {
