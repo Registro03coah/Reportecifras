@@ -3,147 +3,192 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reporte de Días MAC</title>
+    <title>Reporte Días - Sistema MAC</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <!-- Firebase SDK v8 -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
     <style>
         body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .header-banner { background: linear-gradient(135deg, #4caf50, #009688); color: white; border-bottom: 4px solid #1b396b; padding: 10px 0 !important; margin-bottom: 15px !important; }
-        .header-banner h1 { font-size: 1.4rem !important; }
-        .header-banner p { font-size: 0.85rem !important; }
-        
-        .excel-container { width: 100%; max-height: 65vh; overflow: auto; border: 1px solid #ddd; background: white; margin-bottom: 15px; position: relative; }
-        .excel-table { margin-bottom: 0; table-layout: auto; border-collapse: separate; border-spacing: 0; }
-        
-        /* Encabezados fijos con jerarquía de capas (z-index) correcta */
-        .excel-table thead tr:first-child th { 
-            position: sticky; 
-            top: 0; 
-            z-index: 10; 
-            font-size: 9px; 
-            text-transform: uppercase; 
-            background-color: #1b396b; 
-            color: white !important; 
-            white-space: normal !important; 
-            height: 50px; 
-            vertical-align: middle; 
-            padding: 4px; 
-            text-align: center; 
+        .header-banner { background: linear-gradient(135deg, #1b396b, #0dcaf0); color: white; padding: 20px 0; border-bottom: 5px solid #055160; margin-bottom: 20px; }
+        .excel-container { width: 100%; max-height: 65vh; overflow: auto; border: 1px solid #ced4da; background: white; border-radius: 6px; }
+        .excel-table { margin-bottom: 0; table-layout: auto; }
+        .excel-table thead th { 
+            position: sticky; top: 0; z-index: 3; font-size: 11px; font-weight: 700; background-color: #1b396b !important; 
+            color: white !important; text-align: center; vertical-align: middle; padding: 8px 6px; white-space: normal;
         }
-        
-        .excel-table thead tr:nth-child(2) th { 
-            position: sticky; 
-            top: 50px; 
-            z-index: 9; 
-            font-size: 10px; 
-            background-color: #e9ecef !important; 
-            color: #212529 !important; 
-            height: 25px !important; 
-            padding: 2px; 
-            text-align: center; 
-            vertical-align: middle; 
-            border-bottom: 2px solid #2d3436; 
-            user-select: none; 
-        }
-
-        /* Esquina superior izquierda (Cruce de la columna 1 y los títulos) */
-        .excel-table thead tr:first-child th:nth-child(1) {
-            z-index: 11;
-            background-color: #1b396b;
-        }
-        
-        /* Primera columna fija a la izquierda (z-index menor para que pase POR DEBAJO de los títulos) */
-        .excel-table th:nth-child(1) { 
-            position: sticky; 
-            left: 0; 
-            z-index: 8; 
-            background-color: #1b396b; 
-            border-right: 2px solid #ccc; 
-        }
-        
-        .excel-table td:nth-child(1) { 
-            position: sticky; 
-            left: 0; 
-            z-index: 5; 
-            background-color: #f8f9fa; 
-            font-weight: bold; 
-            border-right: 2px solid #ccc; 
-        }
-
-        .excel-table td { padding: 4px; border-bottom: 1px solid #ccc; border-right: 1px solid #ccc; text-align: center; vertical-align: middle; font-size: 11px; white-space: nowrap; min-width: 65px; }
-        
-        .navbar-nav .nav-link { font-size: 11px !important; }
-        .navbar-brand { font-size: 14px !important; }
-        nav.navbar { padding: 2px 15px !important; }
+        .excel-table td { padding: 6px 8px; border: 1px solid #ccc; text-align: center; vertical-align: middle; font-size: 11px; white-space: nowrap; }
     </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
 
-<nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #1b396b; width: 100%;">
-  <div class="container-fluid px-3">
-    <a class="navbar-brand fw-bold" href="https://registro03coah.github.io/mimenu/"><i class="bi bi-hdd-network"></i> SISTEMA MAC</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav ms-auto gap-2">
-        <li class="nav-item"><a class="nav-link text-light px-2" href="index.html"><i class="bi bi-pencil-square"></i> Vaciado de Datos</a></li>
-        <li class="nav-item"><a class="nav-link active bg-primary rounded px-2 text-white fw-bold" href="reporte_dias.html"><i class="bi bi-calendar3"></i> Reporte Días</a></li>
-        <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_semanal.html"><i class="bi bi-calendar-week"></i> Reporte Semanal</a></li>
-        <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_campana.html"><i class="bi bi-bar-chart-fill"></i> Reporte Campaña</a></li>
-        <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_acumulado.html"><i class="bi bi-archive-fill"></i> Reporte Acumulado</a></li>
-        <li class="nav-item"><a class="nav-link px-2" href="graficos.html" style="color: #ff66b2 !important; font-weight: bold;"><i class="bi bi-pie-chart-fill"></i> Gráficos</a></li>
-        <li class="nav-item"><a class="nav-link text-light px-2" href="bd_madre.html"><i class="bi bi-database-fill"></i> BD Principal</a></li>
-        <li class="nav-item"><a class="nav-link text-light px-2" href="bdtotales.html"><i class="bi bi-database-fill-gear"></i> BD Totales</a></li>
-      </ul>
-    </div>
-  </div>
-</nav>
-
-<div class="header-banner text-center d-flex justify-content-center align-items-center">
-    <div><h1 class="fw-bold mb-0"><i class="bi bi-calendar-check"></i> Reporte de Días</h1><p class="lead mb-0">Tablero Diario de Monitoreo Rápido</p></div>
-</div>
-
-<div class="container-fluid px-4 flex-grow-1">
-    <div class="alert alert-success d-flex justify-content-between align-items-center shadow-sm p-2 flex-wrap gap-2">
-        <div style="font-size: 12px;">
-            <strong>Tabla de Lunes a Domingo:</strong> Visualización de datos diarios.<br>
-            <small class="text-muted">Da clic en los números de columna para ordenar o usa el buscador.</small>
+    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #1b396b;">
+      <div class="container-fluid px-4">
+        <a class="navbar-brand fw-bold" href="index.html"><i class="bi bi-hdd-network"></i> SISTEMA MAC</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto gap-3">
+            <li class="nav-item"><a class="nav-link text-light px-3" href="index.html"><i class="bi bi-pencil-square"></i> Vaciado de Datos</a></li>
+            <li class="nav-item"><a class="nav-link active bg-primary rounded px-3 text-white fw-bold" href="reporte_dias.html"><i class="bi bi-calendar3"></i> Reporte Días</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-3" href="reporte_semanal.html"><i class="bi bi-calendar-week"></i> Reporte Semanal</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-3" href="reporte_campana.html"><i class="bi bi-bar-chart-fill"></i> Reporte Campaña</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-3" href="reporte_acumulado.html"><i class="bi bi-archive-fill"></i> Reporte Acumulado</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-3" href="bd_madre.html"><i class="bi bi-database-fill"></i> BD Principal</a></li>
+          </ul>
         </div>
-        
-        <div class="d-flex align-items-center gap-2 flex-wrap">
-            <!-- Semáforo de conexión -->
-            <div id="semaforoConexion" class="badge bg-secondary text-white fs-6 px-3 py-2 rounded-pill"><i class="bi bi-arrow-repeat spinner-border spinner-border-sm"></i> Conectando...</div>
-            
-            <!-- Contador de Registros y Remesas -->
-            <div class="badge bg-dark text-white fs-6 px-3 py-2 rounded-pill" id="contadorInfo">
-                <i class="bi bi-collection-fill text-info"></i> Líneas: <span id="lblTotalLineas">0</span> | <i class="bi bi-tags-fill text-warning"></i> Remesas: <span id="lblTotalRemesas">0</span>
-            </div>
+      </div>
+    </nav>
 
-            <!-- Input Buscador en la Tabla -->
-            <div class="input-group input-group-sm" style="width: 200px;">
-                <span class="input-group-text bg-white text-secondary"><i class="bi bi-search"></i></span>
-                <input type="text" id="inputBuscadorDias" class="form-control" placeholder="Buscar valor...">
-            </div>
-
-            <!-- Botón Copiar a Excel -->
-            <button class="btn btn-sm btn-info fw-bold" onclick="copiarTablaExcel('tablaDias')" title="Copia la tabla para pegarla directo en Excel"><i class="bi bi-file-earmark-spreadsheet-fill"></i> Copiar a Excel</button>
+    <div class="header-banner text-center d-flex justify-content-center align-items-center">
+        <div>
+            <h1 class="fw-bold mb-0"><i class="bi bi-calendar3"></i> Reporte Días</h1>
+            <p class="lead mb-0">Consulta detallada por día de los registros de los módulos</p>
         </div>
     </div>
 
-    <div class="excel-container shadow-sm rounded border-success">
-        <table class="excel-table table table-hover" id="tablaDias">
-            <thead id="cabeceraTablaDias"></thead>
-            <tbody id="cuerpoTablaDias"></tbody>
-        </table>
+    <div class="container-fluid px-4 flex-grow-1">
+        <div class="alert alert-info shadow-sm d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div>
+                <strong>Reporte Días:</strong> Visualización ordenada por Remesa (mayor a menor) y Módulo (050351, 050353, 050354).
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-sm btn-success fw-bold" onclick="exportarReporteDias()"><i class="bi bi-download"></i> Descargar Excel / JSON</button>
+                <div id="semaforoConexion" class="badge bg-success">Conectado</div>
+            </div>
+        </div>
+        <div class="excel-container shadow-sm mb-3">
+            <table class="excel-table table table-hover" id="tablaReporteDias">
+                <thead id="cabeceraReporteDias"></thead>
+                <tbody id="cuerpoReporteDias"></tbody>
+            </table>
+        </div>
     </div>
-</div>
 
-<footer class="text-center py-2 mt-auto text-white shadow-sm" style="background-color: #1b396b; width: 100%;">
-    <small>&copy; 2026 Todos los derechos reservados. Desarrollado por <span class="text-info fw-bold">Carrivers Desing</span> para Módulos MAC. Versión 1.0.19</small>
-</footer>
+    <footer class="text-center py-3 mt-auto text-white" style="background-color: #1b396b;">
+        <small>
+            &copy; 2026 Todos los derechos reservados.<br>
+            Desarrollado por <span class="text-info fw-bold">Carrivers Desing</span> para Módulos MAC.
+        </small>
+    </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script type="module" src="app_dias.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo",
+            authDomain: "cifrasmac.firebaseapp.com",
+            databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com",
+            projectId: "cifrasmac",
+            storageBucket: "cifrasmac.firebasestorage.app",
+            messagingSenderId: "916644687837",
+            appId: "1:916644687837:web:03d346cc48a071af1ed034"
+        };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // Misma lista estricta de columnas para mantener idéntico orden en Reporte Días
+        const NOMBRES_ESTANDAR_BD = [
+            "IDMAC", "REMESA", "MODULO",
+            "DIA", "FECHA", "HORAS_TRABAJADAS", "SEDES", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
+            "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSICION",
+            "CORR_DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES",
+            "CANCELADOS", "TOTAL_DE_ANEXOS_POR_RECHAZO", "CRED_PROD_CANJE_POR_NUEVA", "DISPONIBLES_AL_DIA_ANTERIOR", "ACTUALIZACION",
+            "RECIBIDAS_DE_OTROS_TIPOS", "ENTREGADAS", "ROBO_Y_O_EXTRAVIO", "ANEXAS_A_FUAR", "DATOS_ERRONEOS",
+            "FOTO_MAL_IMPRESA", "SOLICITUD_DE_REIMPRESION", "RETIRADAS_POR_CAUSA", "DISPONIBLES_TOTAL",
+            "FICHAS_ENTREGADAS", "FICHAS_ATENDIDAS", "DIAS_TRABAJADOS", "SOLICITUD_EXPEDICION_ORDINARIA",
+            "SOLICITUD_EXPEDICION_REPATRIADOS", "SOLICITUD_DE_RECTIFICACION",
+            "DEMANDA_DE_JUICIO", "TOTAL_DE_MOVIMIENTOS", "CREDEN_DEVUELTAS_POR_TERCEROS",
+            "34_Imagen_Inconsistente", "35_Movimiento_Posterior", "CONFIGURACION", "ENT", "DTTO",
+            "RESGUARDO", "SCRIPT_EJECUTADO",
+            "FOLIO_NEC", "NUMERO_DE_TRAMITES_APLICADOS", "NUMERO_DE_FICHAS_REQUISITADAS",
+            "NUMERO_DE_ARCHIVOS_DE_TRANSACCION_ACEPTADOS", "TOTAL_DE_ARCHIVOS_DE_TRANSACCION_PROCESADOS",
+            "RECIBIDAS", "CREDENCIALES_INCONSISTENTES",
+            "CREDENCIALES_TOTALES_EN_SIIRFE_DISPONIBLES_PARA_ENTREGA", "TOTAL_DE_CREDENCIALES_ENTREGADAS",
+            "TOTAL_DE_CREDENCIALES_SOLICITADAS", "IMPORTADAS", "EXPORTADAS", "REPOSISION_REIMPRESIONES",
+            "MAL_IMPRESA", "ERROR_EN_CARTOGRAFIA", "DEFUNCION", "SUSPENSION", "DUPLICADO",
+            "ERROR_EN_NUM_DE_EMISION", "PERDIDA_DE_VIGENCIA", "MOV_POST", "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS",
+            "CPV_DEVUELA_ENTREGA_2", "SOLICITUD_DE_REIMPRESION_2", "CPV_DEVUELA_ENTREGA_2_B", "RESGUARDO_2"
+        ];
+
+        function getClaveLimpia(nombreOriginal) {
+            return String(nombreOriginal)
+                .toUpperCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .replace(/[.#$ /\[\]]/g, "_")
+                .replace(/_+/g, "_")
+                .trim();
+        }
+
+        let reporteDataGlobal = null;
+        database.ref('bd_madre').on('value', (snapshot) => {
+            reporteDataGlobal = snapshot.val();
+            let data = reporteDataGlobal;
+            let arr = data ? (Array.isArray(data) ? data : Object.values(data)) : [];
+            const thead = document.getElementById('cabeceraReporteDias');
+            const tbody = document.getElementById('cuerpoReporteDias');
+            if(!thead || !tbody) return;
+
+            thead.innerHTML = '';
+            tbody.innerHTML = '';
+
+            if (arr.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="100%" class="text-center py-4 text-muted">No hay registros disponibles.</td></tr>';
+                return;
+            }
+
+            // Ordenar: por Remesa (mayor a menor) y luego por Módulo (050351, 050353, 050354)
+            arr.sort((a, b) => {
+                let remA = String(a.REMESA || '').trim();
+                let remB = String(b.REMESA || '').trim();
+                if (remA !== remB) {
+                    return remB.localeCompare(remA, undefined, { numeric: true });
+                }
+                let modA = String(a.MODULO || '').trim();
+                let modB = String(b.MODULO || '').trim();
+                return modA.localeCompare(modB);
+            });
+
+            // Construir encabezados
+            let trH = '<tr>';
+            NOMBRES_ESTANDAR_BD.forEach(k => {
+                let visual = k.replace(/_/g, ' ').toUpperCase();
+                trH += `<th>${visual}</th>`;
+            });
+            trH += '</tr>';
+            thead.innerHTML = trH;
+
+            // Rellenar filas
+            let htmlB = '';
+            arr.forEach((item) => {
+                htmlB += '<tr>';
+                NOMBRES_ESTANDAR_BD.forEach(k => {
+                    let cleanKey = getClaveLimpia(k);
+                    let val = item[cleanKey] !== undefined && item[cleanKey] !== null ? item[cleanKey] : (item[k] !== undefined ? item[k] : '');
+                    htmlB += `<td>${val}</td>`;
+                });
+                htmlB += '</tr>';
+            });
+            tbody.innerHTML = htmlB;
+        });
+
+        window.exportarReporteDias = function() {
+            if (!reporteDataGlobal) {
+                alert("No hay datos para exportar.");
+                return;
+            }
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(reporteDataGlobal, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "reporte_dias_respaldo.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        };
+    </script>
 </body>
 </html>
