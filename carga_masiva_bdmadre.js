@@ -10,25 +10,36 @@ const database = firebase.database();
 
 let datosTemporalesCarga = [];
 
-function generarIdMac(remesa, modulo) {
+// Generador de IDMAC Único con Año, Módulo, Remesa y Fecha (Ej: 3512639-1012)
+function generarIdMacBdMadre(remesa, modulo, fecha) {
     let modStr = String(modulo || '').replace(/\D/g, ''); 
     let modDigits = modStr.length >= 2 ? modStr.slice(-2) : modStr.padStart(2, '0');
     if (!modDigits) modDigits = '00';
+    const ultimos3Mod = String(modDigits).slice(-3);
+
+    let anioActual = new Date().getFullYear().toString().slice(-2); // Ej: "26"
+    
     let remStr = String(remesa || '').trim(); 
-    let remMatch = remStr.match(/(\d+)\s*(-?\s*bis\d*)?/i);
-    let numPart = '0000'; 
-    let suffix = '';
-    if (remMatch) { 
-        numPart = remMatch[1].length >= 4 ? remMatch[1].slice(-4) : remMatch[1].padStart(4, '0'); 
-        if (remMatch[2]) { 
-            suffix = remMatch[2].replace(/\s+/g, ''); 
-            if (!suffix.startsWith('-')) suffix = '-' + suffix; 
-        } 
-    }
-    return `${modDigits}${numPart}${suffix}`;
+    let remMatch = remStr.match(/(\d+)/);
+    let numRem = remMatch ? remMatch[1].padStart(2, '0') : '39';
+
+    let fechaLimpia = String(fecha || '').replace(/[^0-9]/g, '');
+    let sufijoFecha = fechaLimpia.length >= 8 ? fechaLimpia.slice(-4) : (fechaLimpia || '0000');
+
+    return `${ultimos3Mod}${anioActual}${numRem}-${sufijoFecha}`;
 }
 
-// Función auxiliar para limpiar y rellenar celdas vacías con 0
+function limpiarNombreClave(key) {
+    if (!key) return "COLUMNA";
+    return String(key)
+        .toUpperCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[.#$ /\[\]]/g, "_")
+        .replace(/_+/g, "_")
+        .trim();
+}
+
 function limpiarValorCelda(val) {
     if (val === null || val === undefined || String(val).trim() === "") {
         return "0";
@@ -36,7 +47,6 @@ function limpiarValorCelda(val) {
     return String(val).trim();
 }
 
-// 1. Procesar archivo Excel (.xlsx) o JSON
 function procesarArchivoExcel(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -48,16 +58,13 @@ function procesarArchivoExcel(e) {
                 let json = JSON.parse(evt.target.result);
                 let rawArr = Array.isArray(json) ? json : Object.values(json);
                 
-                // Asegurar que no queden valores vacíos y tengan IDMAC
                 datosTemporalesCarga = rawArr.map(row => {
                     let objNorm = {};
                     for(let k in row) {
-                        let limpiaKey = k.toUpperCase().trim().replace(/\s+/g, '_');
+                        let limpiaKey = limpiarNombreClave(k);
                         objNorm[limpiaKey] = limpiarValorCelda(row[k]);
                     }
-                    if (!objNorm['IDMAC']) {
-                        objNorm['IDMAC'] = generarIdMac(objNorm['REMESA'], objNorm['MODULO']);
-                    }
+                    objNorm['IDMAC'] = generarIdMacBdMadre(objNorm['REMESA'], objNorm['MODULO'], objNorm['FECHA']);
                     return objNorm;
                 });
 
@@ -80,13 +87,10 @@ function procesarArchivoExcel(e) {
                 datosTemporalesCarga = jsonRows.map(row => {
                     let objNorm = {};
                     for(let k in row) {
-                        let limpiaKey = k.toUpperCase().trim().replace(/\s+/g, '_');
-                        // Si está vacía o en blanco, se pone 0 (excepto en columnas de texto como FECHA, DIA, OBSERVACIONES si se desea)
+                        let limpiaKey = limpiarNombreClave(k);
                         objNorm[limpiaKey] = limpiarValorCelda(row[k]);
                     }
-                    if (!objNorm['IDMAC']) {
-                        objNorm['IDMAC'] = generarIdMac(objNorm['REMESA'], objNorm['MODULO']);
-                    }
+                    objNorm['IDMAC'] = generarIdMacBdMadre(objNorm['REMESA'], objNorm['MODULO'], objNorm['FECHA']);
                     return objNorm;
                 });
 
@@ -100,7 +104,6 @@ function procesarArchivoExcel(e) {
     }
 }
 
-// 2. Procesar pegado directo desde Excel
 function procesarPegadoPortapapeles(e) {
     setTimeout(() => {
         let texto = document.getElementById('textoPegadoExcel').value;
@@ -113,7 +116,7 @@ function procesarPegadoPortapapeles(e) {
         }
 
         let delimitador = lineas[0].includes('\t') ? '\t' : ',';
-        let headers = lineas[0].split(delimitador).map(h => h.toUpperCase().trim().replace(/\s+/g, '_'));
+        let headers = lineas[0].split(delimitador).map(h => limpiarNombreClave(h));
 
         let registros = [];
         for (let i = 1; i < lineas.length; i++) {
@@ -123,9 +126,7 @@ function procesarPegadoPortapapeles(e) {
                 let valCrudo = valores[idx] !== undefined ? valores[idx] : "";
                 obj[h] = limpiarValorCelda(valCrudo);
             });
-            if (!obj['IDMAC']) {
-                obj['IDMAC'] = generarIdMac(obj['REMESA'], obj['MODULO']);
-            }
+            obj['IDMAC'] = generarIdMacBdMadre(obj['REMESA'], obj['MODULO'], obj['FECHA']);
             registros.push(obj);
         }
 
@@ -135,7 +136,6 @@ function procesarPegadoPortapapeles(e) {
     }, 100);
 }
 
-// 3. Mostrar la tabla de vista previa
 function mostrarVistaPrevia(arr) {
     const thead = document.getElementById('headPreview');
     const tbody = document.getElementById('bodyPreview');
@@ -152,7 +152,7 @@ function mostrarVistaPrevia(arr) {
     }
 
     let colSet = new Set(['IDMAC']);
-    arr.forEach(i => Object.keys(i).forEach(k => colSet.add(k.toUpperCase().trim())));
+    arr.forEach(i => Object.keys(i).forEach(k => colSet.add(limpiarNombreClave(k))));
     let columnas = Array.from(colSet);
 
     let trH = '<tr><th>#</th>';
@@ -164,7 +164,7 @@ function mostrarVistaPrevia(arr) {
     arr.slice(0, 50).forEach((fila, idx) => {
         htmlB += `<tr><td class="fw-bold text-center">${idx + 1}</td>`;
         columnas.forEach(col => {
-            let val = fila[col] !== undefined ? fila[col] : (col === 'IDMAC' ? generarIdMac(fila['REMESA'], fila['MODULO']) : '0');
+            let val = fila[col] !== undefined ? fila[col] : (col === 'IDMAC' ? generarIdMacBdMadre(fila['REMESA'], fila['MODULO'], fila['FECHA']) : '0');
             htmlB += `<td>${val}</td>`;
         });
         htmlB += '</tr>';
@@ -178,7 +178,6 @@ function mostrarVistaPrevia(arr) {
     btnGuardar.disabled = false;
 }
 
-// 4. Guardar datos en la ruta `bd_madre` de Firebase
 function subirDatosABdMadre() {
     if (datosTemporalesCarga.length === 0) {
         alert("No hay datos cargados para guardar.");
@@ -198,7 +197,6 @@ function subirDatosABdMadre() {
     }
 }
 
-// 5. Vaciar por completo `bd_madre` en Firebase
 function vaciarBdMadreFirebase() {
     if (confirm("⚠️ ADVERTENCIA EXTREMA: ¿Estás completamente seguro de BORRAR TODO en la ruta 'bd_madre' de Firebase?")) {
         database.ref('bd_madre').remove()
