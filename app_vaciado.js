@@ -25,7 +25,7 @@ const NOMBRES_ESTANDAR_BD = [
     "CANCELADOS", "TOTAL_DE_ANEXOS_POR_RECHAZO", "CRED_PROD_CANJE_POR_NUEVA", "DISPONIBLES_AL_DIA_ANTERIOR", "ACTUALIZACION",
     "RECIBIDAS_DE_OTROS_TIPOS", "ENTREGADAS", "ROBO_Y_O_EXTRAVIO", "ANEXAS_A_FUAR", "DATOS_ERRONEOS",
     "FOTO_MAL_IMPRESA", "SOLICITUD_DE_REIMPRESION", "RETIRADAS_POR_CAUSA", "DISPONIBLES_TOTAL", "CPV_DEVUELA_ENTREGA_2",
-    "FICHAS_ENTREGADAS", "FICHAS_ATENDIDAS", "DIAS_TRABAJADOS",  "SOLICITUD_EXPEDICION_ORDINARIA",
+    "FICHAS_ENTREGADAS", "FICHAS_ATENDIDAS", "DIAS_TRABAJADOS", "SOLICITUD_EXPEDICION_ORDINARIA",
     "SOLICITUD_EXPEDICION_REPATRIADOS", "SOLICITUD_DE_RECTIFICACION",
     "DEMANDA_DE_JUICIO", "REMESA", "TOTAL_DE_MOVIMIENTOS", "CREDEN_DEVUELTAS_POR_TERCEROS",
     "34_Imagen_Inconsistente", "35_Movimiento_Posterior", "CONFIGURACION", "ENT", "DTTO", "MODULO",
@@ -36,7 +36,7 @@ const NOMBRES_ESTANDAR_BD = [
     "CREDENCIALES_TOTALES_EN_SIIRFE_DISPONIBLES_PARA_ENTREGA", "TOTAL_DE_CREDENCIALES_ENTREGADAS",
     "TOTAL_DE_CREDENCIALES_SOLICITADAS", "IMPORTADAS", "EXPORTADAS", "REPOSISION_REIMPRESIONES",
     "MAL_IMPRESA", "ERROR_EN_CARTOGRAFIA", "DEFUNCION", "SUSPENSION", "DUPLICADO",
-    "ERROR_EN_NUM_DE_EMISION", "PERDIDA_DE_VIGENCIA", "MOV_POST", "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS",
+    "ERROR_EN_NUM_DE_EMISION", "PERDIDA_DE_VIGENCIA", "MOV_POST", "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS"
 ];
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -94,7 +94,6 @@ function inicializarEncabezadosYTablas() {
         if (!tbody) return;
         tbody.innerHTML = "";
         
-        // 7 días de la semana
         const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
         dias.forEach(dia => {
             let tr = document.createElement('tr');
@@ -326,7 +325,8 @@ function cargarDatosDesdeFirebase() {
 }
 
 function guardarBasesEnFirebase() {
-    const remesaActual = document.getElementById('hiddenRemesaVal')?.value.trim() || document.getElementById('inputRemesa')?.innerText.trim() || "39";
+    // Lee directamente el número de remesa del nuevo campo superior global
+    const remesaActual = document.getElementById('inputRemesaGlobal')?.value.trim() || "39";
     const anioActual = new Date().getFullYear().toString().slice(-2); 
     
     let datosAGuardar = {};
@@ -466,6 +466,5 @@ function guardarBasesEnFirebase() {
 function limpiarFormulario() {
     if (confirm("¿Deseas limpiar y depurar los datos de las tablas?")) {
         inicializarEncabezadosYTablas();
-        // Nota: Se removió el borrado de camp_* y acum_* para que las iniciales no se pierdan.
     }
 }
