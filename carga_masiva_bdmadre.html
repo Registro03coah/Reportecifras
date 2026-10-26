@@ -107,7 +107,6 @@ window.procesarArchivoExcel = function(event) {
                 const firstSheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[firstSheetName];
                 
-                // Convertir a JSON utilizando la primera fila como encabezados
                 const jsonRows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
                 datosProcesadosGlobal = jsonRows;
                 normalizarYMostrarPreview(datosProcesadosGlobal);
@@ -164,11 +163,9 @@ function normalizarYMostrarPreview(arrRegistros) {
         return;
     }
 
-    // Normalizar cada registro asegurando las 75 columnas y el IDMAC correcto
     datosProcesadosGlobal = arrRegistros.map(item => {
         let itemNormalizado = {};
         
-        // Extraer valores clave existentes con flexibilidad de mayúsculas/minúsculas
         let modVal = "";
         let remVal = "";
         let fecVal = "";
@@ -183,9 +180,8 @@ function normalizarYMostrarPreview(arrRegistros) {
         // Generar IDMAC con la estructura solicitada
         itemNormalizado["IDMAC"] = generarIdMacCustom(modVal, remVal, fecVal);
 
-        // Mapear el resto de las columnas estándar
         NOMBRES_ESTANDAR_BD.forEach(col => {
-            if (col === "IDMAC") return; // Ya asignado
+            if (col === "IDMAC") return; 
             let encontradaClave = Object.keys(item).find(k => getClaveLimpia(k) === getClaveLimpia(col));
             itemNormalizado[col] = encontradaClave !== undefined && item[encontradaClave] !== null ? String(item[encontradaClave]) : "0";
         });
@@ -193,7 +189,6 @@ function normalizarYMostrarPreview(arrRegistros) {
         return itemNormalizado;
     });
 
-    // Construir la tabla de vista previa
     let trH = '<tr>';
     NOMBRES_ESTANDAR_BD.forEach(col => {
         trH += `<th>${col.replace(/_/g, ' ')}</th>`;
@@ -229,7 +224,6 @@ window.subirDatosABdMadre = function() {
             let existente = snapshot.val() || [];
             existente = Array.isArray(existente) ? existente : Object.values(existente);
 
-            // Fusionar manteniendo los datos nuevos
             const fusionFinal = [...existente, ...datosProcesadosGlobal];
 
             dbRef.set(fusionFinal)
