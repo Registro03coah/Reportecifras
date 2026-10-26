@@ -1,37 +1,45 @@
-const firebaseConfig = { 
-    apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo", 
-    authDomain: "cifrasmac.firebaseapp.com", 
-    databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com", 
-    projectId: "cifrasmac" 
+// Configuración de Firebase
+const firebaseConfig = {
+    apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo",
+    authDomain: "cifrasmac.firebaseapp.com",
+    databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com",
+    projectId: "cifrasmac",
+    storageBucket: "cifrasmac.firebasestorage.app",
+    messagingSenderId: "916644687837",
+    appId: "1:916644687837:web:03d346cc48a071af1ed034"
 };
 
-if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
 const database = firebase.database();
 
-let datosTemporalesCarga = [];
+// Lista oficial de las 75 columnas estándar (con IDMAC al inicio)
+const NOMBRES_ESTANDAR_BD = [
+    "IDMAC", "DIA", "FECHA", "HORAS_TRABAJADAS", "SEDES", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
+    "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSICION",
+    "CORR_DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES",
+    "CANCELADOS", "TOTAL_DE_ANEXOS_POR_RECHAZO", "CRED_PROD_CANJE_POR_NUEVA", "DISPONIBLES_AL_DIA_ANTERIOR", "ACTUALIZACION",
+    "RECIBIDAS_DE_OTROS_TIPOS", "ENTREGADAS", "ROBO_Y_O_EXTRAVIO", "ANEXAS_A_FUAR", "DATOS_ERRONEOS",
+    "FOTO_MAL_IMPRESA", "SOLICITUD_DE_REIMPRESION", "RETIRADAS_POR_CAUSA", "DISPONIBLES_TOTAL", "CPV_DEVUELA_ENTREGA_2",
+    "FICHAS_ENTREGADAS", "FICHAS_ATENDIDAS", "DIAS_TRABAJADOS", "SOLICITUD_EXPEDICION_ORDINARIA",
+    "SOLICITUD_EXPEDICION_REPATRIADOS", "SOLICITUD_DE_RECTIFICACION",
+    "DEMANDA_DE_JUICIO", "REMESA", "TOTAL_DE_MOVIMIENTOS", "CREDEN_DEVUELTAS_POR_TERCEROS",
+    "34_Imagen_Inconsistente", "35_Movimiento_Posterior", "CONFIGURACION", "ENT", "DTTO", "MODULO",
+    "RESGUARDO", "SOLICITUD_DE_REIMPRESION_2", "CPV_DEVUELA_ENTREGA_2", "SCRIPT_EJECUTADO",
+    "FOLIO_NEC", "NUMERO_DE_TRAMITES_APLICADOS", "NUMERO_DE_FICHAS_REQUISITADAS",
+    "NUMERO_DE_ARCHIVOS_DE_TRANSACCION_ACEPTADOS", "TOTAL_DE_ARCHIVOS_DE_TRANSACCION_PROCESADOS",
+    "RECIBIDAS", "CREDENCIALES_INCONSISTENTES", "RESGUARDO_2",
+    "CREDENCIALES_TOTALES_EN_SIIRFE_DISPONIBLES_PARA_ENTREGA", "TOTAL_DE_CREDENCIALES_ENTREGADAS",
+    "TOTAL_DE_CREDENCIALES_SOLICITADAS", "IMPORTADAS", "EXPORTADAS", "REPOSISION_REIMPRESIONES",
+    "MAL_IMPRESA", "ERROR_EN_CARTOGRAFIA", "DEFUNCION", "SUSPENSION", "DUPLICADO",
+    "ERROR_EN_NUM_DE_EMISION", "PERDIDA_DE_VIGENCIA", "MOV_POST", "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS"
+];
 
-// Generador de IDMAC Único con Año, Módulo, Remesa y Fecha (Ej: 3512639-1012)
-function generarIdMacBdMadre(remesa, modulo, fecha) {
-    let modStr = String(modulo || '').replace(/\D/g, ''); 
-    let modDigits = modStr.length >= 2 ? modStr.slice(-2) : modStr.padStart(2, '0');
-    if (!modDigits) modDigits = '00';
-    const ultimos3Mod = String(modDigits).slice(-3);
+let datosProcesadosGlobal = [];
 
-    let anioActual = new Date().getFullYear().toString().slice(-2); // Ej: "26"
-    
-    let remStr = String(remesa || '').trim(); 
-    let remMatch = remStr.match(/(\d+)/);
-    let numRem = remMatch ? remMatch[1].padStart(2, '0') : '39';
-
-    let fechaLimpia = String(fecha || '').replace(/[^0-9]/g, '');
-    let sufijoFecha = fechaLimpia.length >= 8 ? fechaLimpia.slice(-4) : (fechaLimpia || '0000');
-
-    return `${ultimos3Mod}${anioActual}${numRem}-${sufijoFecha}`;
-}
-
-function limpiarNombreClave(key) {
-    if (!key) return "COLUMNA";
-    return String(key)
+function getClaveLimpia(nombreOriginal) {
+    return String(nombreOriginal)
         .toUpperCase()
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
@@ -40,174 +48,206 @@ function limpiarNombreClave(key) {
         .trim();
 }
 
-function limpiarValorCelda(val) {
-    if (val === null || val === undefined || String(val).trim() === "") {
-        return "0";
+// Función para generar el IDMAC con el formato solicitado: [últimos 2 del módulo] + [últimos 4 de la remesa] + [ddmm de la fecha]
+function generarIdMacCustom(mod, remesa, fechaStr) {
+    const mod2 = String(mod || "00").slice(-2);
+    const rem4 = String(remesa || "0000").slice(-4).padStart(4, '0');
+    
+    let ddmm = "0000";
+    if (fechaStr) {
+        let limpia = String(fechaStr).trim();
+        if (limpia.includes('/')) {
+            let partes = limpia.split('/');
+            if (partes.length >= 2) {
+                let d = partes[0].padStart(2, '0');
+                let m = partes[1].padStart(2, '0');
+                ddmm = d + m;
+            }
+        } else if (limpia.includes('-')) {
+            let partes = limpia.split('-');
+            if (partes.length >= 3) {
+                if (partes[0].length === 4) { // Formato YYYY-MM-DD
+                    let m = partes[1].padStart(2, '0');
+                    let d = partes[2].padStart(2, '0');
+                    ddmm = d + m;
+                } else { // Formato DD-MM-YYYY
+                    let d = partes[0].padStart(2, '0');
+                    let m = partes[1].padStart(2, '0');
+                    ddmm = d + m;
+                }
+            }
+        }
     }
-    return String(val).trim();
+    return `${mod2}${rem4}${ddmm}`;
 }
 
-function procesarArchivoExcel(e) {
-    const file = e.target.files[0];
+// Procesar archivo Excel (.xlsx / .xls) o JSON
+window.procesarArchivoExcel = function(event) {
+    const file = event.target.files[0];
     if (!file) return;
 
+    const reader = new FileReader();
+    
     if (file.name.endsWith('.json')) {
-        let reader = new FileReader();
-        reader.onload = function(evt) {
+        reader.onload = function(e) {
             try {
-                let json = JSON.parse(evt.target.result);
-                let rawArr = Array.isArray(json) ? json : Object.values(json);
-                
-                datosTemporalesCarga = rawArr.map(row => {
-                    let objNorm = {};
-                    for(let k in row) {
-                        let limpiaKey = limpiarNombreClave(k);
-                        objNorm[limpiaKey] = limpiarValorCelda(row[k]);
-                    }
-                    objNorm['IDMAC'] = generarIdMacBdMadre(objNorm['REMESA'], objNorm['MODULO'], objNorm['FECHA']);
-                    return objNorm;
-                });
-
-                mostrarVistaPrevia(datosTemporalesCarga);
-            } catch(err) {
+                const jsonContent = JSON.parse(e.target.result);
+                datosProcesadosGlobal = Array.isArray(jsonContent) ? jsonContent : Object.values(jsonContent);
+                normalizarYMostrarPreview(datosProcesadosGlobal);
+            } catch (err) {
                 alert("El archivo JSON no es válido.");
             }
         };
         reader.readAsText(file);
     } else {
-        let reader = new FileReader();
         reader.onload = function(e) {
             try {
-                let data = new Uint8Array(e.target.result);
-                let workbook = XLSX.read(data, {type: 'array'});
-                let firstSheet = workbook.SheetNames[0];
-                let worksheet = workbook.Sheets[firstSheet];
-                let jsonRows = XLSX.utils.sheet_to_json(worksheet, {raw: false});
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
                 
-                datosTemporalesCarga = jsonRows.map(row => {
-                    let objNorm = {};
-                    for(let k in row) {
-                        let limpiaKey = limpiarNombreClave(k);
-                        objNorm[limpiaKey] = limpiarValorCelda(row[k]);
-                    }
-                    objNorm['IDMAC'] = generarIdMacBdMadre(objNorm['REMESA'], objNorm['MODULO'], objNorm['FECHA']);
-                    return objNorm;
-                });
-
-                mostrarVistaPrevia(datosTemporalesCarga);
-            } catch(err) {
-                console.error(err);
-                alert("Error al leer el archivo Excel.");
+                const jsonRows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+                datosProcesadosGlobal = jsonRows;
+                normalizarYMostrarPreview(datosProcesadosGlobal);
+            } catch (err) {
+                alert("Error al leer el archivo Excel: " + err.message);
             }
         };
         reader.readAsArrayBuffer(file);
     }
-}
+};
 
-function procesarPegadoPortapapeles(e) {
+// Procesar pegado directo desde el portapapeles (Ctrl+V en el Textarea)
+window.procesarPegadoPortapapeles = function(event) {
     setTimeout(() => {
-        let texto = document.getElementById('textoPegadoExcel').value;
-        if (!texto) return;
+        const texto = document.getElementById('textoPegadoExcel').value;
+        if (!texto.trim()) return;
 
-        let lineas = texto.split('\n').filter(l => l.trim() !== '');
+        const lineas = texto.split('\n').filter(l => l.trim() !== '');
         if (lineas.length < 2) {
-            alert("El texto pegado debe incluir la fila de encabezados y al menos un registro.");
+            alert("El texto pegado debe incluir al menos la fila de encabezados y una fila de datos.");
             return;
         }
 
-        let delimitador = lineas[0].includes('\t') ? '\t' : ',';
-        let headers = lineas[0].split(delimitador).map(h => limpiarNombreClave(h));
+        const encabezados = lineas[0].split('\t').map(h => h.trim());
+        let filasObjetos = [];
 
-        let registros = [];
         for (let i = 1; i < lineas.length; i++) {
-            let valores = lineas[i].split(delimitador);
+            const celdas = lineas[i].split('\t');
             let obj = {};
-            headers.forEach((h, idx) => {
-                let valCrudo = valores[idx] !== undefined ? valores[idx] : "";
-                obj[h] = limpiarValorCelda(valCrudo);
+            encabezados.forEach((cabecera, idx) => {
+                obj[cabecera] = celdas[idx] !== undefined ? celdas[idx].trim() : "";
             });
-            obj['IDMAC'] = generarIdMacBdMadre(obj['REMESA'], obj['MODULO'], obj['FECHA']);
-            registros.push(obj);
+            filasObjetos.push(obj);
         }
 
-        datosTemporalesCarga = registros;
-        mostrarVistaPrevia(datosTemporalesCarga);
-        document.getElementById('textoPegadoExcel').value = '';
+        datosProcesadosGlobal = filasObjetos;
+        normalizarYMostrarPreview(datosProcesadosGlobal);
     }, 100);
-}
+};
 
-function mostrarVistaPrevia(arr) {
-    const thead = document.getElementById('headPreview');
-    const tbody = document.getElementById('bodyPreview');
+// Normalizar registros, calcular IDMAC personalizado y poblar la vista previa
+function normalizarYMostrarPreview(arrRegistros) {
+    const headPreview = document.getElementById('headPreview');
+    const bodyPreview = document.getElementById('bodyPreview');
     const contador = document.getElementById('contadorRegistrosPreview');
     const btnGuardar = document.getElementById('btnGuardarFirebase');
 
-    thead.innerHTML = '';
-    tbody.innerHTML = '';
-    contador.textContent = arr.length;
+    headPreview.innerHTML = '';
+    bodyPreview.innerHTML = '';
 
-    if (arr.length === 0) {
+    if (!arrRegistros || arrRegistros.length === 0) {
+        contador.innerText = "0";
         btnGuardar.disabled = true;
         return;
     }
 
-    let colSet = new Set(['IDMAC']);
-    arr.forEach(i => Object.keys(i).forEach(k => colSet.add(limpiarNombreClave(k))));
-    let columnas = Array.from(colSet);
+    datosProcesadosGlobal = arrRegistros.map(item => {
+        let itemNormalizado = {};
+        
+        let modVal = "";
+        let remVal = "";
+        let fecVal = "";
 
-    let trH = '<tr><th>#</th>';
-    columnas.forEach(c => trH += `<th>${c}</th>`);
+        Object.keys(item).forEach(k => {
+            let kClean = getClaveLimpia(k);
+            if (kClean === "MODULO") modVal = item[k];
+            if (kClean === "REMESA") remVal = item[k];
+            if (kClean === "FECHA") fecVal = item[k];
+        });
+
+        // Generar IDMAC con la estructura solicitada
+        itemNormalizado["IDMAC"] = generarIdMacCustom(modVal, remVal, fecVal);
+
+        NOMBRES_ESTANDAR_BD.forEach(col => {
+            if (col === "IDMAC") return; 
+            let encontradaClave = Object.keys(item).find(k => getClaveLimpia(k) === getClaveLimpia(col));
+            itemNormalizado[col] = encontradaClave !== undefined && item[encontradaClave] !== null ? String(item[encontradaClave]) : "0";
+        });
+
+        return itemNormalizado;
+    });
+
+    let trH = '<tr>';
+    NOMBRES_ESTANDAR_BD.forEach(col => {
+        trH += `<th>${col.replace(/_/g, ' ')}</th>`;
+    });
     trH += '</tr>';
-    thead.innerHTML = trH;
+    headPreview.innerHTML = trH;
 
     let htmlB = '';
-    arr.slice(0, 50).forEach((fila, idx) => {
-        htmlB += `<tr><td class="fw-bold text-center">${idx + 1}</td>`;
-        columnas.forEach(col => {
-            let val = fila[col] !== undefined ? fila[col] : (col === 'IDMAC' ? generarIdMacBdMadre(fila['REMESA'], fila['MODULO'], fila['FECHA']) : '0');
-            htmlB += `<td>${val}</td>`;
+    datosProcesadosGlobal.forEach(item => {
+        htmlB += '<tr>';
+        NOMBRES_ESTANDAR_BD.forEach(col => {
+            htmlB += `<td>${item[col] !== undefined ? item[col] : ''}</td>`;
         });
         htmlB += '</tr>';
     });
-    tbody.innerHTML = htmlB;
+    bodyPreview.innerHTML = htmlB;
 
-    if (arr.length > 50) {
-        tbody.innerHTML += `<tr><td colspan="${columnas.length + 1}" class="text-center text-muted fw-bold bg-light">... y ${arr.length - 50} registros más listos para guardarse en la BD Principal.</td></tr>`;
-    }
-
+    contador.innerText = datosProcesadosGlobal.length;
     btnGuardar.disabled = false;
 }
 
-function subirDatosABdMadre() {
-    if (datosTemporalesCarga.length === 0) {
-        alert("No hay datos cargados para guardar.");
+// Subir datos validados a Firebase (BD Principal / bd_madre)
+window.subirDatosABdMadre = function() {
+    if (!datosProcesadosGlobal || datosProcesadosGlobal.length === 0) {
+        alert("No hay datos para guardar.");
         return;
     }
 
-    if (confirm(`¿Estás seguro de subir ${datosTemporalesCarga.length} registros a la BD Principal (bd_madre) en Firebase?`)) {
-        database.ref('bd_madre').set(datosTemporalesCarga)
-        .then(() => {
-            alert("¡Éxito! Todos los registros se han guardado correctamente en la BD Principal de Firebase.");
-            window.location.href = "bd_madre.html"; 
-        })
-        .catch(err => {
-            console.error("Error detallado de Firebase:", err);
-            alert("Hubo un error al guardar en Firebase. Revisa la consola (F12).");
-        });
-    }
-}
+    if (confirm(`¿Estás seguro de subir y fusionar ${datosProcesadosGlobal.length} registros en la Base de Datos Principal (BD Madre)?`)) {
+        const dbRef = database.ref('bd_madre');
 
-function vaciarBdMadreFirebase() {
-    if (confirm("⚠️ ADVERTENCIA EXTREMA: ¿Estás completamente seguro de BORRAR TODO en la ruta 'bd_madre' de Firebase?")) {
-        database.ref('bd_madre').remove()
-        .then(() => {
-            alert("Se ha vaciado por completo la BD Principal en Firebase.");
-            datosTemporalesCarga = [];
-            mostrarVistaPrevia([]);
-        })
-        .catch(err => {
-            console.error(err);
-            alert("Error al intentar vaciar la base de datos.");
+        dbRef.once('value').then((snapshot) => {
+            let existente = snapshot.val() || [];
+            existente = Array.isArray(existente) ? existente : Object.values(existente);
+
+            const fusionFinal = [...existente, ...datosProcesadosGlobal];
+
+            dbRef.set(fusionFinal)
+                .then(() => {
+                    alert("¡Carga masiva completada con éxito en la BD Principal!");
+                    window.location.href = "bd_madre.html";
+                })
+                .catch(err => {
+                    alert("Error al guardar en Firebase: " + err.message);
+                });
         });
     }
-}
+};
+
+// Vaciar por completo la BD Principal en Firebase
+window.vaciarBdMadreFirebase = function() {
+    if (confirm("¡ADVERTENCIA EXTREMA! Vas a borrar TODOS los registros existentes en la BD Principal de Firebase. ¿Deseas continuar?")) {
+        if (confirm("Confirma nuevamente: Se eliminará toda la información de la BD Madre.")) {
+            database.ref('bd_madre').set(null)
+                .then(() => {
+                    alert("Se ha vaciado toda la BD Principal correctamente.");
+                    location.reload();
+                })
+                .catch(err => alert("Error al vaciar: " + err.message));
+        }
+    }
+};
