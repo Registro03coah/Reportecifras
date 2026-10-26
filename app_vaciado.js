@@ -284,14 +284,11 @@ function guardarBasesEnFirebase() {
                 objFilaDia["INICIALES_C"] = document.getElementById(`camp_${mod}`) ? document.getElementById(`camp_${mod}`).value : "";
                 objFilaDia["INICIALES_A"] = document.getElementById(`acum_${mod}`) ? document.getElementById(`acum_${mod}`).value : "";
 
-                // IDMAC Único con Año, Módulo, Remesa y Fecha (Ej: 3512639-1012)
+                // IDMAC Exacto: 3512642 (3 dígitos MAC + 2 dígitos año + 2 dígitos remesa)
                 const ultimos3Mod = String(mod).slice(-3);
-                let numRem = remesaActual.match(/\d+/) ? remesaActual.match(/\d+/)[0].padStart(2, '0') : '39';
-                let fechaVal = objFilaDia["FECHA"] || '00000000';
-                let fechaLimpia = String(fechaVal).replace(/[^0-9]/g, '');
-                let sufijoFecha = fechaLimpia.length >= 8 ? fechaLimpia.slice(-4) : (fechaLimpia || '0000');
+                let numRem = remesaActual.match(/\d+/) ? remesaActual.match(/\d+/)[0].slice(-2).padStart(2, '0') : '39';
 
-                objFilaDia["IDMAC"] = `${ultimos3Mod}${anioActual}${numRem}-${sufijoFecha}`;
+                objFilaDia["IDMAC"] = `${ultimos3Mod}${anioActual}${numRem}`;
 
                 registrosDiariosParaBdMadre.push(objFilaDia);
             }
@@ -340,7 +337,7 @@ function guardarBasesEnFirebase() {
             objFilaTotal["INICIALES_A"] = document.getElementById(`acum_${mod}`) ? document.getElementById(`acum_${mod}`).value : "";
 
             const ultimos3Mod = String(mod).slice(-3);
-            let numRem = remesaActual.match(/\d+/) ? remesaActual.match(/\d+/)[0].padStart(2, '0') : '39';
+            let numRem = remesaActual.match(/\d+/) ? remesaActual.match(/\d+/)[0].slice(-2).padStart(2, '0') : '39';
             objFilaTotal["IDMAC"] = `${ultimos3Mod}${anioActual}${numRem}`;
 
             registrosTotalesParaBD.push(objFilaTotal);
@@ -373,7 +370,7 @@ function guardarBasesEnFirebase() {
             })
         ]);
     }).then(() => {
-        alert(`¡Éxito! Todos los datos diarios, iniciales y totales se guardaron correctamente en la BD Principal (bd_madre) para la Remesa: ${remesaActual}.`);
+        alert(`¡Éxito! Todos los datos diarios se guardaron correctamente para la Remesa: ${remesaActual}.`);
     }).catch((error) => {
         console.error("Error al guardar en Firebase:", error);
         alert("Hubo un error al guardar los datos en la nube.");
