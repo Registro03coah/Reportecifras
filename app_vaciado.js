@@ -37,7 +37,7 @@ const NOMBRES_ESTANDAR_BD = [
 ];
 
 document.addEventListener("DOMContentLoaded", () => {
-    inicializarTablas();
+    inicializarEncabezadosYTablas();
     configurarTabs();
     configurarPegadoPortapapeles();
     cargarDatosDesdeFirebase();
@@ -53,8 +53,40 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-function inicializarTablas() {
+// Función para construir los encabezados de las tablas dinámicamente
+function construirHeaderTabla(tableEl) {
+    if (!tableEl) return;
+    let thead = tableEl.querySelector('thead');
+    if (!thead) {
+        thead = document.createElement('thead');
+        tableEl.insertBefore(thead, tableEl.firstChild);
+    }
+    thead.innerHTML = "";
+
+    let trT = document.createElement('tr');
+    let trN = document.createElement('tr');
+    trN.className = 'num-row';
+
+    NOMBRES_ESTANDAR_BD.forEach((nombreCol, idx) => {
+        let th = document.createElement('th');
+        th.innerText = nombreCol.replace(/_/g, ' ');
+        th.style.minWidth = "90px";
+        trT.appendChild(th);
+
+        let thN = document.createElement('th');
+        thN.innerText = idx === 0 ? "DÍA" : idx;
+        trN.appendChild(thN);
+    });
+
+    thead.appendChild(trT);
+    thead.appendChild(trN);
+}
+
+function inicializarEncabezadosYTablas() {
     MODULOS.forEach(mod => {
+        const tablaEl = document.querySelector(`#tablaCaptura_${mod}`);
+        if (tablaEl) construirHeaderTabla(tablaEl);
+
         const tbody = document.querySelector(`#tablaCaptura_${mod} tbody`);
         if (!tbody) return;
         tbody.innerHTML = "";
@@ -98,6 +130,9 @@ function inicializarTablas() {
         }
         tbody.appendChild(trTot);
     });
+
+    const tablaTotalesEl = document.querySelector('#tablaCaptura_totales');
+    if (tablaTotalesEl) construirHeaderTabla(tablaTotalesEl);
 
     const tbodyTotales = document.querySelector('#tablaCaptura_totales tbody');
     if (tbodyTotales) {
@@ -240,7 +275,7 @@ function cargarDatosDesdeFirebase() {
 
 function guardarBasesEnFirebase() {
     const remesaActual = document.getElementById('hiddenRemesaVal')?.value.trim() || document.getElementById('inputRemesa')?.innerText.trim() || "39";
-    const anioActual = new Date().getFullYear().toString().slice(-2); // Ej: "26"
+    const anioActual = new Date().getFullYear().toString().slice(-2); 
     
     let datosAGuardar = {};
     let registrosDiariosParaBdMadre = []; 
@@ -284,7 +319,6 @@ function guardarBasesEnFirebase() {
                 objFilaDia["INICIALES_C"] = document.getElementById(`camp_${mod}`) ? document.getElementById(`camp_${mod}`).value : "";
                 objFilaDia["INICIALES_A"] = document.getElementById(`acum_${mod}`) ? document.getElementById(`acum_${mod}`).value : "";
 
-                // IDMAC Exacto: 3512642 (3 dígitos MAC + 2 dígitos año + 2 dígitos remesa)
                 const ultimos3Mod = String(mod).slice(-3);
                 let numRem = remesaActual.match(/\d+/) ? remesaActual.match(/\d+/)[0].slice(-2).padStart(2, '0') : '39';
 
@@ -379,7 +413,7 @@ function guardarBasesEnFirebase() {
 
 function limpiarFormulario() {
     if (confirm("¿Deseas limpiar todos los campos del formulario actual?")) {
-        inicializarTablas();
+        inicializarEncabezadosYTablas();
         MODULOS.forEach(mod => {
             if (document.getElementById(`camp_${mod}`)) document.getElementById(`camp_${mod}`).value = "";
             if (document.getElementById(`acum_${mod}`)) document.getElementById(`acum_${mod}`).value = "";
