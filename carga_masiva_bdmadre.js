@@ -28,6 +28,14 @@ function generarIdMac(remesa, modulo) {
     return `${modDigits}${numPart}${suffix}`;
 }
 
+// Función auxiliar para limpiar y rellenar celdas vacías con 0
+function limpiarValorCelda(val) {
+    if (val === null || val === undefined || String(val).trim() === "") {
+        return "0";
+    }
+    return String(val).trim();
+}
+
 // 1. Procesar archivo Excel (.xlsx) o JSON
 function procesarArchivoExcel(e) {
     const file = e.target.files[0];
@@ -38,7 +46,21 @@ function procesarArchivoExcel(e) {
         reader.onload = function(evt) {
             try {
                 let json = JSON.parse(evt.target.result);
-                datosTemporalesCarga = Array.isArray(json) ? json : Object.values(json);
+                let rawArr = Array.isArray(json) ? json : Object.values(json);
+                
+                // Asegurar que no queden valores vacíos y tengan IDMAC
+                datosTemporalesCarga = rawArr.map(row => {
+                    let objNorm = {};
+                    for(let k in row) {
+                        let limpiaKey = k.toUpperCase().trim().replace(/\s+/g, '_');
+                        objNorm[limpiaKey] = limpiarValorCelda(row[k]);
+                    }
+                    if (!objNorm['IDMAC']) {
+                        objNorm['IDMAC'] = generarIdMac(objNorm['REMESA'], objNorm['MODULO']);
+                    }
+                    return objNorm;
+                });
+
                 mostrarVistaPrevia(datosTemporalesCarga);
             } catch(err) {
                 alert("El archivo JSON no es válido.");
@@ -59,7 +81,8 @@ function procesarArchivoExcel(e) {
                     let objNorm = {};
                     for(let k in row) {
                         let limpiaKey = k.toUpperCase().trim().replace(/\s+/g, '_');
-                        objNorm[limpiaKey] = row[k];
+                        // Si está vacía o en blanco, se pone 0 (excepto en columnas de texto como FECHA, DIA, OBSERVACIONES si se desea)
+                        objNorm[limpiaKey] = limpiarValorCelda(row[k]);
                     }
                     if (!objNorm['IDMAC']) {
                         objNorm['IDMAC'] = generarIdMac(objNorm['REMESA'], objNorm['MODULO']);
@@ -97,7 +120,8 @@ function procesarPegadoPortapapeles(e) {
             let valores = lineas[i].split(delimitador);
             let obj = {};
             headers.forEach((h, idx) => {
-                obj[h] = valores[idx] !== undefined ? valores[idx].trim() : '';
+                let valCrudo = valores[idx] !== undefined ? valores[idx] : "";
+                obj[h] = limpiarValorCelda(valCrudo);
             });
             if (!obj['IDMAC']) {
                 obj['IDMAC'] = generarIdMac(obj['REMESA'], obj['MODULO']);
@@ -140,7 +164,7 @@ function mostrarVistaPrevia(arr) {
     arr.slice(0, 50).forEach((fila, idx) => {
         htmlB += `<tr><td class="fw-bold text-center">${idx + 1}</td>`;
         columnas.forEach(col => {
-            let val = fila[col] !== undefined ? fila[col] : (col === 'IDMAC' ? generarIdMac(fila['REMESA'], fila['MODULO']) : '');
+            let val = fila[col] !== undefined ? fila[col] : (col === 'IDMAC' ? generarIdMac(fila['REMESA'], fila['MODULO']) : '0');
             htmlB += `<td>${val}</td>`;
         });
         htmlB += '</tr>';
@@ -156,7 +180,10 @@ function mostrarVistaPrevia(arr) {
 
 // 4. Guardar datos en la ruta `bd_madre` de Firebase
 function subirDatosABdMadre() {
-    if (datosTemporalesCarga.length === 0) return;
+    if (datosTemporalesCarga.length === 0) {
+        alert("No hay datos cargados para guardar.");
+        return;
+    }
 
     if (confirm(`¿Estás seguro de subir ${datosTemporalesCarga.length} registros a la BD Principal (bd_madre) en Firebase?`)) {
         database.ref('bd_madre').set(datosTemporalesCarga)
@@ -165,15 +192,15 @@ function subirDatosABdMadre() {
             window.location.href = "bd_madre.html"; 
         })
         .catch(err => {
-            console.error(err);
-            alert("Hubo un error al guardar en Firebase.");
+            console.error("Error detallado de Firebase:", err);
+            alert("Hubo un error al guardar en Firebase. Revisa la consola (F12).");
         });
     }
 }
 
 // 5. Vaciar por completo `bd_madre` en Firebase
 function vaciarBdMadreFirebase() {
-    if (confirm("⚠️ ADVERTENCIA EXTREMA: ¿Estás completamente seguro de BORRAR TODO en la ruta 'bd_madre' de Firebase? Esta acción no se puede deshacer.")) {
+    if (confirm("⚠️ ADVERTENCIA EXTREMA: ¿Estás completamente seguro de BORRAR TODO en la ruta 'bd_madre' de Firebase?")) {
         database.ref('bd_madre').remove()
         .then(() => {
             alert("Se ha vaciado por completo la BD Principal en Firebase.");
