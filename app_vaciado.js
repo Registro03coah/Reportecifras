@@ -179,14 +179,15 @@ function sincronizarTotales() {
     detectarRemesa();
 }
 
-// Cargar Iniciales desde Firebase al iniciar la app en cualquier máquina
-function cargarInicialesDesdeNube() {
+// Cargar Iniciales Y Tablas desde Firebase al iniciar la app
+function cargarDatosDesdeNube() {
     const dbRefActual = ref(db, 'vaciado_actual');
     get(dbRefActual).then((snapshot) => {
         if (snapshot.exists()) {
             const data = snapshot.val();
             MODULOS.forEach(mod => {
                 if (data[mod]) {
+                    // Restaurar Iniciales C y A
                     if (data[mod].iniciales_C !== undefined) {
                         const inputCamp = document.getElementById(`camp_${mod}`);
                         if (inputCamp) inputCamp.value = data[mod].iniciales_C;
@@ -195,11 +196,29 @@ function cargarInicialesDesdeNube() {
                         const inputAcum = document.getElementById(`acum_${mod}`);
                         if (inputAcum) inputAcum.value = data[mod].iniciales_A;
                     }
+                    // Restaurar Datos de la Tabla del Módulo
+                    if (data[mod].tabla && Array.isArray(data[mod].tabla)) {
+                        const tbodyMod = document.querySelector(`#tablaCaptura_${mod} tbody`);
+                        if (tbodyMod) {
+                            const filas = tbodyMod.querySelectorAll('tr');
+                            data[mod].tabla.forEach((filaDatos, rIdx) => {
+                                if (filas[rIdx]) {
+                                    const inputs = filas[rIdx].querySelectorAll('input');
+                                    filaDatos.forEach((val, cIdx) => {
+                                        if (inputs[cIdx] && !inputs[cIdx].hasAttribute('readonly')) {
+                                            inputs[cIdx].value = val !== null && val !== undefined ? val : "";
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    }
                 }
             });
+            sincronizarTotales();
         }
     }).catch((error) => {
-        console.error("Error al cargar iniciales desde la nube:", error);
+        console.error("Error al cargar datos desde la nube:", error);
     });
 }
 
@@ -245,8 +264,8 @@ MODULOS.forEach(mod => {
 generarEncabezados('#tablaCaptura_totales', true);
 generarCuerpoTotales();
 
-// Sincronizar iniciales desde Firebase al arrancar
-cargarInicialesDesdeNube();
+// Cargar y sincronizar datos desde Firebase al arrancar
+cargarDatosDesdeNube();
 
 // Función global para alternar pestañas
 window.cambiarModulo = function(mod) {
