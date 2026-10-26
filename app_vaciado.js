@@ -115,7 +115,7 @@ function inicializarEncabezadosYTablas() {
             tbody.appendChild(tr);
         });
 
-        // 8ava fila: LÍNEA TOTALES (Ahora completamente editable y receptora de pegado)
+        // 8ava fila: LÍNEA TOTALES (Editable y receptora de pegado)
         let trTot = document.createElement('tr');
         trTot.className = "fila-totales fw-bold";
         for (let i = 0; i < TOTAL_COLUMNAS; i++) {
@@ -128,7 +128,6 @@ function inicializarEncabezadosYTablas() {
                 input.type = "text";
                 input.className = "form-control form-control-sm text-center p-0 border-0 bg-transparent fw-bold";
                 input.value = "0";
-                // Ya no es readOnly para que el usuario pueda editarlo libremente o recibir datos pegados
                 td.appendChild(input);
             }
             trTot.appendChild(td);
@@ -219,7 +218,7 @@ window.cambiarModulo = function(mod) {
 };
 
 // ==========================================
-// CONFIGURACIÓN DE PEGADO (INCLUYENDO LÍNEA TOTALES)
+// CONFIGURACIÓN DE PEGADO
 // ==========================================
 function configurarPegadoPortapapeles() {
     MODULOS.forEach(mod => {
@@ -239,14 +238,12 @@ function configurarPegadoPortapapeles() {
             let rowOffset = 0;
 
             filasPegadas.forEach((rowStr, rIdx) => {
-                // Permite procesar hasta 8 filas (7 días + 1 línea de totales)
                 if (rIdx + rowOffset >= 8) return;
                 let targetRow = trs[rIdx + rowOffset];
                 if (!targetRow) return;
 
                 let celdasDatos = rowStr.split('\t');
                 
-                // Si la primera línea es el encabezado, saltarla
                 if (rIdx === 0 && (celdasDatos[0].toUpperCase().includes("DIA") || celdasDatos[0].toUpperCase().includes("DÍA"))) {
                     rowOffset++;
                     return;
@@ -292,7 +289,6 @@ function calcularTotalesGenerales() {
 }
 
 function sincronizarTotales() {
-    // Función auxiliar para mantener la sincronización con la pestaña de totales generales
     const tablaTotalesEl = document.querySelector('#tablaCaptura_totales');
     if (tablaTotalesEl && !document.getElementById('container_TOTALES').classList.contains('d-none')) {
         calcularTotalesGenerales();
@@ -468,11 +464,8 @@ function guardarBasesEnFirebase() {
 }
 
 function limpiarFormulario() {
-    if (confirm("¿Deseas limpiar todos los campos del formulario actual?")) {
+    if (confirm("¿Deseas limpiar y depurar los datos de las tablas?")) {
         inicializarEncabezadosYTablas();
-        MODULOS.forEach(mod => {
-            if (document.getElementById(`camp_${mod}`)) document.getElementById(`camp_${mod}`).value = "";
-            if (document.getElementById(`acum_${mod}`)) document.getElementById(`acum_${mod}`).value = "";
-        });
+        // Nota: Se removió el borrado de camp_* y acum_* para que las iniciales no se pierdan.
     }
 }
