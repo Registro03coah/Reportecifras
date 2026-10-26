@@ -14,7 +14,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// ESTRUCTURA ESTRICTA DE LA BD MADRE CON LAS 75 COLUMNAS OFICIALES EN ORDEN CONSECUTIVO
+// ESTRUCTURA ESTRICTA DE LA BD MADRE CON LAS 74 COLUMNAS OFICIALES EN ORDEN CONSECUTIVO
 const ESTRUCTURA_BD_MADRE = [ 
     { key: 'REMESA', num: 39 }, 
     { key: 'MODULO', num: 47 }, 
@@ -45,7 +45,7 @@ const ESTRUCTURA_BD_MADRE = [
     { key: 'ANEXAS_A_FUAR', num: 24 }, 
     { key: 'DATOS_ERRONEOS', num: 25 }, 
     { key: 'FOTO_MAL_IMPRESA', num: 26 }, 
-    { key: 'SOLICITUD_DE_REIMPRESION', num: 27 }, 
+    { key: 'RETIRADA_POR_REIMPRESION', num: 27 }, 
     { key: 'RETIRADAS_POR_CAUSA', num: 28 }, 
     { key: 'DISPONIBLES_TOTAL', num: 29 }, 
     { key: 'CRED_PROD_CANJE_POR_NUEVA', num: 30 }, 
@@ -65,8 +65,7 @@ const ESTRUCTURA_BD_MADRE = [
     { key: 'ENT', num: 45 }, 
     { key: 'DTTO', num: 46 }, 
     { key: 'RESGUARDO', num: 48 }, 
-    { key: 'SOLICITUD_DE_REIMPRESION_2', num: 49 }, 
-    { key: 'CPV_DEVUELA_ENTREGA_2', num: 50 }, 
+    { key: 'SOLICITUD_DE_REIMPRESION', num: 49 }, 
     { key: 'SCRIPT_EJECUTADO', num: 51 }, 
     { key: 'FOLIO_NEC', num: 52 }, 
     { key: 'NUMERO_DE_TRAMITES_APLICADOS', num: 53 }, 
@@ -75,7 +74,6 @@ const ESTRUCTURA_BD_MADRE = [
     { key: 'TOTAL_DE_ARCHIVOS_DE_TRANSACCION_PROCESADOS', num: 56 }, 
     { key: 'RECIBIDAS', num: 57 }, 
     { key: 'CREDENCIALES_INCONSISTENTES', num: 58 }, 
-    { key: 'RESGUARDO_2', num: 59 }, 
     { key: 'CREDENCIALES_TOTALES_EN_SIIRFE_DISPONIBLES_PARA_ENTREGA', num: 60 }, 
     { key: 'TOTAL_DE_CREDENCIALES_ENTREGADAS', num: 61 }, 
     { key: 'TOTAL_DE_CREDENCIALES_SOLICITADAS', num: 62 }, 
