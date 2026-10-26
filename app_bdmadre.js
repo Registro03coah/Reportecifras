@@ -17,8 +17,6 @@ const db = getDatabase(app);
 // ESTRUCTURA DE COLUMNAS DE LA BD PRINCIPAL (EMPATADA Y LIMPIA PARA FIREBASE)
 const ESTRUCTURA_BD_MADRE = [ 
     { key: 'IDMAC', num: 0 },
-    { key: 'REMESA', num: 39 }, 
-    { key: 'MODULO', num: 47 }, 
     { key: 'DIA', num: 1 }, 
     { key: 'FECHA', num: 2 }, 
     { key: 'HORAS_TRABAJADAS', num: 3 }, 
@@ -57,6 +55,7 @@ const ESTRUCTURA_BD_MADRE = [
     { key: 'SOLICITUD_EXPEDICION_ORDINARIA', num: 36 }, 
     { key: 'SOLICITUD_DE_RECTIFICACION', num: 37 }, 
     { key: 'DEMANDA_DE_JUICIO', num: 38 }, 
+    { key: 'REMESA', num: 39 }, 
     { key: 'TOTAL_DE_MOVIMIENTOS', num: 40 }, 
     { key: 'DEVUELTAS_POR_TERCEROS', num: 41 }, 
     { key: '34_IMAGEN_INCONSISTENTE', num: 42 }, 
@@ -64,6 +63,7 @@ const ESTRUCTURA_BD_MADRE = [
     { key: 'CONFIGURACION', num: 44 }, 
     { key: 'ENT', num: 45 }, 
     { key: 'DTTO', num: 46 }, 
+    { key: 'MODULO', num: 47 }, 
     { key: 'RESGUARDO', num: 48 }, 
     { key: 'SOLICITUD_DE_REIMPRESION', num: 49 }, 
     { key: 'CPV_DEVUELA_ENTREGA_2', num: 50 }, 
