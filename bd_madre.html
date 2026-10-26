@@ -54,7 +54,7 @@
     <div class="container-fluid px-4 flex-grow-1">
         <div class="alert alert-info shadow-sm d-flex flex-wrap justify-content-between align-items-center gap-2">
             <div>
-                <strong>BD Madre:</strong> Muestra todos los registros diarios almacenados en la nube ordenados por sus columnas oficiales.
+                <strong>BD Madre:</strong> Muestra todos los registros diarios ordenados por Remesa (mayor a menor) y por Módulo (050351, 050353, 050354).
             </div>
             <div class="d-flex align-items-center gap-2">
                 <button class="btn btn-sm btn-success fw-bold" onclick="exportarBDMadre()"><i class="bi bi-download"></i> Descargar Respaldo</button>
@@ -94,9 +94,10 @@
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        // Lista oficial de las 75 columnas estándar (con IDMAC al inicio)
+        // Lista oficial de columnas con IDMAC, REMESA y MODULO al inicio, y las terminadas en _2 al final
         const NOMBRES_ESTANDAR_BD = [
-            "IDMAC", "REMESA", "MODULO", "DIA", "FECHA", "HORAS_TRABAJADAS", "SEDES", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
+            "IDMAC", "REMESA", "MODULO",
+            "DIA", "FECHA", "HORAS_TRABAJADAS", "SEDES", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
             "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSICION",
             "CORR_DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES",
             "CANCELADOS", "TOTAL_DE_ANEXOS_POR_RECHAZO", "CRED_PROD_CANJE_POR_NUEVA", "DISPONIBLES_AL_DIA_ANTERIOR", "ACTUALIZACION",
@@ -105,16 +106,16 @@
             "FICHAS_ENTREGADAS", "FICHAS_ATENDIDAS", "DIAS_TRABAJADOS", "SOLICITUD_EXPEDICION_ORDINARIA",
             "SOLICITUD_EXPEDICION_REPATRIADOS", "SOLICITUD_DE_RECTIFICACION",
             "DEMANDA_DE_JUICIO", "TOTAL_DE_MOVIMIENTOS", "CREDEN_DEVUELTAS_POR_TERCEROS",
-            "34_Imagen_Inconsistente", "35_Movimiento_Posterior", "CONFIGURACION", "ENT", "DTTO", 
+            "34_Imagen_Inconsistente", "35_Movimiento_Posterior", "CONFIGURACION", "ENT", "DTTO",
             "RESGUARDO", "SCRIPT_EJECUTADO",
             "FOLIO_NEC", "NUMERO_DE_TRAMITES_APLICADOS", "NUMERO_DE_FICHAS_REQUISITADAS",
             "NUMERO_DE_ARCHIVOS_DE_TRANSACCION_ACEPTADOS", "TOTAL_DE_ARCHIVOS_DE_TRANSACCION_PROCESADOS",
-            "RECIBIDAS", "CREDENCIALES_INCONSISTENTES", 
+            "RECIBIDAS", "CREDENCIALES_INCONSISTENTES",
             "CREDENCIALES_TOTALES_EN_SIIRFE_DISPONIBLES_PARA_ENTREGA", "TOTAL_DE_CREDENCIALES_ENTREGADAS",
             "TOTAL_DE_CREDENCIALES_SOLICITADAS", "IMPORTADAS", "EXPORTADAS", "REPOSISION_REIMPRESIONES",
             "MAL_IMPRESA", "ERROR_EN_CARTOGRAFIA", "DEFUNCION", "SUSPENSION", "DUPLICADO",
             "ERROR_EN_NUM_DE_EMISION", "PERDIDA_DE_VIGENCIA", "MOV_POST", "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS",
-            "RESGUARDO_2", "CPV_DEVUELA_ENTREGA_2", "SOLICITUD_DE_REIMPRESION_2",
+            "CPV_DEVUELA_ENTREGA_2", "SOLICITUD_DE_REIMPRESION_2", "CPV_DEVUELA_ENTREGA_2_B", "RESGUARDO_2"
         ];
 
         function getClaveLimpia(nombreOriginal) {
@@ -144,7 +145,19 @@
                 return;
             }
 
-            // Construir encabezados en orden estricto + Columna de ACCIONES
+            // Ordenar: por Remesa (mayor a menor) y luego por Módulo (050351, 050353, 050354)
+            arr.sort((a, b) => {
+                let remA = String(a.REMESA || '').trim();
+                let remB = String(b.REMESA || '').trim();
+                if (remA !== remB) {
+                    return remB.localeCompare(remA, undefined, { numeric: true });
+                }
+                let modA = String(a.MODULO || '').trim();
+                let modB = String(b.MODULO || '').trim();
+                return modA.localeCompare(modB);
+            });
+
+            // Construir encabezados
             let trH = '<tr><th style="background-color: #1b396b; color: white; position: sticky; top: 0; z-index: 4; text-align: center; vertical-align: middle;">ACCIONES</th>';
             NOMBRES_ESTANDAR_BD.forEach(k => {
                 let visual = k.replace(/_/g, ' ').toUpperCase();
@@ -153,11 +166,10 @@
             trH += '</tr>';
             thead.innerHTML = trH;
 
-            // Rellenar filas respetando estrictamente el orden de las columnas estándar
+            // Rellenar filas
             let htmlB = '';
             arr.forEach((item, index) => {
                 htmlB += '<tr>';
-                // Botón de eliminar renglón individual
                 htmlB += `<td><button class="btn btn-danger btn-sm py-0 px-1" onclick="eliminarRegistroBdMadre(${index})" title="Eliminar registro"><i class="bi bi-trash"></i></button></td>`;
                 
                 NOMBRES_ESTANDAR_BD.forEach(k => {
@@ -177,6 +189,13 @@
                     let data = snapshot.val() || [];
                     data = Array.isArray(data) ? data : Object.values(data);
                     
+                    data.sort((a, b) => {
+                        let remA = String(a.REMESA || '').trim();
+                        let remB = String(b.REMESA || '').trim();
+                        if (remA !== remB) return remB.localeCompare(remA, undefined, { numeric: true });
+                        return String(a.MODULO || '').trim().localeCompare(String(b.MODULO || '').trim());
+                    });
+
                     data.splice(index, 1);
 
                     dbRef.set(data).then(() => {
@@ -201,11 +220,11 @@
         };
 
         window.vaciarBDMadre = function() {
-            if (confirm("¡ATENCIÓN! ¿Estás completamente seguro de ELIMINAR Y VACIAR por completo toda la Base de Datos Principal (BD Madre)? Esta acción borrará todos los registros de la nube y no se puede deshacer.")) {
+            if (confirm("¡ATENCIÓN! ¿Estás completamente seguro de VACIAR por completo toda la Base de Datos Principal?")) {
                 if (confirm("Confirma nuevamente: ¿Deseas vaciar toda la BD Madre?")) {
                     database.ref('bd_madre').set(null)
                         .then(() => alert("¡Base de datos vaciada con éxito!"))
-                        .catch(err => alert("Error al vaciar la base de datos: " + err.message));
+                        .catch(err => alert("Error: " + err.message));
                 }
             }
         };
@@ -217,10 +236,10 @@
             reader.onload = function(e) {
                 try {
                     const jsonData = JSON.parse(e.target.result);
-                    if (confirm("¿Estás seguro de reemplazar toda la Base de Datos Principal (BD Madre) con este respaldo? Esta acción no se puede deshacer.")) {
+                    if (confirm("¿Estás seguro de reemplazar toda la Base de Datos Principal con este respaldo?")) {
                         database.ref('bd_madre').set(jsonData)
                             .then(() => alert("¡Base de datos restaurada con éxito!"))
-                            .catch(err => alert("Error al subir la base de datos: " + err.message));
+                            .catch(err => alert("Error: " + err.message));
                     }
                 } catch (err) {
                     alert("El archivo no es un JSON válido.");
