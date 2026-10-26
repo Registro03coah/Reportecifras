@@ -14,8 +14,10 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// ESTRUCTURA ESTRICTA ORDENADA POR NUMERACIÓN CONSECUTIVA (1 al 75)
+// ESTRUCTURA CON REMESA AL INICIO Y ORDEN CONSECUTIVO ESTRICTO (1 al 75)
 const ESTRUCTURA_BD_MADRE = [ 
+    { key: 'REMESA', num: 39 }, 
+    { key: 'MODULO', num: 47 }, 
     { key: 'IDMAC', num: 0 },
     { key: 'DIA', num: 1 }, 
     { key: 'FECHA', num: 2 }, 
@@ -27,7 +29,7 @@ const ESTRUCTURA_BD_MADRE = [
     { key: 'INSCRIPCIONES', num: 8 }, 
     { key: 'CORRECCION_DE_DATOS_PERSONALES', num: 9 }, 
     { key: 'CAMBIO_DE_DOMICILIO', num: 10 }, 
-    { key: 'REPOSICION', num: 11 }, 
+    { key: 'REPOSISION', num: 11 }, 
     { key: 'CORR_DE_DATOS_DIRECCION', num: 12 }, 
     { key: 'REINCORPORACION', num: 13 }, 
     { key: 'REEMPLAZO', num: 14 }, 
@@ -35,12 +37,12 @@ const ESTRUCTURA_BD_MADRE = [
     { key: 'TOTAL_DE_TRAMITES', num: 16 }, 
     { key: 'CANCELADOS', num: 17 }, 
     { key: 'TOTAL_DE_ANEXO_DE_RECHAZO', num: 18 }, 
-    { key: 'CRED_PROD_CANJE_POR_NUEVA', num: 19 }, 
+    { key: 'CPV_DEVUELTA_ENTREGA', num: 19 }, 
     { key: 'DISPONIBLES_AL_DIA_ANTERIOR', num: 20 }, 
     { key: 'RECIBIDAS', num: 21 }, 
     { key: 'RECIBIDAS_DE_OTROS_TIPOS', num: 22 }, 
     { key: 'ENTREGADAS', num: 23 }, 
-    { key: 'ROBO_Y_O_EXTRAVIO', num: 24 }, 
+    { key: 'RECIBO_YO_EXTRAVIO', num: 24 }, 
     { key: 'ANEXAS_A_FUAR', num: 25 }, 
     { key: 'DATOS_ERRONEOS', num: 26 }, 
     { key: 'FOTO_MAL_IMPRESA', num: 27 }, 
@@ -55,7 +57,6 @@ const ESTRUCTURA_BD_MADRE = [
     { key: 'SOLICITUD_EXPEDICION_ORDINARIA', num: 36 }, 
     { key: 'SOLICITUD_DE_RECTIFICACION', num: 37 }, 
     { key: 'DEMANDA_DE_JUICIO', num: 38 }, 
-    { key: 'REMESA', num: 39 }, 
     { key: 'TOTAL_DE_MOVIMIENTOS', num: 40 }, 
     { key: 'DEVUELTAS_POR_TERCEROS', num: 41 }, 
     { key: '34_IMAGEN_INCONSISTENTE', num: 42 }, 
@@ -63,7 +64,6 @@ const ESTRUCTURA_BD_MADRE = [
     { key: 'CONFIGURACION', num: 44 }, 
     { key: 'ENT', num: 45 }, 
     { key: 'DTTO', num: 46 }, 
-    { key: 'MODULO', num: 47 }, 
     { key: 'RESGUARDO', num: 48 }, 
     { key: 'SOLICITUD_DE_REIMPRESION', num: 49 }, 
     { key: 'CPV_DEVUELA_ENTREGA_2', num: 50 }, 
@@ -74,6 +74,9 @@ const ESTRUCTURA_BD_MADRE = [
     { key: 'REGISTRADAS_POR_DIA', num: 55 }, 
     { key: 'FALTANTES', num: 56 }, 
     { key: 'OBSERVACIONES', num: 57 }, 
+    { key: 'SIN_NOMBRE1', num: 58 }, 
+    { key: 'SIN_NOMBRE2', num: 59 }, 
+    { key: 'SIN_NOMBRE3', num: 60 }, 
     { key: 'MAC_QUE_RECIBE', num: 61 }, 
     { key: 'MAC_QUE_ENTREGA', num: 62 }, 
     { key: 'IMPORTADAS', num: 63 }, 
@@ -119,7 +122,6 @@ window.copiarTablaExcel = function(tablaId) {
 };
 
 function construirHeaderTabla() {
-    // Buscamos el thead de forma flexible para asegurarnos de que pinte en la tabla correcta
     const thead = document.getElementById('cabeceraTablaBdMadre') || document.querySelector('table thead'); 
     if(!thead) return;
     thead.innerHTML = "";
@@ -128,7 +130,6 @@ function construirHeaderTabla() {
     let trN = document.createElement('tr'); 
     trN.className = 'num-row';
     
-    // Forzar estrictamente el orden de ESTRUCTURA_BD_MADRE
     ESTRUCTURA_BD_MADRE.forEach((colObj) => {
         let th = document.createElement('th'); 
         th.setAttribute('data-col', colObj.key);
@@ -208,7 +209,6 @@ function procesarYMostrarDatos(datosAProcesar = bdMadreGlobal) {
     
     datosAProcesar.forEach(fila => {
         let tr = document.createElement('tr');
-        // Recorrer estrictamente el arreglo ESTRUCTURA_BD_MADRE para mantener el orden consecutivo
         ESTRUCTURA_BD_MADRE.forEach(colObj => {
             let td = document.createElement('td');
             let val = obtenerValorFila(fila, colObj);
@@ -244,7 +244,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-// Semáforo de conexión Firebase
 onValue(ref(db, ".info/connected"), (snap) => {
     const sem = document.getElementById("semaforoConexion");
     if(!sem) return;
@@ -257,7 +256,6 @@ onValue(ref(db, ".info/connected"), (snap) => {
     }
 });
 
-// Escuchar cambios en la BD Principal en tiempo real
 onValue(ref(db, 'bd_madre'), (snapshot) => {
     if (snapshot.exists()) { 
         const data = snapshot.val();
