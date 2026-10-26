@@ -175,7 +175,7 @@ function configurarTabs() {
 }
 
 // ==========================================
-// FUNCIÓN GLOBAL PARA CAMBIAR DE MÓDULO (EXPUESTA A WINDOW)
+// FUNCIÓN GLOBAL PARA CAMBIAR DE MÓDULO
 // ==========================================
 window.cambiarModulo = function(mod) {
     ["050351", "050353", "050354", "TOTALES"].forEach(m => {
@@ -184,25 +184,16 @@ window.cambiarModulo = function(mod) {
         const pasteZone = document.getElementById(`pasteZone_${m}`);
         
         if (btn) {
-            if (m === mod) {
-                btn.classList.add('active');
-            } else {
-                btn.classList.remove('active');
-            }
+            if (m === mod) btn.classList.add('active');
+            else btn.classList.remove('active');
         }
         if (container) {
-            if (m === mod) {
-                container.classList.remove('d-none');
-            } else {
-                container.classList.add('d-none');
-            }
+            if (m === mod) container.classList.remove('d-none');
+            else container.classList.add('d-none');
         }
         if (pasteZone) {
-            if (m === mod && m !== 'TOTALES') {
-                pasteZone.classList.remove('d-none');
-            } else {
-                pasteZone.classList.add('d-none');
-            }
+            if (m === mod && m !== 'TOTALES') pasteZone.classList.remove('d-none');
+            else pasteZone.classList.add('d-none');
         }
     });
 
@@ -225,12 +216,17 @@ window.cambiarModulo = function(mod) {
     }
 };
 
+// ==========================================
+// CONFIGURACIÓN ROBUSTA DE PEGADO (PORTAPAPELES)
+// ==========================================
 function configurarPegadoPortapapeles() {
     MODULOS.forEach(mod => {
+        const pasteZone = document.getElementById(`pasteZone_${mod}`);
+        const container = document.getElementById(`container_${mod}`);
         const tbody = document.querySelector(`#tablaCaptura_${mod} tbody`);
         if (!tbody) return;
 
-        tbody.addEventListener('paste', (e) => {
+        const ejecutarPegado = (e) => {
             e.preventDefault();
             let clipboardData = e.clipboardData || window.clipboardData;
             let pastedData = clipboardData.getData('Text');
@@ -238,25 +234,42 @@ function configurarPegadoPortapapeles() {
 
             let filasPegadas = pastedData.split('\n').filter(row => row.trim() !== '');
             let trs = tbody.querySelectorAll('tr');
-            
+            let rowOffset = 0;
+
             filasPegadas.forEach((rowStr, rIdx) => {
-                if (rIdx >= 7) return;
-                let targetRow = trs[rIdx];
+                if (rIdx + rowOffset >= 7) return;
+                let targetRow = trs[rIdx + rowOffset];
                 if (!targetRow) return;
 
                 let celdasDatos = rowStr.split('\t');
-                let inputs = targetRow.querySelectorAll('input');
+                
+                // Si la primera celda es el encabezado "DIA", saltamos esa línea
+                if (rIdx === 0 && (celdasDatos[0].toUpperCase().includes("DIA") || celdasDatos[0].toUpperCase().includes("DÍA"))) {
+                    rowOffset++;
+                    return;
+                }
 
-                inputs.forEach((input, cIdx) => {
-                    let val = celdasDatos[cIdx + 1] !== undefined ? celdasDatos[cIdx + 1].trim() : (celdasDatos[cIdx] !== undefined ? celdasDatos[cIdx].trim() : "");
-                    if (val !== "") {
-                        input.value = val;
+                let editableInputs = targetRow.querySelectorAll('input:not([readonly])');
+                
+                // Detectar si el portapapeles incluye la columna 1 (Día) o empieza directo en la Columna 2 (Fecha)
+                let startIndex = (celdasDatos.length >= TOTAL_COLUMNAS || celdasDatos[0].toLowerCase().includes('lunes') || celdasDatos[0].toLowerCase().includes('martes')) ? 1 : 0;
+
+                editableInputs.forEach((input, cIdx) => {
+                    let valorCelda = celdasDatos[cIdx + startIndex];
+                    if (valorCelda !== undefined) {
+                        input.value = valorCelda.trim();
                     }
                 });
             });
 
             recalcularTotalesModulo(mod);
-        });
+            sincronizarTotales();
+        };
+
+        // Escuchar el evento paste tanto en la caja de pegado como en el contenedor de la tabla
+        if (pasteZone) pasteZone.addEventListener('paste', ejecutarPegado);
+        if (container) container.addEventListener('paste', ejecutarPegado);
+        tbody.addEventListener('paste', ejecutarPegado);
     });
 }
 
