@@ -17,9 +17,9 @@ const db = getDatabase(app);
 const MODULOS = ["050351", "050353", "050354"];
 const TOTAL_COLUMNAS = 75;
 
-// NOMBRES ESTÁNDAR OFICIALES DE LAS 75 COLUMNAS
+// NOMBRES ESTÁNDAR OFICIALES DE LAS 75 COLUMNAS (Con IDMAC al inicio)
 const NOMBRES_ESTANDAR_BD = [
-    "DIA", "FECHA", "HORAS_TRABAJADAS", "SEDES", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
+    "IDMAC", "DIA", "FECHA", "HORAS_TRABAJADAS", "SEDES", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
     "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSICION",
     "CORR_DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES",
     "CANCELADOS", "TOTAL_DE_ANEXOS_POR_RECHAZO", "CRED_PROD_CANJE_POR_NUEVA", "DISPONIBLES_AL_DIA_ANTERIOR", "ACTUALIZACION",
@@ -39,8 +39,8 @@ const NOMBRES_ESTANDAR_BD = [
     "ERROR_EN_NUM_DE_EMISION", "PERDIDA_DE_VIGENCIA", "MOV_POST", "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS"
 ];
 
-// Índice de la columna REMESA (Columna 38 en base 0)
 const INDEX_COLUMNA_REMESA = 38;
+const INDEX_COLUMNA_FECHA = 2; // Índice en base 0 de FECHA dentro de las columnas de datos
 
 document.addEventListener("DOMContentLoaded", () => {
     inicializarEncabezadosYTablas();
@@ -58,6 +58,39 @@ document.addEventListener("DOMContentLoaded", () => {
         btnLimpiar.addEventListener('click', limpiarFormulario);
     }
 });
+
+// Función para generar el IDMAC con el formato solicitado: [últimos 2 del módulo] + [últimos 4 de la remesa] + [ddmm de la fecha]
+function generarIdMacCustom(mod, remesa, fechaStr) {
+    const mod2 = String(mod).slice(-2);
+    const rem4 = String(remesa).slice(-4).padStart(4, '0');
+    
+    let ddmm = "0000";
+    if (fechaStr) {
+        let limpia = fechaStr.trim();
+        if (limpia.includes('/')) {
+            let partes = limpia.split('/');
+            if (partes.length >= 2) {
+                let d = partes[0].padStart(2, '0');
+                let m = partes[1].padStart(2, '0');
+                ddmm = d + m;
+            }
+        } else if (limpia.includes('-')) {
+            let partes = limpia.split('-');
+            if (partes.length >= 3) {
+                if (partes[0].length === 4) { // YYYY-MM-DD
+                    let m = partes[1].padStart(2, '0');
+                    let d = partes[2].padStart(2, '0');
+                    ddmm = d + m;
+                } else { // DD-MM-YYYY
+                    let d = partes[0].padStart(2, '0');
+                    let m = partes[1].padStart(2, '0');
+                    ddmm = d + m;
+                }
+            }
+        }
+    }
+    return `${mod2}${rem4}${ddmm}`;
+}
 
 function construirHeaderTabla(tableEl, isTotales = false) {
     if (!tableEl) return;
@@ -109,7 +142,7 @@ function inicializarEncabezadosYTablas() {
                     let input = document.createElement('input');
                     input.type = "text";
                     input.className = "form-control form-control-sm text-center p-0 border-0 bg-transparent";
-                    input.value = "0";
+                    input.value = (i === INDEX_COLUMNA_REMESA ? "202643" : (i === INDEX_COLUMNA_FECHA ? "" : "0"));
                     td.appendChild(input);
                 }
                 tr.appendChild(td);
@@ -177,9 +210,6 @@ function configurarTabs() {
     });
 }
 
-// ==========================================
-// FUNCIÓN GLOBAL PARA CAMBIAR DE MÓDULO
-// ==========================================
 window.cambiarModulo = function(mod) {
     ["050351", "050353", "050354", "TOTALES"].forEach(m => {
         const btn = document.getElementById(`btn-tab-${m}`);
@@ -212,7 +242,6 @@ window.cambiarModulo = function(mod) {
             panelAccionesTotales.classList.remove('d-none');
             panelAccionesTotales.classList.add('d-flex');
             
-            // Detectar automáticamente la remesa desde la columna de la tabla del primer módulo
             const remesaDetectada = obtenerRemesaDesdeTablas() || "S/N";
             const spanRemesa = document.getElementById('inputRemesa');
             if (spanRemesa) spanRemesa.innerText = remesaDetectada;
@@ -225,9 +254,6 @@ window.cambiarModulo = function(mod) {
     }
 };
 
-// ==========================================
-// FUNCIÓN PARA EXTRAER LA REMESA DE LA TABLA
-// ==========================================
 function obtenerRemesaDesdeTablas() {
     for (let mod of MODULOS) {
         const tbody = document.querySelector(`#tablaCaptura_${mod} tbody`);
@@ -236,7 +262,6 @@ function obtenerRemesaDesdeTablas() {
         for (let r = 0; r < 7; r++) {
             if (!primerasFilas[r]) continue;
             const inputs = primerasFilas[r].querySelectorAll('input');
-            // La columna REMESA está en el índice 38 (restando 1 porque el índice 0 de inputs es la columna Fecha)
             const inputRemesa = inputs[INDEX_COLUMNA_REMESA - 1];
             if (inputRemesa && inputRemesa.value.trim() !== "" && inputRemesa.value.trim() !== "0") {
                 return inputRemesa.value.trim();
@@ -246,9 +271,6 @@ function obtenerRemesaDesdeTablas() {
     return null;
 }
 
-// ==========================================
-// CONFIGURACIÓN DE PEGADO
-// ==========================================
 function configurarPegadoPortapapeles() {
     MODULOS.forEach(mod => {
         const pasteZone = document.getElementById(`pasteZone_${mod}`);
@@ -355,14 +377,11 @@ function cargarDatosDesdeFirebase() {
 }
 
 function guardarBasesEnFirebase() {
-    // Extrae automáticamente la Remesa directamente de la columna 38 de las tablas
     const remesaActual = obtenerRemesaDesdeTablas() || "S/N";
     
     if (remesaActual === "S/N") {
         alert("Aviso: No se detectó ningún número de remesa en la columna REMESA de las tablas. Asegúrate de incluirlo.");
     }
-
-    const anioActual = new Date().getFullYear().toString().slice(-2); 
     
     let datosAGuardar = {};
     let registrosDiariosParaBdMadre = []; 
@@ -378,6 +397,15 @@ function guardarBasesEnFirebase() {
             let objFilaDia = {};
             let esFilaTotales = rowIndex === 7;
 
+            // Extraer fecha de la celda correspondiente para el IDMAC
+            let fechaCelda = "";
+            const inputsFila = fila.querySelectorAll('input');
+            if (!esFilaTotales && inputsFila[INDEX_COLUMNA_FECHA - 1]) {
+                fechaCelda = inputsFila[INDEX_COLUMNA_FECHA - 1].value.trim();
+            }
+
+            const idMacGenerado = generarIdMacCustom(mod, remesaActual, fechaCelda);
+
             fila.querySelectorAll('td').forEach((td, colIdx) => {
                 const input = td.querySelector('input');
                 let valCelda = input ? input.value.trim() : "";
@@ -385,16 +413,19 @@ function guardarBasesEnFirebase() {
                 
                 filaArray.push(valCelda);
 
-                let nombreOriginal = NOMBRES_ESTANDAR_BD[colIdx] || `Col_${colIdx + 1}`;
-                let claveLimpia = String(nombreOriginal)
-                    .toUpperCase()
-                    .normalize("NFD")
-                    .replace(/[\u0300-\u036f]/g, "")
-                    .replace(/[.#$ /\[\]]/g, "_")
-                    .replace(/_+/g, "_")
-                    .trim();
-
-                objFilaDia[claveLimpia] = valCelda;
+                let nombreOriginal = NOMBRES_ESTANDAR_BD[colIdx];
+                if (nombreOriginal === "IDMAC") {
+                    objFilaDia["IDMAC"] = idMacGenerado;
+                } else {
+                    let claveLimpia = String(nombreOriginal)
+                        .toUpperCase()
+                        .normalize("NFD")
+                        .replace(/[\u0300-\u036f]/g, "")
+                        .replace(/[.#$ /\[\]]/g, "_")
+                        .replace(/_+/g, "_")
+                        .trim();
+                    objFilaDia[claveLimpia] = valCelda;
+                }
             });
 
             datosTabla.push(filaArray);
@@ -402,14 +433,9 @@ function guardarBasesEnFirebase() {
             if (!esFilaTotales) {
                 objFilaDia["MODULO"] = mod;
                 objFilaDia["REMESA"] = remesaActual;
-                
+                objFilaDia["IDMAC"] = idMacGenerado;
                 objFilaDia["INICIALES_C"] = document.getElementById(`camp_${mod}`) ? document.getElementById(`camp_${mod}`).value : "";
                 objFilaDia["INICIALES_A"] = document.getElementById(`acum_${mod}`) ? document.getElementById(`acum_${mod}`).value : "";
-
-                const ultimos3Mod = String(mod).slice(-3);
-                let numRem = remesaActual.match(/\d+/) ? remesaActual.match(/\d+/)[0].slice(-2).padStart(2, '0') : '39';
-
-                objFilaDia["IDMAC"] = `${ultimos3Mod}${anioActual}${numRem}`;
 
                 registrosDiariosParaBdMadre.push(objFilaDia);
             }
@@ -435,31 +461,38 @@ function guardarBasesEnFirebase() {
             if (!filaModulo) return;
 
             let objFilaTotal = {};
+            let fechaFilaTotal = ""; 
+            const inputsTotales = filaModulo.querySelectorAll('input');
+            if (inputsTotales[INDEX_COLUMNA_FECHA - 1]) {
+                fechaFilaTotal = inputsTotales[INDEX_COLUMNA_FECHA - 1].value.trim();
+            }
+            const idMacGeneradoTotales = generarIdMacCustom(mod, remesaActual, fechaFilaTotal);
+
             filaModulo.querySelectorAll('td').forEach((td, colIdx) => {
                 const input = td.querySelector('input');
                 let valorCelda = input ? input.value.trim() : "0";
                 if (valorCelda === "") valorCelda = "0";
 
-                let nombreOriginal = NOMBRES_ESTANDAR_BD[colIdx] || `Col_${colIdx + 1}`;
-                let claveLimpia = String(nombreOriginal)
-                    .toUpperCase()
-                    .normalize("NFD")
-                    .replace(/[\u0300-\u036f]/g, "")
-                    .replace(/[.#$ /\[\]]/g, "_")
-                    .replace(/_+/g, "_")
-                    .trim();
-
-                objFilaTotal[claveLimpia] = valorCelda;
+                let nombreOriginal = NOMBRES_ESTANDAR_BD[colIdx];
+                if (nombreOriginal === "IDMAC") {
+                    objFilaTotal["IDMAC"] = idMacGeneradoTotales;
+                } else {
+                    let claveLimpia = String(nombreOriginal)
+                        .toUpperCase()
+                        .normalize("NFD")
+                        .replace(/[\u0300-\u036f]/g, "")
+                        .replace(/[.#$ /\[\]]/g, "_")
+                        .replace(/_+/g, "_")
+                        .trim();
+                    objFilaTotal[claveLimpia] = valorCelda;
+                }
             });
 
             objFilaTotal["MODULO"] = mod;
             objFilaTotal["REMESA"] = remesaActual;
+            objFilaTotal["IDMAC"] = idMacGeneradoTotales;
             objFilaTotal["INICIALES_C"] = document.getElementById(`camp_${mod}`) ? document.getElementById(`camp_${mod}`).value : "";
             objFilaTotal["INICIALES_A"] = document.getElementById(`acum_${mod}`) ? document.getElementById(`acum_${mod}`).value : "";
-
-            const ultimos3Mod = String(mod).slice(-3);
-            let numRem = remesaActual.match(/\d+/) ? remesaActual.match(/\d+/)[0].slice(-2).padStart(2, '0') : '39';
-            objFilaTotal["IDMAC"] = `${ultimos3Mod}${anioActual}${numRem}`;
 
             registrosTotalesParaBD.push(objFilaTotal);
         });
