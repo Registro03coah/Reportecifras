@@ -47,7 +47,7 @@ const ESTRUCTURA_DIAS = [
     { key: 'REIMPRESION_2', num: 28 }, 
     { key: 'RETIRADAS_POR_CAUSA', num: 29 }, 
     { key: 'DISPONIBLES', num: 30 }, 
-    { key: 'CREDENCIALES_X_CANJE', num: 31 }, 
+    { key: 'CRED_PROD_CANJE_POR_NUEVA', num: 31 }, 
     { key: 'FICHAS_ENTREGADAS', num: 32 }, 
     { key: 'FICHAS_ATENDIDAS', num: 33 }, 
     { key: 'DIAS_TRABAJADOS', num: 34 }, 
