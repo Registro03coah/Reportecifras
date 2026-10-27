@@ -91,6 +91,20 @@ function generarIdMacCustom(mod, remesa, fechaStr) {
     }
     return `${mod2}${rem4}${ddmm}`;
 }
+function depurarRemesa() {
+    const tbody = document.querySelector(`#tablaCaptura_050351 tbody`);
+    if (!tbody) return;
+    const filas = tbody.querySelectorAll('tr');
+    console.log("--- DEPURANDO CELDAS ---");
+    filas.forEach((fila, idx) => {
+        if (idx < 7) {
+            const inputs = fila.querySelectorAll('input');
+            console.log(`Fila ${idx} - Input en índice 38 (Remesa):`, inputs[38] ? inputs[38].value : "No existe");
+        }
+    });
+}
+
+
 
 function construirHeaderTabla(tableEl, isTotales = false) {
     if (!tableEl) return;
