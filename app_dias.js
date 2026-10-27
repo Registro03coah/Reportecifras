@@ -37,6 +37,7 @@ const ESTRUCTURA_DIAS = [
     { key: 'TOTAL_DE_TRAMITES', num: 16 }, 
     { key: 'CANCELADOS', num: 17 }, 
     { key: 'TOTAL_DE_ANEXOS_POR_RECHAZO', num: 18 }, 
+     { key: 'CRED_PROD_CANJE_POR_NUEVA', num: 30 },
     { key: 'DISPONIBLES_AL_DIA_ANTERIOR', num: 19 }, 
     { key: 'ACTUALIZACION', num: 20 }, 
     { key: 'RECIBIDAS_DE_OTROS_TIPOS', num: 21 }, 
@@ -48,12 +49,10 @@ const ESTRUCTURA_DIAS = [
     { key: 'RETIRADA_POR_REIMPRESION', num: 27 }, 
     { key: 'RETIRADAS_POR_CAUSA', num: 28 }, 
     { key: 'DISPONIBLES_TOTAL', num: 29 }, 
-    { key: 'CRED_PROD_CANJE_POR_NUEVA', num: 30 }, 
-    { key: 'FICHAS_ENTREGADAS', num: 31 }, 
+     { key: 'FICHAS_ENTREGADAS', num: 31 }, 
     { key: 'FICHAS_ATENDIDAS', num: 32 }, 
     { key: 'DIAS_TRABAJADOS', num: 33 }, 
-    { key: 'CIF_05', num: 34 }, 
-    { key: 'SOLICITUD_EXPEDICION_REPATRIADOS', num: 35 }, 
+      { key: 'SOLICITUD_EXPEDICION_REPATRIADOS', num: 35 }, 
     { key: 'SOLICITUD_EXPEDICION_ORDINARIA', num: 36 }, 
     { key: 'SOLICITUD_DE_RECTIFICACION', num: 37 }, 
     { key: 'DEMANDA_DE_JUICIO', num: 38 }, 
@@ -89,7 +88,8 @@ const ESTRUCTURA_DIAS = [
     { key: 'PERDIDA_DE_VIGENCIA', num: 72 }, 
     { key: 'MOV_POST', num: 73 }, 
     { key: 'ANEXAS_A_SOLICITUD', num: 74 }, 
-    { key: 'OTRAS_BAJAS', num: 75 } 
+    { key: 'OTRAS_BAJAS', num: 75 }, 
+    { key: 'CIF_05', num: 34 },
 ];
 
 let bdMadreGlobal = [];
