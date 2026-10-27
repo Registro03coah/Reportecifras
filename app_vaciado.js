@@ -38,8 +38,8 @@ const NOMBRES_ESTANDAR_BD = [
     "ERROR_EN_NUM_DE_EMISION", "PERDIDA_DE_VIGENCIA", "MOV_POST", "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS",
 ];
 
-const INDEX_COLUMNA_REMESA = 1; // Columna REMESA ahora es la segunda de datos (índice 1)
-const INDEX_COLUMNA_FECHA = 4;  // Columna FECHA ahora es la quinta de datos (índice 4)
+const INDEX_COLUMNA_REMESA = 38; // Columna REMESA ahora es la segunda de datos (índice 1)
+const INDEX_COLUMNA_FECHA = 1;  // Columna FECHA ahora es la quinta de datos (índice 4)
 
 document.addEventListener("DOMContentLoaded", () => {
     inicializarEncabezadosYTablas();
