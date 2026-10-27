@@ -12,20 +12,91 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <style>
-        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .header-banner { background: linear-gradient(135deg, #1b396b, #0dcaf0); color: white; padding: 20px 0; border-bottom: 5px solid #055160; margin-bottom: 20px; }
-        .excel-container { width: 100%; max-height: 65vh; overflow: auto; border: 1px solid #ced4da; background: white; border-radius: 6px; }
-        .excel-table { margin-bottom: 0; table-layout: auto; }
-        .excel-table thead th { 
-            position: sticky; top: 0; z-index: 3; font-size: 11px; font-weight: 700; background-color: #1b396b !important; 
-            color: white !important; text-align: center; vertical-align: middle; padding: 8px 6px; white-space: normal;
+        html, body { 
+            height: 100%; 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column; 
+            background-color: #f8f9fa; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            overflow: hidden; 
         }
-        .excel-table td { padding: 6px 8px; border: 1px solid #ccc; text-align: center; vertical-align: middle; font-size: 11px; white-space: nowrap; }
+        .navbar-fija { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            z-index: 1030; 
+            background-color: #1b396b; 
+        }
+        .main-content-wrapper { 
+            margin-top: 48px; 
+            margin-bottom: 32px; 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+            padding: 8px 15px; 
+        }
+        .header-banner { 
+            background: linear-gradient(135deg, #1b396b, #0dcaf0); 
+            color: white; 
+            padding: 8px 12px; 
+            border-bottom: 3px solid #055160; 
+            margin-bottom: 8px; 
+            border-radius: 6px; 
+        }
+        .excel-container { 
+            width: 100%; 
+            flex: 1; 
+            overflow: auto !important; 
+            border: 1px solid #ced4da; 
+            background: white; 
+            border-radius: 6px; 
+        }
+        .excel-table { 
+            margin-bottom: 0; 
+            table-layout: auto; 
+            width: max-content; 
+        }
+        .excel-table thead th { 
+            position: sticky; 
+            top: 0; 
+            z-index: 3; 
+            font-size: 11px; 
+            font-weight: 700; 
+            background-color: #1b396b !important; 
+            color: white !important; 
+            text-align: center; 
+            vertical-align: middle; 
+            padding: 8px 6px; 
+            white-space: nowrap; 
+        }
+        .excel-table td { 
+            padding: 6px 8px; 
+            border: 1px solid #ccc; 
+            text-align: center; 
+            vertical-align: middle; 
+            font-size: 11px; 
+            white-space: nowrap; 
+        }
+        .footer-fijo { 
+            position: fixed; 
+            bottom: 0; 
+            left: 0; 
+            width: 100%; 
+            z-index: 1030; 
+            background-color: #1b396b; 
+            color: white; 
+            text-align: center; 
+            padding: 5px 0; 
+            font-size: 11px; 
+        }
     </style>
 </head>
-<body class="d-flex flex-column min-vh-100">
+<body>
 
-    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #1b396b;">
+    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm navbar-fija">
       <div class="container-fluid px-4">
         <a class="navbar-brand fw-bold" href="index.html"><i class="bi bi-hdd-network"></i> SISTEMA MAC</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -44,24 +115,23 @@
       </div>
     </nav>
 
-    <div class="header-banner text-center d-flex justify-content-center align-items-center">
-        <div>
-            <h1 class="fw-bold mb-0"><i class="bi bi-calendar3"></i> Reporte Días</h1>
-            <p class="lead mb-0">Consulta detallada por día de los registros de los módulos</p>
+    <div class="main-content-wrapper container-fluid">
+        <div class="header-banner text-center shadow-sm">
+            <h1 class="fw-bold mb-0" style="font-size: 1.2rem;"><i class="bi bi-calendar3"></i> Reporte Días</h1>
+            <p class="mb-0 text-light" style="font-size: 0.8rem;">Consulta detallada por día de los registros de los módulos</p>
         </div>
-    </div>
 
-    <div class="container-fluid px-4 flex-grow-1">
-        <div class="alert alert-info shadow-sm d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div class="alert alert-info shadow-sm py-1 px-2 mb-2 d-flex flex-wrap justify-content-between align-items-center gap-2" style="font-size: 12px;">
             <div>
                 <strong>Reporte Días:</strong> Visualización ordenada por Remesa (mayor a menor) y Módulo (050351, 050353, 050354).
             </div>
             <div class="d-flex align-items-center gap-2">
-                <button class="btn btn-sm btn-success fw-bold" onclick="exportarReporteDias()"><i class="bi bi-download"></i> Descargar Excel / JSON</button>
+                <button class="btn btn-sm btn-success fw-bold py-1" onclick="exportarReporteDias()"><i class="bi bi-download"></i> Descargar Excel / JSON</button>
                 <div id="semaforoConexion" class="badge bg-success">Conectado</div>
             </div>
         </div>
-        <div class="excel-container shadow-sm mb-3">
+
+        <div class="excel-container shadow-sm">
             <table class="excel-table table table-hover" id="tablaReporteDias">
                 <thead id="cabeceraReporteDias"></thead>
                 <tbody id="cuerpoReporteDias"></tbody>
@@ -69,11 +139,8 @@
         </div>
     </div>
 
-    <footer class="text-center py-3 mt-auto text-white" style="background-color: #1b396b;">
-        <small>
-            &copy; 2026 Todos los derechos reservados.<br>
-            Desarrollado por <span class="text-info fw-bold">Carrivers Desing</span> para Módulos MAC.
-        </small>
+    <footer class="footer-fijo shadow-sm">
+        <small>&copy; 2026 Todos los derechos reservados. Desarrollado por <span class="text-info fw-bold">Carrivers Desing</span> para Módulos MAC.</small>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -90,7 +157,7 @@
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        // Misma lista estricta de columnas para mantener idéntico orden en Reporte Días
+        // Lista exacta de encabezados proporcionada
         const NOMBRES_ESTANDAR_BD = [
             "IDMAC", "REMESA", "MODULO",
             "DIA", "FECHA", "HORAS_TRABAJADAS", "SEDES", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
@@ -110,8 +177,7 @@
             "CREDENCIALES_TOTALES_EN_SIIRFE_DISPONIBLES_PARA_ENTREGA", "TOTAL_DE_CREDENCIALES_ENTREGADAS",
             "TOTAL_DE_CREDENCIALES_SOLICITADAS", "IMPORTADAS", "EXPORTADAS", "REPOSISION_REIMPRESIONES",
             "MAL_IMPRESA", "ERROR_EN_CARTOGRAFIA", "DEFUNCION", "SUSPENSION", "DUPLICADO",
-            "ERROR_EN_NUM_DE_EMISION", "PERDIDA_DE_VIGENCIA", "MOV_POST", "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS",
-            "CPV_DEVUELA_ENTREGA_2", "SOLICITUD_DE_REIMPRESION_2", "CPV_DEVUELA_ENTREGA_2_B", "RESGUARDO_2"
+            "ERROR_EN_NUM_DE_EMISION", "PERDIDA_DE_VIGENCIA", "MOV_POST", "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS"
         ];
 
         function getClaveLimpia(nombreOriginal) {
