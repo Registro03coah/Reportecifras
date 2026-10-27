@@ -38,10 +38,10 @@ const NOMBRES_ESTANDAR_BD = [
     "ERROR_EN_NUM_DE_EMISION", "PERDIDA_DE_VIGENCIA", "MOV_POST", "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS"
 ];
 
-// Índices corregidos (restando 1 internamente para coincidir con la posición del input)
-const INDEX_COLUMNA_REMESA = 39; 
-const INDEX_COLUMNA_FECHA = 2;   
-const INDEX_COLUMNA_MODULO = 47; 
+// Índices corregidos basados en la posición real dentro del arreglo NOMBRES_ESTANDAR_BD
+const INDEX_COLUMNA_REMESA = 38; 
+const INDEX_COLUMNA_FECHA = 1;   
+const INDEX_COLUMNA_MODULO = 45; 
 
 document.addEventListener("DOMContentLoaded", () => {
     inicializarEncabezadosYTablas();
@@ -142,10 +142,8 @@ function inicializarEncabezadosYTablas() {
                     let input = document.createElement('input');
                     input.type = "text";
                     input.className = "form-control form-control-sm text-center p-0 border-0 bg-transparent";
-                    // INDEX_COLUMNA_REMESA - 1 asegura que caiga en la columna correcta de inputs
                     input.value = (i === (INDEX_COLUMNA_REMESA - 1) ? "202643" : (i === (INDEX_COLUMNA_MODULO - 1) ? mod : (i === (INDEX_COLUMNA_FECHA - 1) ? "" : "0")));
                     
-                    // Escuchar cambios para actualizar el visor de remesa en tiempo real
                     input.addEventListener('input', () => {
                         actualizarRemesaVisualizador();
                     });
@@ -217,7 +215,6 @@ function configurarTabs() {
     });
 }
 
-// Función para actualizar dinámicamente la etiqueta de la remesa en el cuadro verde superior
 function actualizarRemesaVisualizador() {
     const lblRemesaActiva = document.getElementById('lblRemesaActiva');
     if (!lblRemesaActiva) return;
