@@ -91,20 +91,6 @@ function generarIdMacCustom(mod, remesa, fechaStr) {
     }
     return `${mod2}${rem4}${ddmm}`;
 }
-function depurarRemesa() {
-    const tbody = document.querySelector(`#tablaCaptura_050351 tbody`);
-    if (!tbody) return;
-    const filas = tbody.querySelectorAll('tr');
-    console.log("--- DEPURANDO CELDAS ---");
-    filas.forEach((fila, idx) => {
-        if (idx < 7) {
-            const inputs = fila.querySelectorAll('input');
-            console.log(`Fila ${idx} - Input en índice 38 (Remesa):`, inputs[38] ? inputs[38].value : "No existe");
-        }
-    });
-}
-
-
 
 function construirHeaderTabla(tableEl, isTotales = false) {
     if (!tableEl) return;
@@ -157,7 +143,6 @@ function inicializarEncabezadosYTablas() {
                     input.type = "text";
                     input.className = "form-control form-control-sm text-center p-0 border-0 bg-transparent";
                     
-                    // Corrección: se compara directamente con INDEX_COLUMNA_REMESA (38)
                     input.value = (i === INDEX_COLUMNA_REMESA ? "202643" : (i === INDEX_COLUMNA_MODULO ? mod : (i === INDEX_COLUMNA_FECHA ? "" : "0")));
                     
                     input.addEventListener('input', () => {
@@ -418,6 +403,7 @@ function cargarDatosDesdeFirebase() {
                             if (filas[rIdx]) {
                                 let inputs = filas[rIdx].querySelectorAll('input');
                                 filaArr.forEach((val, cIdx) => {
+                                    if (cIdx === 0) return; // Omitir el día del input mapping ya que es texto fijo
                                     if (inputs[cIdx - 1]) inputs[cIdx - 1].value = val;
                                 });
                             }
@@ -460,9 +446,16 @@ function guardarBasesEnFirebase() {
             const idMacGenerado = generarIdMacCustom(mod, remesaActual, fechaCelda);
 
             fila.querySelectorAll('td').forEach((td, colIdx) => {
-                const input = td.querySelector('input');
-                let valCelda = input ? input.value.trim() : "";
-                if (valCelda === "") valCelda = "0";
+                let valCelda = "";
+                
+                // Si es la columna 0 (DIA), extraemos el texto directamente del td ("Lunes", "Martes", etc.)
+                if (colIdx === 0) {
+                    valCelda = td.innerText.trim();
+                } else {
+                    const input = td.querySelector('input');
+                    valCelda = input ? input.value.trim() : "";
+                    if (valCelda === "") valCelda = "0";
+                }
                 
                 filaArray.push(valCelda);
 
@@ -524,9 +517,14 @@ function guardarBasesEnFirebase() {
             const idMacGeneradoTotales = generarIdMacCustom(mod, remesaActual, fechaFilaTotal);
 
             filaModulo.querySelectorAll('td').forEach((td, colIdx) => {
-                const input = td.querySelector('input');
-                let valorCelda = input ? input.value.trim() : "0";
-                if (valorCelda === "") valorCelda = "0";
+                let valCelda = "";
+                if (colIdx === 0) {
+                    valCelda = td.innerText.trim();
+                } else {
+                    const input = td.querySelector('input');
+                    valCelda = input ? input.value.trim() : "0";
+                    if (valCelda === "") valCelda = "0";
+                }
 
                 let nombreOriginal = NOMBRES_ESTANDAR_BD[colIdx];
                 if (nombreOriginal === "REMESA") {
@@ -541,7 +539,7 @@ function guardarBasesEnFirebase() {
                         .replace(/[.#$ /\[\]]/g, "_")
                         .replace(/_+/g, "_")
                         .trim();
-                    objFilaTotal[claveLimpia] = valorCelda;
+                    objFilaTotal[claveLimpia] = valCelda;
                 }
             });
 
