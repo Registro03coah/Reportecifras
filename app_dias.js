@@ -14,7 +14,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// ESTRUCTURA ACTUALIZADA CON LOS NOMBRES ESTÁNDAR Y SIN ACENTOS (EMPATADA CON EL VACIADO)
+// ESTRUCTURA EXACTA HASTA DISPONIBLES_TOTAL (SIN COLUMNAS _2)
 const ESTRUCTURA_DIAS = [ 
     { key: 'IDMAC', num: 0 },
     { key: 'REMESA', num: 39 }, 
@@ -37,7 +37,7 @@ const ESTRUCTURA_DIAS = [
     { key: 'TOTAL_DE_TRAMITES', num: 16 }, 
     { key: 'CANCELADOS', num: 17 }, 
     { key: 'TOTAL_DE_ANEXOS_POR_RECHAZO', num: 18 }, 
-     { key: 'CRED_PROD_CANJE_POR_NUEVA', num: 30 },
+    { key: 'CRED_PROD_CANJE_POR_NUEVA', num: 30 },
     { key: 'DISPONIBLES_AL_DIA_ANTERIOR', num: 19 }, 
     { key: 'ACTUALIZACION', num: 20 }, 
     { key: 'RECIBIDAS_DE_OTROS_TIPOS', num: 21 }, 
@@ -162,7 +162,23 @@ function procesarYMostrarDatos(datosAProcesar = bdMadreGlobal) {
      
     if (datosAProcesar.length === 0) return;
      
-    datosAProcesar.forEach(fila => {
+    // ORDENAMIENTO: Remesa descendente (mayor a menor), y Módulo ascendente (050351, 050353, 050354)
+    let datosOrdenados = [...datosAProcesar].sort((a, b) => {
+        const objRemesa = ESTRUCTURA_DIAS.find(c => c.key === 'REMESA') || { key: 'REMESA', num: 39 };
+        const objModulo = ESTRUCTURA_DIAS.find(c => c.key === 'MODULO') || { key: 'MODULO', num: 47 };
+
+        let remA = String(obtenerValorFila(a, objRemesa)).trim();
+        let remB = String(obtenerValorFila(b, objRemesa)).trim();
+        if (remA !== remB) {
+            return remB.localeCompare(remA, undefined, { numeric: true }); // Mayor a menor (descendente)
+        }
+
+        let modA = String(obtenerValorFila(a, objModulo)).trim();
+        let modB = String(obtenerValorFila(b, objModulo)).trim();
+        return modA.localeCompare(modB, undefined, { numeric: true }); // Orden de módulos específico
+    });
+
+    datosOrdenados.forEach(fila => {
         let tr = document.createElement('tr');
         ESTRUCTURA_DIAS.forEach(colObj => {
             let td = document.createElement('td');
