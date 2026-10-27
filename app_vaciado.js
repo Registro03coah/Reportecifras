@@ -17,84 +17,32 @@ const db = getDatabase(app);
 const MODULOS = ["050351", "050353", "050354"];
 const TOTAL_COLUMNAS = 75;
 
-// NOMBRES ESTÁNDAR OFICIALES DE LAS 75 COLUMNAS (Con IDMAC al inicio)
+// Lista exacta de las 75 columnas con IDMAC, REMESA y MODULO al inicio, y las terminadas en _2 al final
 const NOMBRES_ESTANDAR_BD = [
-"DIA",
-"FECHA",
-"HORAS_TRABAJADAS",
-"SEDES",
-"INICIAL",
-"FINAL",
-"TOTAL_DE_FOLIOS",
-"INSCRIPCIONES",
-"CORRECCION_DE_DATOS_PERSONALES",
-"CAMBIO_DE_DOMICILIO",
-"REPOSICION",
-"CORR_DE_DATOS_DIRECCION",
-"REINCORPORACION",
-"REEMPLAZO",
-"REIMPRESION",
-"TOTAL_DE_TRAMITES",
-"CANCELADOS",
-"TOTAL_DE_ANEXOS_POR_RECHAZO",
-"CRED_PROD_CANJE_POR_NUEVA",  
-"DISPONIBLES_AL_DIA_ANTERIOR",
-"ACTUALIZACION",
-"RECIBIDAS_DE_OTROS_TIPOS",
-"ENTREGADAS",
-"ROBO_Y_O_EXTRAVIO",
-"ANEXAS_A_FUAR",
-"DATOS_ERRONEOS",
-"FOTO_MAL_IMPRESA",
-"RETIRADA_POR_REIMPRESION",
-"RETIRADAS_POR_CAUSA",
-"DISPONIBLES_TOTAL",
-"FICHAS_ENTREGADAS",
-"FICHAS_ATENDIDAS",
-"DIAS_TRABAJADOS",
-"SOLICITUD_EXPEDICION_ORDINARIA",
-"SOLICITUD_EXPEDICION_REPATRIADOS",  
-"SOLICITUD_DE_RECTIFICACION",
-"DEMANDA_DE_JUICIO",
-    "REMESA",
-"TOTAL_DE_MOVIMIENTOS",
-"CREDEN_DEVUELTAS_POR_TERCEROS",
-"RECHAZOS_DE_MAC_34",
-"RECHAZOS_DE_MAC_35",
-"CONFIGURACION",
-"ENT",
-"DTTO",
-    "MODULO",
-"RESGUARDO",
-"SOLICITUD_DE_REIMPRESION",
-"SCRIPT_EJECUTADO",
-"FOLIO_NEC",
-"NUMERO_DE_TRAMITES_APLICADOS",
-"NUMERO_DE_FICHAS_REQUISITADAS",
-"NUMERO_DE_ARCHIVOS_DE_TRANSACCION_ACEPTADOS",
-"TOTAL_DE_ARCHIVOS_DE_TRANSACCION_PROCESADOS",
-"RECIBIDAS",
-"CREDENCIALES_INCONSISTENTES",
-"CREDENCIALES_TOTALES_EN_SIIRFE_DISPONIBLES_PARA_ENTREGA",
-"TOTAL_DE_CREDENCIALES_ENTREGADAS",
-"TOTAL_DE_CREDENCIALES_SOLICITADAS",
-"IMPORTADAS",
-"EXPORTADAS",
-"REPOSISION_REIMPRESIONES",
-"MAL_IMPRESA",
-"ERROR_EN_CARTOGRAFIA",
-"DEFUNCION",
-"SUSPENSION",
-"DUPLICADO",
-"ERROR_EN_NUM_DE_EMISION",
-"PERDIDA_DE_VIGENCIA",
-"MOV_POST",
-"ANEXAS_A_SOLICITUD",
-"OTRAS_BAJAS"
+    "IDMAC", "REMESA", "MODULO",
+    "DIA", "FECHA", "HORAS_TRABAJADAS", "SEDES", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
+    "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSICION",
+    "CORR_DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES",
+    "CANCELADOS", "TOTAL_DE_ANEXOS_POR_RECHAZO", "CRED_PROD_CANJE_POR_NUEVA", "DISPONIBLES_AL_DIA_ANTERIOR", "ACTUALIZACION",
+    "RECIBIDAS_DE_OTROS_TIPOS", "ENTREGADAS", "ROBO_Y_O_EXTRAVIO", "ANEXAS_A_FUAR", "DATOS_ERRONEOS",
+    "FOTO_MAL_IMPRESA", "SOLICITUD_DE_REIMPRESION", "RETIRADAS_POR_CAUSA", "DISPONIBLES_TOTAL",
+    "FICHAS_ENTREGADAS", "FICHAS_ATENDIDAS", "DIAS_TRABAJADOS", "SOLICITUD_EXPEDICION_ORDINARIA",
+    "SOLICITUD_EXPEDICION_REPATRIADOS", "SOLICITUD_DE_RECTIFICACION",
+    "DEMANDA_DE_JUICIO", "TOTAL_DE_MOVIMIENTOS", "CREDEN_DEVUELTAS_POR_TERCEROS",
+    "34_Imagen_Inconsistente", "35_Movimiento_Posterior", "CONFIGURACION", "ENT", "DTTO",
+    "RESGUARDO", "SCRIPT_EJECUTADO",
+    "FOLIO_NEC", "NUMERO_DE_TRAMITES_APLICADOS", "NUMERO_DE_FICHAS_REQUISITADAS",
+    "NUMERO_DE_ARCHIVOS_DE_TRANSACCION_ACEPTADOS", "TOTAL_DE_ARCHIVOS_DE_TRANSACCION_PROCESADOS",
+    "RECIBIDAS", "CREDENCIALES_INCONSISTENTES",
+    "CREDENCIALES_TOTALES_EN_SIIRFE_DISPONIBLES_PARA_ENTREGA", "TOTAL_DE_CREDENCIALES_ENTREGADAS",
+    "TOTAL_DE_CREDENCIALES_SOLICITADAS", "IMPORTADAS", "EXPORTADAS", "REPOSISION_REIMPRESIONES",
+    "MAL_IMPRESA", "ERROR_EN_CARTOGRAFIA", "DEFUNCION", "SUSPENSION", "DUPLICADO",
+    "ERROR_EN_NUM_DE_EMISION", "PERDIDA_DE_VIGENCIA", "MOV_POST", "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS",
+    "CPV_DEVUELA_ENTREGA_2", "SOLICITUD_DE_REIMPRESION_2", "CPV_DEVUELA_ENTREGA_2_B", "RESGUARDO_2"
 ];
 
-const INDEX_COLUMNA_REMESA = 38;
-const INDEX_COLUMNA_FECHA = 2; // Índice en base 0 de FECHA dentro de las columnas de datos
+const INDEX_COLUMNA_REMESA = 1; // Columna REMESA ahora es la segunda de datos (índice 1)
+const INDEX_COLUMNA_FECHA = 4;  // Columna FECHA ahora es la quinta de datos (índice 4)
 
 document.addEventListener("DOMContentLoaded", () => {
     inicializarEncabezadosYTablas();
@@ -113,14 +61,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-// Función para generar el IDMAC con el formato solicitado: [últimos 2 del módulo] + [últimos 4 de la remesa] + [ddmm de la fecha]
 function generarIdMacCustom(mod, remesa, fechaStr) {
-    const mod2 = String(mod).slice(-2);
-    const rem4 = String(remesa).slice(-4).padStart(4, '0');
+    const mod2 = String(mod || "00").slice(-2);
+    const rem4 = String(remesa || "0000").slice(-4).padStart(4, '0');
     
     let ddmm = "0000";
     if (fechaStr) {
-        let limpia = fechaStr.trim();
+        let limpia = String(fechaStr).trim();
         if (limpia.includes('/')) {
             let partes = limpia.split('/');
             if (partes.length >= 2) {
@@ -131,11 +78,11 @@ function generarIdMacCustom(mod, remesa, fechaStr) {
         } else if (limpia.includes('-')) {
             let partes = limpia.split('-');
             if (partes.length >= 3) {
-                if (partes[0].length === 4) { // YYYY-MM-DD
+                if (partes[0].length === 4) {
                     let m = partes[1].padStart(2, '0');
                     let d = partes[2].padStart(2, '0');
                     ddmm = d + m;
-                } else { // DD-MM-YYYY
+                } else {
                     let d = partes[0].padStart(2, '0');
                     let m = partes[1].padStart(2, '0');
                     ddmm = d + m;
@@ -196,7 +143,7 @@ function inicializarEncabezadosYTablas() {
                     let input = document.createElement('input');
                     input.type = "text";
                     input.className = "form-control form-control-sm text-center p-0 border-0 bg-transparent";
-                    input.value = (i === INDEX_COLUMNA_REMESA ? "202643" : (i === INDEX_COLUMNA_FECHA ? "" : "0"));
+                    input.value = (i === INDEX_COLUMNA_REMESA ? "202643" : (i === INDEX_COLUMNA_MODULO ? mod : (i === INDEX_COLUMNA_FECHA ? "" : "0")));
                     td.appendChild(input);
                 }
                 tr.appendChild(td);
@@ -204,7 +151,6 @@ function inicializarEncabezadosYTablas() {
             tbody.appendChild(tr);
         });
 
-        // 8ava fila: LÍNEA TOTALES
         let trTot = document.createElement('tr');
         trTot.className = "fila-totales fw-bold";
         for (let i = 0; i < TOTAL_COLUMNAS; i++) {
@@ -251,6 +197,9 @@ function inicializarEncabezadosYTablas() {
         });
     }
 }
+
+// Índice auxiliar para inicializar el módulo en su columna si corresponde
+const INDEX_COLUMNA_MODULO = 2;
 
 function configurarTabs() {
     const tabs = document.querySelectorAll('.nav-link, [data-bs-toggle="tab"]');
@@ -451,7 +400,6 @@ function guardarBasesEnFirebase() {
             let objFilaDia = {};
             let esFilaTotales = rowIndex === 7;
 
-            // Extraer fecha de la celda correspondiente para el IDMAC
             let fechaCelda = "";
             const inputsFila = fila.querySelectorAll('input');
             if (!esFilaTotales && inputsFila[INDEX_COLUMNA_FECHA - 1]) {
@@ -470,6 +418,10 @@ function guardarBasesEnFirebase() {
                 let nombreOriginal = NOMBRES_ESTANDAR_BD[colIdx];
                 if (nombreOriginal === "IDMAC") {
                     objFilaDia["IDMAC"] = idMacGenerado;
+                } else if (nombreOriginal === "REMESA") {
+                    objFilaDia["REMESA"] = remesaActual;
+                } else if (nombreOriginal === "MODULO") {
+                    objFilaDia["MODULO"] = mod;
                 } else {
                     let claveLimpia = String(nombreOriginal)
                         .toUpperCase()
@@ -530,6 +482,10 @@ function guardarBasesEnFirebase() {
                 let nombreOriginal = NOMBRES_ESTANDAR_BD[colIdx];
                 if (nombreOriginal === "IDMAC") {
                     objFilaTotal["IDMAC"] = idMacGeneradoTotales;
+                } else if (nombreOriginal === "REMESA") {
+                    objFilaTotal["REMESA"] = remesaActual;
+                } else if (nombreOriginal === "MODULO") {
+                    objFilaTotal["MODULO"] = mod;
                 } else {
                     let claveLimpia = String(nombreOriginal)
                         .toUpperCase()
