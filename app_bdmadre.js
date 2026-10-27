@@ -14,7 +14,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// ESTRUCTURA ESTRICTA DE LA BD MADRE CON LAS 74 COLUMNAS OFICIALES EN ORDEN CONSECUTIVO
+// ESTRUCTURA ESTRICTA DE LA BD MADRE CON LAS 75 COLUMNAS FINALES PARA LA INTEGRACION DE LA BD MADRE DE AQUI SE ALIMANTARA DIAS
 const ESTRUCTURA_BD_MADRE = [ 
     { key: 'REMESA', num: 39 }, 
     { key: 'MODULO', num: 47 }, 
@@ -37,6 +37,7 @@ const ESTRUCTURA_BD_MADRE = [
     { key: 'TOTAL_DE_TRAMITES', num: 16 }, 
     { key: 'CANCELADOS', num: 17 }, 
     { key: 'TOTAL_DE_ANEXOS_POR_RECHAZO', num: 18 }, 
+    { key: 'CRED_PROD_CANJE_POR_NUEVA', num: 30 }, 
     { key: 'DISPONIBLES_AL_DIA_ANTERIOR', num: 19 }, 
     { key: 'ACTUALIZACION', num: 20 }, 
     { key: 'RECIBIDAS_DE_OTROS_TIPOS', num: 21 }, 
@@ -48,7 +49,7 @@ const ESTRUCTURA_BD_MADRE = [
     { key: 'RETIRADA_POR_REIMPRESION', num: 27 }, 
     { key: 'RETIRADAS_POR_CAUSA', num: 28 }, 
     { key: 'DISPONIBLES_TOTAL', num: 29 }, 
-    { key: 'CRED_PROD_CANJE_POR_NUEVA', num: 30 }, 
+    { key: 'CREDENCIAL_POR_CANJE', num: 30 }, 
     { key: 'FICHAS_ENTREGADAS', num: 31 }, 
     { key: 'FICHAS_ATENDIDAS', num: 32 }, 
     { key: 'DIAS_TRABAJADOS', num: 33 }, 
@@ -65,7 +66,8 @@ const ESTRUCTURA_BD_MADRE = [
     { key: 'ENT', num: 45 }, 
     { key: 'DTTO', num: 46 }, 
     { key: 'RESGUARDO', num: 48 }, 
-    { key: 'SOLICITUD_DE_REIMPRESION', num: 49 }, 
+    { key: 'SOLICITUD_DE_REIMPRESION', num: 49 },
+    { key: 'CPV_DEVUELTA_ENTREGA', num: 30 }, 
     { key: 'SCRIPT_EJECUTADO', num: 51 }, 
     { key: 'FOLIO_NEC', num: 52 }, 
     { key: 'NUMERO_DE_TRAMITES_APLICADOS', num: 53 }, 
