@@ -142,7 +142,9 @@ function inicializarEncabezadosYTablas() {
                     let input = document.createElement('input');
                     input.type = "text";
                     input.className = "form-control form-control-sm text-center p-0 border-0 bg-transparent";
-                    input.value = (i === (INDEX_COLUMNA_REMESA - 1) ? "202643" : (i === (INDEX_COLUMNA_MODULO - 1) ? mod : (i === (INDEX_COLUMNA_FECHA - 1) ? "" : "0")));
+                    
+                    // Corrección: se compara directamente con INDEX_COLUMNA_REMESA (38)
+                    input.value = (i === INDEX_COLUMNA_REMESA ? "202643" : (i === INDEX_COLUMNA_MODULO ? mod : (i === INDEX_COLUMNA_FECHA ? "" : "0")));
                     
                     input.addEventListener('input', () => {
                         actualizarRemesaVisualizador();
