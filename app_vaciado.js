@@ -17,7 +17,7 @@ const db = getDatabase(app);
 const MODULOS = ["050351", "050353", "050354"];
 const TOTAL_COLUMNAS = 75;
 
-// Lista exacta de las 75 columnas con IDMAC, REMESA y MODULO al inicio, y las terminadas en _2 al final
+// Lista exacta de las 75 columnas
 const NOMBRES_ESTANDAR_BD = [
     "DIA", "FECHA", "HORAS_TRABAJADAS", "SEDES", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
     "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSICION", "CORR_DE_DATOS_DIRECCION", 
@@ -35,11 +35,13 @@ const NOMBRES_ESTANDAR_BD = [
     "CREDENCIALES_TOTALES_EN_SIIRFE_DISPONIBLES_PARA_ENTREGA", "TOTAL_DE_CREDENCIALES_ENTREGADAS",
     "TOTAL_DE_CREDENCIALES_SOLICITADAS", "IMPORTADAS", "EXPORTADAS", "REPOSISION_REIMPRESIONES",
     "MAL_IMPRESA", "ERROR_EN_CARTOGRAFIA", "DEFUNCION", "SUSPENSION", "DUPLICADO",
-    "ERROR_EN_NUM_DE_EMISION", "PERDIDA_DE_VIGENCIA", "MOV_POST", "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS",
+    "ERROR_EN_NUM_DE_EMISION", "PERDIDA_DE_VIGENCIA", "MOV_POST", "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS"
 ];
 
-const INDEX_COLUMNA_REMESA = 39; // Columna REMESA ahora es la segunda de datos (índice 1)
-const INDEX_COLUMNA_FECHA = 1;  // Columna FECHA ahora es la quinta de datos (índice 4)
+// Índices corregidos (restando 1 internamente para coincidir con la posición del input)
+const INDEX_COLUMNA_REMESA = 39; 
+const INDEX_COLUMNA_FECHA = 2;   
+const INDEX_COLUMNA_MODULO = 47; 
 
 document.addEventListener("DOMContentLoaded", () => {
     inicializarEncabezadosYTablas();
@@ -140,7 +142,14 @@ function inicializarEncabezadosYTablas() {
                     let input = document.createElement('input');
                     input.type = "text";
                     input.className = "form-control form-control-sm text-center p-0 border-0 bg-transparent";
-                    input.value = (i === INDEX_COLUMNA_REMESA ? "202643" : (i === INDEX_COLUMNA_MODULO ? mod : (i === INDEX_COLUMNA_FECHA ? "" : "0")));
+                    // INDEX_COLUMNA_REMESA - 1 asegura que caiga en la columna correcta de inputs
+                    input.value = (i === (INDEX_COLUMNA_REMESA - 1) ? "202643" : (i === (INDEX_COLUMNA_MODULO - 1) ? mod : (i === (INDEX_COLUMNA_FECHA - 1) ? "" : "0")));
+                    
+                    // Escuchar cambios para actualizar el visor de remesa en tiempo real
+                    input.addEventListener('input', () => {
+                        actualizarRemesaVisualizador();
+                    });
+
                     td.appendChild(input);
                 }
                 tr.appendChild(td);
@@ -193,10 +202,8 @@ function inicializarEncabezadosYTablas() {
             tbodyTotales.appendChild(tr);
         });
     }
+    actualizarRemesaVisualizador();
 }
-
-// Índice auxiliar para inicializar el módulo en su columna si corresponde
-const INDEX_COLUMNA_MODULO = 2;
 
 function configurarTabs() {
     const tabs = document.querySelectorAll('.nav-link, [data-bs-toggle="tab"]');
@@ -210,8 +217,44 @@ function configurarTabs() {
     });
 }
 
+// Función para actualizar dinámicamente la etiqueta de la remesa en el cuadro verde superior
+function actualizarRemesaVisualizador() {
+    const lblRemesaActiva = document.getElementById('lblRemesaActiva');
+    if (!lblRemesaActiva) return;
+
+    let moduloActivo = "050351";
+    if (document.getElementById('btn-tab-050353') && document.getElementById('btn-tab-050353').classList.contains('active')) {
+        moduloActivo = "050353";
+    } else if (document.getElementById('btn-tab-050354') && document.getElementById('btn-tab-050354').classList.contains('active')) {
+        moduloActivo = "050354";
+    } else if (document.getElementById('btn-tab-TOTALES') && document.getElementById('btn-tab-TOTALES').classList.contains('active')) {
+        moduloActivo = "TOTALES";
+    }
+
+    if (moduloActivo === "TOTALES") {
+        lblRemesaActiva.innerText = obtenerRemesaDesdeTablas() || "S/N";
+        return;
+    }
+
+    let remesaEncontrada = "S/N";
+    const tbody = document.querySelector(`#tablaCaptura_${moduloActivo} tbody`);
+    if (tbody) {
+        const filas = tbody.querySelectorAll('tr');
+        for (let r = 0; r < 7; r++) {
+            if (!filas[r]) continue;
+            const inputs = filas[r].querySelectorAll('input');
+            const inputRemesa = inputs[INDEX_COLUMNA_REMESA - 1]; 
+            if (inputRemesa && inputRemesa.value.trim() !== "" && inputRemesa.value.trim() !== "0") {
+                remesaEncontrada = inputRemesa.value.trim();
+                break;
+            }
+        }
+    }
+    lblRemesaActiva.innerText = remesaEncontrada;
+}
+
 window.cambiarModulo = function(mod) {
-    ["050351", "050353", "050354", "TOTALES"].forEach(m => {
+    MODULOS.concat(["TOTALES"]).forEach(m => {
         const btn = document.getElementById(`btn-tab-${m}`);
         const container = document.getElementById(`container_${m}`);
         const pasteZone = document.getElementById(`pasteZone_${m}`);
@@ -241,17 +284,13 @@ window.cambiarModulo = function(mod) {
         if (mod === 'TOTALES') {
             panelAccionesTotales.classList.remove('d-none');
             panelAccionesTotales.classList.add('d-flex');
-            
-            const remesaDetectada = obtenerRemesaDesdeTablas() || "S/N";
-            const spanRemesa = document.getElementById('inputRemesa');
-            if (spanRemesa) spanRemesa.innerText = remesaDetectada;
-
             calcularTotalesGenerales();
         } else {
             panelAccionesTotales.classList.add('d-none');
             panelAccionesTotales.classList.remove('d-flex');
         }
     }
+    actualizarRemesaVisualizador();
 };
 
 function obtenerRemesaDesdeTablas() {
@@ -312,6 +351,7 @@ function configurarPegadoPortapapeles() {
             });
 
             sincronizarTotales();
+            actualizarRemesaVisualizador();
         };
 
         if (pasteZone) pasteZone.addEventListener('paste', ejecutarPegado);
@@ -372,6 +412,7 @@ function cargarDatosDesdeFirebase() {
                     }
                 }
             });
+            actualizarRemesaVisualizador();
         }
     });
 }
@@ -413,9 +454,7 @@ function guardarBasesEnFirebase() {
                 filaArray.push(valCelda);
 
                 let nombreOriginal = NOMBRES_ESTANDAR_BD[colIdx];
-                if (nombreOriginal === "IDMAC") {
-                    objFilaDia["IDMAC"] = idMacGenerado;
-                } else if (nombreOriginal === "REMESA") {
+                if (nombreOriginal === "REMESA") {
                     objFilaDia["REMESA"] = remesaActual;
                 } else if (nombreOriginal === "MODULO") {
                     objFilaDia["MODULO"] = mod;
@@ -431,12 +470,12 @@ function guardarBasesEnFirebase() {
                 }
             });
 
+            objFilaDia["IDMAC"] = idMacGenerado;
             datosTabla.push(filaArray);
 
             if (!esFilaTotales) {
                 objFilaDia["MODULO"] = mod;
                 objFilaDia["REMESA"] = remesaActual;
-                objFilaDia["IDMAC"] = idMacGenerado;
                 objFilaDia["INICIALES_C"] = document.getElementById(`camp_${mod}`) ? document.getElementById(`camp_${mod}`).value : "";
                 objFilaDia["INICIALES_A"] = document.getElementById(`acum_${mod}`) ? document.getElementById(`acum_${mod}`).value : "";
 
@@ -477,9 +516,7 @@ function guardarBasesEnFirebase() {
                 if (valorCelda === "") valorCelda = "0";
 
                 let nombreOriginal = NOMBRES_ESTANDAR_BD[colIdx];
-                if (nombreOriginal === "IDMAC") {
-                    objFilaTotal["IDMAC"] = idMacGeneradoTotales;
-                } else if (nombreOriginal === "REMESA") {
+                if (nombreOriginal === "REMESA") {
                     objFilaTotal["REMESA"] = remesaActual;
                 } else if (nombreOriginal === "MODULO") {
                     objFilaTotal["MODULO"] = mod;
@@ -495,9 +532,9 @@ function guardarBasesEnFirebase() {
                 }
             });
 
+            objFilaTotal["IDMAC"] = idMacGeneradoTotales;
             objFilaTotal["MODULO"] = mod;
             objFilaTotal["REMESA"] = remesaActual;
-            objFilaTotal["IDMAC"] = idMacGeneradoTotales;
             objFilaTotal["INICIALES_C"] = document.getElementById(`camp_${mod}`) ? document.getElementById(`camp_${mod}`).value : "";
             objFilaTotal["INICIALES_A"] = document.getElementById(`acum_${mod}`) ? document.getElementById(`acum_${mod}`).value : "";
 
