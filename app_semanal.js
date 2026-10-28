@@ -188,7 +188,6 @@ function actualizarContadoresGlobales(datosMostrados, remesaActiva) {
     if (totalLineasElem) totalLineasElem.innerText = totalLineas;
     if (totalRemesasElem) totalRemesasElem.innerText = remesasUnicasTotales.size;
 
-    // Actualizar dinámicamente el placeholder del input con la remesa mayor detectada en gris
     const inputRemesa = document.getElementById('remesaFiltroInput');
     const ultimaRemesaGlobal = obtenerUltimaRemesa(bdTotalesGlobal);
     if (inputRemesa && ultimaRemesaGlobal) {
@@ -257,7 +256,9 @@ function renderizarTablaConTotales(datos, primeraFila) {
     let trTotales = document.createElement('tr');
     trTotales.className = 'fila-totales table-dark fw-bold';
     
-    const columnasBlanco = ['Ent', 'Inicial', 'Final', 'Iniciales_S', 'Configuración'];
+    // Columnas que se quedan completamente en blanco (incluyendo 'Módulo')
+    const columnasBlanco = ['Ent', 'Módulo', 'Inicial', 'Final', 'Iniciales_S', 'Configuración'];
+    // Columnas cuyos valores se repiten de la primera fila
     const columnasRepetidas = ['Dtto', 'Remesa'];
 
     ESTRUCTURA_SEMANAL.forEach((colObj, index) => {
@@ -267,13 +268,13 @@ function renderizarTablaConTotales(datos, primeraFila) {
         if (index === 0) {
             td.innerText = "TOTALES";
         } else if (columnasBlanco.some(c => c.toLowerCase() === nombreKeyNorm.toLowerCase())) {
-            td.innerText = "";
+            td.innerText = ""; // Se quedan en blanco
         } else if (columnasRepetidas.some(c => c.toLowerCase() === nombreKeyNorm.toLowerCase())) {
-            td.innerText = primeraFila ? obtenerValorFila(primeraFila, colObj) : "";
-        } else if (sumatoriasTotales[colObj.key] !== undefined && sumatoriasTotales[colObj.key] !== 0) {
-            td.innerText = sumatoriasTotales[colObj.key];
+            td.innerText = primeraFila ? obtenerValorFila(primeraFila, colObj) : "0"; // Se repite o 0 si no hay
         } else {
-            td.innerText = "";
+            // Para todas las demás columnas numéricas, si hay suma se muestra, si es 0 o vacío se coloca '0'
+            let valSuma = sumatoriasTotales[colObj.key];
+            td.innerText = (valSuma !== undefined && !isNaN(valSuma)) ? valSuma : 0;
         }
         trTotales.appendChild(td);
     });
