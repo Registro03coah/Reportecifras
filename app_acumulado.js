@@ -20,7 +20,6 @@ const COLUMNAS_ACUMULADO_KEYS = [
     "DIAS_TRABAJADOS", "CONFIGURACION"
 ];
 
-// MAPA_NUMEROS sincronizado 1 a 1 con tu nuevo orden de columnas
 const MAPA_NUMEROS = {};
 COLUMNAS_ACUMULADO_KEYS.forEach((col, index) => {
     MAPA_NUMEROS[col] = index + 1;
@@ -36,8 +35,6 @@ window.copiarTablaExcel = function(tablaId) {
     const tabla = document.getElementById(tablaId);
     if (!tabla) return;
     const clone = tabla.cloneNode(true);
-    const totales = clone.querySelectorAll('.fila-totales');
-    totales.forEach(t => t.remove()); 
     const div = document.createElement('div');
     div.appendChild(clone);
     document.body.appendChild(div);
@@ -48,7 +45,7 @@ window.copiarTablaExcel = function(tablaId) {
     selection.addRange(range);
     try {
         document.execCommand('copy');
-        alert("¡Tabla copiada sin la fila de totales! Lista para pegar en Excel.");
+        alert("¡Tabla copiada con todo y la fila de totales! Lista para pegar en Excel.");
     } catch (err) {
         alert("Error al intentar copiar.");
     }
@@ -105,6 +102,12 @@ function obtenerValorFlexible(objetoRegistro, claveBuscada) {
 function renderTabla() {
     const tbody = document.querySelector('#tablaAcumulado tbody'); if(!tbody) return; tbody.innerHTML = "";
     
+    const contenedorTabla = document.querySelector('#tablaAcumulado')?.closest('.table-responsive');
+    if(contenedorTabla) {
+        contenedorTabla.style.maxHeight = "none";
+        contenedorTabla.style.overflowY = "visible";
+    }
+
     let dataF = bdtotalesGlobal.length > 0 ? bdtotalesGlobal : bdMadreGlobal;
     let remesasDisponibles = [...new Set(dataF.map(x => parseInt(obtenerValorFlexible(x, 'REMESA'), 10)))].filter(x => !isNaN(x)).sort((a, b) => a - b);
     
@@ -168,9 +171,8 @@ function renderTabla() {
         }
 
         let sumasMod = {};
-        // Recorremos TODAS las columnas definidas para sumar automáticamente cualquier campo numérico existente en la BD
         COLUMNAS_ACUMULADO_KEYS.forEach(col => {
-            if(!['ENT', 'DTTO', 'MODULO', 'INICIAL', 'FINAL', 'TOTAL_DE_FOLIOS'].includes(col)) {
+            if(!['ENT', 'DTTO', 'MODULO', 'INICIAL', 'FINAL', 'TOTAL_DE_FOLIOS', 'CONFIGURACION'].includes(col)) {
                 sumasMod[col] = 0;
             }
         });
@@ -182,7 +184,13 @@ function renderTabla() {
             });
         });
 
-        // Cálculo específico de Total de Trámites y Total de Movimientos basado en tus campos activos
+        // Para CONFIGURACION: tomamos el valor del último registro (remesa más grande) de este módulo
+        if(uReg) {
+            sumasMod['CONFIGURACION'] = obtenerValorFlexible(uReg, 'CONFIGURACION');
+        } else {
+            sumasMod['CONFIGURACION'] = "";
+        }
+
         let totalTramites = (sumasMod['INSCRIPCIONES'] || 0) + 
                             (sumasMod['CORRECCION_DE_DATOS_PERSONALES'] || 0) + 
                             (sumasMod['CAMBIO_DE_DOMICILIO'] || 0) + 
@@ -238,6 +246,13 @@ function renderTabla() {
                 } else {
                     tdDet.className = "text-danger fw-bold";
                 }
+            } else if(col === 'CONFIGURACION') {
+                // En configuración no sumamos, mostramos el valor asignado por módulo en la línea negra
+                if(isNegro && item.sumas) {
+                    valDet = item.sumas['CONFIGURACION'] !== undefined ? item.sumas['CONFIGURACION'] : "";
+                } else {
+                    valDet = "";
+                }
             } else {
                 if(isNegro && item.sumas && item.sumas[col] !== undefined) {
                     valDet = item.sumas[col];
@@ -258,7 +273,8 @@ function renderTabla() {
         let td = document.createElement('td');
         if(col === 'MODULO') {
             td.innerText = "TOTAL";
-        } else if (['ENT', 'DTTO', 'INICIAL', 'FINAL', 'INICIALES_C', 'CONFIGURACION'].includes(col)) {
+        } else if (['ENT', 'DTTO', 'INICIAL', 'FINAL', 'INICIALES_A', 'INICIALES_C', 'CONFIGURACION'].includes(col)) {
+            // Se excluye el total de Iniciales y Configuración según solicitud
             td.innerText = "";
         } else { 
             td.innerText = acumuladorGranTotal[col] || 0; 
@@ -266,6 +282,25 @@ function renderTabla() {
         trT.appendChild(td);
     });
     tbody.appendChild(trT);
+}
+
+function crearBotonFlotanteRemesas() {
+    if(document.getElementById('btnFlotanteRemesas')) return;
+    let btnF = document.createElement('button');
+    btnF.id = 'btnFlotanteRemesas';
+    btnF.className = 'btn btn-warning shadow fw-bold position-fixed';
+    btnF.style.cssText = 'bottom: 25px; right: 25px; z-index: 1050; border-radius: 50px; padding: 12px 24px; color: #000;';
+    btnF.innerHTML = '<i class="bi bi-list-columns"></i> Ver Remesas';
+    btnF.onclick = () => {
+        let modalEl = document.getElementById('modalRemesasAcumulado');
+        if(modalEl) {
+            let m = new bootstrap.Modal(modalEl);
+            m.show();
+        } else {
+            alert("El modal de remesas se está cargando. Intenta de nuevo en un segundo.");
+        }
+    };
+    document.body.appendChild(btnF);
 }
 
 const dbRefConfigAcumulado = ref(db, 'configuracion/acumulado');
@@ -298,6 +333,7 @@ if(btnGuardarAcumulado) {
 }
 
 construirHeaderTabla();
+crearBotonFlotanteRemesas();
 
 Promise.all([get(ref(db, 'bd_madre')), get(ref(db, 'bdtotales'))]).then(([sM, sT]) => {
     let aM = sM.exists() ? (Array.isArray(sM.val())?sM.val():Object.values(sM.val())).map(normalizarObj) : [];
