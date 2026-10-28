@@ -91,25 +91,27 @@ function renderTabla() {
     let acumuladorGranTotal = {};
     COLUMNAS_ACUMULADO_KEYS.forEach(col => { acumuladorGranTotal[col] = 0; });
 
+    let camposTrámites = [
+        'INSCRIPCIONES', 
+        'CORRECCION_DE_DATOS_PERSONALES', 
+        'CAMBIO_DE_DOMICILIO', 
+        'REPOSISION', 
+        'CORR__DE_DATOS_DIRECCION', 
+        'REINCORPORACION', 
+        'REEMPLAZO', 
+        'REIMPRESION'
+    ];
+
     modulosList.forEach(mod => {
         let regsMod = registros.filter(r => String(obtenerValorFlexible(r, 'MODULO') || '').trim().includes(mod)).sort((a,b)=>parseInt(obtenerValorFlexible(a, 'REMESA')) - parseInt(obtenerValorFlexible(b, 'REMESA')));
         if(regsMod.length === 0) return;
 
-        let tr = document.createElement('tr');
         let pReg = regsMod[0]; 
         let uReg = regsMod[regsMod.length-1];
 
-        // Columnas de trámites operativos específicos
-        let camposTrámites = [
-            'INSCRIPCIONES', 
-            'CORRECCION_DE_DATOS_PERSONALES', 
-            'CAMBIO_DE_DOMICILIO', 
-            'REPOSISION', 
-            'CORR__DE_DATOS_DIRECCION', 
-            'REINCORPORACION', 
-            'REEMPLAZO', 
-            'REIMPRESION'
-        ];
+        // 1. FILA PRINCIPAL RESUMEN DEL MÓDULO (Primera fila en rojo con totales acumulados)
+        let trPrincipal = document.createElement('tr');
+        trPrincipal.className = "fw-bold text-danger bg-light";
 
         let sumaTramitesModulo = 0;
         regsMod.forEach(r => {
@@ -125,7 +127,6 @@ function renderTabla() {
             if (!isNaN(v)) sumaCanceladosModulo += v;
         });
 
-        // Cálculo de Folios (Final - Inicial + 1)
         let valIniFolio = pReg ? parseFloat(obtenerValorFlexible(pReg, 'INICIAL')) : NaN;
         let valFinFolio = uReg ? parseFloat(obtenerValorFlexible(uReg, 'FINAL')) : NaN;
         let foliosNegra = (!isNaN(valIniFolio) && !isNaN(valFinFolio) && valFinFolio >= valIniFolio) ? (valFinFolio - valIniFolio + 1) : 0;
@@ -165,18 +166,52 @@ function renderTabla() {
                 acumuladorGranTotal[col] += sum;
             }
             td.innerText = valorCelda;
-            tr.appendChild(td);
+            trPrincipal.appendChild(td);
         });
-        tbody.appendChild(tr);
+        tbody.appendChild(trPrincipal);
+
+        // 2. FILAS SECUNDARIAS DE DESGLOSE (Remesa por remesa tal como en la imagen)
+        regsMod.forEach(rDetalle => {
+            let trDetalle = document.createElement('tr');
+            trDetalle.className = "text-danger"; // Estilo rojo como en el formato
+
+            let rIniDet = parseFloat(obtenerValorFlexible(rDetalle, 'INICIAL')) || 0;
+            let rFinDet = parseFloat(obtenerValorFlexible(rDetalle, 'FINAL')) || 0;
+            let foliosDet = (rFinDet >= rIniDet && rIniDet > 0) ? (rFinDet - rIniDet + 1) : 0;
+
+            COLUMNAS_ACUMULADO_KEYS.forEach(col => {
+                let tdDet = document.createElement('td');
+                let valDet = "";
+
+                if(col === 'MODULO') {
+                    valDet = mod;
+                } else if(col === 'INICIAL') {
+                    valDet = obtenerValorFlexible(rDetalle, 'INICIAL') || "";
+                } else if(col === 'FINAL') {
+                    valDet = obtenerValorFlexible(rDetalle, 'FINAL') || "";
+                } else if(col === 'TOTAL_DE_FOLIOS') {
+                    valDet = foliosDet > 0 ? foliosDet : "";
+                } else if(['ENT','DTTO'].includes(col)) {
+                    valDet = obtenerValorFlexible(rDetalle, col) || "";
+                } else {
+                    // Las filas secundarias muestran celdas vacías en los rubros operativos tal como en tu formato de Excel
+                    valDet = "";
+                }
+                tdDet.innerText = valDet;
+                trDetalle.appendChild(tdDet);
+            });
+            tbody.appendChild(trDetalle);
+        });
     });
     
+    // 3. FILA DE GRAN TOTAL FINAL
     let trT = document.createElement('tr'); 
-    trT.className = 'fila-totales fw-bold';
+    trT.className = 'fila-totales fw-bold bg-dark text-white';
     COLUMNAS_ACUMULADO_KEYS.forEach(col => {
         let td = document.createElement('td');
         td.style.fontWeight = 'bold';
         if(col === 'MODULO') {
-            td.innerText = "GRAN TOTAL";
+            td.innerText = "TOTAL";
         } else if (['INICIAL','FINAL','INICIALES_A','CONFIGURACION','ENT','DTTO'].includes(col)) {
             td.innerText = "";
         } else { 
@@ -187,7 +222,6 @@ function renderTabla() {
     tbody.appendChild(trT);
 }
 
-// Ventana flotante de Auditoría y Desglose de Acumulado
 function abrirVentanaAuditoriaAcumulado() {
     let rIniVal = document.getElementById('inputAcumuladoInicio')?.value.trim() || '';
     let rFinVal = document.getElementById('inputAcumuladoFin')?.value.trim() || '';
@@ -275,7 +309,6 @@ function abrirVentanaAuditoriaAcumulado() {
     myModal.show();
 }
 
-// Inyectar botón "Ver Desglose" junto al botón de guardar acumulado
 document.addEventListener("DOMContentLoaded", () => {
     const btnGuardarAcumulado = document.getElementById('btnGuardarAcumulado');
     if (btnGuardarAcumulado && !document.getElementById('btnAuditarAcumulado')) {
