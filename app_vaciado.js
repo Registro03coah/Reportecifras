@@ -33,7 +33,7 @@ const NOMBRES_ESTANDAR_BD = [
     "NUMERO_DE_ARCHIVOS_DE_TRANSACCION_ACEPTADOS", "TOTAL_DE_ARCHIVOS_DE_TRANSACCION_PROCESADOS",
     "RECIBIDAS", "CREDENCIALES_INCONSISTENTES",
     "CREDENCIALES_TOTALES_EN_SIIRFE_DISPONIBLES_PARA_ENTREGA", "TOTAL_DE_CREDENCIALES_ENTREGADAS",
-    "TOTAL_DE_CREDENCIALES_SOLICITADAS", "IMPORTADAS", "EXPORTADAS", "MAL_IMPRESA", "REPOSICION_REIMPRESIONES",
+    "TOTAL_DE_CREDENCIALES_SOLICITADAS", "IMPORTADAS", "EXPORTADAS", "MAL_IMPRESA", "REPOSISION_REIMPRESIONES",
      "ERROR_EN_CARTOGRAFIA", "DEFUNCION", "SUSPENSION", "DUPLICADO",
     "ERROR_EN_NUM_DE_EMISION", "PERDIDA_DE_VIGENCIA", "MOV_POST", "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS"
 ];
@@ -42,13 +42,15 @@ const INDEX_COLUMNA_REMESA = 38;
 const INDEX_COLUMNA_FECHA = 1;   
 const INDEX_COLUMNA_MODULO = 45; 
 
-// Índices exactos según el arreglo oficial
-const IDX_REPOSICION = NOMBRES_ESTANDAR_BD.indexOf("REPOSICION");                   // 10
-const IDX_REIMPRESION = NOMBRES_ESTANDAR_BD.indexOf("REIMPRESION");                // 14
-const IDX_REPOS_REIMP = NOMBRES_ESTANDAR_BD.indexOf("REPOSISION_REIMPRESIONES");     // 65
-const IDX_TOTAL_FOLIOS = NOMBRES_ESTANDAR_BD.indexOf("TOTAL_DE_FOLIOS");             // 6
-const IDX_FICHAS_REQ = NOMBRES_ESTANDAR_BD.indexOf("NUMERO_DE_FICHAS_REQUISITADAS"); // 54
-const IDX_FICHAS_ATEN = NOMBRES_ESTANDAR_BD.indexOf("NUMERO_DE_FICHAS_ATENDIDAS");   // 32
+const IDX_REPOSICION = NOMBRES_ESTANDAR_BD.indexOf("REPOSICION");                   
+const IDX_REIMPRESION = NOMBRES_ESTANDAR_BD.indexOf("REIMPRESION");                
+const IDX_REPOS_REIMP = NOMBRES_ESTANDAR_BD.indexOf("REPOSISION_REIMPRESIONES");     
+const IDX_TOTAL_FOLIOS = NOMBRES_ESTANDAR_BD.indexOf("TOTAL_DE_FOLIOS");             
+const IDX_FICHAS_REQ = NOMBRES_ESTANDAR_BD.indexOf("NUMERO_DE_FICHAS_REQUISITADAS"); 
+const IDX_FICHAS_ATEN = NOMBRES_ESTANDAR_BD.indexOf("NUMERO_DE_FICHAS_ATENDIDAS");   
+const IDX_TOTAL_TRAMITES = NOMBRES_ESTANDAR_BD.indexOf("TOTAL_DE_TRAMITES");
+const IDX_CANCELADOS = NOMBRES_ESTANDAR_BD.indexOf("CANCELADOS");
+const IDX_TOTAL_MOVIMIENTOS = NOMBRES_ESTANDAR_BD.indexOf("TOTAL_DE_MOVIMIENTOS");
 
 document.addEventListener("DOMContentLoaded", () => {
     inicializarEncabezadosYTablas();
@@ -105,10 +107,13 @@ function generarIdMacTotales(mod, remesa) {
     return `${mod2}${rem4}`;
 }
 
-// Función para calcular sumas automáticas en cada fila
 function calcularCamposDerivados(fila) {
     const inputs = fila.querySelectorAll('input');
     
+    inputs.forEach(inp => {
+        if (inp.value.trim() === "") inp.value = "0";
+    });
+
     // 1. Suma de Reposición + Reimpresión hacia REPOSISION_REIMPRESIONES
     if (IDX_REPOSICION !== -1 && IDX_REIMPRESION !== -1 && IDX_REPOS_REIMP !== -1) {
         const inputRepo = inputs[IDX_REPOSICION - 1];
@@ -122,7 +127,7 @@ function calcularCamposDerivados(fila) {
         }
     }
 
-    // 2. Copiar Total de Folios a Fichas Requisitadas y Fichas Atendidas
+    // 2. Duplicar Total de Folios a Fichas Requisitadas y Atendidas
     if (IDX_TOTAL_FOLIOS !== -1) {
         const inputTotalFolios = inputs[IDX_TOTAL_FOLIOS - 1];
         if (inputTotalFolios) {
@@ -136,6 +141,19 @@ function calcularCamposDerivados(fila) {
                 const inputAten = inputs[IDX_FICHAS_ATEN - 1];
                 if (inputAten) inputAten.value = valFolios;
             }
+        }
+    }
+
+    // 3. Resta de Total de Trámites - Cancelados hacia Total de Movimientos
+    if (IDX_TOTAL_TRAMITES !== -1 && IDX_CANCELADOS !== -1 && IDX_TOTAL_MOVIMIENTOS !== -1) {
+        const inputTramites = inputs[IDX_TOTAL_TRAMITES - 1];
+        const inputCancelados = inputs[IDX_CANCELADOS - 1];
+        const inputMovimientos = inputs[IDX_TOTAL_MOVIMIENTOS - 1];
+
+        if (inputTramites && inputCancelados && inputMovimientos) {
+            const valTramites = parseFloat(inputTramites.value) || 0;
+            const valCancelados = parseFloat(inputCancelados.value) || 0;
+            inputMovimientos.value = valTramites - valCancelados;
         }
     }
 }
@@ -217,7 +235,7 @@ function inicializarEncabezadosYTablas() {
                 input.type = "text";
                 input.className = "form-control form-control-sm text-center p-0 border-0 bg-transparent fw-bold";
                 input.value = "0";
-                if (i === IDX_REPOS_REIMP || i === IDX_FICHAS_REQ || i === IDX_FICHAS_ATEN) {
+                if (i === IDX_REPOS_REIMP || i === IDX_FICHAS_REQ || i === IDX_FICHAS_ATEN || i === IDX_TOTAL_MOVIMIENTOS) {
                     input.readOnly = true;
                 }
                 td.appendChild(input);
@@ -369,8 +387,10 @@ function configurarPegadoPortapapeles() {
 
                 editableInputs.forEach((input, cIdx) => {
                     let valorCelda = celdasDatos[cIdx + startIndex];
-                    if (valorCelda !== undefined) {
+                    if (valorCelda !== undefined && valorCelda.trim() !== "") {
                         input.value = valorCelda.trim();
+                    } else {
+                        input.value = "0";
                     }
                 });
 
@@ -403,7 +423,9 @@ function calcularTotalesGenerales() {
         for (let c = 1; c < TOTAL_COLUMNAS; c++) {
             let valOrigen = filaTotalesModulo.querySelectorAll('td')[c].querySelector('input').value;
             let inputDestino = filaDestinoTotales.querySelectorAll('td')[c].querySelector('input');
-            if (inputDestino) inputDestino.value = (valOrigen !== "" ? valOrigen : "0");
+            if (inputDestino) {
+                inputDestino.value = (valOrigen !== "" && valOrigen !== undefined ? valOrigen : "0");
+            }
         }
     });
 }
@@ -435,7 +457,9 @@ function cargarDatosDesdeFirebase() {
                                 let inputs = filas[rIdx].querySelectorAll('input');
                                 filaArr.forEach((val, cIdx) => {
                                     if (cIdx === 0) return;
-                                    if (inputs[cIdx - 1]) inputs[cIdx - 1].value = (val !== "" ? val : "0");
+                                    if (inputs[cIdx - 1]) {
+                                        inputs[cIdx - 1].value = (val !== "" && val !== undefined && val !== null ? val : "0");
+                                    }
                                 });
                                 calcularCamposDerivados(filas[rIdx]);
                             }
@@ -446,6 +470,10 @@ function cargarDatosDesdeFirebase() {
             actualizarRemesaVisualizador();
         }
     });
+}
+
+function guardarBasesInFirebase() {
+    // ...
 }
 
 function guardarBasesEnFirebase() {
@@ -486,8 +514,10 @@ function guardarBasesEnFirebase() {
                 } else {
                     const input = td.querySelector('input');
                     valCelda = input ? input.value.trim() : "";
-                    // Si está vacío, se fuerza a "0" para que no se guarde en blanco
-                    if (valCelda === "" || valCelda === undefined) valCelda = "0";
+                    if (valCelda === "" || valCelda === undefined || valCelda === null) {
+                        valCelda = "0";
+                        if (input) input.value = "0";
+                    }
                 }
                 
                 filaArray.push(valCelda);
@@ -556,7 +586,10 @@ function guardarBasesEnFirebase() {
                 } else {
                     const input = td.querySelector('input');
                     valCelda = input ? input.value.trim() : "0";
-                    if (valCelda === "" || valCelda === undefined) valCelda = "0";
+                    if (valCelda === "" || valCelda === undefined || valCelda === null) {
+                        valCelda = "0";
+                        if (input) input.value = "0";
+                    }
                 }
 
                 let nombreOriginal = NOMBRES_ESTANDAR_BD[colIdx];
