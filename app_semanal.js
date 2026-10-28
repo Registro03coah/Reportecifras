@@ -1,6 +1,6 @@
 /**
  * Sistema de Reportes Diarios - Módulos MAC (Nube)
- * Versión: 11.1
+ * Versión: 11.1 (Ubicada en el pie de página)
  */
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -71,7 +71,6 @@ const ESTRUCTURA_SEMANAL = [
 let bdTotalesGlobal = [];
 let anchosGuardados = JSON.parse(localStorage.getItem('anchosColumnasSemanal')) || {};
 
-// Función para copiar la tabla a Excel omitiendo o manteniendo la fila de totales según prefieras
 window.copiarTablaExcel = function(tablaId) {
     const tabla = document.getElementById(tablaId);
     if (!tabla) return;
@@ -188,8 +187,14 @@ function actualizarContadoresGlobales(datosMostrados, remesaIni, remesaFin) {
         contadorInfo.innerHTML = `
             <i class="bi bi-collection-fill text-info"></i> Líneas: <span>${totalLineas}</span> | 
             <i class="bi bi-tags-fill text-warning"></i> Remesas Totales: <span>${remesasUnicasTotales.size}</span> | 
-            <i class="bi bi-filter-circle-fill text-success"></i> Rango: <span>${remesaIni || 'N/A'} al ${remesaFin || 'N/A'}</span>
+            <i class="bi bi-filter-circle-fill text-success"></i> Rango: <span>${remesaIni || 'Libre'} al ${remesaFin || 'Última'}</span>
         `;
+    }
+
+    // Actualizar versión en el pie de página si existe el elemento correspondiente
+    const footerVersion = document.getElementById('footerVersion');
+    if (footerVersion) {
+        footerVersion.innerText = "Versión 11.1";
     }
 }
 
@@ -197,26 +202,18 @@ function procesarYMostrarDatosConFiltroRemesas() {
     const inputIni = document.getElementById('remesaInicialInput');
     const inputFin = document.getElementById('remesaFinalInput');
 
-    let remesaIni = inputIni ? inputIni.value.trim() : localStorage.getItem('remesaInicial_v11') || '';
-    let remesaFin = inputFin ? inputFin.value.trim() : localStorage.getItem('remesaFinal_v11') || '';
+    // Tomamos los valores directamente de lo que el usuario escribe en los inputs
+    let remesaIni = inputIni ? inputIni.value.trim() : '';
+    let remesaFin = inputFin ? inputFin.value.trim() : '';
 
-    // Si los inputs están vacíos pero hay valores guardados, cargarlos
-    if (inputIni && !inputIni.value && localStorage.getItem('remesaInicial_v11')) {
-        inputIni.value = localStorage.getItem('remesaInicial_v11');
-        remesaIni = inputIni.value;
-    }
-    if (inputFin && !inputFin.value && localStorage.getItem('remesaFinal_v11')) {
-        inputFin.value = localStorage.getItem('remesaFinal_v11');
-        remesaFin = inputFin.value;
-    }
+    // Guardar en localStorage conforme el usuario escribe para recordar su captura
+    if (inputIni) localStorage.setItem('remesaInicial_v11', remesaIni);
+    if (inputFin) localStorage.setItem('remesaFinal_v11', remesaFin);
 
     const objRemesa = ESTRUCTURA_SEMANAL.find(c => c.key === 'Remesa') || { key: 'Remesa', num: 39 };
-
-    // Si no hay remesa final especificada, determinamos la última remesa disponible
     let ultimaRemesaGlobal = obtenerUltimaRemesa(bdTotalesGlobal);
     let remesaEfectivaFin = remesaFin !== "" ? remesaFin : ultimaRemesaGlobal;
 
-    // Filtrar datos según el rango de remesas
     let datosFiltrados = bdTotalesGlobal.filter(fila => {
         let valRemesa = String(obtenerValorFila(fila, objRemesa)).trim();
         if (!valRemesa) return false;
@@ -238,13 +235,12 @@ function procesarYMostrarDatosConFiltroRemesas() {
         return true;
     });
 
-    if (datosFiltrados.length === 0 && bdTotalesGlobal.length > 0 && ultimaRemesaGlobal) {
-        // Fallback predeterminado a la última remesa si el rango queda vacío
+    if (datosFiltrados.length === 0 && bdTotalesGlobal.length > 0 && ultimaRemesaGlobal && remesaIni === "") {
         datosFiltrados = bdTotalesGlobal.filter(fila => String(obtenerValorFila(fila, objRemesa)).trim() === String(ultimaRemesaGlobal));
     }
 
     renderizarTablaConTotales(datosFiltrados);
-    actualizarContadoresGlobales(datosFiltrados, remesaIni || (datosFiltrados[0] ? obtenerValorFila(datosFiltrados[0], objRemesa) : ''), remesaEfectivaFin);
+    actualizarContadoresGlobales(datosFiltrados, remesaIni, remesaFin);
 }
 
 function renderizarTablaConTotales(datos) {
@@ -254,13 +250,11 @@ function renderizarTablaConTotales(datos) {
     
     if (!datos || datos.length === 0) return;
 
-    // Objeto para acumular los totales de las columnas numéricas
     let sumatoriasTotales = {};
     ESTRUCTURA_SEMANAL.forEach(colObj => {
         sumatoriasTotales[colObj.key] = 0;
     });
 
-    // Pintar filas de datos
     datos.forEach(fila => {
         let tr = document.createElement('tr');
         ESTRUCTURA_SEMANAL.forEach(colObj => {
@@ -274,7 +268,6 @@ function renderizarTablaConTotales(datos) {
             td.innerText = val;
             tr.appendChild(td);
 
-            // Acumular si es valor numérico válido
             let numVal = parseFloat(val);
             if (!isNaN(numVal)) {
                 sumatoriasTotales[colObj.key] += numVal;
@@ -283,7 +276,6 @@ function renderizarTablaConTotales(datos) {
         tbody.appendChild(tr);
     });
 
-    // Crear y agregar la 4ta línea: Fila de Totales
     let trTotales = document.createElement('tr');
     trTotales.className = 'fila-totales table-dark fw-bold';
     
@@ -301,23 +293,21 @@ function renderizarTablaConTotales(datos) {
     tbody.appendChild(trTotales);
 }
 
-// Configuración de Eventos para Inputs de Remesa y Buscador
 document.addEventListener("DOMContentLoaded", () => {
     const inputIni = document.getElementById('remesaInicialInput');
     const inputFin = document.getElementById('remesaFinalInput');
 
+    // Cargar valores guardados previamente en localStorage si existen, de lo contrario inician vacíos
     if (inputIni) {
         inputIni.value = localStorage.getItem('remesaInicial_v11') || '';
-        inputIni.addEventListener('input', (e) => {
-            localStorage.setItem('remesaInicial_v11', e.target.value.trim());
+        inputIni.addEventListener('input', () => {
             procesarYMostrarDatosConFiltroRemesas();
         });
     }
 
     if (inputFin) {
         inputFin.value = localStorage.getItem('remesaFinal_v11') || '';
-        inputFin.addEventListener('input', (e) => {
-            localStorage.setItem('remesaFinal_v11', e.target.value.trim());
+        inputFin.addEventListener('input', () => {
             procesarYMostrarDatosConFiltroRemesas();
         });
     }
@@ -342,23 +332,20 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-// Construir cabecera de inmediato
 construirHeaderTabla();
 
-// Conexión Firebase Semáforo
 onValue(ref(db, ".info/connected"), (snap) => {
     const sem = document.getElementById("semaforoConexion");
     if(!sem) return;
     if (snap.val() === true) { 
         sem.className = "badge bg-success text-white fs-6 px-3 py-2 rounded-pill"; 
-        sem.innerHTML = 'ONLINE (v11.1)'; 
+        sem.innerHTML = 'ONLINE'; 
     } else { 
         sem.className = "badge bg-danger text-white fs-6 px-3 py-2 rounded-pill"; 
         sem.innerHTML = 'OFFLINE'; 
     }
 });
 
-// Lectura de la base de datos 'bdtotales'
 onValue(ref(db, 'bdtotales'), (snapshot) => {
     if (snapshot.exists()) {
         const data = snapshot.val();
