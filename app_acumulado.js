@@ -36,22 +36,35 @@ window.copiarTablaExcel = function(tablaId) {
 };
 
 let dataGlobalAcumulado = [];
+
 onValue(ref(db, ".info/connected"), (s) => { 
     let sem = document.getElementById("semaforoConexion"); 
-    if(sem) sem.innerText = s.val() ? "ONLINE" : "OFFLINE"; 
+    if(sem) {
+        sem.className = s.val() ? "badge bg-success text-white ms-2" : "badge bg-danger text-white ms-2";
+        sem.innerHTML = s.val() ? '<i class="bi bi-check-circle"></i> ONLINE' : '<i class="bi bi-x-circle"></i> OFFLINE';
+    }
 });
 
 function construirHeaderTabla() {
     const thead = document.querySelector('#tablaAcumulado thead'); if(!thead) return;
-    thead.innerHTML = ""; let trT = document.createElement('tr'); let trN = document.createElement('tr'); trN.className = 'num-row';
+    thead.innerHTML = ""; 
+    let trT = document.createElement('tr'); 
+    let trN = document.createElement('tr'); 
+    trN.className = 'num-row';
+    
     COLUMNAS_ACUMULADO_KEYS.forEach(col => {
-        let th = document.createElement('th'); th.innerText = col.replace(/_/g, ' '); 
+        let th = document.createElement('th'); 
+        th.innerText = col.replace(/_/g, ' '); 
         th.style.minWidth = ['MODULO','ENT','DTTO'].includes(col) ? "70px" : "90px";
         if(['INICIAL','FINAL','TOTAL_DE_FOLIOS'].includes(col)) th.classList.add('bg-folios');
         trT.appendChild(th);
-        let thN = document.createElement('th'); thN.innerText = obtenerNumeroColumna(col); trN.appendChild(thN);
+        
+        let thN = document.createElement('th'); 
+        thN.innerText = obtenerNumeroColumna(col); 
+        trN.appendChild(thN);
     });
-    thead.appendChild(trT); thead.appendChild(trN);
+    thead.appendChild(trT); 
+    thead.appendChild(trN);
 }
 
 function limpiarStr(str) {
@@ -70,7 +83,7 @@ function obtenerValorFlexible(objetoRegistro, claveBuscada) {
 function renderTabla() {
     const tbody = document.querySelector('#tablaAcumulado tbody'); if(!tbody) return; tbody.innerHTML = "";
     
-    let remesasDisponibles = [...new Set(dataGlobalAcumulado.map(x => parseInt(obtenerValorFlexible(x, 'REMESA'), 10)).filter(x => !isNaN(x)))].sort((a, b) => a - b);
+    let remesasDisponibles = [...new Set(dataGlobalAcumulado.map(x => parseInt(obtenerValorFlexible(x, 'REMESA'), 10)))].filter(x => !isNaN(x)).sort((a, b) => a - b);
     if(remesasDisponibles.length === 0) return;
 
     let rIniVal = document.getElementById('inputAcumuladoInicio')?.value.trim() || '';
@@ -79,251 +92,76 @@ function renderTabla() {
     let rIni = rIniVal !== "" ? parseInt(rIniVal, 10) : remesasDisponibles[0];
     let rFin = rFinVal !== "" ? parseInt(rFinVal, 10) : remesasDisponibles[remesasDisponibles.length - 1];
 
-    let lbl = document.getElementById('lblRangoRemesas');
-    if(lbl) lbl.innerText = `Desde ${rIni} hasta ${rFin}`;
-
     let registros = dataGlobalAcumulado.filter(f => { 
         let rNum = parseInt(obtenerValorFlexible(f, 'REMESA'), 10); 
         return !isNaN(rNum) && rNum >= rIni && rNum <= rFin; 
-    });
+    }).sort((a, b) => parseInt(obtenerValorFlexible(a, 'REMESA')) - parseInt(obtenerValorFlexible(b, 'REMESA')));
 
-    let modulosList = ['050351', '050353', '050354'];
     let acumuladorGranTotal = {};
     COLUMNAS_ACUMULADO_KEYS.forEach(col => { acumuladorGranTotal[col] = 0; });
 
-    let camposTrámites = [
-        'INSCRIPCIONES', 
-        'CORRECCION_DE_DATOS_PERSONALES', 
-        'CAMBIO_DE_DOMICILIO', 
-        'REPOSISION', 
-        'CORR__DE_DATOS_DIRECCION', 
-        'REINCORPORACION', 
-        'REEMPLAZO', 
-        'REIMPRESION'
-    ];
+    registros.forEach(rDetalle => {
+        let trDetalle = document.createElement('tr');
 
-    modulosList.forEach(mod => {
-        let regsMod = registros.filter(r => String(obtenerValorFlexible(r, 'MODULO') || '').trim().includes(mod)).sort((a,b)=>parseInt(obtenerValorFlexible(a, 'REMESA')) - parseInt(obtenerValorFlexible(b, 'REMESA')));
-        if(regsMod.length === 0) return;
+        let rIniDet = parseFloat(obtenerValorFlexible(rDetalle, 'INICIAL')) || 0;
+        let rFinDet = parseFloat(obtenerValorFlexible(rDetalle, 'FINAL')) || 0;
+        let foliosDet = (rFinDet >= rIniDet && rIniDet > 0) ? (rFinDet - rIniDet + 1) : 0;
 
-        let pReg = regsMod[0]; 
-        let uReg = regsMod[regsMod.length-1];
-
-        // 1. FILA PRINCIPAL RESUMEN DEL MÓDULO (Primera fila en rojo con totales acumulados)
-        let trPrincipal = document.createElement('tr');
-        trPrincipal.className = "fw-bold text-danger bg-light";
-
-        let sumaTramitesModulo = 0;
-        regsMod.forEach(r => {
-            camposTrámites.forEach(cKey => {
-                let v = parseFloat(obtenerValorFlexible(r, cKey) || 0);
-                if (!isNaN(v)) sumaTramitesModulo += v;
-            });
-        });
-
-        let sumaCanceladosModulo = 0;
-        regsMod.forEach(r => {
-            let v = parseFloat(obtenerValorFlexible(r, 'CANCELADOS') || 0);
-            if (!isNaN(v)) sumaCanceladosModulo += v;
-        });
-
-        let valIniFolio = pReg ? parseFloat(obtenerValorFlexible(pReg, 'INICIAL')) : NaN;
-        let valFinFolio = uReg ? parseFloat(obtenerValorFlexible(uReg, 'FINAL')) : NaN;
-        let foliosNegra = (!isNaN(valIniFolio) && !isNaN(valFinFolio) && valFinFolio >= valIniFolio) ? (valFinFolio - valIniFolio + 1) : 0;
+        acumuladorGranTotal['TOTAL_DE_FOLIOS'] += foliosDet;
 
         COLUMNAS_ACUMULADO_KEYS.forEach(col => {
-            let td = document.createElement('td');
-            let valorCelda = "";
+            let tdDet = document.createElement('td');
+            let valDet = "";
 
-            if(col === 'MODULO') {
-                valorCelda = mod;
+            if(col === 'ENT') {
+                valDet = obtenerValorFlexible(rDetalle, 'ENT') || "05";
+                tdDet.className = "text-danger fw-bold";
+            } else if(col === 'DTTO') {
+                valDet = obtenerValorFlexible(rDetalle, 'DTTO') || "03";
+                tdDet.className = "text-danger fw-bold";
+            } else if(col === 'MODULO') {
+                valDet = obtenerValorFlexible(rDetalle, 'MODULO') || "";
+                tdDet.className = "text-danger fw-bold";
             } else if(col === 'INICIAL') {
-                valorCelda = obtenerValorFlexible(pReg, 'INICIAL') || "0";
+                valDet = obtenerValorFlexible(rDetalle, 'INICIAL') || "";
+                tdDet.className = "text-danger fw-bold";
             } else if(col === 'FINAL') {
-                valorCelda = obtenerValorFlexible(uReg, 'FINAL') || "0";
-            } else if(col === 'INICIALES_A') {
-                valorCelda = obtenerValorFlexible(pReg, 'INICIALES_A') || "0";
-            } else if(col === 'CONFIGURACION') {
-                valorCelda = obtenerValorFlexible(uReg, 'CONFIGURACION') || "0";
-            } else if(['ENT','DTTO'].includes(col)) {
-                valorCelda = obtenerValorFlexible(pReg, col) || "";
+                valDet = obtenerValorFlexible(rDetalle, 'FINAL') || "";
+                tdDet.className = "text-danger fw-bold";
             } else if(col === 'TOTAL_DE_FOLIOS') {
-                valorCelda = foliosNegra;
-                acumuladorGranTotal[col] += Number(valorCelda);
-            } else if(col === 'TOTAL_DE_TRAMITES') {
-                valorCelda = sumaTramitesModulo;
-                acumuladorGranTotal[col] += Number(valorCelda);
-            } else if(col === 'TOTAL_DE_MOVIMIENTOS') {
-                valorCelda = sumaTramitesModulo - sumaCanceladosModulo;
-                acumuladorGranTotal[col] += Number(valorCelda);
-            } else { 
-                let sum = 0; 
-                regsMod.forEach(r => { 
-                    let val = parseFloat(obtenerValorFlexible(r, col) || 0); 
-                    if(!isNaN(val)) sum += val; 
-                }); 
-                valorCelda = sum;
-                acumuladorGranTotal[col] += sum;
-            }
-            td.innerText = valorCelda;
-            trPrincipal.appendChild(td);
-        });
-        tbody.appendChild(trPrincipal);
-
-        // 2. FILAS SECUNDARIAS DE DESGLOSE (Remesa por remesa tal como en la imagen)
-        regsMod.forEach(rDetalle => {
-            let trDetalle = document.createElement('tr');
-            trDetalle.className = "text-danger"; // Estilo rojo como en el formato
-
-            let rIniDet = parseFloat(obtenerValorFlexible(rDetalle, 'INICIAL')) || 0;
-            let rFinDet = parseFloat(obtenerValorFlexible(rDetalle, 'FINAL')) || 0;
-            let foliosDet = (rFinDet >= rIniDet && rIniDet > 0) ? (rFinDet - rIniDet + 1) : 0;
-
-            COLUMNAS_ACUMULADO_KEYS.forEach(col => {
-                let tdDet = document.createElement('td');
-                let valDet = "";
-
-                if(col === 'MODULO') {
-                    valDet = mod;
-                } else if(col === 'INICIAL') {
-                    valDet = obtenerValorFlexible(rDetalle, 'INICIAL') || "";
-                } else if(col === 'FINAL') {
-                    valDet = obtenerValorFlexible(rDetalle, 'FINAL') || "";
-                } else if(col === 'TOTAL_DE_FOLIOS') {
-                    valDet = foliosDet > 0 ? foliosDet : "";
-                } else if(['ENT','DTTO'].includes(col)) {
-                    valDet = obtenerValorFlexible(rDetalle, col) || "";
+                valDet = foliosDet > 0 ? foliosDet : "";
+                tdDet.className = "text-dark fw-bold";
+            } else {
+                let vNum = parseFloat(obtenerValorFlexible(rDetalle, col) || 0);
+                if(!isNaN(vNum) && vNum !== 0) {
+                    valDet = vNum;
+                    acumuladorGranTotal[col] += vNum;
                 } else {
-                    // Las filas secundarias muestran celdas vacías en los rubros operativos tal como en tu formato de Excel
                     valDet = "";
                 }
-                tdDet.innerText = valDet;
-                trDetalle.appendChild(tdDet);
-            });
-            tbody.appendChild(trDetalle);
+            }
+            tdDet.innerText = valDet;
+            trDetalle.appendChild(tdDet);
         });
+        tbody.appendChild(trDetalle);
     });
     
-    // 3. FILA DE GRAN TOTAL FINAL
+    // Fila de Gran Total Final al pie de la tabla
     let trT = document.createElement('tr'); 
-    trT.className = 'fila-totales fw-bold bg-dark text-white';
+    trT.className = 'fila-totales fw-bold';
     COLUMNAS_ACUMULADO_KEYS.forEach(col => {
         let td = document.createElement('td');
-        td.style.fontWeight = 'bold';
         if(col === 'MODULO') {
             td.innerText = "TOTAL";
-        } else if (['INICIAL','FINAL','INICIALES_A','CONFIGURACION','ENT','DTTO'].includes(col)) {
+        } else if (['ENT', 'DTTO', 'INICIAL', 'FINAL', 'INICIALES_A', 'CONFIGURACION'].includes(col)) {
             td.innerText = "";
         } else { 
-            td.innerText = acumuladorGranTotal[col]; 
+            td.innerText = acumuladorGranTotal[col] || 0; 
         }
         trT.appendChild(td);
     });
     tbody.appendChild(trT);
 }
-
-function abrirVentanaAuditoriaAcumulado() {
-    let rIniVal = document.getElementById('inputAcumuladoInicio')?.value.trim() || '';
-    let rFinVal = document.getElementById('inputAcumuladoFin')?.value.trim() || '';
-
-    let remesasDisponibles = [...new Set(dataGlobalAcumulado.map(x => parseInt(obtenerValorFlexible(x, 'REMESA'), 10)).filter(x => !isNaN(x)))].sort((a, b) => a - b);
-    if(remesasDisponibles.length === 0) {
-        alert("No hay remesas disponibles para auditar.");
-        return;
-    }
-
-    let rIni = rIniVal !== "" ? parseInt(rIniVal, 10) : remesasDisponibles[0];
-    let rFin = rFinVal !== "" ? parseInt(rFinVal, 10) : remesasDisponibles[remesasDisponibles.length - 1];
-
-    let registros = dataGlobalAcumulado.filter(f => { 
-        let rNum = parseInt(obtenerValorFlexible(f, 'REMESA'), 10); 
-        return !isNaN(rNum) && rNum >= rIni && rNum <= rFin; 
-    }).sort((a, b) => parseInt(obtenerValorFlexible(a, 'REMESA'), 10) - parseInt(obtenerValorFlexible(b, 'REMESA'), 10));
-
-    let modalId = "modalAuditoriaAcumulado";
-    let modalEl = document.getElementById(modalId);
-    if (!modalEl) {
-        const modalHtml = `
-        <div class="modal fade" id="${modalId}" tabindex="-1" aria-hidden="true">
-          <div class="modal-dialog modal-xl modal-dialog-scrollable">
-            <div class="modal-content">
-              <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title fw-bold"><i class="bi bi-search"></i> Auditoría de Acumulado en Rango (<span id="lblRangoAuditoriaAcum"></span>)</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-              </div>
-              <div class="modal-body bg-light">
-                <div class="mb-3 text-end">
-                    <button class="btn btn-success btn-sm fw-bold" onclick="copiarTablaExcel('tablaAuditoriaDesgloseAcum')">
-                        <i class="bi bi-table"></i> Copiar Desglose a Excel
-                    </button>
-                </div>
-                <div class="table-responsive bg-white rounded shadow-sm p-2" style="max-height: 60vh;">
-                    <table class="table table-bordered table-striped table-hover text-center align-middle" id="tablaAuditoriaDesgloseAcum" style="font-size: 11px;">
-                        <thead class="table-dark sticky-top" id="cabeceraAuditoriaAcum"></thead>
-                        <tbody id="cuerpoAuditoriaAcum"></tbody>
-                    </table>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>`;
-        document.body.insertAdjacentHTML('beforeend', modalHtml);
-        modalEl = document.getElementById(modalId);
-    }
-
-    document.getElementById('lblRangoAuditoriaAcum').innerText = `${rIni} al ${rFin}`;
-
-    let theadAud = document.getElementById('cabeceraAuditoriaAcum');
-    let trTh = `<tr><th>REMESA</th><th>MÓDULO</th>`;
-    COLUMNAS_ACUMULADO_KEYS.forEach(col => {
-        if(!['ENT', 'DTTO', 'MODULO'].includes(col)) {
-            trTh += `<th>${col.replace(/_/g, ' ')}</th>`;
-        }
-    });
-    trTh += `</tr>`;
-    theadAud.innerHTML = trTh;
-
-    let tbodyAud = document.getElementById('cuerpoAuditoriaAcum');
-    tbodyAud.innerHTML = "";
-
-    if (registros.length === 0) {
-        tbodyAud.innerHTML = `<tr><td colspan="10" class="text-muted py-3">No se encontraron registros en el rango seleccionado.</td></tr>`;
-    } else {
-        registros.forEach(r => {
-            let remVal = obtenerValorFlexible(r, 'REMESA');
-            let modVal = obtenerValorFlexible(r, 'MODULO');
-            let trRow = `<tr><td class="fw-bold bg-warning-subtle">${remVal}</td><td class="fw-bold">${modVal}</td>`;
-            
-            COLUMNAS_ACUMULADO_KEYS.forEach(col => {
-                if(!['ENT', 'DTTO', 'MODULO'].includes(col)) {
-                    let valCol = obtenerValorFlexible(r, col) || "0";
-                    trRow += `<td>${valCol}</td>`;
-                }
-            });
-            trRow += `</tr>`;
-            tbodyAud.innerHTML += trRow;
-        });
-    }
-
-    let myModal = new bootstrap.Modal(modalEl);
-    myModal.show();
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-    const btnGuardarAcumulado = document.getElementById('btnGuardarAcumulado');
-    if (btnGuardarAcumulado && !document.getElementById('btnAuditarAcumulado')) {
-        let btnAuditar = document.createElement('button');
-        btnAuditar.id = 'btnAuditarAcumulado';
-        btnAuditar.className = 'btn btn-warning btn-sm fw-bold ms-2';
-        btnAuditar.innerHTML = '<i class="bi bi-search"></i> Ver Desglose';
-        btnAuditar.addEventListener('click', abrirVentanaAuditoriaAcumulado);
-        btnGuardarAcumulado.parentNode.insertBefore(btnAuditar, btnGuardarAcumulado.nextSibling);
-    }
-});
-
-function normalizarObj(i) { let l={}; for(let k in i) l[k.toUpperCase().trim()] = i[k]; return l; }
-
-construirHeaderTabla();
 
 const dbRefConfigAcumulado = ref(db, 'configuracion/acumulado');
 onValue(dbRefConfigAcumulado, (snapshot) => {
@@ -345,7 +183,7 @@ if(btnGuardarAcumulado) {
             inicio: iniVal,
             fin: finVal
         }).then(() => {
-            alert("¡Rango de acumulado guardado en la nube y sincronizado para todos los equipos!");
+            alert("¡Rango de acumulado guardado en la nube y sincronizado!");
             renderTabla();
         }).catch((error) => {
             console.error("Error al guardar configuración en Firebase:", error);
@@ -354,12 +192,14 @@ if(btnGuardarAcumulado) {
     });
 }
 
+construirHeaderTabla();
+
 Promise.all([get(ref(db, 'bd_madre')), get(ref(db, 'bdtotales'))]).then(([sM, sT]) => {
     let aM = sM.exists() ? (Array.isArray(sM.val())?sM.val():Object.values(sM.val())).map(normalizarObj) : [];
     let aT = sT.exists() ? (Array.isArray(sT.val())?sT.val():Object.values(sT.val())).map(normalizarObj) : [];
     dataGlobalAcumulado = [...aT, ...aM];
 
-    let todasRemesas = [...new Set(dataGlobalAcumulado.map(x => parseInt(obtenerValorFlexible(x, 'REMESA'), 10)).filter(x => !isNaN(x)))].sort((a, b) => a - b);
+    let todasRemesas = [...new Set(dataGlobalAcumulado.map(x => parseInt(obtenerValorFlexible(x, 'REMESA'), 10)))].filter(x => !isNaN(x)).sort((a, b) => a - b);
     
     if(todasRemesas.length > 0) {
         get(dbRefConfigAcumulado).then((snap) => {
@@ -374,3 +214,5 @@ Promise.all([get(ref(db, 'bd_madre')), get(ref(db, 'bdtotales'))]).then(([sM, sT
 
     renderTabla();
 });
+
+function normalizarObj(i) { let l={}; for(let k in i) l[k.toUpperCase().trim()] = i[k]; return l; }
