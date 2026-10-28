@@ -201,6 +201,37 @@ function renderTabla() {
                 valorCelda = pR ? (obtenerValorFlexible(pR, 'INICIAL') || "0") : "0";
             } else if(col === 'FINAL') {
                 valorCelda = uR ? (obtenerValorFlexible(uR, 'FINAL') || "0") : "0";
+            } else if(col === 'TOTAL_DE_FOLIOS') {
+                // REGLA 1: Total de folios = Final - Inicial + 1
+                let valIni = pR ? parseFloat(obtenerValorFlexible(pR, 'INICIAL')) : NaN;
+                let valFin = uR ? parseFloat(obtenerValorFlexible(uR, 'FINAL')) : NaN;
+                if (!isNaN(valIni) && !isNaN(valFin) && valFin >= valIni) {
+                    valorCelda = (valFin - valIni + 1);
+                } else {
+                    valorCelda = 0;
+                }
+                acumuladorGranTotal[col] += Number(valorCelda);
+            } else if(col === 'TOTAL_DE_MOVIMIENTOS') {
+                // REGLA 2: Suma estricta de las columnas de trámites específicos
+                let camposMov = [
+                    'INSCRIPCIONES', 
+                    'CORRECCION_DE_DATOS_PERSONALES', 
+                    'CAMBIO_DE_DOMICILIO', 
+                    'REPOSICION', 
+                    'CORR_DE_DATOS_DIRECCION', 
+                    'REINCORPORACION', 
+                    'REEMPLAZO', 
+                    'REIMPRESION'
+                ];
+                let sumaMov = 0;
+                regs.forEach(r => {
+                    camposMov.forEach(cKey => {
+                        let v = parseFloat(obtenerValorFlexible(r, cKey) || 0);
+                        if (!isNaN(v)) sumaMov += v;
+                    });
+                });
+                valorCelda = sumaMov;
+                acumuladorGranTotal[col] += Number(valorCelda);
             } else if(col === 'INICIALES_C') {
                 valorCelda = pR ? (obtenerValorFlexible(pR, 'INICIALES_C') || "0") : "0";
             } else if(col === 'CONFIGURACION') {
@@ -242,7 +273,6 @@ function renderTabla() {
     tbody.appendChild(trT);
 }
 
-// --- FUNCIÓN PARA ABRIR LA VENTANA FLOTANTE DE AUDITORÍA Y DESGLOSE ---
 function abrirVentanaAuditoria() {
     let dataF = bdtotalesGlobal.length > 0 ? bdtotalesGlobal : bdMadreGlobal;
     let rIniVal = document.getElementById('inputCampanaInicio').value.trim();
@@ -262,7 +292,6 @@ function abrirVentanaAuditoria() {
         return !isNaN(rNum) && rNum >= rIni && rNum <= rFin; 
     }).sort((a, b) => parseInt(obtenerValorFlexible(a, 'REMESA'), 10) - parseInt(obtenerValorFlexible(b, 'REMESA'), 10));
 
-    // Crear la estructura de la ventana flotante (Modal) si no existe
     let modalId = "modalAuditoriaCampana";
     let modalEl = document.getElementById(modalId);
     if (!modalEl) {
@@ -296,7 +325,6 @@ function abrirVentanaAuditoria() {
 
     document.getElementById('lblRangoAuditoria').innerText = `${rIni} al ${rFin}`;
 
-    // Construir cabecera de la tabla de auditoría (Remesa, Módulo y las columnas clave)
     let theadAud = document.getElementById('cabeceraAuditoria');
     let trTh = `<tr><th>REMESA</th><th>MÓDULO</th>`;
     COLUMNAS_CAMPANA_KEYS.forEach(col => {
@@ -307,7 +335,6 @@ function abrirVentanaAuditoria() {
     trTh += `</tr>`;
     theadAud.innerHTML = trTh;
 
-    // Rellenar registros individuales de cada remesa encontrada
     let tbodyAud = document.getElementById('cuerpoAuditoria');
     tbodyAud.innerHTML = "";
 
@@ -330,12 +357,10 @@ function abrirVentanaAuditoria() {
         });
     }
 
-    // Mostrar el Modal usando Bootstrap
     let myModal = new bootstrap.Modal(modalEl);
     myModal.show();
 }
 
-// Inyectar un botón de Auditoría junto al botón de Guardar Campaña en la interfaz
 document.addEventListener("DOMContentLoaded", () => {
     const btnGuardarCampana = document.getElementById('btnGuardarCampana');
     if (btnGuardarCampana && !document.getElementById('btnAuditarCampana')) {
