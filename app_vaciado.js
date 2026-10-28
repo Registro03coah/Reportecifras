@@ -42,6 +42,11 @@ const INDEX_COLUMNA_REMESA = 38;
 const INDEX_COLUMNA_FECHA = 1;   
 const INDEX_COLUMNA_MODULO = 45; 
 
+// Índices automáticos para Reposición, Reimpresión y su columna suma
+const IDX_REPOSICION = NOMBRES_ESTANDAR_BD.indexOf("REPOSICION");       // 10
+const IDX_REIMPRESION = NOMBRES_ESTANDAR_BD.indexOf("REIMPRESION");    // 14
+const IDX_REPOS_REIMP = NOMBRES_ESTANDAR_BD.indexOf("REPOSISION_REIMPRESIONES"); // 65
+
 document.addEventListener("DOMContentLoaded", () => {
     inicializarEncabezadosYTablas();
     configurarTabs();
@@ -99,6 +104,23 @@ function generarIdMacTotales(mod, remesa) {
     return `${mod2}${rem4}`;
 }
 
+// Función para calcular la suma de Reposición + Reimpresión en una fila dada
+function calcularSumaReposicionReimpresion(fila) {
+    const inputs = fila.querySelectorAll('input');
+    if (IDX_REPOSICION !== -1 && IDX_REIMPRESION !== -1 && IDX_REPOS_REIMP !== -1) {
+        // Los inputs excluyen la primera columna (columna 0), por lo que el índice del input es (indexColumna - 1)
+        const inputRepo = inputs[IDX_REPOSICION - 1];
+        const inputReimp = inputs[IDX_REIMPRESION - 1];
+        const inputSuma = inputs[IDX_REPOS_REIMP - 1];
+
+        if (inputRepo && inputReimp && inputSuma) {
+            const valRepo = parseFloat(inputRepo.value) || 0;
+            const valReimp = parseFloat(inputReimp.value) || 0;
+            inputSuma.value = valRepo + valReimp;
+        }
+    }
+}
+
 function construirHeaderTabla(tableEl, isTotales = false) {
     if (!tableEl) return;
     let thead = tableEl.querySelector('thead');
@@ -153,6 +175,7 @@ function inicializarEncabezadosYTablas() {
                     input.value = (i === INDEX_COLUMNA_REMESA ? "202643" : (i === INDEX_COLUMNA_MODULO ? mod : (i === INDEX_COLUMNA_FECHA ? "" : "0")));
                     
                     input.addEventListener('input', () => {
+                        calcularSumaReposicionReimpresion(tr);
                         actualizarRemesaVisualizador();
                     });
 
@@ -175,6 +198,10 @@ function inicializarEncabezadosYTablas() {
                 input.type = "text";
                 input.className = "form-control form-control-sm text-center p-0 border-0 bg-transparent fw-bold";
                 input.value = "0";
+                // Si es la columna suma, la hacemos de solo lectura en la fila de totales para que se calcule sola
+                if (i === IDX_REPOS_REIMP) {
+                    input.readOnly = true;
+                }
                 td.appendChild(input);
             }
             trTot.appendChild(td);
@@ -308,7 +335,7 @@ function configurarPegadoPortapapeles() {
             let rowOffset = 0;
 
             filasPegadas.forEach((rowStr, rIdx) => {
-                if (rIdx + rowOffset >= 8) return;
+                if (rIdx + rowOffset >= 7) return; // Solo procesar las 7 filas de días
                 let targetRow = trs[rIdx + rowOffset];
                 if (!targetRow) return;
 
@@ -328,6 +355,9 @@ function configurarPegadoPortapapeles() {
                         input.value = valorCelda.trim();
                     }
                 });
+
+                // Recalcular la suma tras pegar datos en la fila
+                calcularSumaReposicionReimpresion(targetRow);
             });
 
             sincronizarTotales();
@@ -356,6 +386,9 @@ function calcularTotalesGenerales() {
             let inputDestino = filaDestinoTotales.querySelectorAll('td')[c].querySelector('input');
             if (inputDestino) inputDestino.value = valOrigen;
         }
+
+        // Asegurar que la fila de totales del módulo también tenga calculada su suma de reposición + reimpresión
+        calcularSumaReposicionReimpresion(filaTotalesModulo);
     });
 }
 
@@ -388,6 +421,8 @@ function cargarDatosDesdeFirebase() {
                                     if (cIdx === 0) return;
                                     if (inputs[cIdx - 1]) inputs[cIdx - 1].value = val;
                                 });
+                                // Recalcular suma para cada fila cargada
+                                calcularSumaReposicionReimpresion(filas[rIdx]);
                             }
                         });
                     }
@@ -415,6 +450,9 @@ function guardarBasesEnFirebase() {
         let datosTabla = [];
         
         filas.forEach((fila, rowIndex) => {
+            // Asegurar el cálculo antes de guardar cada fila
+            calcularSumaReposicionReimpresion(fila);
+
             let filaArray = [];
             let objFilaDia = {};
             let esFilaTotales = rowIndex === 7;
@@ -491,10 +529,11 @@ function guardarBasesEnFirebase() {
             const filaModulo = filasTotales[i];
             if (!filaModulo) return;
 
+            // Asegurar cálculo en la fila resumen de totales generales
+            calcularSumaReposicionReimpresion(filaModulo);
+
             let objFilaTotal = {};
             const idMacTotalesGenerado = generarIdMacTotales(mod, remesaActual);
-
-            // Variable temporal para capturar el valor de DISPONIBLES_TOTAL
             let valorDisponiblesTotal = "0";
 
             filaModulo.querySelectorAll('td').forEach((td, colIdx) => {
@@ -509,7 +548,6 @@ function guardarBasesEnFirebase() {
 
                 let nombreOriginal = NOMBRES_ESTANDAR_BD[colIdx];
 
-                // Capturamos el valor si corresponde a DISPONIBLES_TOTAL
                 if (nombreOriginal === "DISPONIBLES_TOTAL") {
                     valorDisponiblesTotal = valCelda;
                 }
@@ -530,9 +568,7 @@ function guardarBasesEnFirebase() {
                 }
             });
 
-            // Asignamos explícitamente el valor capturado a la columna INICIALES_S
             objFilaTotal["INICIALES_S"] = valorDisponiblesTotal;
-
             objFilaTotal["IDMAC"] = idMacTotalesGenerado;
             objFilaTotal["MODULO"] = mod;
             objFilaTotal["REMESA"] = remesaActual;
