@@ -92,10 +92,20 @@ function renderTabla() {
     let rIni = rIniVal !== "" ? parseInt(rIniVal, 10) : remesasDisponibles[0];
     let rFin = rFinVal !== "" ? parseInt(rFinVal, 10) : remesasDisponibles[remesasDisponibles.length - 1];
 
+    let modulosObjetivo = ['050351', '050353', '050354'];
+
+    // Filtrar estrictamente los registros que pertenecen al rango de remesas y a los módulos válidos
     let registros = dataGlobalAcumulado.filter(f => { 
         let rNum = parseInt(obtenerValorFlexible(f, 'REMESA'), 10); 
-        return !isNaN(rNum) && rNum >= rIni && rNum <= rFin; 
-    }).sort((a, b) => parseInt(obtenerValorFlexible(a, 'REMESA')) - parseInt(obtenerValorFlexible(b, 'REMESA')));
+        let modVal = String(obtenerValorFlexible(f, 'MODULO') || '').trim();
+        let esModuloValido = modulosObjetivo.some(m => modVal.includes(m));
+        return !isNaN(rNum) && rNum >= rIni && rNum <= rFin && esModuloValido; 
+    }).sort((a, b) => {
+        let modA = String(obtenerValorFlexible(a, 'MODULO') || '');
+        let modB = String(obtenerValorFlexible(b, 'MODULO') || '');
+        if(modA !== modB) return modA.localeCompare(modB);
+        return parseInt(obtenerValorFlexible(a, 'REMESA')) - parseInt(obtenerValorFlexible(b, 'REMESA'));
+    });
 
     let acumuladorGranTotal = {};
     COLUMNAS_ACUMULADO_KEYS.forEach(col => { acumuladorGranTotal[col] = 0; });
