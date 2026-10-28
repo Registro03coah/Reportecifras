@@ -188,7 +188,13 @@ function actualizarContadoresGlobales(datosMostrados, remesaActiva) {
     if (totalLineasElem) totalLineasElem.innerText = totalLineas;
     if (totalRemesasElem) totalRemesasElem.innerText = remesasUnicasTotales.size;
 
-    // Actualizar versión en el footer si existe
+    // Actualizar dinámicamente el placeholder del input con la remesa mayor detectada en gris
+    const inputRemesa = document.getElementById('remesaFiltroInput');
+    const ultimaRemesaGlobal = obtenerUltimaRemesa(bdTotalesGlobal);
+    if (inputRemesa && ultimaRemesaGlobal) {
+        inputRemesa.placeholder = ultimaRemesaGlobal;
+    }
+
     const footerVersion = document.getElementById('footerVersion');
     if (footerVersion) {
         footerVersion.innerText = "11.1";
@@ -248,13 +254,10 @@ function renderizarTablaConTotales(datos, primeraFila) {
         tbody.appendChild(tr);
     });
 
-    // Cuarta línea: Fila de Totales con las reglas específicas requeridas
     let trTotales = document.createElement('tr');
     trTotales.className = 'fila-totales table-dark fw-bold';
     
-    // Columnas que se quedan en blanco
     const columnasBlanco = ['Ent', 'Inicial', 'Final', 'Iniciales_S', 'Configuración'];
-    // Columnas cuyos valores se repiten de la primera fila
     const columnasRepetidas = ['Dtto', 'Remesa'];
 
     ESTRUCTURA_SEMANAL.forEach((colObj, index) => {
@@ -264,11 +267,11 @@ function renderizarTablaConTotales(datos, primeraFila) {
         if (index === 0) {
             td.innerText = "TOTALES";
         } else if (columnasBlanco.some(c => c.toLowerCase() === nombreKeyNorm.toLowerCase())) {
-            td.innerText = ""; // Se quedan en blanco
+            td.innerText = "";
         } else if (columnasRepetidas.some(c => c.toLowerCase() === nombreKeyNorm.toLowerCase())) {
-            td.innerText = primeraFila ? obtenerValorFila(firstFila = primeraFila, colObj) : ""; // Se repite el valor
+            td.innerText = primeraFila ? obtenerValorFila(primeraFila, colObj) : "";
         } else if (sumatoriasTotales[colObj.key] !== undefined && sumatoriasTotales[colObj.key] !== 0) {
-            td.innerText = sumatoriasTotales[colObj.key]; // Demás columnas sumadas
+            td.innerText = sumatoriasTotales[colObj.key];
         } else {
             td.innerText = "";
         }
@@ -281,7 +284,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const inputRemesa = document.getElementById('remesaFiltroInput');
 
     if (inputRemesa) {
-        inputRemesa.value = localStorage.getItem('remesaUnicaSemanal_v11'] || '';
+        inputRemesa.value = localStorage.getItem('remesaUnicaSemanal_v11') || '';
         inputRemesa.addEventListener('input', () => {
             procesarYMostrarDatosConFiltroRemesa();
         });
