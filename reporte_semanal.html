@@ -3,19 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMA MAC - Reporte Semanal</title>
-    <!-- Bootstrap CSS -->
+    <title>SISTEMA MAC</title>
+    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <style>
-        body { background-color: #f4f6f9; font-size: 0.9rem; }
-        .navbar-custom { background-color: #1b396b; color: white; }
+        body { background-color: #f4f6f9; font-size: 0.85rem; }
+        .navbar-custom { background-color: #1b396b; }
         .table-custom th { background-color: #1b396b; color: white; text-align: center; vertical-align: middle; }
+        .num-row th { background-color: #2c3e50; color: #f1c40f; font-size: 0.8rem; }
     </style>
 </head>
 <body>
 
-    <!-- BARRA DE NAVEGACIÓN SUPERIOR (Original) -->
+    <!-- BARRA DE NAVEGACIÓN SUPERIOR -->
     <nav class="navbar navbar-expand-lg navbar-dark navbar-custom px-3 py-2 shadow-sm">
         <div class="container-fluid">
             <a class="navbar-brand fw-bold" href="#"><i class="bi bi-shield-shaded"></i> SISTEMA MAC</a>
@@ -32,33 +33,33 @@
         </div>
     </nav>
 
-    <!-- ENCABEZADO DE SECCIÓN -->
-    <div class="bg-primary text-white text-center py-2 shadow-sm mb-3">
+    <!-- ENCABEZADO DE MÓDULO -->
+    <div class="container-fluid text-center text-white py-2 shadow-sm mb-3" style="background-color: #1b396b;">
         <h4 class="mb-0 fw-bold"><i class="bi bi-calendar-week"></i> Reporte Semanal</h4>
-        <small class="text-light">Consolidado General de Base Totales</small>
+        <small class="text-white-50">Consolidado General de Base Totales</small>
     </div>
 
-    <!-- CONTENEDOR PRINCIPAL -->
-    <div class="container-fluid px-4">
+    <!-- CONTENEDOR DE LA VISTA -->
+    <div class="container-fluid px-3">
         
-        <!-- BARRA DE ACCIÓN SUPERIOR (Con el cuadro naranja y contadores) -->
+        <!-- BARRA DE FILTROS Y CONTROLES -->
         <div class="card shadow-sm mb-3 p-2 bg-white">
             <div class="row align-items-center">
-                <div class="col-md-4 text-muted small">
-                    <strong>Base Totales (Semanal):</strong> Visualización de registros consolidados.
+                <div class="col-md-4 text-secondary small">
+                    <strong>Base Totales (Semanal):</strong> Visualización de registros consolidados.<br>
+                    <span class="text-muted">Usa el buscador o haz clic en las columnas para ordenar.</span>
                 </div>
                 
-                <!-- CUADRO NARANJA PARA LA REMESA ÚNICA -->
+                <!-- CONTENEDOR NARANJA ORIGINAL -->
                 <div class="col-md-4 text-center">
-                    <div id="contenedorNaranja" class="d-inline-block px-3 py-1 rounded shadow-sm" style="background-color: #fd7e14;">
-                        <label for="remesaFiltroInput" class="text-white fw-bold me-2 small">Remesa:</label>
-                        <input type="text" id="remesaFiltroInput" class="form-control form-control-sm d-inline-block text-center fw-bold" style="width: 90px;" placeholder="Ej. 1" />
+                    <div id="contenedorNaranja" class="d-inline-block px-3 py-2 rounded shadow-sm" style="background-color: #fd7e14; min-width: 150px; height: 38px;">
+                        <!-- Aquí iba tu contenido o input original -->
                     </div>
                 </div>
 
                 <div class="col-md-4 text-end d-flex justify-content-end align-items-center gap-2">
                     <span id="semaforoConexion" class="badge bg-success text-white px-3 py-2 rounded-pill">ONLINE</span>
-                    <span id="contadorInfo" class="badge bg-dark text-white px-3 py-2 rounded-pill"></span>
+                    <span id="contadorInfo" class="badge bg-dark text-white px-2 py-2 rounded-pill small"></span>
                 </div>
             </div>
         </div>
@@ -75,25 +76,25 @@
             </div>
         </div>
 
-        <!-- TABLA PRINCIPAL -->
+        <!-- TABLA DE DATOS -->
         <div class="table-responsive bg-white shadow-sm rounded border mb-4" style="max-height: 65vh; overflow-y: auto;">
-            <table id="tablaSemanal" class="table table-bordered table-striped table-hover mb-0 text-center align-middle" style="font-size: 0.85rem;">
-                <thead id="cabeceraTablaSemanal" class="table-dark sticky-top">
-                    <!-- Cabecera dinámica inyectada por JS -->
+            <table id="tablaSemanal" class="table table-bordered table-striped table-hover mb-0 text-center align-middle">
+                <thead id="cabeceraTablaSemanal" class="table-custom sticky-top">
+                    <!-- Cabecera generada por JS -->
                 </thead>
                 <tbody id="cuerpoTablaSemanal">
-                    <!-- Filas dinámicas y de totales inyectadas por JS -->
+                    <!-- Filas generadas por JS -->
                 </tbody>
             </table>
         </div>
     </div>
 
-    <!-- PIE DE PÁGINA (Con la Versión 11.1 solicitada) -->
+    <!-- PIE DE PÁGINA ORIGINAL (Versión 1.0.19 o previa) -->
     <footer class="text-center py-3 text-muted border-top bg-white">
-        <small>© 2026 Todos los derechos reservados. Desarrollado por Carrivers Desing para Módulos MAC. Versión <span id="footerVersion">11.1</span></small>
+        <small>© 2026 Todos los derechos reservados. Desarrollado por Carrivers Desing para Módulos MAC. Versión 1.0.19</small>
     </footer>
 
-    <!-- Script Principal con la lógica y reglas de totales -->
+    <!-- SCRIPT PRINCIPAL -->
     <script type="module" src="app.js"></script>
 </body>
 </html>
