@@ -1,5 +1,6 @@
 /**
  * Sistema de Reportes Diarios - Módulos MAC (Nube)
+ * Módulo: Reporte Semanal
  * Versión: 11.1
  */
 
@@ -170,7 +171,8 @@ function obtenerUltimaRemesa(datos) {
 }
 
 function actualizarContadoresGlobales(datosMostrados, remesaActiva) {
-    const contadorInfo = document.getElementById('contadorInfo');
+    const totalLineasElem = document.getElementById('lblTotalLineas');
+    const totalRemesasElem = document.getElementById('lblTotalRemesas');
     const totalLineas = bdTotalesGlobal.length;
     
     const remesasUnicasTotales = new Set();
@@ -183,15 +185,10 @@ function actualizarContadoresGlobales(datosMostrados, remesaActiva) {
         }
     });
 
-    if (contadorInfo) {
-        contadorInfo.innerHTML = `
-            <i class="bi bi-collection-fill text-info"></i> Líneas: <span>${totalLineas}</span> | 
-            <i class="bi bi-tags-fill text-warning"></i> Remesas Totales: <span>${remesasUnicasTotales.size}</span> | 
-            <i class="bi bi-filter-circle-fill text-success"></i> Filtro: <span>${remesaActiva}</span>
-        `;
-    }
+    if (totalLineasElem) totalLineasElem.innerText = totalLineas;
+    if (totalRemesasElem) totalRemesasElem.innerText = remesasUnicasTotales.size;
 
-    // Reflejar la versión en el pie de página
+    // Actualizar versión en el footer si existe
     const footerVersion = document.getElementById('footerVersion');
     if (footerVersion) {
         footerVersion.innerText = "11.1";
@@ -251,11 +248,13 @@ function renderizarTablaConTotales(datos, primeraFila) {
         tbody.appendChild(tr);
     });
 
-    // Fila de Totales con las reglas específicas de celdas en blanco, repetidas y sumadas
+    // Cuarta línea: Fila de Totales con las reglas específicas requeridas
     let trTotales = document.createElement('tr');
     trTotales.className = 'fila-totales table-dark fw-bold';
     
+    // Columnas que se quedan en blanco
     const columnasBlanco = ['Ent', 'Inicial', 'Final', 'Iniciales_S', 'Configuración'];
+    // Columnas cuyos valores se repiten de la primera fila
     const columnasRepetidas = ['Dtto', 'Remesa'];
 
     ESTRUCTURA_SEMANAL.forEach((colObj, index) => {
@@ -267,7 +266,7 @@ function renderizarTablaConTotales(datos, primeraFila) {
         } else if (columnasBlanco.some(c => c.toLowerCase() === nombreKeyNorm.toLowerCase())) {
             td.innerText = ""; // Se quedan en blanco
         } else if (columnasRepetidas.some(c => c.toLowerCase() === nombreKeyNorm.toLowerCase())) {
-            td.innerText = primeraFila ? obtenerValorFila(primeraFila, colObj) : ""; // Se repite el valor de la primera fila
+            td.innerText = primeraFila ? obtenerValorFila(firstFila = primeraFila, colObj) : ""; // Se repite el valor
         } else if (sumatoriasTotales[colObj.key] !== undefined && sumatoriasTotales[colObj.key] !== 0) {
             td.innerText = sumatoriasTotales[colObj.key]; // Demás columnas sumadas
         } else {
@@ -282,7 +281,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const inputRemesa = document.getElementById('remesaFiltroInput');
 
     if (inputRemesa) {
-        inputRemesa.value = localStorage.getItem('remesaUnicaSemanal_v11') || '';
+        inputRemesa.value = localStorage.getItem('remesaUnicaSemanal_v11'] || '';
         inputRemesa.addEventListener('input', () => {
             procesarYMostrarDatosConFiltroRemesa();
         });
