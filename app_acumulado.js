@@ -167,22 +167,22 @@ function renderTabla() {
             ESTRUCTURA_21[indexNegro].finalReal = ESTRUCTURA_21[indexNegro].finalDefault;
         }
 
-        let camposTrámites = [
-            'INSCRIPCIONES', 'CORRECCION_DE_DATOS_PERSONALES', 'CAMBIO_DE_DOMICILIO', 
-            'REPOSICION_REIMPRESIONES', 'CORR_DE_DATOS_DIRECCION', 'REINCORPORACION', 
-            'REEMPLAZO', 'CANCELADOS'
-        ];
-
         let sumasMod = {};
-        camposTrámites.forEach(c => { sumasMod[c] = 0; });
+        // Recorremos TODAS las columnas definidas para sumar automáticamente cualquier campo numérico existente en la BD
+        COLUMNAS_ACUMULADO_KEYS.forEach(col => {
+            if(!['ENT', 'DTTO', 'MODULO', 'INICIAL', 'FINAL', 'TOTAL_DE_FOLIOS'].includes(col)) {
+                sumasMod[col] = 0;
+            }
+        });
 
         regsMod.forEach(r => {
-            camposTrámites.forEach(c => {
+            Object.keys(sumasMod).forEach(c => {
                 let v = parseFloat(obtenerValorFlexible(r, c) || 0);
                 if(!isNaN(v)) sumasMod[c] += v;
             });
         });
 
+        // Cálculo específico de Total de Trámites y Total de Movimientos basado en tus campos activos
         let totalTramites = (sumasMod['INSCRIPCIONES'] || 0) + 
                             (sumasMod['CORRECCION_DE_DATOS_PERSONALES'] || 0) + 
                             (sumasMod['CAMBIO_DE_DOMICILIO'] || 0) + 
@@ -206,11 +206,10 @@ function renderTabla() {
 
         let rIniNum = parseFloat(rIniStr) || 0;
         let rFinNum = parseFloat(rFinStr) || 0;
-        let foliosDet = 0;
-        if (rFinNum >= rIniNum && rIniNum > 0) {
-            foliosDet = rFinNum - rIniNum + 1;
-        } else if (item.inicial === "24050351109082" || item.inicial === "25050351109053") {
-            foliosDet = Math.abs(rFinNum - rIniNum) + 1; 
+        let foliosDet = (rFinNum >= rIniNum && rIniNum > 0) ? (rFinNum - rIniNum + 1) : 0;
+
+        if (foliosDet > 0) {
+            acumuladorGranTotal['TOTAL_DE_FOLIOS'] += foliosDet;
         }
 
         COLUMNAS_ACUMULADO_KEYS.forEach(col => {
@@ -236,7 +235,6 @@ function renderTabla() {
                 valDet = foliosDet > 0 ? foliosDet : "";
                 if(isNegro) {
                     tdDet.className = "text-dark fw-bold";
-                    acumuladorGranTotal[col] += foliosDet;
                 } else {
                     tdDet.className = "text-danger fw-bold";
                 }
