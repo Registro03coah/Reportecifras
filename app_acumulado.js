@@ -5,9 +5,30 @@ const firebaseConfig = { apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo", auth
 const app = initializeApp(firebaseConfig); 
 const db = getDatabase(app);
 
-const COLUMNAS_ACUMULADO_KEYS = ["ENT", "DTTO", "MODULO", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS", "NO_UTILIZADOS", "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSICION_REIMPRESIONES", "CORR_DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES", "RECHAZOS_DE_MAC_34", "RECHAZOS_DE_MAC_35", "CANCELADOS", "TOTAL_DE_MOVIMIENTOS", "CIF_05", "SOLICITUD_EXPEDICION_ORDINARIA", "SOLICITUD_RECTIFICACION", "DEMANDA_DE_JUICIO", "INICIALES_A", "ACTUALIZACION", "RECIBIDAS_DE_OTROS_TIPOS", "IMPORTADAS", "EXPORTADAS", "ENTREGADAS", "ANEXAS_A_FUAR", "RESGUARDO", "SOLICITUD_DE_REIMPRESION", "ROBO_Y_O_EXTRAVIO", "RETIRADAS_POR_CAUSA", "SOBRANTES", "DUPLICADOS", "DISPONIBLES_TOTAL", "DISPONIBLES_DE_SOL_DE_EXP", "REIMPRE_FUERA_DEL_SISTEMA", "CREDEN_DEVUELTAS_POR_TERCEROS", "CRED_PRODUCTO_DE_REGISTRO_DUPLICADO", "CRED_PROD_CANJE_POR_NUEVA", "DIAS_TRABAJADOS", "CONFIGURACION"];
+const COLUMNAS_ACUMULADO_KEYS = [
+    "ENT", "DTTO", "MODULO", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS", "NO_UTILIZADOS", 
+    "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", 
+    "REPOSICION_REIMPRESIONES", "CORR_DE_DATOS_DIRECCION", "REINCORPORACION", 
+    "REEMPLAZO", "TOTAL_DE_TRAMITES", "RECHAZOS_DE_MAC_34", "RECHAZOS_DE_MAC_35", 
+    "CANCELADOS", "TOTAL_DE_MOVIMIENTOS", "CIF_05", "SOLICITUD_EXPEDICION_ORDINARIA", 
+    "SOLICITUD_DE_RECTIFICACION", "DEMANDA_DE_JUICIO", "INICIALES_C", "ACTUALIZACION", 
+    "RECIBIDAS_DE_OTROS_TIPOS", "IMPORTADAS", "EXPORTADAS", "ENTREGADAS", 
+    "ANEXAS_A_FUAR", "RESGUARDO", "SOLICITUD_DE_REIMPRESION", "ROBO_Y_O_EXTRAVIO", 
+    "RETIRADAS_POR_CAUSA", "SOBRANTES", "DUPLICADOS", "DISPONIBLES_TOTAL", 
+    "DISPONIBLES_DE_SOL_DE_EXP", "REIMPRE_FUERA_DEL_SISTEMA", "CREDEN_DEVUELTAS_POR_TERCEROS", 
+    "CRED_PRODUCTO_DE_REGISTRO_DUPLICADO", "CRED_PROD_CANJE_POR_NUEVA", 
+    "DIAS_TRABAJADOS", "CONFIGURACION"
+];
 
-const MAPA_NUMEROS = { "DIA": 1, "FECHA": 2, "HORAS_TRABAJADAS": 3, "SEDES": 4, "INICIAL": 5, "FINAL": 6, "TOTAL_DE_FOLIOS": 7, "INSCRIPCIONES": 8, "CORRECCION_DE_DATOS_PERSONALES": 9, "CAMBIO_DE_DOMICILIO": 10, "REPOSISION": 11, "CORR__DE_DATOS_DIRECCION": 12, "REINCORPORACION": 13, "REEMPLAZO": 14, "REIMPRESION": 15, "TOTAL_DE_TRAMITES": 16, "CANCELADOS": 17, "TOTAL_DE_ANEXOS_POR_RECHAZO": 18, "CPV_DEVUELA_ENTREGA": 19, "DISPONIBLES_AL_DIA_ANTERIOR": 20, "ACTUALIZACION": 21, "RECIBIDAS_DE_OTROS_TIPOS": 22, "ENTREGADAS": 23, "RECIBO_Y_O_EXTRAVIO": 24, "ANEXAS_A_FUAR": 25, "DATOS_ERRONEOS": 26, "FOTO_MAL_IMPRESA": 27, "SOLICITU_DE_REIMPRESION": 28, "RETIRADAS_POR_CAUSA": 29, "DISPONIBLES": 30, "CREDENCIALES_X_CANJE": 31, "FICHAS_ENTREGADAS": 32, "FICHAS_ATENDIDAS": 33, "DIAS_TRABAJADOS": 34, "CIF_05": 35, "SOLICITUD_EXPEDICION": 36, "SOLICITUD_RECTIFICACION": 37, "DEMANDA_DE_JUICIO": 38, "REMESA": 39, "TOTAL_DE_MOVIMIENTOS": 40, "CREDEN_DEVUELTAS_POR_TERCEROS": 41, "RECHAZOS_DE_MAC_34": 42, "RECHAZOS_DE_MAC_35": 43, "CONFIGURACION": 44, "ENT": 45, "DTTO": 46, "MODULO": 47, "RESGUARDO": 48, "SOLICITUD_DE_REIMPRESION": 49, "CPV_DEVUELA_ENTREGA_2": 50, "SCRIPT_EJECUTADOS": 51, "FOLIO_NEC": 52, "NUMERO_DE_TRAMITES_APLICADOS": 53, "NUMERO_DE_FICHAS_REQUISITADAS": 54, "NUMERO_DE_ARCHIVOS_DE_TRANSACCION_ACEPTADOS": 55, "TOTAL_DE_ARCHIVOS_DE_TRANSACCION_PROCESADOS": 56, "CREDENCIALES_RECIBIDAS": 57, "CREDENCIALES_INCONSISTENTES": 58, "CREDENCIALES_EN_RESGUARDO": 59, "CREDENCIALES_TOTALES_EN_SIIRFE_DISPONIBLES_PARA_ENTREGA": 60, "TOTAL_DE_CREDENCIALES_ENTREGADAS": 61, "TOTAL_DE_CREDENCIALES_SOLICITADAS": 62, "IMPORTADAS": 63, "EXPORTADAS": 64, "REPOSICIONES_REIMPRESIONES": 65, "MAL_IMPRESA": 66, "ERROR_EN_CARTOGRAFIA": 67, "DEFUNCION": 68, "SUSPENSION": 69, "DUPLICADO": 70, "ERROR_EN_NUM_DE_EMISION": 71, "PERDIDA_DE_VIGENCIA": 72, "MOV_POST": 73, "ANEXAS_A_SOLICITUD": 74, "OTRAS_BAJAS": 75, "INICIALES_C": 76, "INICIALES_A": 77, "INICIALES_S": 78, "IDMAC": 79 };
+// MAPA_NUMEROS sincronizado 1 a 1 con tu nuevo orden de columnas
+const MAPA_NUMEROS = {};
+COLUMNAS_ACUMULADO_KEYS.forEach((col, index) => {
+    MAPA_NUMEROS[col] = index + 1;
+});
+MAPA_NUMEROS["REMESA"] = 45; 
+MAPA_NUMEROS["ENT"] = 46; 
+MAPA_NUMEROS["DTTO"] = 47; 
+MAPA_NUMEROS["MODULO"] = 48;
 
 function obtenerNumeroColumna(key) { return MAPA_NUMEROS[key] || '-'; }
 
@@ -91,16 +112,20 @@ function renderTabla() {
     let rFinVal = document.getElementById('inputAcumuladoFin')?.value.trim() || '';
 
     let rIni = rIniVal !== "" ? parseInt(rIniVal, 10) : (remesasDisponibles[0] || 1);
-    let rFin = rFinVal !== "" ? parseInt(rFinVal, 10) : (remesasDisponibles[remesasDisponibles.length - 1] || 999);
+    let remesaMaximaBD = remesasDisponibles.length > 0 ? remesasDisponibles[remesasDisponibles.length - 1] : 999;
+    let rFin = rFinVal !== "" ? parseInt(rFinVal, 10) : remesaMaximaBD;
+
+    let inputFinEl = document.getElementById('inputAcumuladoFin');
+    if(inputFinEl && !inputFinEl.value && remesaMaximaBD !== 999) {
+        inputFinEl.placeholder = `Máx: ${remesaMaximaBD}`;
+    }
 
     let registrosRango = dataF.filter(f => { 
         let rNum = parseInt(obtenerValorFlexible(f, 'REMESA'), 10); 
         return !isNaN(rNum) && rNum >= rIni && rNum <= rFin; 
     });
 
-    // Definición exacta de los 21 renglones idénticos a tu imagen modelo (7 por módulo)
     const ESTRUCTURA_21 = [
-        // MÓDULO 50351 (Línea 0 es negra, 1 a 6 son rojas)
         { tipo: "NEGRO", modulo: "50351", inicial: "2605035108669", finalDefault: "2605035130714" },
         { tipo: "ROJO",  modulo: "50351", inicial: "2605035100001", final: "2605035108668" },
         { tipo: "ROJO",  modulo: "50351", inicial: "2505035125557", final: "2505035139930" },
@@ -109,7 +134,6 @@ function renderTabla() {
         { tipo: "ROJO",  modulo: "50351", inicial: "24050351119618", final: "2405035132139" },
         { tipo: "ROJO",  modulo: "50351", inicial: "24050351109082", final: "24050351119617" },
 
-        // MÓDULO 50353 (Línea 7 es negra, 8 a 13 son rojas)
         { tipo: "NEGRO", modulo: "50353", inicial: "2605035303086", finalDefault: "2605035312364" },
         { tipo: "ROJO",  modulo: "50353", inicial: "2605035300001", final: "2605035303085" },
         { tipo: "ROJO",  modulo: "50353", inicial: "2505035309689", final: "2505035316305" },
@@ -118,7 +142,6 @@ function renderTabla() {
         { tipo: "ROJO",  modulo: "50353", inicial: "2405035307991", final: "2405035313485" },
         { tipo: "ROJO",  modulo: "50353", inicial: "2405035303096", final: "2405035307990" },
 
-        // MÓDULO 50354 (Línea 14 es negra, 15 a 20 son rojas)
         { tipo: "NEGRO", modulo: "50354", inicial: "2605035401973", finalDefault: "2605035406077" },
         { tipo: "ROJO",  modulo: "50354", inicial: "2605035400001", final: "2605035401972" },
         { tipo: "ROJO",  modulo: "50354", inicial: "2505035404268", final: "2505035408381" },
@@ -131,7 +154,6 @@ function renderTabla() {
     let acumuladorGranTotal = {};
     COLUMNAS_ACUMULADO_KEYS.forEach(col => { acumuladorGranTotal[col] = 0; });
 
-    // Actualizar folios finales de las líneas negras (0, 7, 14) según la BD y rango de remesas
     ['50351', '50353', '50354'].forEach(modTarget => {
         let regsMod = registrosRango.filter(r => String(obtenerValorFlexible(r, 'MODULO') || '').trim().includes(modTarget))
             .sort((a,b)=>parseInt(obtenerValorFlexible(a, 'REMESA')) - parseInt(obtenerValorFlexible(b, 'REMESA')));
@@ -145,8 +167,12 @@ function renderTabla() {
             ESTRUCTURA_21[indexNegro].finalReal = ESTRUCTURA_21[indexNegro].finalDefault;
         }
 
-        // Sumatorias de trámites para las líneas negras (cuando me pases tus nombres de columnas exactos)
-        let camposTrámites = ['INSCRIPCIONES', 'CORRECCION_DE_DATOS_PERSONALES', 'CAMBIO_DE_DOMICILIO', 'REPOSISION', 'CORR__DE_DATOS_DIRECCION', 'REINCORPORACION', 'REEMPLAZO', 'REIMPRESION'];
+        let camposTrámites = [
+            'INSCRIPCIONES', 'CORRECCION_DE_DATOS_PERSONALES', 'CAMBIO_DE_DOMICILIO', 
+            'REPOSICION_REIMPRESIONES', 'CORR_DE_DATOS_DIRECCION', 'REINCORPORACION', 
+            'REEMPLAZO', 'CANCELADOS'
+        ];
+
         let sumasMod = {};
         camposTrámites.forEach(c => { sumasMod[c] = 0; });
 
@@ -156,6 +182,18 @@ function renderTabla() {
                 if(!isNaN(v)) sumasMod[c] += v;
             });
         });
+
+        let totalTramites = (sumasMod['INSCRIPCIONES'] || 0) + 
+                            (sumasMod['CORRECCION_DE_DATOS_PERSONALES'] || 0) + 
+                            (sumasMod['CAMBIO_DE_DOMICILIO'] || 0) + 
+                            (sumasMod['REPOSICION_REIMPRESIONES'] || 0) + 
+                            (sumasMod['CORR_DE_DATOS_DIRECCION'] || 0) + 
+                            (sumasMod['REINCORPORACION'] || 0) + 
+                            (sumasMod['REEMPLAZO'] || 0);
+
+        sumasMod['TOTAL_DE_TRAMITES'] = totalTramites;
+        sumasMod['TOTAL_DE_MOVIMIENTOS'] = totalTramites - (sumasMod['CANCELADOS'] || 0);
+
         ESTRUCTURA_21[indexNegro].sumas = sumasMod;
     });
 
@@ -168,7 +206,12 @@ function renderTabla() {
 
         let rIniNum = parseFloat(rIniStr) || 0;
         let rFinNum = parseFloat(rFinStr) || 0;
-        let foliosDet = (rFinNum >= rIniNum && rIniNum > 0) ? (rFinNum - rIniNum + 1) : 0;
+        let foliosDet = 0;
+        if (rFinNum >= rIniNum && rIniNum > 0) {
+            foliosDet = rFinNum - rIniNum + 1;
+        } else if (item.inicial === "24050351109082" || item.inicial === "25050351109053") {
+            foliosDet = Math.abs(rFinNum - rIniNum) + 1; 
+        }
 
         COLUMNAS_ACUMULADO_KEYS.forEach(col => {
             let tdDet = document.createElement('td');
@@ -193,9 +236,9 @@ function renderTabla() {
                 valDet = foliosDet > 0 ? foliosDet : "";
                 if(isNegro) {
                     tdDet.className = "text-dark fw-bold";
-                    acumuladorGranTotal[col] += foliosDet; // Solo los negros entran al gran total de folios
+                    acumuladorGranTotal[col] += foliosDet;
                 } else {
-                    tdDet.className = "text-danger fw-bold"; // Rojos en rojo
+                    tdDet.className = "text-danger fw-bold";
                 }
             } else {
                 if(isNegro && item.sumas && item.sumas[col] !== undefined) {
@@ -211,14 +254,13 @@ function renderTabla() {
         tbody.appendChild(trDetalle);
     });
     
-    // Fila de Gran Total Final
     let trT = document.createElement('tr'); 
     trT.className = 'fila-totales fw-bold';
     COLUMNAS_ACUMULADO_KEYS.forEach(col => {
         let td = document.createElement('td');
         if(col === 'MODULO') {
             td.innerText = "TOTAL";
-        } else if (['ENT', 'DTTO', 'INICIAL', 'FINAL', 'INICIALES_A', 'CONFIGURACION'].includes(col)) {
+        } else if (['ENT', 'DTTO', 'INICIAL', 'FINAL', 'INICIALES_C', 'CONFIGURACION'].includes(col)) {
             td.innerText = "";
         } else { 
             td.innerText = acumuladorGranTotal[col] || 0; 
@@ -268,6 +310,12 @@ Promise.all([get(ref(db, 'bd_madre')), get(ref(db, 'bdtotales'))]).then(([sM, sT
     let todasRemesas = [...new Set([...aT, ...aM].map(x => parseInt(obtenerValorFlexible(x, 'REMESA'), 10)))].filter(x => !isNaN(x)).sort((a, b) => a - b);
     
     if(todasRemesas.length > 0) {
+        let remesaMax = todasRemesas[todasRemesas.length - 1];
+        let inputFin = document.getElementById('inputAcumuladoFin');
+        if(inputFin) {
+            inputFin.placeholder = `Máx: ${remesaMax}`;
+        }
+
         get(dbRefConfigAcumulado).then((snap) => {
             if (!snap.exists() || !snap.val().inicio) {
                 set(dbRefConfigAcumulado, {
