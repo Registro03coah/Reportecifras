@@ -98,19 +98,19 @@ function renderTabla() {
         return !isNaN(rNum) && rNum >= rIni && rNum <= rFin; 
     });
 
-    // Definición exacta de los 21 renglones (7 por módulo: índice 0, 7, 14 son negros con fórmulas; los demás son rojos fijos)
+    // Definición exacta de los 21 renglones idénticos a tu imagen modelo (7 por módulo)
     const ESTRUCTURA_21 = [
-        // MÓDULO 50351
-        { tipo: "NEGRO", modulo: "50351", inicial: "2605035108669", final: "" },
+        // MÓDULO 50351 (Línea 0 es negra, 1 a 6 son rojas)
+        { tipo: "NEGRO", modulo: "50351", inicial: "2605035108669", finalDefault: "2605035130714" },
         { tipo: "ROJO",  modulo: "50351", inicial: "2605035100001", final: "2605035108668" },
         { tipo: "ROJO",  modulo: "50351", inicial: "2505035125557", final: "2505035139930" },
         { tipo: "ROJO",  modulo: "50351", inicial: "25050351109053", final: "2505035125556" },
-        { tipo: "ROJO",  modulo: "50351", inicial: "2505035100001", final: "25050351109052" },
+        { tipo: "ROJO",  modulo: "50351", inicial: "2505035100001", final: "2505035109052" },
         { tipo: "ROJO",  modulo: "50351", inicial: "24050351119618", final: "2405035132139" },
-        { tipo: "ROJO",  modulo: "50351", inicial: "24050351109082", final: "24050351119617" }, // Aquí va el 12522 debajo del 9052
+        { tipo: "ROJO",  modulo: "50351", inicial: "24050351109082", final: "24050351119617" },
 
-        // MÓDULO 50353
-        { tipo: "NEGRO", modulo: "50353", inicial: "2605035303086", final: "" },
+        // MÓDULO 50353 (Línea 7 es negra, 8 a 13 son rojas)
+        { tipo: "NEGRO", modulo: "50353", inicial: "2605035303086", finalDefault: "2605035312364" },
         { tipo: "ROJO",  modulo: "50353", inicial: "2605035300001", final: "2605035303085" },
         { tipo: "ROJO",  modulo: "50353", inicial: "2505035309689", final: "2505035316305" },
         { tipo: "ROJO",  modulo: "50353", inicial: "2505035303324", final: "2505035309688" },
@@ -118,8 +118,8 @@ function renderTabla() {
         { tipo: "ROJO",  modulo: "50353", inicial: "2405035307991", final: "2405035313485" },
         { tipo: "ROJO",  modulo: "50353", inicial: "2405035303096", final: "2405035307990" },
 
-        // MÓDULO 50354
-        { tipo: "NEGRO", modulo: "50354", inicial: "2605035401973", final: "" },
+        // MÓDULO 50354 (Línea 14 es negra, 15 a 20 son rojas)
+        { tipo: "NEGRO", modulo: "50354", inicial: "2605035401973", finalDefault: "2605035406077" },
         { tipo: "ROJO",  modulo: "50354", inicial: "2605035400001", final: "2605035401972" },
         { tipo: "ROJO",  modulo: "50354", inicial: "2505035404268", final: "2505035408381" },
         { tipo: "ROJO",  modulo: "50354", inicial: "2505035401417", final: "2505035404267" },
@@ -131,27 +131,21 @@ function renderTabla() {
     let acumuladorGranTotal = {};
     COLUMNAS_ACUMULADO_KEYS.forEach(col => { acumuladorGranTotal[col] = 0; });
 
-    // Para los renglones negros (índices 0, 7, 14), calculamos con la BD según el módulo y rango de remesas
+    // Actualizar folios finales de las líneas negras (0, 7, 14) según la BD y rango de remesas
     ['50351', '50353', '50354'].forEach(modTarget => {
         let regsMod = registrosRango.filter(r => String(obtenerValorFlexible(r, 'MODULO') || '').trim().includes(modTarget))
             .sort((a,b)=>parseInt(obtenerValorFlexible(a, 'REMESA')) - parseInt(obtenerValorFlexible(b, 'REMESA')));
         
-        let pReg = regsMod.length > 0 ? regsMod[0] : null;
         let uReg = regsMod.length > 0 ? regsMod[regsMod.length - 1] : null;
-
-        // Guardamos los datos calculados para el renglón negro de este módulo
         let indexNegro = modTarget === '50351' ? 0 : (modTarget === '50353' ? 7 : 14);
         
-        // El inicial del negro viene del primer registro del rango o se mantiene, el final es el último final del rango
-        if(pReg && uReg) {
-            ESTRUCTURA_21[indexNegro].inicialReal = obtenerValorFlexible(pReg, 'INICIAL') || ESTRUCTURA_21[indexNegro].inicial;
-            ESTRUCTURA_21[indexNegro].finalReal = obtenerValorFlexible(uReg, 'FINAL') || ESTRUCTURA_21[indexNegro].inicial;
+        if(uReg && obtenerValorFlexible(uReg, 'FINAL')) {
+            ESTRUCTURA_21[indexNegro].finalReal = obtenerValorFlexible(uReg, 'FINAL');
         } else {
-            ESTRUCTURA_21[indexNegro].inicialReal = ESTRUCTURA_21[indexNegro].inicial;
-            ESTRUCTURA_21[indexNegro].finalReal = ESTRUCTURA_21[indexNegro].inicial;
+            ESTRUCTURA_21[indexNegro].finalReal = ESTRUCTURA_21[indexNegro].finalDefault;
         }
 
-        // Sumatorias de trámites para el renglón negro
+        // Sumatorias de trámites para las líneas negras (cuando me pases tus nombres de columnas exactos)
         let camposTrámites = ['INSCRIPCIONES', 'CORRECCION_DE_DATOS_PERSONALES', 'CAMBIO_DE_DOMICILIO', 'REPOSISION', 'CORR__DE_DATOS_DIRECCION', 'REINCORPORACION', 'REEMPLAZO', 'REIMPRESION'];
         let sumasMod = {};
         camposTrámites.forEach(c => { sumasMod[c] = 0; });
@@ -165,11 +159,11 @@ function renderTabla() {
         ESTRUCTURA_21[indexNegro].sumas = sumasMod;
     });
 
-    ESTRUCTURA_21.forEach((item, idx) => {
+    ESTRUCTURA_21.forEach((item) => {
         let trDetalle = document.createElement('tr');
         let isNegro = (item.tipo === "NEGRO");
 
-        let rIniStr = isNegro ? item.inicialReal : item.inicial;
+        let rIniStr = item.inicial;
         let rFinStr = isNegro ? item.finalReal : item.final;
 
         let rIniNum = parseFloat(rIniStr) || 0;
@@ -197,9 +191,12 @@ function renderTabla() {
                 tdDet.className = isNegro ? "fw-bold" : "text-danger fw-bold";
             } else if(col === 'TOTAL_DE_FOLIOS') {
                 valDet = foliosDet > 0 ? foliosDet : "";
-                tdDet.className = "text-dark fw-bold";
-                if(!isNegro) tdDet.className = "text-danger fw-bold"; // Total de folios al lado de finales rojos también en rojo
-                acumuladorGranTotal[col] += foliosDet;
+                if(isNegro) {
+                    tdDet.className = "text-dark fw-bold";
+                    acumuladorGranTotal[col] += foliosDet; // Solo los negros entran al gran total de folios
+                } else {
+                    tdDet.className = "text-danger fw-bold"; // Rojos en rojo
+                }
             } else {
                 if(isNegro && item.sumas && item.sumas[col] !== undefined) {
                     valDet = item.sumas[col];
@@ -208,7 +205,7 @@ function renderTabla() {
                     valDet = "";
                 }
             }
-            tdDet.innerText = valDet !== 0 ? valDet : (isNegro ? "" : "");
+            tdDet.innerText = valDet !== 0 ? valDet : "";
             trDetalle.appendChild(tdDet);
         });
         tbody.appendChild(trDetalle);
