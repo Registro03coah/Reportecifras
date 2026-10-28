@@ -1,3 +1,8 @@
+/**
+ * Sistema de Reportes Diarios - Módulos MAC (Nube)
+ * Versión: 11.1
+ */
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
@@ -14,11 +19,11 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// Estructura reducida únicamente con las columnas que aparecen en tu imagen
 const ESTRUCTURA_SEMANAL = [
     { key: 'Ent', num: 45 },
     { key: 'Dtto', num: 46 },
     { key: 'Módulo', num: 47 },
+    { key: 'Remesa', num: 39 },
     { key: 'Inicial', num: 5 },
     { key: 'Final', num: 6 },
     { key: 'Total_de_folios', num: 7 },
@@ -47,31 +52,31 @@ const ESTRUCTURA_SEMANAL = [
     { key: 'Exportadas', num: 64 },
     { key: 'Entregadas', num: 23 },
     { key: 'Anexas_a_fuar', num: 25 },
-     { key: 'Resguardo', num: 48 },
+    { key: 'Resguardo', num: 48 },
     { key: 'Solicitud_de_reimpresión', num: 28 },
     { key: 'ROBO_Y_O_EXTRAVIO', num: 24 },
     { key: 'Retiradas_por_causa', num: 29 },
-     { key: 'SobranteS', num: 80 },
+    { key: 'SobranteS', num: 80 },
     { key: 'DuplicadoS', num: 70 },
     { key: 'DISPONIBLES_TOTAL', num: 30 },
-     { key: 'Disponibles_de_sol_de_exp', num: 81 },
-{ key: 'Reimpre_fuera_del_sistema', num: 82 },
+    { key: 'Disponibles_de_sol_de_exp', num: 81 },
+    { key: 'Reimpre_fuera_del_sistema', num: 82 },
     { key: 'creden_devueltas_por_terceros', num: 83 },
     { key: 'cred_producto_de_registro_duplicado', num: 84 },
     { key: 'CRED_PROD_CANJE_POR_NUEVA', num: 31 },
-     { key: 'Días_trabajados', num: 34 },
-    { key: 'Configuración', num: 44 },    
+    { key: 'Días_trabajados', num: 34 },
+    { key: 'Configuración', num: 44 }
 ];
 
 let bdTotalesGlobal = [];
 let anchosGuardados = JSON.parse(localStorage.getItem('anchosColumnasSemanal')) || {};
 
+// Función para copiar la tabla a Excel omitiendo o manteniendo la fila de totales según prefieras
 window.copiarTablaExcel = function(tablaId) {
     const tabla = document.getElementById(tablaId);
     if (!tabla) return;
     const clone = tabla.cloneNode(true);
-    const totales = clone.querySelectorAll('.fila-totales');
-    totales.forEach(t => t.remove()); 
+    
     const div = document.createElement('div');
     div.appendChild(clone);
     document.body.appendChild(div);
@@ -82,7 +87,7 @@ window.copiarTablaExcel = function(tablaId) {
     selection.addRange(range);
     try {
         document.execCommand('copy');
-        alert("¡Tabla copiada sin la fila de totales! Lista para pegar en Excel.");
+        alert("¡Tabla copiada al portapapeles! Lista para pegar en Excel.");
     } catch (err) {
         alert("Error al intentar copiar.");
     }
@@ -165,82 +170,164 @@ function obtenerUltimaRemesa(datos) {
     return listaRemesas[listaRemesas.length - 1];
 }
 
-function actualizarContadoresGlobales(datosMostrados) {
+function actualizarContadoresGlobales(datosMostrados, remesaIni, remesaFin) {
     const contadorInfo = document.getElementById('contadorInfo');
     const totalLineas = bdTotalesGlobal.length;
     
     const remesasUnicasTotales = new Set();
+    const objRemesa = ESTRUCTURA_SEMANAL.find(c => c.key === 'Remesa') || { key: 'Remesa', num: 39 };
+    
     bdTotalesGlobal.forEach(fila => {
-        const objRemesa = ESTRUCTURA_SEMANAL.find(c => c.key === 'Remesa') || { key: 'Remesa', num: 39 };
         let valRemesa = obtenerValorFila(fila, objRemesa);
         if (valRemesa !== undefined && valRemesa !== null && String(valRemesa).trim() !== "") {
             remesasUnicasTotales.add(String(valRemesa).trim());
         }
     });
 
-    let remesaActual = "N/A";
-    if (datosMostrados && datosMostrados.length > 0) {
-        const objRemesa = ESTRUCTURA_SEMANAL.find(c => c.key === 'Remesa') || { key: 'Remesa', num: 39 };
-        let primeraRemesaMostrada = obtenerValorFila(datosMostrados[0], objRemesa);
-        if (primeraRemesaMostrada !== undefined && primeraRemesaMostrada !== null && String(primeraRemesaMostrada).trim() !== "") {
-            remesaActual = String(primeraRemesaMostrada).trim();
-        }
-    }
-
     if (contadorInfo) {
         contadorInfo.innerHTML = `
             <i class="bi bi-collection-fill text-info"></i> Líneas: <span>${totalLineas}</span> | 
-            <i class="bi bi-tags-fill text-warning"></i> Remesas: <span>${remesasUnicasTotales.size}</span> | 
-            <i class="bi bi-star-fill text-success"></i> Remesa Actual: <span>${remesaActual}</span>
+            <i class="bi bi-tags-fill text-warning"></i> Remesas Totales: <span>${remesasUnicasTotales.size}</span> | 
+            <i class="bi bi-filter-circle-fill text-success"></i> Rango: <span>${remesaIni || 'N/A'} al ${remesaFin || 'N/A'}</span>
         `;
     }
 }
 
-function procesarYMostrarDatos(datosAProcesar) {
+function procesarYMostrarDatosConFiltroRemesas() {
+    const inputIni = document.getElementById('remesaInicialInput');
+    const inputFin = document.getElementById('remesaFinalInput');
+
+    let remesaIni = inputIni ? inputIni.value.trim() : localStorage.getItem('remesaInicial_v11') || '';
+    let remesaFin = inputFin ? inputFin.value.trim() : localStorage.getItem('remesaFinal_v11') || '';
+
+    // Si los inputs están vacíos pero hay valores guardados, cargarlos
+    if (inputIni && !inputIni.value && localStorage.getItem('remesaInicial_v11')) {
+        inputIni.value = localStorage.getItem('remesaInicial_v11');
+        remesaIni = inputIni.value;
+    }
+    if (inputFin && !inputFin.value && localStorage.getItem('remesaFinal_v11')) {
+        inputFin.value = localStorage.getItem('remesaFinal_v11');
+        remesaFin = inputFin.value;
+    }
+
+    const objRemesa = ESTRUCTURA_SEMANAL.find(c => c.key === 'Remesa') || { key: 'Remesa', num: 39 };
+
+    // Si no hay remesa final especificada, determinamos la última remesa disponible
+    let ultimaRemesaGlobal = obtenerUltimaRemesa(bdTotalesGlobal);
+    let remesaEfectivaFin = remesaFin !== "" ? remesaFin : ultimaRemesaGlobal;
+
+    // Filtrar datos según el rango de remesas
+    let datosFiltrados = bdTotalesGlobal.filter(fila => {
+        let valRemesa = String(obtenerValorFila(fila, objRemesa)).trim();
+        if (!valRemesa) return false;
+
+        if (remesaIni !== "" && remesaEfectivaFin !== "") {
+            let numR = parseFloat(valRemesa);
+            let numI = parseFloat(remesaIni);
+            let numF = parseFloat(remesaEfectivaFin);
+
+            if (!isNaN(numR) && !isNaN(numI) && !isNaN(numF)) {
+                return numR >= numI && numR <= numF;
+            }
+            return valRemesa >= remesaIni && valRemesa <= remesaEfectivaFin;
+        } else if (remesaIni !== "") {
+            return valRemesa === remesaIni;
+        } else if (remesaEfectivaFin !== "") {
+            return valRemesa === remesaEfectivaFin;
+        }
+        return true;
+    });
+
+    if (datosFiltrados.length === 0 && bdTotalesGlobal.length > 0 && ultimaRemesaGlobal) {
+        // Fallback predeterminado a la última remesa si el rango queda vacío
+        datosFiltrados = bdTotalesGlobal.filter(fila => String(obtenerValorFila(fila, objRemesa)).trim() === String(ultimaRemesaGlobal));
+    }
+
+    renderizarTablaConTotales(datosFiltrados);
+    actualizarContadoresGlobales(datosFiltrados, remesaIni || (datosFiltrados[0] ? obtenerValorFila(datosFiltrados[0], objRemesa) : ''), remesaEfectivaFin);
+}
+
+function renderizarTablaConTotales(datos) {
     const tbody = document.getElementById('cuerpoTablaSemanal'); 
     if(!tbody) return;
     tbody.innerHTML = "";
     
-    actualizarContadoresGlobales(datosAProcesar);
-    
-    if (!datosAProcesar || datosAProcesar.length === 0) return;
-    
-    datosAProcesar.forEach(fila => {
+    if (!datos || datos.length === 0) return;
+
+    // Objeto para acumular los totales de las columnas numéricas
+    let sumatoriasTotales = {};
+    ESTRUCTURA_SEMANAL.forEach(colObj => {
+        sumatoriasTotales[colObj.key] = 0;
+    });
+
+    // Pintar filas de datos
+    datos.forEach(fila => {
         let tr = document.createElement('tr');
         ESTRUCTURA_SEMANAL.forEach(colObj => {
             let td = document.createElement('td');
             let val = obtenerValorFila(fila, colObj);
+            
             if(typeof val === 'string' && val.includes('T00:00:00')) {
                 val = val.split('T')[0];
             }
+
             td.innerText = val;
             tr.appendChild(td);
+
+            // Acumular si es valor numérico válido
+            let numVal = parseFloat(val);
+            if (!isNaN(numVal)) {
+                sumatoriasTotales[colObj.key] += numVal;
+            }
         });
         tbody.appendChild(tr);
     });
+
+    // Crear y agregar la 4ta línea: Fila de Totales
+    let trTotales = document.createElement('tr');
+    trTotales.className = 'fila-totales table-dark fw-bold';
+    
+    ESTRUCTURA_SEMANAL.forEach((colObj, index) => {
+        let td = document.createElement('td');
+        if (index === 0) {
+            td.innerText = "TOTALES";
+        } else if (sumatoriasTotales[colObj.key] !== 0) {
+            td.innerText = sumatoriasTotales[colObj.key];
+        } else {
+            td.innerText = "";
+        }
+        trTotales.appendChild(td);
+    });
+    tbody.appendChild(trTotales);
 }
 
-// Configuración del Buscador
+// Configuración de Eventos para Inputs de Remesa y Buscador
 document.addEventListener("DOMContentLoaded", () => {
+    const inputIni = document.getElementById('remesaInicialInput');
+    const inputFin = document.getElementById('remesaFinalInput');
+
+    if (inputIni) {
+        inputIni.value = localStorage.getItem('remesaInicial_v11') || '';
+        inputIni.addEventListener('input', (e) => {
+            localStorage.setItem('remesaInicial_v11', e.target.value.trim());
+            procesarYMostrarDatosConFiltroRemesas();
+        });
+    }
+
+    if (inputFin) {
+        inputFin.value = localStorage.getItem('remesaFinal_v11') || '';
+        inputFin.addEventListener('input', (e) => {
+            localStorage.setItem('remesaFinal_v11', e.target.value.trim());
+            procesarYMostrarDatosConFiltroRemesas();
+        });
+    }
+
     const inputBuscador = document.getElementById('inputBuscadorSemanal');
     if (inputBuscador) {
         inputBuscador.addEventListener('keyup', (e) => {
             const textoFiltro = e.target.value.toLowerCase().trim();
-            if (textoFitle === "") { // Nota: dejamos el manejo limpio
-                // ...
-            }
             if (textoFiltro === "") {
-                const ultimaRemesa = obtenerUltimaRemesa(bdTotalesGlobal);
-                if (ultimaRemesa) {
-                    const filtrados = bdTotalesGlobal.filter(fila => {
-                        const objRemesa = ESTRUCTURA_SEMANAL.find(c => c.key === 'Remesa') || { key: 'Remesa', num: 39 };
-                        let val = obtenerValorFila(fila, objRemesa);
-                        return String(val).trim() === String(ultimaRemesa);
-                    });
-                    procesarYMostrarDatos(filtrados);
-                } else {
-                    procesarYMostrarDatos(bdTotalesGlobal);
-                }
+                procesarYMostrarDatosConFiltroRemesas();
                 return;
             }
             
@@ -250,12 +337,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     return val.includes(textoFiltro);
                 });
             });
-            procesarYMostrarDatos(filtrados);
+            renderizarTablaConTotales(filtrados);
         });
     }
 });
 
-// Construir la cabecera fija de inmediato
+// Construir cabecera de inmediato
 construirHeaderTabla();
 
 // Conexión Firebase Semáforo
@@ -264,33 +351,22 @@ onValue(ref(db, ".info/connected"), (snap) => {
     if(!sem) return;
     if (snap.val() === true) { 
         sem.className = "badge bg-success text-white fs-6 px-3 py-2 rounded-pill"; 
-        sem.innerHTML = 'ONLINE'; 
+        sem.innerHTML = 'ONLINE (v11.1)'; 
     } else { 
         sem.className = "badge bg-danger text-white fs-6 px-3 py-2 rounded-pill"; 
         sem.innerHTML = 'OFFLINE'; 
     }
 });
 
-// Lectura de la base de datos exacta 'bdtotales'
+// Lectura de la base de datos 'bdtotales'
 onValue(ref(db, 'bdtotales'), (snapshot) => {
     if (snapshot.exists()) {
         const data = snapshot.val();
         bdTotalesGlobal = Array.isArray(data) ? data : Object.values(data);
-        
-        const ultimaRemesa = obtenerUltimaRemesa(bdTotalesGlobal);
-        if (ultimaRemesa) {
-            const datosUltimaRemesa = bdTotalesGlobal.filter(fila => {
-                const objRemesa = ESTRUCTURA_SEMANAL.find(c => c.key === 'Remesa') || { key: 'Remesa', num: 39 };
-                let val = obtenerValorFila(fila, objRemesa);
-                return String(val).trim() === String(ultimaRemesa);
-            });
-            procesarYMostrarDatos(datosUltimaRemesa);
-        } else {
-            procesarYMostrarDatos(bdTotalesGlobal);
-        }
+        procesarYMostrarDatosConFiltroRemesas();
     } else {
         bdTotalesGlobal = [];
-        procesarYMostrarDatos(bdTotalesGlobal);
+        renderizarTablaConTotales([]);
     }
 }, (error) => {
     console.error("❌ Error al leer 'bdtotales':", error);
