@@ -1,6 +1,6 @@
 /**
  * Sistema de Reportes Diarios - Módulos MAC (Nube)
- * Versión: 11.1 (Ubicada en el pie de página)
+ * Versión: 11.1
  */
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -169,7 +169,7 @@ function obtenerUltimaRemesa(datos) {
     return listaRemesas[listaRemesas.length - 1];
 }
 
-function actualizarContadoresGlobales(datosMostrados, remesaIni, remesaFin) {
+function actualizarContadoresGlobales(datosMostrados, filtroAplicado) {
     const contadorInfo = document.getElementById('contadorInfo');
     const totalLineas = bdTotalesGlobal.length;
     
@@ -187,11 +187,11 @@ function actualizarContadoresGlobales(datosMostrados, remesaIni, remesaFin) {
         contadorInfo.innerHTML = `
             <i class="bi bi-collection-fill text-info"></i> Líneas: <span>${totalLineas}</span> | 
             <i class="bi bi-tags-fill text-warning"></i> Remesas Totales: <span>${remesasUnicasTotales.size}</span> | 
-            <i class="bi bi-filter-circle-fill text-success"></i> Rango: <span>${remesaIni || 'Libre'} al ${remesaFin || 'Última'}</span>
+            <i class="bi bi-filter-circle-fill text-success"></i> Filtro: <span>${filtroAplicado || 'Última Remesa'}</span>
         `;
     }
 
-    // Actualizar versión en el pie de página si existe el elemento correspondiente
+    // Reflejar la versión en el pie de página
     const footerVersion = document.getElementById('footerVersion');
     if (footerVersion) {
         footerVersion.innerText = "Versión 11.1";
@@ -199,48 +199,45 @@ function actualizarContadoresGlobales(datosMostrados, remesaIni, remesaFin) {
 }
 
 function procesarYMostrarDatosConFiltroRemesas() {
-    const inputIni = document.getElementById('remesaInicialInput');
-    const inputFin = document.getElementById('remesaFinalInput');
+    const inputRemesa = document.getElementById('remesaFiltroInput'); // Un solo cuadro de texto unificado
+    let textoFiltroRemesa = inputRemesa ? inputRemesa.value.trim() : '';
 
-    // Tomamos los valores directamente de lo que el usuario escribe en los inputs
-    let remesaIni = inputIni ? inputIni.value.trim() : '';
-    let remesaFin = inputFin ? inputFin.value.trim() : '';
-
-    // Guardar en localStorage conforme el usuario escribe para recordar su captura
-    if (inputIni) localStorage.setItem('remesaInicial_v11', remesaIni);
-    if (inputFin) localStorage.setItem('remesaFinal_v11', remesaFin);
+    if (inputRemesa) localStorage.setItem('remesaFiltroUnico_v11', textoFiltroRemesa);
 
     const objRemesa = ESTRUCTURA_SEMANAL.find(c => c.key === 'Remesa') || { key: 'Remesa', num: 39 };
     let ultimaRemesaGlobal = obtenerUltimaRemesa(bdTotalesGlobal);
-    let remesaEfectivaFin = remesaFin !== "" ? remesaFin : ultimaRemesaGlobal;
 
     let datosFiltrados = bdTotalesGlobal.filter(fila => {
         let valRemesa = String(obtenerValorFila(fila, objRemesa)).trim();
         if (!valRemesa) return false;
 
-        if (remesaIni !== "" && remesaEfectivaFin !== "") {
+        if (textoFiltroRemesa === "") {
+            // Si está vacío, toma por defecto la última remesa subida
+            return String(valRemesa) === String(ultimaRemesaGlobal);
+        }
+
+        // Si el usuario ingresó un rango separado por guion (ej. 10-15)
+        if (textoFiltroRemesa.includes('-')) {
+            let partes = textoFiltroRemesa.split('-');
+            let ini = partes[0].trim();
+            let fin = partes[1].trim() !== "" ? partes[1].trim() : ultimaRemesaGlobal;
+
             let numR = parseFloat(valRemesa);
-            let numI = parseFloat(remesaIni);
-            let numF = parseFloat(remesaEfectivaFin);
+            let numI = parseFloat(ini);
+            let numF = parseFloat(fin);
 
             if (!isNaN(numR) && !isNaN(numI) && !isNaN(numF)) {
                 return numR >= numI && numR <= numF;
             }
-            return valRemesa >= remesaIni && valRemesa <= remesaEfectivaFin;
-        } else if (remesaIni !== "") {
-            return valRemesa === remesaIni;
-        } else if (remesaEfectivaFin !== "") {
-            return valRemesa === remesaEfectivaFin;
+            return valRemesa >= ini && valRemesa <= fin;
+        } else {
+            // Si es una sola remesa escrita (ej. 12)
+            return String(valRemesa) === textoFiltroRemesa;
         }
-        return true;
     });
 
-    if (datosFiltrados.length === 0 && bdTotalesGlobal.length > 0 && ultimaRemesaGlobal && remesaIni === "") {
-        datosFiltrados = bdTotalesGlobal.filter(fila => String(obtenerValorFila(fila, objRemesa)).trim() === String(ultimaRemesaGlobal));
-    }
-
     renderizarTablaConTotales(datosFiltrados);
-    actualizarContadoresGlobales(datosFiltrados, remesaIni, remesaFin);
+    actualizarContadoresGlobales(datosFiltrados, textoFiltroRemesa || ultimaRemesaGlobal);
 }
 
 function renderizarTablaConTotales(datos) {
@@ -276,6 +273,7 @@ function renderizarTablaConTotales(datos) {
         tbody.appendChild(tr);
     });
 
+    // Fila de totales (cuarta línea al fondo de la tabla)
     let trTotales = document.createElement('tr');
     trTotales.className = 'fila-totales table-dark fw-bold';
     
@@ -294,20 +292,11 @@ function renderizarTablaConTotales(datos) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    const inputIni = document.getElementById('remesaInicialInput');
-    const inputFin = document.getElementById('remesaFinalInput');
+    const inputRemesa = document.getElementById('remesaFiltroInput');
 
-    // Cargar valores guardados previamente en localStorage si existen, de lo contrario inician vacíos
-    if (inputIni) {
-        inputIni.value = localStorage.getItem('remesaInicial_v11') || '';
-        inputIni.addEventListener('input', () => {
-            procesarYMostrarDatosConFiltroRemesas();
-        });
-    }
-
-    if (inputFin) {
-        inputFin.value = localStorage.getItem('remesaFinal_v11') || '';
-        inputFin.addEventListener('input', () => {
+    if (inputRemesa) {
+        inputRemesa.value = localStorage.getItem('remesaFiltroUnico_v11') || '';
+        inputRemesa.addEventListener('input', () => {
             procesarYMostrarDatosConFiltroRemesas();
         });
     }
