@@ -492,9 +492,10 @@ function guardarBasesEnFirebase() {
             if (!filaModulo) return;
 
             let objFilaTotal = {};
-            
-            // Generación de IDMAC específico para Totales Generales
             const idMacTotalesGenerado = generarIdMacTotales(mod, remesaActual);
+
+            // Variable temporal para capturar el valor de DISPONIBLES_TOTAL
+            let valorDisponiblesTotal = "0";
 
             filaModulo.querySelectorAll('td').forEach((td, colIdx) => {
                 let valCelda = "";
@@ -507,6 +508,12 @@ function guardarBasesEnFirebase() {
                 }
 
                 let nombreOriginal = NOMBRES_ESTANDAR_BD[colIdx];
+
+                // Capturamos el valor si corresponde a DISPONIBLES_TOTAL
+                if (nombreOriginal === "DISPONIBLES_TOTAL") {
+                    valorDisponiblesTotal = valCelda;
+                }
+
                 if (nombreOriginal === "REMESA") {
                     objFilaTotal["REMESA"] = remesaActual;
                 } else if (nombreOriginal === "MODULO") {
@@ -522,6 +529,9 @@ function guardarBasesEnFirebase() {
                     objFilaTotal[claveLimpia] = valCelda;
                 }
             });
+
+            // Asignamos explícitamente el valor capturado a la columna INICIALES_S
+            objFilaTotal["INICIALES_S"] = valorDisponiblesTotal;
 
             objFilaTotal["IDMAC"] = idMacTotalesGenerado;
             objFilaTotal["MODULO"] = mod;
