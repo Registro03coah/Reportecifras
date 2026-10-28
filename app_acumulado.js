@@ -35,6 +35,9 @@ window.copiarTablaExcel = function(tablaId) {
     selection.removeAllRanges();
 };
 
+let bdtotalesGlobal = []; 
+let bdMadreGlobal = [];
+
 onValue(ref(db, ".info/connected"), (s) => { 
     let sem = document.getElementById("semaforoConexion"); 
     if(sem) {
@@ -65,113 +68,220 @@ function construirHeaderTabla() {
     thead.appendChild(trN);
 }
 
-// Estructura exacta de los 21 renglones (7 por módulo: 1 negro + 6 rojos)
-const ESTRUCTURA_21_RENGLONES = [
-    // --- MÓDULO 50351 (7 renglones: 1 principal negro + 6 desgloses rojos) ---
-    { tipo: "NEGRO", ent: "05", dtto: "03", modulo: "50351", inicial: "2605035108669", final: "2605035130714" },
-    { tipo: "ROJO",  ent: "05", dtto: "03", modulo: "50351", inicial: "2605035100001", final: "2605035108668" },
-    { tipo: "ROJO",  ent: "05", dtto: "03", modulo: "50351", inicial: "2505035125557", final: "2505035139930" },
-    { tipo: "ROJO",  ent: "05", dtto: "03", modulo: "50351", inicial: "2505035109053", final: "2505035125556" },
-    { tipo: "ROJO",  ent: "05", dtto: "03", modulo: "50351", inicial: "2505035100001", final: "2505035109052" },
-    { tipo: "ROJO",  ent: "05", dtto: "03", modulo: "50351", inicial: "24050351119618", final: "2405035132139" },
-    { tipo: "ROJO",  ent: "05", dtto: "03", modulo: "50351", inicial: "24050351109082", final: "24050351119617" },
+function limpiarStr(str) {
+    return String(str || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
+}
 
-    // --- MÓDULO 50353 (7 renglones: 1 principal negro + 6 desgloses rojos) ---
-    { tipo: "NEGRO", ent: "05", dtto: "03", modulo: "50353", inicial: "2605035303086", final: "2605035312364" },
-    { tipo: "ROJO",  ent: "05", dtto: "03", modulo: "50353", inicial: "2605035300001", final: "2605035303085" },
-    { tipo: "ROJO",  ent: "05", dtto: "03", modulo: "50353", inicial: "2505035309689", final: "2505035316305" },
-    { tipo: "ROJO",  ent: "05", dtto: "03", modulo: "50353", inicial: "2505035303324", final: "2505035309688" },
-    { tipo: "ROJO",  ent: "05", dtto: "03", modulo: "50353", inicial: "2505035300001", final: "2505035303323" },
-    { tipo: "ROJO",  ent: "05", dtto: "03", modulo: "50353", inicial: "2405035307991", final: "2405035313485" },
-    { tipo: "ROJO",  ent: "05", dtto: "03", modulo: "50353", inicial: "2405035303096", final: "2405035307990" },
-
-    // --- MÓDULO 50354 (7 renglones: 1 principal negro + 6 desgloses rojos) ---
-    { tipo: "NEGRO", ent: "05", dtto: "03", modulo: "50354", inicial: "2605035401973", final: "2605035406077" },
-    { tipo: "ROJO",  ent: "05", dtto: "03", modulo: "50354", inicial: "2605035400001", final: "2605035401972" },
-    { tipo: "ROJO",  ent: "05", dtto: "03", modulo: "50354", inicial: "2505035404268", final: "2505035408381" },
-    { tipo: "ROJO",  ent: "05", dtto: "03", modulo: "50354", inicial: "2505035401417", final: "2505035404267" },
-    { tipo: "ROJO",  ent: "05", dtto: "03", modulo: "50354", inicial: "2505035400001", final: "2505035401416" },
-    { tipo: "ROJO",  ent: "05", dtto: "03", modulo: "50354", inicial: "2405035402884", final: "2405035405329" },
-    { tipo: "ROJO",  ent: "05", dtto: "03", modulo: "50354", inicial: "2405035400971", final: "2405035402883" }
-];
+function obtenerValorFlexible(objetoRegistro, claveBuscada) {
+    if (!objetoRegistro) return "";
+    if (objetoRegistro[claveBuscada] !== undefined) return objetoRegistro[claveBuscada];
+    let claveLimpiada = limpiarStr(claveBuscada);
+    let llaveEncontrada = Object.keys(objetoRegistro).find(k => limpiarStr(k) === claveLimpiada);
+    if (llaveEncontrada !== undefined) return objetoRegistro[llaveEncontrada];
+    return "";
+}
 
 function renderTabla() {
     const tbody = document.querySelector('#tablaAcumulado tbody'); if(!tbody) return; tbody.innerHTML = "";
     
-    let sumaTotalFolios = 0;
+    let dataF = bdtotalesGlobal.length > 0 ? bdtotalesGlobal : bdMadreGlobal;
+    let remesasDisponibles = [...new Set(dataF.map(x => parseInt(obtenerValorFlexible(x, 'REMESA'), 10)))].filter(x => !isNaN(x)).sort((a, b) => a - b);
+    
+    let rIniVal = document.getElementById('inputAcumuladoInicio')?.value.trim() || '';
+    let rFinVal = document.getElementById('inputAcumuladoFin')?.value.trim() || '';
 
-    ESTRUCTURA_21_RENGLONES.forEach(item => {
-        let trDetalle = document.createElement('tr');
+    let rIni = rIniVal !== "" ? parseInt(rIniVal, 10) : (remesasDisponibles[0] || 1);
+    let rFin = rFinVal !== "" ? parseInt(rFinVal, 10) : (remesasDisponibles[remesasDisponibles.length - 1] || 999);
 
-        let rIniNum = parseFloat(item.inicial) || 0;
-        let rFinNum = parseFloat(item.final) || 0;
-        let foliosDet = (rFinNum >= rIniNum && rIniNum > 0) ? (rFinNum - rIniNum + 1) : 0;
+    let registrosRango = dataF.filter(f => { 
+        let rNum = parseInt(obtenerValorFlexible(f, 'REMESA'), 10); 
+        return !isNaN(rNum) && rNum >= rIni && rNum <= rFin; 
+    });
+
+    // Definición exacta de los 21 renglones (7 por módulo: índice 0, 7, 14 son negros con fórmulas; los demás son rojos fijos)
+    const ESTRUCTURA_21 = [
+        // MÓDULO 50351
+        { tipo: "NEGRO", modulo: "50351", inicial: "2605035108669", final: "" },
+        { tipo: "ROJO",  modulo: "50351", inicial: "2605035100001", final: "2605035108668" },
+        { tipo: "ROJO",  modulo: "50351", inicial: "2505035125557", final: "2505035139930" },
+        { tipo: "ROJO",  modulo: "50351", inicial: "25050351109053", final: "2505035125556" },
+        { tipo: "ROJO",  modulo: "50351", inicial: "2505035100001", final: "25050351109052" },
+        { tipo: "ROJO",  modulo: "50351", inicial: "24050351119618", final: "2405035132139" },
+        { tipo: "ROJO",  modulo: "50351", inicial: "24050351109082", final: "24050351119617" }, // Aquí va el 12522 debajo del 9052
+
+        // MÓDULO 50353
+        { tipo: "NEGRO", modulo: "50353", inicial: "2605035303086", final: "" },
+        { tipo: "ROJO",  modulo: "50353", inicial: "2605035300001", final: "2605035303085" },
+        { tipo: "ROJO",  modulo: "50353", inicial: "2505035309689", final: "2505035316305" },
+        { tipo: "ROJO",  modulo: "50353", inicial: "2505035303324", final: "2505035309688" },
+        { tipo: "ROJO",  modulo: "50353", inicial: "2505035300001", final: "2505035303323" },
+        { tipo: "ROJO",  modulo: "50353", inicial: "2405035307991", final: "2405035313485" },
+        { tipo: "ROJO",  modulo: "50353", inicial: "2405035303096", final: "2405035307990" },
+
+        // MÓDULO 50354
+        { tipo: "NEGRO", modulo: "50354", inicial: "2605035401973", final: "" },
+        { tipo: "ROJO",  modulo: "50354", inicial: "2605035400001", final: "2605035401972" },
+        { tipo: "ROJO",  modulo: "50354", inicial: "2505035404268", final: "2505035408381" },
+        { tipo: "ROJO",  modulo: "50354", inicial: "2505035401417", final: "2505035404267" },
+        { tipo: "ROJO",  modulo: "50354", inicial: "2505035400001", final: "2505035401416" },
+        { tipo: "ROJO",  modulo: "50354", inicial: "2405035402884", final: "2405035405329" },
+        { tipo: "ROJO",  modulo: "50354", inicial: "2405035400971", final: "2405035402883" }
+    ];
+
+    let acumuladorGranTotal = {};
+    COLUMNAS_ACUMULADO_KEYS.forEach(col => { acumuladorGranTotal[col] = 0; });
+
+    // Para los renglones negros (índices 0, 7, 14), calculamos con la BD según el módulo y rango de remesas
+    ['50351', '50353', '50354'].forEach(modTarget => {
+        let regsMod = registrosRango.filter(r => String(obtenerValorFlexible(r, 'MODULO') || '').trim().includes(modTarget))
+            .sort((a,b)=>parseInt(obtenerValorFlexible(a, 'REMESA')) - parseInt(obtenerValorFlexible(b, 'REMESA')));
         
-        if(foliosDet > 0) sumaTotalFolios += foliosDet;
+        let pReg = regsMod.length > 0 ? regsMod[0] : null;
+        let uReg = regsMod.length > 0 ? regsMod[regsMod.length - 1] : null;
+
+        // Guardamos los datos calculados para el renglón negro de este módulo
+        let indexNegro = modTarget === '50351' ? 0 : (modTarget === '50353' ? 7 : 14);
+        
+        // El inicial del negro viene del primer registro del rango o se mantiene, el final es el último final del rango
+        if(pReg && uReg) {
+            ESTRUCTURA_21[indexNegro].inicialReal = obtenerValorFlexible(pReg, 'INICIAL') || ESTRUCTURA_21[indexNegro].inicial;
+            ESTRUCTURA_21[indexNegro].finalReal = obtenerValorFlexible(uReg, 'FINAL') || ESTRUCTURA_21[indexNegro].inicial;
+        } else {
+            ESTRUCTURA_21[indexNegro].inicialReal = ESTRUCTURA_21[indexNegro].inicial;
+            ESTRUCTURA_21[indexNegro].finalReal = ESTRUCTURA_21[indexNegro].inicial;
+        }
+
+        // Sumatorias de trámites para el renglón negro
+        let camposTrámites = ['INSCRIPCIONES', 'CORRECCION_DE_DATOS_PERSONALES', 'CAMBIO_DE_DOMICILIO', 'REPOSISION', 'CORR__DE_DATOS_DIRECCION', 'REINCORPORACION', 'REEMPLAZO', 'REIMPRESION'];
+        let sumasMod = {};
+        camposTrámites.forEach(c => { sumasMod[c] = 0; });
+
+        regsMod.forEach(r => {
+            camposTrámites.forEach(c => {
+                let v = parseFloat(obtenerValorFlexible(r, c) || 0);
+                if(!isNaN(v)) sumasMod[c] += v;
+            });
+        });
+        ESTRUCTURA_21[indexNegro].sumas = sumasMod;
+    });
+
+    ESTRUCTURA_21.forEach((item, idx) => {
+        let trDetalle = document.createElement('tr');
+        let isNegro = (item.tipo === "NEGRO");
+
+        let rIniStr = isNegro ? item.inicialReal : item.inicial;
+        let rFinStr = isNegro ? item.finalReal : item.final;
+
+        let rIniNum = parseFloat(rIniStr) || 0;
+        let rFinNum = parseFloat(rFinStr) || 0;
+        let foliosDet = (rFinNum >= rIniNum && rIniNum > 0) ? (rFinNum - rIniNum + 1) : 0;
 
         COLUMNAS_ACUMULADO_KEYS.forEach(col => {
             let tdDet = document.createElement('td');
             let valDet = "";
 
-            if (item.tipo === "ROJO") {
-                // Renglones rojos: solo muestran ENT, DTTO, MODULO, INICIAL, FINAL en rojo; TOTAL_DE_FOLIOS en negro; lo demás vacío
-                if(col === 'ENT') {
-                    valDet = item.ent; tdDet.className = "text-danger fw-bold";
-                } else if(col === 'DTTO') {
-                    valDet = item.dtto; tdDet.className = "text-danger fw-bold";
-                } else if(col === 'MODULO') {
-                    valDet = item.modulo; tdDet.className = "text-danger fw-bold";
-                } else if(col === 'INICIAL') {
-                    valDet = item.inicial; tdDet.className = "text-danger fw-bold";
-                } else if(col === 'FINAL') {
-                    valDet = item.final; tdDet.className = "text-danger fw-bold";
-                } else if(col === 'TOTAL_DE_FOLIOS') {
-                    valDet = foliosDet > 0 ? foliosDet : ""; tdDet.className = "text-dark fw-bold";
-                } else {
-                    valDet = ""; // Vacío en los renglones rojos tal como solicitaste
-                }
+            if(col === 'ENT') {
+                valDet = "05";
+                tdDet.className = isNegro ? "fw-bold" : "text-danger fw-bold";
+            } else if(col === 'DTTO') {
+                valDet = "03";
+                tdDet.className = isNegro ? "fw-bold" : "text-danger fw-bold";
+            } else if(col === 'MODULO') {
+                valDet = item.modulo;
+                tdDet.className = isNegro ? "fw-bold" : "text-danger fw-bold";
+            } else if(col === 'INICIAL') {
+                valDet = rIniStr;
+                tdDet.className = isNegro ? "fw-bold" : "text-danger fw-bold";
+            } else if(col === 'FINAL') {
+                valDet = rFinStr;
+                tdDet.className = isNegro ? "fw-bold" : "text-danger fw-bold";
+            } else if(col === 'TOTAL_DE_FOLIOS') {
+                valDet = foliosDet > 0 ? foliosDet : "";
+                tdDet.className = "text-dark fw-bold";
+                if(!isNegro) tdDet.className = "text-danger fw-bold"; // Total de folios al lado de finales rojos también en rojo
+                acumuladorGranTotal[col] += foliosDet;
             } else {
-                // Renglones negros (principales): listos para las fórmulas y sumatorias
-                if(col === 'ENT') {
-                    valDet = item.ent;
-                } else if(col === 'DTTO') {
-                    valDet = item.dtto;
-                } else if(col === 'MODULO') {
-                    valDet = item.modulo;
-                } else if(col === 'INICIAL') {
-                    valDet = item.inicial;
-                } else if(col === 'FINAL') {
-                    valDet = item.final;
-                } else if(col === 'TOTAL_DE_FOLIOS') {
-                    valDet = foliosDet > 0 ? foliosDet : "";
+                if(isNegro && item.sumas && item.sumas[col] !== undefined) {
+                    valDet = item.sumas[col];
+                    acumuladorGranTotal[col] += valDet;
                 } else {
-                    valDet = ""; // Aquí irán las fórmulas posteriormente
+                    valDet = "";
                 }
             }
-            tdDet.innerText = valDet;
+            tdDet.innerText = valDet !== 0 ? valDet : (isNegro ? "" : "");
             trDetalle.appendChild(tdDet);
         });
         tbody.appendChild(trDetalle);
     });
     
-    // Fila de Gran Total Final al pie de los 21 renglones
+    // Fila de Gran Total Final
     let trT = document.createElement('tr'); 
     trT.className = 'fila-totales fw-bold';
     COLUMNAS_ACUMULADO_KEYS.forEach(col => {
         let td = document.createElement('td');
         if(col === 'MODULO') {
             td.innerText = "TOTAL";
-        } else if(col === 'TOTAL_DE_FOLIOS') {
-            td.innerText = sumaTotalFolios;
         } else if (['ENT', 'DTTO', 'INICIAL', 'FINAL', 'INICIALES_A', 'CONFIGURACION'].includes(col)) {
             td.innerText = "";
         } else { 
-            td.innerText = ""; 
+            td.innerText = acumuladorGranTotal[col] || 0; 
         }
         trT.appendChild(td);
     });
     tbody.appendChild(trT);
 }
 
+const dbRefConfigAcumulado = ref(db, 'configuracion/acumulado');
+onValue(dbRefConfigAcumulado, (snapshot) => {
+    if (snapshot.exists()) {
+        const config = snapshot.val();
+        if (config.inicio !== undefined && document.getElementById('inputAcumuladoInicio')) document.getElementById('inputAcumuladoInicio').value = config.inicio;
+        if (config.fin !== undefined && document.getElementById('inputAcumuladoFin')) document.getElementById('inputAcumuladoFin').value = config.fin;
+    }
+    renderTabla();
+});
+
+const btnGuardarAcumulado = document.getElementById('btnGuardarAcumulado');
+if(btnGuardarAcumulado) {
+    btnGuardarAcumulado.addEventListener('click', () => {
+        let iniVal = document.getElementById('inputAcumuladoInicio')?.value.trim() || '';
+        let finVal = document.getElementById('inputAcumuladoFin')?.value.trim() || '';
+
+        set(dbRefConfigAcumulado, {
+            inicio: iniVal,
+            fin: finVal
+        }).then(() => {
+            alert("¡Rango de acumulado guardado en la nube y sincronizado!");
+            renderTabla();
+        }).catch((error) => {
+            console.error("Error al guardar configuración en Firebase:", error);
+            alert("Hubo un error al guardar el rango en la nube.");
+        });
+    });
+}
+
 construirHeaderTabla();
-renderTabla();
+
+Promise.all([get(ref(db, 'bd_madre')), get(ref(db, 'bdtotales'))]).then(([sM, sT]) => {
+    let aM = sM.exists() ? (Array.isArray(sM.val())?sM.val():Object.values(sM.val())).map(normalizarObj) : [];
+    let aT = sT.exists() ? (Array.isArray(sT.val())?sT.val():Object.values(sT.val())).map(normalizarObj) : [];
+    bdtotalesGlobal = aT;
+    bdMadreGlobal = aM;
+
+    let todasRemesas = [...new Set([...aT, ...aM].map(x => parseInt(obtenerValorFlexible(x, 'REMESA'), 10)))].filter(x => !isNaN(x)).sort((a, b) => a - b);
+    
+    if(todasRemesas.length > 0) {
+        get(dbRefConfigAcumulado).then((snap) => {
+            if (!snap.exists() || !snap.val().inicio) {
+                set(dbRefConfigAcumulado, {
+                    inicio: String(todasRemesas[0]),
+                    fin: ""
+                });
+            }
+        });
+    }
+
+    renderTabla();
+});
+
+function normalizarObj(i) { let l={}; for(let k in i) l[k.toUpperCase().trim()] = i[k]; return l; }
