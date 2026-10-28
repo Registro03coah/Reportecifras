@@ -3,63 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Reportes - Reporte Semanal</title>
-    <!-- Bootstrap CSS y Estilos -->
+    <title>SISTEMA MAC - Reporte Semanal</title>
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #f4f6f9; font-size: 0.9rem; }
+        .navbar-custom { background-color: #1b396b; color: white; }
+        .table-custom th { background-color: #1b396b; color: white; text-align: center; vertical-align: middle; }
+    </style>
 </head>
-<body class="bg-light">
+<body>
 
-    <!-- Contenedor Principal o Barra Superior con el Cuadro Naranja -->
-    <div class="container-fluid py-3">
-        <div class="row align-items-center mb-3">
-            <div class="col-md-6">
-                <h3>Reporte Semanal</h3>
+    <!-- BARRA DE NAVEGACIÓN SUPERIOR (Original) -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom px-3 py-2 shadow-sm">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold" href="#"><i class="bi bi-shield-shaded"></i> SISTEMA MAC</a>
+            <div class="ms-auto d-flex align-items-center flex-wrap gap-2">
+                <a href="vaciado.html" class="text-white text-decoration-none small px-2"><i class="bi bi-pencil-square"></i> Vaciado de Datos</a>
+                <a href="reporte_dias.html" class="text-white text-decoration-none small px-2"><i class="bi bi-calendar-day"></i> Reporte Días</a>
+                <a href="reporte_semanal.html" class="text-white text-decoration-none small px-2 fw-bold text-warning"><i class="bi bi-calendar-week"></i> Reporte Semanal</a>
+                <a href="reporte_campana.html" class="text-white text-decoration-none small px-2"><i class="bi bi-flag"></i> Reporte Campaña</a>
+                <a href="reporte_acumulado.html" class="text-white text-decoration-none small px-2"><i class="bi bi-collection"></i> Reporte Acumulado</a>
+                <a href="graficos.html" class="text-white text-decoration-none small px-2"><i class="bi bi-graph-up"></i> Gráficos</a>
+                <a href="bd_principal.html" class="text-white text-decoration-none small px-2"><i class="bi bi-database"></i> BD Principal</a>
+                <a href="bd_totales.html" class="text-white text-decoration-none small px-2"><i class="bi bi-hdd-stack"></i> BD Totales</a>
             </div>
-            <!-- CUADRO NARANJA PARA ESCRIBIR LA REMESA -->
-            <div class="col-md-6 text-end">
-                <div id="contenedorNaranja" class="d-inline-block p-2 rounded" style="background-color: #fd7e14;">
-                    <label for="remesaFiltroInput" class="text-white fw-bold me-2">Remesa:</label>
-                    <input type="text" id="remesaFiltroInput" class="form-control form-control-sm d-inline-block w-auto" placeholder="Ej. 1" />
+        </div>
+    </nav>
+
+    <!-- ENCABEZADO DE SECCIÓN -->
+    <div class="bg-primary text-white text-center py-2 shadow-sm mb-3">
+        <h4 class="mb-0 fw-bold"><i class="bi bi-calendar-week"></i> Reporte Semanal</h4>
+        <small class="text-light">Consolidado General de Base Totales</small>
+    </div>
+
+    <!-- CONTENEDOR PRINCIPAL -->
+    <div class="container-fluid px-4">
+        
+        <!-- BARRA DE ACCIÓN SUPERIOR (Con el cuadro naranja y contadores) -->
+        <div class="card shadow-sm mb-3 p-2 bg-white">
+            <div class="row align-items-center">
+                <div class="col-md-4 text-muted small">
+                    <strong>Base Totales (Semanal):</strong> Visualización de registros consolidados.
                 </div>
-                <span id="semaforoConexion" class="ms-2"></span>
+                
+                <!-- CUADRO NARANJA PARA LA REMESA ÚNICA -->
+                <div class="col-md-4 text-center">
+                    <div id="contenedorNaranja" class="d-inline-block px-3 py-1 rounded shadow-sm" style="background-color: #fd7e14;">
+                        <label for="remesaFiltroInput" class="text-white fw-bold me-2 small">Remesa:</label>
+                        <input type="text" id="remesaFiltroInput" class="form-control form-control-sm d-inline-block text-center fw-bold" style="width: 90px;" placeholder="Ej. 1" />
+                    </div>
+                </div>
+
+                <div class="col-md-4 text-end d-flex justify-content-end align-items-center gap-2">
+                    <span id="semaforoConexion" class="badge bg-success text-white px-3 py-2 rounded-pill">ONLINE</span>
+                    <span id="contadorInfo" class="badge bg-dark text-white px-3 py-2 rounded-pill"></span>
+                </div>
             </div>
         </div>
 
-        <!-- Información de Contadores -->
-        <div id="contadorInfo" class="mb-3 text-secondary fw-semibold"></div>
-
-        <!-- Buscador general y Botón Copiar a Excel -->
-        <div class="row mb-3">
+        <!-- BUSCADOR Y BOTÓN EXCEL -->
+        <div class="row mb-3 align-items-center">
             <div class="col-md-8">
-                <input type="text" id="inputBuscadorSemanal" class="form-control" placeholder="Usa el buscador para filtrar registros..." />
+                <input type="text" id="inputBuscadorSemanal" class="form-control form-control-sm" placeholder="Usa el buscador para filtrar registros..." />
             </div>
             <div class="col-md-4 text-end">
-                <button class="btn btn-success" onclick="copiarTablaExcel('tablaSemanal')">
+                <button class="btn btn-success btn-sm fw-bold shadow-sm" onclick="copiarTablaExcel('tablaSemanal')">
                     <i class="bi bi-file-earmark-excel"></i> Copiar a Excel
                 </button>
             </div>
         </div>
 
-        <!-- Tabla de Reporte Semanal -->
-        <div class="table-responsive bg-white shadow-sm rounded p-2">
-            <table id="tablaSemanal" class="table table-bordered table-striped table-hover mb-0 text-center align-middle">
-                <thead id="cabeceraTablaSemanal" class="table-dark">
-                    <!-- Se construye dinámicamente mediante JavaScript -->
+        <!-- TABLA PRINCIPAL -->
+        <div class="table-responsive bg-white shadow-sm rounded border mb-4" style="max-height: 65vh; overflow-y: auto;">
+            <table id="tablaSemanal" class="table table-bordered table-striped table-hover mb-0 text-center align-middle" style="font-size: 0.85rem;">
+                <thead id="cabeceraTablaSemanal" class="table-dark sticky-top">
+                    <!-- Cabecera dinámica inyectada por JS -->
                 </thead>
                 <tbody id="cuerpoTablaSemanal">
-                    <!-- Datos dinámicos -->
+                    <!-- Filas dinámicas y de totales inyectadas por JS -->
                 </tbody>
             </table>
         </div>
     </div>
 
-    <!-- Pie de página con la Versión 11.1 -->
-    <footer class="text-center py-4 mt-4 text-muted border-top">
+    <!-- PIE DE PÁGINA (Con la Versión 11.1 solicitada) -->
+    <footer class="text-center py-3 text-muted border-top bg-white">
         <small>© 2026 Todos los derechos reservados. Desarrollado por Carrivers Desing para Módulos MAC. Versión <span id="footerVersion">11.1</span></small>
     </footer>
 
-    <!-- Script principal (Asegúrate de que tenga type="module") -->
+    <!-- Script Principal con la lógica y reglas de totales -->
     <script type="module" src="app.js"></script>
 </body>
 </html>
