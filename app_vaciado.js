@@ -42,10 +42,13 @@ const INDEX_COLUMNA_REMESA = 38;
 const INDEX_COLUMNA_FECHA = 1;   
 const INDEX_COLUMNA_MODULO = 45; 
 
-// Índices automáticos para Reposición, Reimpresión y su columna suma
-const IDX_REPOSICION = NOMBRES_ESTANDAR_BD.indexOf("REPOSICION");       // 10
-const IDX_REIMPRESION = NOMBRES_ESTANDAR_BD.indexOf("REIMPRESION");    // 14
-const IDX_REPOS_REIMP = NOMBRES_ESTANDAR_BD.indexOf("REPOSISION_REIMPRESIONES"); // 65
+// Índices exactos según el arreglo oficial
+const IDX_REPOSICION = NOMBRES_ESTANDAR_BD.indexOf("REPOSICION");                   // 10
+const IDX_REIMPRESION = NOMBRES_ESTANDAR_BD.indexOf("REIMPRESION");                // 14
+const IDX_REPOS_REIMP = NOMBRES_ESTANDAR_BD.indexOf("REPOSISION_REIMPRESIONES");     // 65
+const IDX_TOTAL_FOLIOS = NOMBRES_ESTANDAR_BD.indexOf("TOTAL_DE_FOLIOS");             // 6
+const IDX_FICHAS_REQ = NOMBRES_ESTANDAR_BD.indexOf("NUMERO_DE_FICHAS_REQUISITADAS"); // 54
+const IDX_FICHAS_ATEN = NOMBRES_ESTANDAR_BD.indexOf("NUMERO_DE_FICHAS_ATENDIDAS");   // 32
 
 document.addEventListener("DOMContentLoaded", () => {
     inicializarEncabezadosYTablas();
@@ -64,7 +67,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-// IDMAC para registros diarios (Mod + Remesa + Fecha DDMM)
 function generarIdMacCustom(mod, remesa, fechaStr) {
     const mod2 = String(mod || "00").slice(-2);
     const rem4 = String(remesa || "0000").slice(-4).padStart(4, '0');
@@ -97,18 +99,18 @@ function generarIdMacCustom(mod, remesa, fechaStr) {
     return `${mod2}${rem4}${ddmm}`;
 }
 
-// IDMAC específico para Totales Generales (2 últimos del módulo + 4 dígitos de la remesa)
 function generarIdMacTotales(mod, remesa) {
     const mod2 = String(mod || "00").slice(-2);
     const rem4 = String(remesa || "0000").slice(-4).padStart(4, '0');
     return `${mod2}${rem4}`;
 }
 
-// Función para calcular la suma de Reposición + Reimpresión en una fila dada
-function calcularSumaReposicionReimpresion(fila) {
+// Función para calcular sumas automáticas en cada fila
+function calcularCamposDerivados(fila) {
     const inputs = fila.querySelectorAll('input');
+    
+    // 1. Suma de Reposición + Reimpresión hacia REPOSISION_REIMPRESIONES
     if (IDX_REPOSICION !== -1 && IDX_REIMPRESION !== -1 && IDX_REPOS_REIMP !== -1) {
-        // Los inputs excluyen la primera columna (columna 0), por lo que el índice del input es (indexColumna - 1)
         const inputRepo = inputs[IDX_REPOSICION - 1];
         const inputReimp = inputs[IDX_REIMPRESION - 1];
         const inputSuma = inputs[IDX_REPOS_REIMP - 1];
@@ -117,6 +119,23 @@ function calcularSumaReposicionReimpresion(fila) {
             const valRepo = parseFloat(inputRepo.value) || 0;
             const valReimp = parseFloat(inputReimp.value) || 0;
             inputSuma.value = valRepo + valReimp;
+        }
+    }
+
+    // 2. Copiar Total de Folios a Fichas Requisitadas y Fichas Atendidas
+    if (IDX_TOTAL_FOLIOS !== -1) {
+        const inputTotalFolios = inputs[IDX_TOTAL_FOLIOS - 1];
+        if (inputTotalFolios) {
+            const valFolios = inputTotalFolios.value || "0";
+            
+            if (IDX_FICHAS_REQ !== -1) {
+                const inputReq = inputs[IDX_FICHAS_REQ - 1];
+                if (inputReq) inputReq.value = valFolios;
+            }
+            if (IDX_FICHAS_ATEN !== -1) {
+                const inputAten = inputs[IDX_FICHAS_ATEN - 1];
+                if (inputAten) inputAten.value = valFolios;
+            }
         }
     }
 }
@@ -175,7 +194,7 @@ function inicializarEncabezadosYTablas() {
                     input.value = (i === INDEX_COLUMNA_REMESA ? "202643" : (i === INDEX_COLUMNA_MODULO ? mod : (i === INDEX_COLUMNA_FECHA ? "" : "0")));
                     
                     input.addEventListener('input', () => {
-                        calcularSumaReposicionReimpresion(tr);
+                        calcularCamposDerivados(tr);
                         actualizarRemesaVisualizador();
                     });
 
@@ -198,8 +217,7 @@ function inicializarEncabezadosYTablas() {
                 input.type = "text";
                 input.className = "form-control form-control-sm text-center p-0 border-0 bg-transparent fw-bold";
                 input.value = "0";
-                // Si es la columna suma, la hacemos de solo lectura en la fila de totales para que se calcule sola
-                if (i === IDX_REPOS_REIMP) {
+                if (i === IDX_REPOS_REIMP || i === IDX_FICHAS_REQ || i === IDX_FICHAS_ATEN) {
                     input.readOnly = true;
                 }
                 td.appendChild(input);
@@ -335,7 +353,7 @@ function configurarPegadoPortapapeles() {
             let rowOffset = 0;
 
             filasPegadas.forEach((rowStr, rIdx) => {
-                if (rIdx + rowOffset >= 7) return; // Solo procesar las 7 filas de días
+                if (rIdx + rowOffset >= 7) return; 
                 let targetRow = trs[rIdx + rowOffset];
                 if (!targetRow) return;
 
@@ -356,8 +374,7 @@ function configurarPegadoPortapapeles() {
                     }
                 });
 
-                // Recalcular la suma tras pegar datos en la fila
-                calcularSumaReposicionReimpresion(targetRow);
+                calcularCamposDerivados(targetRow);
             });
 
             sincronizarTotales();
@@ -381,14 +398,13 @@ function calcularTotalesGenerales() {
 
         if (!filaTotalesModulo || !filaDestinoTotales) return;
 
+        calcularCamposDerivados(filaTotalesModulo);
+
         for (let c = 1; c < TOTAL_COLUMNAS; c++) {
             let valOrigen = filaTotalesModulo.querySelectorAll('td')[c].querySelector('input').value;
             let inputDestino = filaDestinoTotales.querySelectorAll('td')[c].querySelector('input');
-            if (inputDestino) inputDestino.value = valOrigen;
+            if (inputDestino) inputDestino.value = (valOrigen !== "" ? valOrigen : "0");
         }
-
-        // Asegurar que la fila de totales del módulo también tenga calculada su suma de reposición + reimpresión
-        calcularSumaReposicionReimpresion(filaTotalesModulo);
     });
 }
 
@@ -419,10 +435,9 @@ function cargarDatosDesdeFirebase() {
                                 let inputs = filas[rIdx].querySelectorAll('input');
                                 filaArr.forEach((val, cIdx) => {
                                     if (cIdx === 0) return;
-                                    if (inputs[cIdx - 1]) inputs[cIdx - 1].value = val;
+                                    if (inputs[cIdx - 1]) inputs[cIdx - 1].value = (val !== "" ? val : "0");
                                 });
-                                // Recalcular suma para cada fila cargada
-                                calcularSumaReposicionReimpresion(filas[rIdx]);
+                                calcularCamposDerivados(filas[rIdx]);
                             }
                         });
                     }
@@ -450,8 +465,7 @@ function guardarBasesEnFirebase() {
         let datosTabla = [];
         
         filas.forEach((fila, rowIndex) => {
-            // Asegurar el cálculo antes de guardar cada fila
-            calcularSumaReposicionReimpresion(fila);
+            calcularCamposDerivados(fila);
 
             let filaArray = [];
             let objFilaDia = {};
@@ -472,7 +486,8 @@ function guardarBasesEnFirebase() {
                 } else {
                     const input = td.querySelector('input');
                     valCelda = input ? input.value.trim() : "";
-                    if (valCelda === "") valCelda = "0";
+                    // Si está vacío, se fuerza a "0" para que no se guarde en blanco
+                    if (valCelda === "" || valCelda === undefined) valCelda = "0";
                 }
                 
                 filaArray.push(valCelda);
@@ -517,7 +532,6 @@ function guardarBasesEnFirebase() {
         };
     });
 
-    // Sincronizar y calcular totales generales antes de extraerlos para bdtotales
     calcularTotalesGenerales();
 
     let registrosTotalesParaBD = [];
@@ -529,8 +543,7 @@ function guardarBasesEnFirebase() {
             const filaModulo = filasTotales[i];
             if (!filaModulo) return;
 
-            // Asegurar cálculo en la fila resumen de totales generales
-            calcularSumaReposicionReimpresion(filaModulo);
+            calcularCamposDerivados(filaModulo);
 
             let objFilaTotal = {};
             const idMacTotalesGenerado = generarIdMacTotales(mod, remesaActual);
@@ -543,7 +556,7 @@ function guardarBasesEnFirebase() {
                 } else {
                     const input = td.querySelector('input');
                     valCelda = input ? input.value.trim() : "0";
-                    if (valCelda === "") valCelda = "0";
+                    if (valCelda === "" || valCelda === undefined) valCelda = "0";
                 }
 
                 let nombreOriginal = NOMBRES_ESTANDAR_BD[colIdx];
