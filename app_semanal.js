@@ -169,7 +169,7 @@ function obtenerUltimaRemesa(datos) {
     return listaRemesas[listaRemesas.length - 1];
 }
 
-function actualizarContadoresGlobales(datosMostrados, filtroAplicado) {
+function actualizarContadoresGlobales(datosMostrados, remesaActiva) {
     const contadorInfo = document.getElementById('contadorInfo');
     const totalLineas = bdTotalesGlobal.length;
     
@@ -187,7 +187,7 @@ function actualizarContadoresGlobales(datosMostrados, filtroAplicado) {
         contadorInfo.innerHTML = `
             <i class="bi bi-collection-fill text-info"></i> Líneas: <span>${totalLineas}</span> | 
             <i class="bi bi-tags-fill text-warning"></i> Remesas Totales: <span>${remesasUnicasTotales.size}</span> | 
-            <i class="bi bi-filter-circle-fill text-success"></i> Filtro: <span>${filtroAplicado || 'Última Remesa'}</span>
+            <i class="bi bi-filter-circle-fill text-success"></i> Filtro: <span>${remesaActiva}</span>
         `;
     }
 
@@ -198,46 +198,25 @@ function actualizarContadoresGlobales(datosMostrados, filtroAplicado) {
     }
 }
 
-function procesarYMostrarDatosConFiltroRemesas() {
-    const inputRemesa = document.getElementById('remesaFiltroInput'); // Un solo cuadro de texto unificado
-    let textoFiltroRemesa = inputRemesa ? inputRemesa.value.trim() : '';
+function procesarYMostrarDatosConFiltroRemesa() {
+    const inputRemesa = document.getElementById('remesaFiltroInput'); // Cuadro de texto dentro del contenedor naranja
+    let remesaEscrita = inputRemesa ? inputRemesa.value.trim() : '';
 
-    if (inputRemesa) localStorage.setItem('remesaFiltroUnico_v11', textoFiltroRemesa);
+    if (inputRemesa) localStorage.setItem('remesaUnicaSemanal_v11', remesaEscrita);
 
     const objRemesa = ESTRUCTURA_SEMANAL.find(c => c.key === 'Remesa') || { key: 'Remesa', num: 39 };
     let ultimaRemesaGlobal = obtenerUltimaRemesa(bdTotalesGlobal);
 
+    // Si está en blanco, se toma la última remesa subida (la mayor)
+    let remesaEfectiva = remesaEscrita !== "" ? remesaEscrita : ultimaRemesaGlobal;
+
     let datosFiltrados = bdTotalesGlobal.filter(fila => {
         let valRemesa = String(obtenerValorFila(fila, objRemesa)).trim();
-        if (!valRemesa) return false;
-
-        if (textoFiltroRemesa === "") {
-            // Si está vacío, toma por defecto la última remesa subida
-            return String(valRemesa) === String(ultimaRemesaGlobal);
-        }
-
-        // Si el usuario ingresó un rango separado por guion (ej. 10-15)
-        if (textoFiltroRemesa.includes('-')) {
-            let partes = textoFiltroRemesa.split('-');
-            let ini = partes[0].trim();
-            let fin = partes[1].trim() !== "" ? partes[1].trim() : ultimaRemesaGlobal;
-
-            let numR = parseFloat(valRemesa);
-            let numI = parseFloat(ini);
-            let numF = parseFloat(fin);
-
-            if (!isNaN(numR) && !isNaN(numI) && !isNaN(numF)) {
-                return numR >= numI && numR <= numF;
-            }
-            return valRemesa >= ini && valRemesa <= fin;
-        } else {
-            // Si es una sola remesa escrita (ej. 12)
-            return String(valRemesa) === textoFiltroRemesa;
-        }
+        return valRemesa === String(remesaEfectiva);
     });
 
     renderizarTablaConTotales(datosFiltrados);
-    actualizarContadoresGlobales(datosFiltrados, textoFiltroRemesa || ultimaRemesaGlobal);
+    actualizarContadoresGlobales(datosFiltrados, remesaEfectiva || 'N/A');
 }
 
 function renderizarTablaConTotales(datos) {
@@ -273,7 +252,7 @@ function renderizarTablaConTotales(datos) {
         tbody.appendChild(tr);
     });
 
-    // Fila de totales (cuarta línea al fondo de la tabla)
+    // Cuarta línea: Fila de Totales al fondo de la tabla
     let trTotales = document.createElement('tr');
     trTotales.className = 'fila-totales table-dark fw-bold';
     
@@ -295,9 +274,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const inputRemesa = document.getElementById('remesaFiltroInput');
 
     if (inputRemesa) {
-        inputRemesa.value = localStorage.getItem('remesaFiltroUnico_v11') || '';
+        inputRemesa.value = localStorage.getItem('remesaUnicaSemanal_v11') || '';
         inputRemesa.addEventListener('input', () => {
-            procesarYMostrarDatosConFiltroRemesas();
+            procesarYMostrarDatosConFiltroRemesa();
         });
     }
 
@@ -306,7 +285,7 @@ document.addEventListener("DOMContentLoaded", () => {
         inputBuscador.addEventListener('keyup', (e) => {
             const textoFiltro = e.target.value.toLowerCase().trim();
             if (textoFiltro === "") {
-                procesarYMostrarDatosConFiltroRemesas();
+                procesarYMostrarDatosConFiltroRemesa();
                 return;
             }
             
@@ -339,7 +318,7 @@ onValue(ref(db, 'bdtotales'), (snapshot) => {
     if (snapshot.exists()) {
         const data = snapshot.val();
         bdTotalesGlobal = Array.isArray(data) ? data : Object.values(data);
-        procesarYMostrarDatosConFiltroRemesas();
+        procesarYMostrarDatosConFiltroRemesa();
     } else {
         bdTotalesGlobal = [];
         renderizarTablaConTotales([]);
