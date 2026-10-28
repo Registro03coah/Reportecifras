@@ -165,7 +165,6 @@ function renderTabla() {
     if(remesasDisponibles.length === 0) return;
 
     let rIni = rIniVal !== "" ? parseInt(rIniVal, 10) : remesasDisponibles[0];
-    // Si la remesa final está vacía, toma automáticamente la mayor subida actual de la base de datos
     let rFin = rFinVal !== "" ? parseInt(rFinVal, 10) : remesasDisponibles[remesasDisponibles.length - 1];
 
     let registros = dataF.filter(f => { 
@@ -243,6 +242,112 @@ function renderTabla() {
     tbody.appendChild(trT);
 }
 
+// --- FUNCIÓN PARA ABRIR LA VENTANA FLOTANTE DE AUDITORÍA Y DESGLOSE ---
+function abrirVentanaAuditoria() {
+    let dataF = bdtotalesGlobal.length > 0 ? bdtotalesGlobal : bdMadreGlobal;
+    let rIniVal = document.getElementById('inputCampanaInicio').value.trim();
+    let rFinVal = document.getElementById('inputCampanaFin').value.trim();
+
+    let remesasDisponibles = [...new Set(dataF.map(x => parseInt(obtenerValorFlexible(x, 'REMESA'), 10)).filter(x => !isNaN(x)))].sort((a, b) => a - b);
+    if(remesasDisponibles.length === 0) {
+        alert("No hay remesas disponibles para auditar.");
+        return;
+    }
+
+    let rIni = rIniVal !== "" ? parseInt(rIniVal, 10) : remesasDisponibles[0];
+    let rFin = rFinVal !== "" ? parseInt(rFinVal, 10) : remesasDisponibles[remesasDisponibles.length - 1];
+
+    let registros = dataF.filter(f => { 
+        let rNum = parseInt(obtenerValorFlexible(f, 'REMESA'), 10); 
+        return !isNaN(rNum) && rNum >= rIni && rNum <= rFin; 
+    }).sort((a, b) => parseInt(obtenerValorFlexible(a, 'REMESA'), 10) - parseInt(obtenerValorFlexible(b, 'REMESA'), 10));
+
+    // Crear la estructura de la ventana flotante (Modal) si no existe
+    let modalId = "modalAuditoriaCampana";
+    let modalEl = document.getElementById(modalId);
+    if (!modalEl) {
+        const modalHtml = `
+        <div class="modal fade" id="${modalId}" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+              <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold"><i class="bi bi-search"></i> Auditoría de Remesas en Rango (<span id="lblRangoAuditoria"></span>)</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body bg-light">
+                <div class="mb-3 text-end">
+                    <button class="btn btn-success btn-sm fw-bold" onclick="copiarTablaExcel('tablaAuditoriaDesglose')">
+                        <i class="bi bi-file-earmark-excel"></i> Copiar Desglose a Excel
+                    </button>
+                </div>
+                <div class="table-responsive bg-white rounded shadow-sm p-2" style="max-height: 60vh;">
+                    <table class="table table-bordered table-striped table-hover text-center align-middle" id="tablaAuditoriaDesglose" style="font-size: 11px;">
+                        <thead class="table-dark sticky-top" id="cabeceraAuditoria"></thead>
+                        <tbody id="cuerpoAuditoria"></tbody>
+                    </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        modalEl = document.getElementById(modalId);
+    }
+
+    document.getElementById('lblRangoAuditoria').innerText = `${rIni} al ${rFin}`;
+
+    // Construir cabecera de la tabla de auditoría (Remesa, Módulo y las columnas clave)
+    let theadAud = document.getElementById('cabeceraAuditoria');
+    let trTh = `<tr><th>REMESA</th><th>MÓDULO</th>`;
+    COLUMNAS_CAMPANA_KEYS.forEach(col => {
+        if(!['ENT', 'DTTO', 'MODULO'].includes(col)) {
+            trTh += `<th>${col.replace(/_/g, ' ')}</th>`;
+        }
+    });
+    trTh += `</tr>`;
+    theadAud.innerHTML = trTh;
+
+    // Rellenar registros individuales de cada remesa encontrada
+    let tbodyAud = document.getElementById('cuerpoAuditoria');
+    tbodyAud.innerHTML = "";
+
+    if (registros.length === 0) {
+        tbodyAud.innerHTML = `<tr><td colspan="10" class="text-muted py-3">No se encontraron registros en el rango seleccionado.</td></tr>`;
+    } else {
+        registros.forEach(r => {
+            let remVal = obtenerValorFlexible(r, 'REMESA');
+            let modVal = obtenerValorFlexible(r, 'MODULO');
+            let trRow = `<tr><td class="fw-bold bg-warning-subtle">${remVal}</td><td class="fw-bold">${modVal}</td>`;
+            
+            COLUMNAS_CAMPANA_KEYS.forEach(col => {
+                if(!['ENT', 'DTTO', 'MODULO'].includes(col)) {
+                    let valCol = obtenerValorFlexible(r, col) || "0";
+                    trRow += `<td>${valCol}</td>`;
+                }
+            });
+            trRow += `</tr>`;
+            tbodyAud.innerHTML += trRow;
+        });
+    }
+
+    // Mostrar el Modal usando Bootstrap
+    let myModal = new bootstrap.Modal(modalEl);
+    myModal.show();
+}
+
+// Inyectar un botón de Auditoría junto al botón de Guardar Campaña en la interfaz
+document.addEventListener("DOMContentLoaded", () => {
+    const btnGuardarCampana = document.getElementById('btnGuardarCampana');
+    if (btnGuardarCampana && !document.getElementById('btnAuditarCampana')) {
+        let btnAuditar = document.createElement('button');
+        btnAuditar.id = 'btnAuditarCampana';
+        btnAuditar.className = 'btn btn-warning btn-sm fw-bold ms-2';
+        btnAuditar.innerHTML = '<i class="bi bi-eye-fill"></i> Ver Desglose de Remesas';
+        btnAuditar.addEventListener('click', abrirVentanaAuditoria);
+        btnGuardarCampana.parentNode.insertBefore(btnAuditar, btnGuardarCampana.nextSibling);
+    }
+});
+
 function normalizarObj(i) { 
     let l = {}; 
     for(let k in i) l[k.toUpperCase().trim()] = i[k]; 
@@ -251,7 +356,6 @@ function normalizarObj(i) {
 
 construirHeaderTabla();
 
-// Sincronizar el rango de campaña directamente desde Firebase en tiempo real
 const dbRefConfigCampana = ref(db, 'configuracion/campana');
 onValue(dbRefConfigCampana, (snapshot) => {
     if (snapshot.exists()) {
@@ -262,7 +366,6 @@ onValue(dbRefConfigCampana, (snapshot) => {
     renderTabla();
 });
 
-// Guardar los cambios del rango en Firebase al hacer clic en el botón
 document.getElementById('btnGuardarCampana').addEventListener('click', () => {
     let iniVal = document.getElementById('inputCampanaInicio').value.trim();
     let finVal = document.getElementById('inputCampanaFin').value.trim();
@@ -285,7 +388,6 @@ Promise.all([get(ref(db, 'bd_madre')), get(ref(db, 'bdtotales'))]).then(([sM, sT
 
     let todasRemesas = [...new Set([...bdtotalesGlobal, ...bdMadreGlobal].map(x => parseInt(obtenerValorFlexible(x, 'REMESA'), 10)).filter(x => !isNaN(x)))].sort((a, b) => a - b);
     
-    // Si no hay configuración previa en Firebase, asigna por defecto la menor remesa encontrada
     if(todasRemesas.length > 0) {
         get(dbRefConfigCampana).then((snap) => {
             if (!snap.exists() || !snap.val().inicio) {
