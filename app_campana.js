@@ -191,6 +191,34 @@ function renderTabla() {
         let pR = regs.length > 0 ? regs[0] : null; 
         let uR = regs.length > 0 ? regs[regs.length - 1] : null;
 
+        // Lista de columnas que componen los trámites operativos
+        let camposTrámites = [
+            'INSCRIPCIONES', 
+            'CORRECCION_DE_DATOS_PERSONALES', 
+            'CAMBIO_DE_DOMICILIO', 
+            'REPOSICION', 
+            'CORR_DE_DATOS_DIRECCION', 
+            'REINCORPORACION', 
+            'REEMPLAZO', 
+            'REIMPRESION'
+        ];
+
+        // Calcular Total de Trámites para este módulo en el rango
+        let sumaTramitesModulo = 0;
+        regs.forEach(r => {
+            camposTrámites.forEach(cKey => {
+                let v = parseFloat(obtenerValorFlexible(r, cKey) || 0);
+                if (!isNaN(v)) sumaTramitesModulo += v;
+            });
+        });
+
+        // Calcular Cancelados totales del módulo en el rango
+        let sumaCanceladosModulo = 0;
+        regs.forEach(r => {
+            let v = parseFloat(obtenerValorFlexible(r, 'CANCELADOS') || 0);
+            if (!isNaN(v)) sumaCanceladosModulo += v;
+        });
+
         COLUMNAS_CAMPANA_KEYS.forEach(col => {
             let td = document.createElement('td');
             let valorCelda = "";
@@ -202,7 +230,6 @@ function renderTabla() {
             } else if(col === 'FINAL') {
                 valorCelda = uR ? (obtenerValorFlexible(uR, 'FINAL') || "0") : "0";
             } else if(col === 'TOTAL_DE_FOLIOS') {
-                // REGLA 1: Total de folios = Final - Inicial + 1
                 let valIni = pR ? parseFloat(obtenerValorFlexible(pR, 'INICIAL')) : NaN;
                 let valFin = uR ? parseFloat(obtenerValorFlexible(uR, 'FINAL')) : NaN;
                 if (!isNaN(valIni) && !isNaN(valFin) && valFin >= valIni) {
@@ -211,26 +238,13 @@ function renderTabla() {
                     valorCelda = 0;
                 }
                 acumuladorGranTotal[col] += Number(valorCelda);
+            } else if(col === 'TOTAL_DE_TRAMITES') {
+                // Total de Trámites = Suma de las 8 columnas de trámites
+                valorCelda = sumaTramitesModulo;
+                acumuladorGranTotal[col] += Number(valorCelda);
             } else if(col === 'TOTAL_DE_MOVIMIENTOS') {
-                // REGLA 2: Suma estricta de las columnas de trámites específicos
-                let camposMov = [
-                    'INSCRIPCIONES', 
-                    'CORRECCION_DE_DATOS_PERSONALES', 
-                    'CAMBIO_DE_DOMICILIO', 
-                    'REPOSICION', 
-                    'CORR_DE_DATOS_DIRECCION', 
-                    'REINCORPORACION', 
-                    'REEMPLAZO', 
-                    'REIMPRESION'
-                ];
-                let sumaMov = 0;
-                regs.forEach(r => {
-                    camposMov.forEach(cKey => {
-                        let v = parseFloat(obtenerValorFlexible(r, cKey) || 0);
-                        if (!isNaN(v)) sumaMov += v;
-                    });
-                });
-                valorCelda = sumaMov;
+                // Total de Movimientos = Total de Trámites - Cancelados
+                valorCelda = sumaTramitesModulo - sumaCanceladosModulo;
                 acumuladorGranTotal[col] += Number(valorCelda);
             } else if(col === 'INICIALES_C') {
                 valorCelda = pR ? (obtenerValorFlexible(pR, 'INICIALES_C') || "0") : "0";
@@ -306,7 +320,7 @@ function abrirVentanaAuditoria() {
               <div class="modal-body bg-light">
                 <div class="mb-3 text-end">
                     <button class="btn btn-success btn-sm fw-bold" onclick="copiarTablaExcel('tablaAuditoriaDesglose')">
-                        <i class="bi bi-file-earmark-excel"></i> Copiar Desglose a Excel
+                        <i class="bi bi-table"></i> Copiar Desglose a Excel
                     </button>
                 </div>
                 <div class="table-responsive bg-white rounded shadow-sm p-2" style="max-height: 60vh;">
@@ -367,7 +381,7 @@ document.addEventListener("DOMContentLoaded", () => {
         let btnAuditar = document.createElement('button');
         btnAuditar.id = 'btnAuditarCampana';
         btnAuditar.className = 'btn btn-warning btn-sm fw-bold ms-2';
-        btnAuditar.innerHTML = '<i class="bi bi-eye-fill"></i> Ver Desglose de Remesas';
+        btnAuditar.innerHTML = '<i class="bi bi-search"></i> Ver Desglose';
         btnAuditar.addEventListener('click', abrirVentanaAuditoria);
         btnGuardarCampana.parentNode.insertBefore(btnAuditar, btnGuardarCampana.nextSibling);
     }
