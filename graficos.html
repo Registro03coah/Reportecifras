@@ -59,7 +59,7 @@
     <div class="header-banner text-center d-flex justify-content-center align-items-center shadow-sm">
         <div>
             <h1 class="fw-bold mb-0"><i class="bi bi-pie-chart-fill"></i> Panel de Gráficos e Inteligencia Operativa</h1>
-            <p class="lead mb-0">Comparativa de Trámites por Remesa, Módulos y Control de Metas Distritales</p>
+            <p class="lead mb-0">Análisis independiente por módulo, sedes completas y control de metas</p>
         </div>
     </div>
 
@@ -74,11 +74,11 @@
                         <option value="MES">Por Mes</option>
                     </select>
                 </div>
-                <div class="col-md-4 d-flex align-items-center gap-2">
+                <div class="col-md-3 d-flex align-items-center gap-2">
                     <label class="fw-bold text-secondary mb-0" id="lblSelectPeriodo">Año:</label>
                     <select id="filtroValorPeriodo" class="form-select form-select-sm fw-bold"></select>
                 </div>
-                <div class="col-md-5 text-end d-flex justify-content-end align-items-center gap-2">
+                <div class="col-md-6 text-end d-flex justify-content-end align-items-center gap-2">
                     <button class="btn btn-warning btn-sm fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalMetaDistrital">
                         <i class="bi bi-table"></i> Ver Meta Distrital
                     </button>
@@ -111,7 +111,7 @@
             </div>
             <div class="col-md-3">
                 <div class="kpi-card" style="border-left-color: #198754;">
-                    <span class="text-muted fw-bold" style="font-size: 11px;">DÍAS LABORADOS / DESCANSOS</span>
+                    <span class="text-muted fw-bold" style="font-size: 11px;">BALANCE GENERAL (LAB / DESC)</span>
                     <h5 id="kpiDiasBalance" class="fw-bold text-success mb-0">0 / 0</h5>
                 </div>
             </div>
@@ -121,7 +121,7 @@
     <!-- GRÁFICOS -->
     <div class="container-fluid px-4 flex-grow-1 mb-5">
         <div class="row">
-            <!-- NUEVO GRÁFICO: Trámites por Remesa (Estilo Campaña) -->
+            <!-- Gráfico de Trámites por Remesa -->
             <div class="col-12">
                 <div class="card-grafico">
                     <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-graph-up-arrow"></i> Trámites por Remesa (Comparativa por Módulo)</h5>
@@ -141,16 +141,34 @@
                     <canvas id="chartTiposTramites" height="260"></canvas>
                 </div>
             </div>
+
+            <!-- Gráfico de Sedes con Selector Exclusivo por Módulo (Muestra TODAS las sedes sin recortes) -->
             <div class="col-lg-6">
                 <div class="card-grafico">
-                    <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-geo-alt-fill"></i> Frecuencia de Visitas por Sede (Depurado sin ceros)</h5>
-                    <canvas id="chartSedes" height="140"></canvas>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold text-secondary mb-0"><i class="bi bi-geo-alt-fill"></i> Frecuencia de Visitas por Sede</h5>
+                        <select id="selectModuloSedes" class="form-select form-select-sm w-auto fw-bold text-primary">
+                            <option value="050351">Módulo 050351 (Monclova)</option>
+                            <option value="050353" selected>Módulo 050353 (Semifijo)</option>
+                            <option value="050354">Módulo 050354 (Móvil)</option>
+                        </select>
+                    </div>
+                    <canvas id="chartSedes" height="160"></canvas>
                 </div>
             </div>
+
+            <!-- Gráfico de Días Laborados vs Descansos con Selector por Módulo -->
             <div class="col-lg-6">
                 <div class="card-grafico">
-                    <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-calendar-check-fill"></i> Días Laborados vs Días Inactivos (Descansos / Festivos)</h5>
-                    <canvas id="chartDias" height="140"></canvas>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold text-secondary mb-0"><i class="bi bi-calendar-check-fill"></i> Días Laborados vs Descansos</h5>
+                        <select id="selectModuloDias" class="form-select form-select-sm w-auto fw-bold text-primary">
+                            <option value="050351">Módulo 050351 (Monclova)</option>
+                            <option value="050353" selected>Módulo 050353 (Semifijo)</option>
+                            <option value="050354">Módulo 050354 (Móvil)</option>
+                        </select>
+                    </div>
+                    <canvas id="chartDias" height="160"></canvas>
                 </div>
             </div>
         </div>
@@ -401,6 +419,8 @@
             procesarYRenderizarGraficos();
         });
         document.getElementById('filtroValorPeriodo').addEventListener('change', procesarYRenderizarGraficos);
+        document.getElementById('selectModuloSedes').addEventListener('change', procesarYRenderizarGraficos);
+        document.getElementById('selectModuloDias').addEventListener('change', procesarYRenderizarGraficos);
         
         document.querySelectorAll('.meta-input').forEach(inp => {
             inp.addEventListener('input', calcularTablaMetaDistrital);
@@ -542,11 +562,15 @@
             let totalMovimientos = datosFiltrados.reduce((acc, curr) => acc + (parseFloat(obtenerValorFlexible(curr, 'TOTAL_DE_MOVIMIENTOS')) || 0), 0);
             
             let sedesSet = new Set(datosFiltrados.map(i => i['SEDES_NORMALIZADAS']).filter(s => s && s !== 'Sin Sede' && s !== '0' && s !== 0));
-            
-            let diasLaboradosCount = 0;
-            let diasInactivosCount = 0;
 
-            datosFiltrados.forEach(item => {
+            // --- CÁLCULO INDEPENDIENTE DE DÍAS LABORADOS Y DESCANSOS POR MÓDULO ---
+            let moduloDiasSel = document.getElementById('selectModuloDias').value;
+            let datosModuloDias = datosFiltrados.filter(item => String(obtenerValorFlexible(item, 'MODULO') || '').trim().includes(moduloDiasSel));
+            
+            let diasLabMod = 0;
+            let diasDescMod = 0;
+
+            datosModuloDias.forEach(item => {
                 let inicial = parseFloat(obtenerValorFlexible(item, 'INICIAL')) || 0;
                 let tramites = parseFloat(obtenerValorFlexible(item, 'TOTAL_DE_TRAMITES')) || 0;
                 let fechaStr = String(obtenerValorFlexible(item, 'FECHA') || '');
@@ -561,18 +585,18 @@
                 }
 
                 if (inicial > 0 || tramites > 0) {
-                    diasLaboradosCount++;
+                    diasLabMod++;
                 } else if (!esDomingo) {
-                    diasInactivosCount++;
+                    diasDescMod++;
                 }
             });
 
             document.getElementById('kpiTotalTramites').innerText = totalTramites.toLocaleString();
             document.getElementById('kpiTotalMovimientos').innerText = totalMovimientos.toLocaleString();
             document.getElementById('kpiSedesVisitadas').innerText = sedesSet.size;
-            document.getElementById('kpiDiasBalance').innerText = `${diasLaboradosCount} Lab / ${diasInactivosCount} Desc`;
+            document.getElementById('kpiDiasBalance').innerText = `${diasLabMod} Lab / ${diasDescMod} Desc (Mod)`;
 
-            // --- GRÁFICO NUEVO: Trámites por Remesa (Estilo Campaña) ---
+            // Gráfico de Remesas
             let remesasMap = {};
             datosFiltrados.forEach(item => {
                 let remesa = String(obtenerValorFlexible(item, 'REMESA') || 'S/N').trim();
@@ -608,7 +632,7 @@
                 options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
             });
 
-            // Gráfico 1 (Evolución por Módulo)
+            // Gráfico Evolución por Módulo
             let modulosList = ['050351', '050353', '050354'];
             let tramitesPorModulo = { '050351': 0, '050353': 0, '050354': 0 };
             let movimientosPorModulo = { '050351': 0, '050353': 0, '050354': 0 };
@@ -639,7 +663,7 @@
                 options: { responsive: true, plugins: { legend: { position: 'top' } } }
             });
 
-            // Gráfico 2 (Tipos de Trámite)
+            // Gráfico Tipos de Trámite
             let sumInscripciones = datosFiltrados.reduce((acc, curr) => acc + (parseFloat(obtenerValorFlexible(curr, 'INSCRIPCIONES')) || 0), 0);
             let sumCambioDom = datosFiltrados.reduce((acc, curr) => acc + (parseFloat(obtenerValorFlexible(curr, 'CAMBIO_DE_DOMICILIO')) || 0), 0);
             let sumReposicion = datosFiltrados.reduce((acc, curr) => acc + (parseFloat(obtenerValorFlexible(curr, 'REPOSICION') || obtenerValorFlexible(curr, 'REPOSICION_REIMPRESIONES')) || 0), 0);
@@ -659,15 +683,20 @@
                 options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
             });
 
-            // Gráfico 3 (Sedes sin ceros)
+            // --- GRÁFICO DE SEDES (MOSTRANDO TODAS LAS SEDES DEL MÓDULO SELECCIONADO) ---
+            let moduloSedesSel = document.getElementById('selectModuloSedes').value;
             let sedesCount = {};
             datosFiltrados.forEach(item => {
-                let sede = item['SEDES_NORMALIZADAS'];
-                if (sede && sede !== 'Sin Sede' && sede !== '0' && sede !== 0) {
-                    sedesCount[sede] = (sedesCount[sede] || 0) + 1;
+                let mod = String(obtenerValorFlexible(item, 'MODULO') || '').trim();
+                if (mod.includes(moduloSedesSel)) {
+                    let sede = item['SEDES_NORMALIZADAS'];
+                    if (sede && sede !== 'Sin Sede' && sede !== '0' && sede !== 0) {
+                        sedesCount[sede] = (sedesCount[sede] || 0) + 1;
+                    }
                 }
             });
-            let sortedSedes = Object.entries(sedesCount).sort((a,b) => b[1] - a[1]).slice(0, 6);
+            // Ordenadas de mayor a menor frecuencia, sin recortar a 6 (muestra todas)
+            let sortedSedes = Object.entries(sedesCount).sort((a,b) => b[1] - a[1]);
 
             if (chartSedesObj) chartSedesObj.destroy();
             chartSedesObj = new Chart(document.getElementById('chartSedes'), {
@@ -683,7 +712,7 @@
                 options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } }
             });
 
-            // Gráfico 4 (Días laborados)
+            // Gráfico Días Laborados vs Descansos (Independiente por Módulo)
             if (chartDiasObj) chartDiasObj.destroy();
             chartDiasObj = new Chart(document.getElementById('chartDias'), {
                 type: 'bar',
@@ -691,7 +720,7 @@
                     labels: ['Días Laborados', 'Días Descanso / Festivos'],
                     datasets: [{
                         label: 'Cantidad de Días',
-                        data: [diasLaboradosCount, diasInactivosCount],
+                        data: [diasLabMod, diasDescDescMod = diasDescMod],
                         backgroundColor: ['#198754', '#dc3545']
                     }]
                 },
