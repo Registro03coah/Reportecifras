@@ -9,6 +9,23 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
+        /* Reglas de desbloqueo táctil y fluidez exclusiva para celulares */
+@media (max-width: 768px) {
+    html, body {
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+        width: 100% !important;
+        height: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    /* Asegurar que las tablas principales no bloqueen el contenedor */
+    .table-responsive {
+        width: 100% !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+}
         /* Estilos adaptativos exclusivos para Celulares / Pantallas pequeñas */
 @media (max-width: 768px) {
     /* Ajustar contenedores principales para aprovechar el ancho de la pantalla */
