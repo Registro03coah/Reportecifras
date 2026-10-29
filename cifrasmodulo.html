@@ -16,11 +16,6 @@
 </head>
 <body>
 
-    <!-- Botón Flotante para Regresar al Menú Principal -->
-    <a href="index.html" class="btn-regresar-menu" title="Regresar al Centro de Mando">
-        <i class="fas fa-home"></i> <span>Menú Principal</span>
-    </a>
-
     <!-- MODAL DE CAMBIO DE CONTRASEÑA -->
     <div class="modal fade" id="modalCambiarPassword" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -108,8 +103,11 @@
         <!-- Encabezado Institucional -->
         <div class="header-box d-flex justify-content-between align-items-center">
             <div class="d-flex gap-1">
-                <button type="button" id="btnVolver" class="btn btn-sm btn-outline-secondary py-0 px-2 fw-bold" style="font-size: 0.65rem;">⬅ Volver al Menú</button>
-                <button type="button" id="btnCerrarSesion" class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold" style="font-size: 0.65rem;">🔒 Cerrar Sesión</button>
+                <!-- Botón Volver al Menú (Manda a modulosmac.html) -->
+                <a href="modulosmac.html" id="btnVolver" class="btn btn-sm btn-outline-secondary py-0 px-2 fw-bold text-decoration-none d-flex align-items-center" style="font-size: 0.65rem;">⬅ Volver al Menú</a>
+                
+                <!-- Botón Cerrar Sesión (Manda a index.html y limpia sesión) -->
+                <a href="index.html" id="btnCerrarSesion" class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold text-decoration-none d-flex align-items-center" style="font-size: 0.65rem;" onclick="localStorage.removeItem('sesion_modulo_activo'); localStorage.removeItem('sesion_admin_mode');">🔒 Cerrar Sesión</a>
             </div>
             <div class="text-center flex-grow-1">
                 <h6 class="fw-bold m-0 text-dark" style="font-size: 0.75rem;">DIRECCIÓN EJECUTIVA DEL REGISTRO FEDERAL DE ELECTORES</h6>
@@ -156,7 +154,7 @@
             </div>
             <div class="row g-1 align-items-center justify-content-between text-center">
                 <div class="col-auto">
-                    <strong>MÓDULO:</strong> <input type="text" id="txtModulo" class="cell-input d-inline-block fw-bold text-primary text-center" style="width: 75px;" value="" readonly style="background-color: #e9ecef;">
+                    <strong>MÓDULO:</strong> <input type="text" id="txtModulo" class="cell-input d-inline-block fw-bold text-primary text-center" style="width: 75px; background-color: #e9ecef;" value="" readonly>
                 </div>
                 <div class="col-auto">
                     <strong>CONF.:</strong> <input type="text" id="txtConfGlobal" class="cell-input d-inline-block fw-bold text-primary text-center" style="width: 50px;" value="" oninput="actualizarConfGlobal(this.value); guardarDatosLocales();">
