@@ -9,6 +9,41 @@
     <!-- SheetJS para leer archivos Excel (.xlsx/.xls) de forma nativa -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
+        /* Reglas completas de adaptación y fluidez táctil exclusiva para celulares */
+@media (max-width: 768px) {
+    /* Desbloqueo de scroll y fluidez vertical en móviles */
+    html, body {
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+        width: 100% !important;
+        height: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    /* Asegurar que las tablas y contenedores no bloqueen el desplazamiento horizontal/vertical */
+    .table-responsive {
+        width: 100% !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    /* Márgenes y espaciados limpios para aprovechar la pantalla del celular */
+    .container, .container-fluid {
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+    }
+
+    /* Ajuste de tipografías generales en móvil */
+    h5, .fw-bold {
+        font-size: 0.95rem !important;
+    }
+
+    /* Ergonomía para botones en pantallas pequeñas */
+    .btn {
+        font-size: 0.85rem !important;
+        padding: 8px 12px !important;
+    }
+}
         body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .header-banner { background: linear-gradient(135deg, #1b396b, #0d6efd); color: white; border-bottom: 4px solid #146c43; padding: 15px 0; margin-bottom: 15px; }
         .preview-container { width: 100%; max-height: 50vh; overflow: auto; border: 1px solid #ddd; background: white; margin-bottom: 15px; }
