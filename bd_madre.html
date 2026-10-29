@@ -389,7 +389,7 @@
             reader.readAsText(file);
         };
     </script>
-    <script>
+   <script>
     document.addEventListener("DOMContentLoaded", function() {
         let paginaActual = window.location.pathname.split("/").pop();
 
@@ -402,14 +402,18 @@
             ""
         ];
 
-        // Si la página está protegida, exigimos el pase de seguridad
+        // Si la página está protegida, validamos el acceso
         if (!paginasLibres.includes(paginaActual)) {
             let sesionAutorizada = localStorage.getItem('sesion_autorizada');
             
-            if (sesionAutorizada !== 'true') {
-                alert("⚠️ Acceso restringido. Debe ingresar la contraseña desde el menú principal.");
-                window.location.href = 'index.html';
-            }
+            // Damos un respiro de 100 milisegundos para asegurar que lea bien el almacenamiento
+            setTimeout(function() {
+                let autorizacionActualizada = localStorage.getItem('sesion_autorizada');
+                if (autorizacionActualizada !== 'true') {
+                    alert("⚠️ Acceso restringido. Debe ingresar la contraseña desde el menú principal.");
+                    window.location.href = 'index.html';
+                }
+            }, 100);
         }
     });
 </script>
