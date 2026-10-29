@@ -726,5 +726,29 @@
             });
         }
     </script>
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        let paginaActual = window.location.pathname.split("/").pop();
+
+        // Páginas que NO piden contraseña (libres)
+        let paginasLibres = [
+            "index.html", 
+            "modulosmac.html", 
+            "reporte_dias.html", 
+            "graficos.html",
+            ""
+        ];
+
+        // Si la página está protegida, exigimos el pase de seguridad
+        if (!paginasLibres.includes(paginaActual)) {
+            let sesionAutorizada = localStorage.getItem('sesion_autorizada');
+            
+            if (sesionAutorizada !== 'true') {
+                alert("⚠️ Acceso restringido. Debe ingresar la contraseña desde el menú principal.");
+                window.location.href = 'index.html';
+            }
+        }
+    });
+</script>
 </body>
 </html>
