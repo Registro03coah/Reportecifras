@@ -393,16 +393,17 @@
     document.addEventListener("DOMContentLoaded", function() {
         let paginaActual = window.location.pathname.split("/").pop();
 
+        // Lista de páginas libres que no exigen la contraseña general "charro"
         let paginasLibres = [
             "index.html", 
             "modulosmac.html", 
+            "cifrasmodulo.html", // <--- Importante para que respete la contraseña de cada módulo
             "reporte_dias.html", 
             "graficos.html",
             ""
         ];
 
         if (!paginasLibres.includes(paginaActual)) {
-            // Validamos el pase con sessionStorage
             if (sessionStorage.getItem('sesion_autorizada') !== 'true') {
                 alert("⚠️ Acceso restringido. Debe ingresar la contraseña desde el menú principal.");
                 window.location.href = 'index.html';
