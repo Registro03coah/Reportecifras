@@ -1,14 +1,53 @@
-const firebaseConfig = { 
-    apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo", 
-    authDomain: "cifrasmac.firebaseapp.com", 
-    databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com", 
-    projectId: "cifrasmac" 
+// Configuración de Firebase
+const firebaseConfig = {  
+    apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo",  
+    authDomain: "cifrasmac.firebaseapp.com",  
+    databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com",  
+    projectId: "cifrasmac"  
 };
 
 if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
 let datosTemporalesCarga = [];
+
+// Lista oficial y estandarizada de columnas para BD Totales y Gráficas
+const COLUMNAS_ESTANDAR_TOTALES = [
+    "IDMAC", "DIA", "FECHA", "HORAS_TRABAJADAS", "SEDES", "INICIAL", "FINAL",
+    "TOTAL_DE_FOLIOS", "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES",
+    "CAMBIO_DE_DOMICILIO", "REPOSICION", "CORR_DE_DATOS_DIRECCION",
+    "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES",
+    "CANCELADOS", "TOTAL_DE_ANEXOS_POR_RECHAZO", "CRED_PROD_CANJE_POR_NUEVA",  
+    "DISPONIBLES_AL_DIA_ANTERIOR", "ACTUALIZACION", "RECIBIDAS_DE_OTROS_TIPOS",
+    "ENTREGADAS", "ROBO_Y_O_EXTRAVIO", "ANEXAS_A_FUAR", "DATOS_ERRONEOS",
+    "FOTO_MAL_IMPRESA", "RETIRADA_POR_REIMPRESION", "RETIRADAS_POR_CAUSA",
+    "DISPONIBLES_TOTAL", "FICHAS_ENTREGADAS", "FICHAS_ATENDIDAS", "DIAS_TRABAJADOS",
+    "SOLICITUD_EXPEDICION_ORDINARIA", "SOLICITUD_EXPEDICION_REPATRIADOS",  
+    "SOLICITUD_DE_RECTIFICACION", "DEMANDA_DE_JUICIO", "REMESA",
+    "TOTAL_DE_MOVIMIENTOS", "CREDEN_DEVUELTAS_POR_TERCEROS", "RECHAZOS_DE_MAC_34",
+    "RECHAZOS_DE_MAC_35", "CONFIGURACION", "ENT", "DTTO", "MODULO", "RESGUARDO",
+    "SOLICITUD_DE_REIMPRESION", "SCRIPT_EJECUTADO", "FOLIO_NEC",
+    "NUMERO_DE_TRAMITES_APLICADOS", "NUMERO_DE_FICHAS_REQUISITADAS",
+    "NUMERO_DE_ARCHIVOS_DE_TRANSACCION_ACEPTADOS",
+    "TOTAL_DE_ARCHIVOS_DE_TRANSACCION_PROCESADOS", "RECIBIDAS",
+    "CREDENCIALES_INCONSISTENTES",
+    "CREDENCIALES_TOTALES_EN_SIIRFE_DISPONIBLES_PARA_ENTREGA",
+    "TOTAL_DE_CREDENCIALES_ENTREGADAS", "TOTAL_DE_CREDENCIALES_SOLICITADAS",
+    "IMPORTADAS", "EXPORTADAS", "REPOSISION_REIMPRESIONES", "MAL_IMPRESA",
+    "ERROR_EN_CARTOGRAFIA", "DEFUNCION", "SUSPENSION", "DUPLICADO",
+    "ERROR_EN_NUM_DE_EMISION", "PERDIDA_DE_VIGENCIA", "MOV_POST",
+    "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS"
+];
+
+function getClaveLimpia(nombreOriginal) {
+    return String(nombreOriginal || "")
+        .toUpperCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[.#$ /\[\]]/g, "_")
+        .replace(/_+/g, "_")
+        .trim();
+}
 
 function generarIdMac(remesa, modulo) {
     let modStr = String(modulo || '').replace(/\D/g, ''); 
@@ -28,59 +67,47 @@ function generarIdMac(remesa, modulo) {
     return `${modDigits}${numPart}${suffix}`;
 }
 
-// 1. Procesar si el usuario sube un archivo Excel (.xlsx) o JSON
+// 1. Procesar archivo Excel (.xlsx/.xls) o JSON con estandarización de columnas
 function procesarArchivoExcel(e) {
     const file = e.target.files[0];
     if (!file) return;
 
+    let reader = new FileReader();
     if (file.name.endsWith('.json')) {
-        let reader = new FileReader();
         reader.onload = function(evt) {
             try {
                 let json = JSON.parse(evt.target.result);
-                datosTemporalesCarga = Array.isArray(json) ? json : Object.values(json);
-                mostrarVistaPrevia(datosTemporalesCarga);
+                let rawArr = Array.isArray(json) ? json : Object.values(json);
+                normalizarYMostrarPreview(rawArr);
             } catch(err) {
                 alert("El archivo JSON no es válido.");
             }
         };
         reader.readAsText(file);
     } else {
-        let reader = new FileReader();
         reader.onload = function(e) {
             try {
                 let data = new Uint8Array(e.target.result);
                 let workbook = XLSX.read(data, {type: 'array'});
                 let firstSheet = workbook.SheetNames[0];
                 let worksheet = workbook.Sheets[firstSheet];
-                // Convertir la hoja de Excel a un arreglo de objetos JSON limpiando nombres de columnas
-                let jsonRows = XLSX.utils.sheet_to_json(worksheet, {raw: false});
+                let jsonRows = XLSX.utils.sheet_to_json(worksheet, {defval: ""});
                 
-                datosTemporalesCarga = jsonRows.map(row => {
-                    let objNorm = {};
-                    for(let k in row) {
-                        let limpiaKey = k.toUpperCase().trim().replace(/\s+/g, '_');
-                        objNorm[limpiaKey] = row[k];
-                    }
-                    objNorm['IDMAC'] = generarIdMac(objNorm['REMESA'], objNorm['MODULO']);
-                    return objNorm;
-                });
-
-                mostrarVistaPrevia(datosTemporalesCarga);
+                normalizarYMostrarPreview(jsonRows);
             } catch(err) {
                 console.error(err);
-                alert("Error al leer el archivo Excel.");
+                alert("Error al leer el archivo Excel: " + err.message);
             }
         };
         reader.readAsArrayBuffer(file);
     }
 }
 
-// 2. Procesar si el usuario copia de Excel y pega directamente en el cuadro de texto
+// 2. Procesar pegado directo desde el portapapeles
 function procesarPegadoPortapapeles(e) {
     setTimeout(() => {
         let texto = document.getElementById('textoPegadoExcel').value;
-        if (!texto) return;
+        if (!texto.trim()) return;
 
         let lineas = texto.split('\n').filter(l => l.trim() !== '');
         if (lineas.length < 2) {
@@ -89,27 +116,25 @@ function procesarPegadoPortapapeles(e) {
         }
 
         let delimitador = lineas[0].includes('\t') ? '\t' : ',';
-        let headers = lineas[0].split(delimitador).map(h => h.toUpperCase().trim().replace(/\s+/g, '_'));
+        let headers = lineas[0].split(delimitador).map(h => h.trim());
 
-        let registros = [];
+        let filasObjetos = [];
         for (let i = 1; i < lineas.length; i++) {
             let valores = lineas[i].split(delimitador);
             let obj = {};
-            headers.forEach((h, idx) => {
-                obj[h] = valores[idx] !== undefined ? valores[idx].trim() : '';
+            headers.forEach((cabecera, idx) => {
+                obj[cabecera] = valores[idx] !== undefined ? valores[idx].trim() : "";
             });
-            obj['IDMAC'] = generarIdMac(obj['REMESA'], obj['MODULO']);
-            registros.push(obj);
+            filasObjetos.push(obj);
         }
 
-        datosTemporalesCarga = registros;
-        mostrarVistaPrevia(datosTemporalesCarga);
-        document.getElementById('textoPegadoExcel').value = ''; // limpiar textarea
+        normalizarYMostrarPreview(filasObjetos);
+        document.getElementById('textoPegadoExcel').value = ''; 
     }, 100);
 }
 
-// 3. Mostrar la tabla de vista previa
-function mostrarVistaPrevia(arr) {
+// 3. Normalizar registros aplicando el estándar de columnas exactas para Firebase y Gráficas
+function normalizarYMostrarPreview(arrRegistros) {
     const thead = document.getElementById('headPreview');
     const tbody = document.getElementById('bodyPreview');
     const contador = document.getElementById('contadorRegistrosPreview');
@@ -117,67 +142,89 @@ function mostrarVistaPrevia(arr) {
 
     thead.innerHTML = '';
     tbody.innerHTML = '';
-    contador.textContent = arr.length;
 
-    if (arr.length === 0) {
+    if (!arrRegistros || arrRegistros.length === 0) {
+        contador.innerText = "0";
         btnGuardar.disabled = true;
         return;
     }
 
-    let colSet = new Set(['IDMAC']);
-    arr.forEach(i => Object.keys(i).forEach(k => colSet.add(k.toUpperCase().trim())));
-    let columnas = Array.from(colSet);
+    datosTemporalesCarga = arrRegistros.map(item => {
+        let itemNormalizado = {};
+        let modVal = "";
+        let remVal = "";
 
-    // Cabecera HTML
+        Object.keys(item).forEach(k => {
+            let kClean = getClaveLimpia(k);
+            if (kClean === "MODULO") modVal = item[k];
+            if (kClean === "REMESA") remVal = item[k];
+        });
+
+        // IDMAC unificado
+        itemNormalizado["IDMAC"] = generarIdMac(remVal, modVal);
+
+        // Mapear cada columna estándar buscando coincidencias limpias con el Excel
+        COLUMNAS_ESTANDAR_TOTALES.forEach(col => {
+            if (col === "IDMAC") return;
+            let encontradaClave = Object.keys(item).find(k => getClaveLimpia(k) === getClaveLimpia(col));
+            itemNormalizado[col] = encontradaClave !== undefined && item[encontradaClave] !== null ? String(item[encontradaClave]) : "0";
+        });
+
+        return itemNormalizado;
+    });
+
+    // Renderizar cabecera de vista previa
     let trH = '<tr><th>#</th>';
-    columnas.forEach(c => trH += `<th>${c}</th>`);
+    COLUMNAS_ESTANDAR_TOTALES.forEach(col => {
+        trH += `<th>${col.replace(/_/g, ' ')}</th>`;
+    });
     trH += '</tr>';
     thead.innerHTML = trH;
 
-    // Primeros 50 registros de vista previa para no saturar el navegador
+    // Renderizar primeros 50 registros en pantalla
     let htmlB = '';
-    arr.slice(0, 50).forEach((fila, idx) => {
+    datosTemporalesCarga.slice(0, 50).forEach((fila, idx) => {
         htmlB += `<tr><td class="fw-bold text-center">${idx + 1}</td>`;
-        columnas.forEach(col => {
-            let val = fila[col] !== undefined ? fila[col] : (col === 'IDMAC' ? generarIdMac(fila['REMESA'], fila['MODULO']) : '');
-            htmlB += `<td>${val}</td>`;
+        COLUMNAS_ESTANDAR_TOTALES.forEach(col => {
+            htmlB += `<td>${fila[col] !== undefined ? fila[col] : ''}</td>`;
         });
         htmlB += '</tr>';
     });
     tbody.innerHTML = htmlB;
 
-    if (arr.length > 50) {
-        tbody.innerHTML += `<tr><td colspan="${columnas.length + 1}" class="text-center text-muted fw-bold bg-light">... y ${arr.length - 50} registros más listos para guardarse en la nube.</td></tr>`;
+    if (datosTemporalesCarga.length > 50) {
+        tbody.innerHTML += `<tr><td colspan="${COLUMNAS_ESTANDAR_TOTALES.length + 1}" class="text-center text-muted fw-bold bg-light">... y ${datosTemporalesCarga.length - 50} registros más listos para guardarse en la nube.</td></tr>`;
     }
 
+    contador.innerText = datosTemporalesCarga.length;
     btnGuardar.disabled = false;
 }
 
-// 4. Subir todos los datos procesados a Firebase de un solo golpe
+// 4. Subir todos los datos estandarizados a Firebase
 function subirDatosAFirebase() {
     if (datosTemporalesCarga.length === 0) return;
 
-    if (confirm(`¿Estás seguro de subir ${datosTemporalesCarga.length} registros con todas sus columnas a la Base de Datos Totales en Firebase?`)) {
+    if (confirm(`¿Estás seguro de subir ${datosTemporalesCarga.length} registros estandarizados a la Base de Datos Totales en Firebase?`)) {
         database.ref('bdtotales').set(datosTemporalesCarga)
         .then(() => {
-            alert("¡Éxito! Todos los registros y columnas se han guardado correctamente en Firebase.");
-            window.location.href = "bdtotales.html"; // Regresar a la BD Totales
+            alert("¡Éxito! Todos los registros se han guardado correctamente en Firebase.");
+            window.location.href = "bdtotales.html"; 
         })
         .catch(err => {
             console.error(err);
-            alert("Hubo un error al guardar en Firebase.");
+            alert("Hubo un error al guardar en Firebase: " + err.message);
         });
     }
 }
 
 // 5. Vaciar por completo Firebase en la ruta bdtotales
 function vaciarFirebaseCompleto() {
-    if (confirm("⚠️ ADVERTENCIA EXTREMA: ¿Estás completamente seguro de BORRAR TODO en la ruta 'bdtotales' de Firebase? Esta acción no se puede deshacer y dejará la base de datos totalmente en ceros.")) {
+    if (confirm("⚠️ ADVERTENCIA EXTREMA: ¿Estás completamente seguro de BORRAR TODO en la ruta 'bdtotales' de Firebase?")) {
         database.ref('bdtotales').remove()
         .then(() => {
             alert("Se ha vaciado por completo la base de datos en Firebase.");
             datosTemporalesCarga = [];
-            mostrarVistaPrevia([]);
+            normalizarYMostrarPreview([]);
         })
         .catch(err => {
             console.error(err);
