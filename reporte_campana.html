@@ -137,27 +137,21 @@
     document.addEventListener("DOMContentLoaded", function() {
         let paginaActual = window.location.pathname.split("/").pop();
 
-        // Páginas que NO piden contraseña (libres)
+        // Páginas libres (el candado las deja pasar sin pedir la contraseña "charro")
         let paginasLibres = [
             "index.html", 
             "modulosmac.html", 
+            "cifrasmodulo.html", // <--- ¡Agregamos esta para que no estorbe con las claves de los módulos!
             "reporte_dias.html", 
             "graficos.html",
             ""
         ];
 
-        // Si la página está protegida, validamos el acceso
         if (!paginasLibres.includes(paginaActual)) {
-            let sesionAutorizada = localStorage.getItem('sesion_autorizada');
-            
-            // Damos un respiro de 100 milisegundos para asegurar que lea bien el almacenamiento
-            setTimeout(function() {
-                let autorizacionActualizada = localStorage.getItem('sesion_autorizada');
-                if (autorizacionActualizada !== 'true') {
-                    alert("⚠️ Acceso restringido. Debe ingresar la contraseña desde el menú principal.");
-                    window.location.href = 'index.html';
-                }
-            }, 100);
+            if (sessionStorage.getItem('sesion_autorizada') !== 'true') {
+                alert("⚠️ Acceso restringido. Debe ingresar la contraseña desde el menú principal.");
+                window.location.href = 'index.html';
+            }
         }
     });
 </script>
