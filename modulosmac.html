@@ -6,6 +6,8 @@
     <title>Centro de Mando - Módulos MAC (Nube)</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <!-- FontAwesome para iconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Firebase SDKs (Compat) -->
@@ -14,6 +16,34 @@
     
     <style>
         body { background-color: #f4f6f9; font-family: Arial, sans-serif; min-height: 100vh; display: flex; flex-direction: column; justify-content: space-between; }
+        
+        /* Barra superior de estilo vintage / institucional clásico */
+        .navbar-vintage {
+            background-color: #ffffff;
+            border-bottom: 2px solid #cbd5e1;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            padding: 4px 15px;
+        }
+        .navbar-vintage .navbar-brand {
+            color: #1b396b !important;
+            font-size: 14px;
+        }
+        .navbar-vintage .nav-link {
+            color: #475569 !important;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 6px 8px !important;
+            transition: color 0.2s;
+        }
+        .navbar-vintage .nav-link:hover, .navbar-vintage .nav-link.active {
+            color: #1b396b !important;
+            background-color: #e2e8f0;
+            border-radius: 4px;
+        }
+        .navbar-vintage .nav-link.text-pink {
+            color: #d81b60 !important;
+        }
+
         .header-box { background: #ffffff; border-bottom: 2px solid #1b396b; padding: 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .card-modulo { cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; border: 2px solid #cbd5e1; }
         .card-modulo:hover { transform: translateY(-5px); box-shadow: 0 6px 16px rgba(0,0,0,0.15); border-color: #0d6efd; }
@@ -31,6 +61,42 @@
 </head>
 <body>
   
+    <!-- BARRA DE NAVEGACIÓN ESTILO VINTAGE / CLÁSICO -->
+    <nav class="navbar navbar-expand-lg navbar-vintage">
+      <div class="container-fluid px-2">
+        <a class="navbar-brand fw-bold" href="index.html"><i class="bi bi-hdd-network"></i> SISTEMA MAC</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto align-items-lg-center gap-1">
+            <!-- Botón de Casita -->
+            <li class="nav-item">
+              <a class="nav-link px-2" href="index.html" title="Inicio / Portada">
+                <i class="bi bi-house-door-fill fs-6"></i>
+              </a>
+            </li>
+            <li class="nav-item"><a class="nav-link px-2" href="captura.html"><i class="bi bi-pencil-square"></i> Captura</a></li>
+            <li class="nav-item"><a class="nav-link px-2" href="reporte_dias.html"><i class="bi bi-calendar3"></i> Reporte Días</a></li>
+            <li class="nav-item"><a class="nav-link px-2" href="reporte_semanal.html"><i class="bi bi-calendar-week"></i> Reporte Semanal</a></li>
+            <li class="nav-item"><a class="nav-link px-2" href="reporte_campana.html"><i class="bi bi-bar-chart-fill"></i> Reporte Campaña</a></li>
+            <li class="nav-item"><a class="nav-link px-2" href="reporte_acumulado.html"><i class="bi bi-archive-fill"></i> Reporte Acumulado</a></li>
+            <li class="nav-item"><a class="nav-link px-2 text-pink fw-bold" href="graficos.html"><i class="bi bi-pie-chart-fill"></i> Gráficos</a></li>
+            <li class="nav-item"><a class="nav-link px-2" href="bd_madre.html"><i class="bi bi-database-fill"></i> BD Principal</a></li>
+            <li class="nav-item"><a class="nav-link px-2" href="bdtotales.html"><i class="bi bi-database-fill-gear"></i> BD Totales</a></li>
+            <li class="nav-item"><a class="nav-link px-2 active bg-light border rounded" href="modulosmac.html"><i class="bi bi-building-fill-gear"></i> Módulos MAC</a></li>
+            
+            <!-- Botón de Salir -->
+            <li class="nav-item ms-lg-2">
+              <a class="btn btn-outline-dark btn-sm fw-bold px-2 py-1" href="https://registro03coah.github.io/mimenu/" style="font-size: 11px;">
+                <i class="bi bi-box-arrow-right"></i> Salir
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
     <div class="header-box text-center">
         <h4 class="fw-bold text-primary mb-1">DIRECCIÓN EJECUTIVA DEL REGISTRO FEDERAL DE ELECTORES</h4>
         <h5 class="fw-bold text-secondary mb-0">SISTEMA DE REPORTES DE CIFRAS POR DÍA - MÓDULOS MAC DTTO 03</h5>
