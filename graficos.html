@@ -23,12 +23,12 @@
             }
         }
         body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .header-banner { background: linear-gradient(135deg, #ff66b2, #d81b60); color: white; padding: 12px 0; border-bottom: 4px solid #ad1457; margin-bottom: 15px; }
+        .header-banner { background: linear-gradient(135deg, #ff66b2, #d81b60); color: white; padding: 10px 0; border-bottom: 4px solid #ad1457; margin-bottom: 15px; }
         .navbar-nav .nav-link { font-size: 11px !important; }
         .navbar-brand { font-size: 14px !important; }
         nav.navbar { padding: 2px 15px !important; }
-        .card-grafico { background: white; border-radius: 8px; border: 1px solid #ced4da; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; padding: 15px; }
-        .kpi-card { border-left: 4px solid #1b396b; background: white; border-radius: 6px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .card-grafico { background: white; border-radius: 8px; border: 1px solid #ced4da; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 15px; padding: 12px; }
+        .kpi-card { border-left: 4px solid #1b396b; background: white; border-radius: 6px; padding: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
     </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
@@ -58,117 +58,117 @@
     <!-- BANNER -->
     <div class="header-banner text-center d-flex justify-content-center align-items-center shadow-sm">
         <div>
-            <h1 class="fw-bold mb-0"><i class="bi bi-pie-chart-fill"></i> Panel de Gráficos e Inteligencia Operativa</h1>
-            <p class="lead mb-0">Análisis independiente por módulo, sedes completas y control de metas</p>
+            <h1 class="fw-bold mb-0" style="font-size: 1.3rem;"><i class="bi bi-pie-chart-fill"></i> Panel de Gráficos e Inteligencia Operativa</h1>
+            <p class="lead mb-0" style="font-size: 0.85rem;">Análisis independiente por módulo, sedes y control de metas</p>
         </div>
     </div>
 
     <!-- CONTROLES Y FILTROS -->
     <div class="container-fluid px-4 mb-3">
-        <div class="card shadow-sm p-3 bg-light">
-            <div class="row align-items-center g-3">
+        <div class="card shadow-sm p-2 bg-light">
+            <div class="row align-items-center g-2">
                 <div class="col-md-3 d-flex align-items-center gap-2">
-                    <label class="fw-bold text-secondary mb-0">Periodo:</label>
+                    <label class="fw-bold text-secondary mb-0" style="font-size: 12px;">Periodo:</label>
                     <select id="filtroTipoPeriodo" class="form-select form-select-sm fw-bold">
                         <option value="ANIO">Por Año</option>
                         <option value="MES">Por Mes</option>
                     </select>
                 </div>
                 <div class="col-md-3 d-flex align-items-center gap-2">
-                    <label class="fw-bold text-secondary mb-0" id="lblSelectPeriodo">Año:</label>
+                    <label class="fw-bold text-secondary mb-0" id="lblSelectPeriodo" style="font-size: 12px;">Año:</label>
                     <select id="filtroValorPeriodo" class="form-select form-select-sm fw-bold"></select>
                 </div>
                 <div class="col-md-6 text-end d-flex justify-content-end align-items-center gap-2">
-                    <button class="btn btn-warning btn-sm fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalMetaDistrital">
+                    <button class="btn btn-warning btn-sm fw-bold shadow-sm py-1 px-2" data-bs-toggle="modal" data-bs-target="#modalMetaDistrital" style="font-size: 11px;">
                         <i class="bi bi-table"></i> Ver Meta Distrital
                     </button>
-                    <div id="semaforoConexion" class="badge bg-success">Conectado</div>
+                    <div id="semaforoConexion" class="badge bg-success" style="font-size: 10px;">Conectado</div>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- TARJETAS KPI -->
-    <div class="container-fluid px-4 mb-4">
-        <div class="row g-3">
+    <div class="container-fluid px-4 mb-3">
+        <div class="row g-2">
             <div class="col-md-3">
                 <div class="kpi-card">
-                    <span class="text-muted fw-bold" style="font-size: 11px;">TOTAL TRÁMITES (3 MÓDULOS)</span>
-                    <h3 id="kpiTotalTramites" class="fw-bold text-primary mb-0">0</h3>
+                    <span class="text-muted fw-bold" style="font-size: 10px;">TOTAL TRÁMITES (3 MÓDULOS)</span>
+                    <h4 id="kpiTotalTramites" class="fw-bold text-primary mb-0">0</h4>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="kpi-card" style="border-left-color: #ffc107;">
-                    <span class="text-muted fw-bold" style="font-size: 11px;">TOTAL MOVIMIENTOS</span>
-                    <h3 id="kpiTotalMovimientos" class="fw-bold text-warning mb-0">0</h3>
+                    <span class="text-muted fw-bold" style="font-size: 10px;">TOTAL MOVIMIENTOS</span>
+                    <h4 id="kpiTotalMovimientos" class="fw-bold text-warning mb-0">0</h4>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="kpi-card" style="border-left-color: #0dcaf0;">
-                    <span class="text-muted fw-bold" style="font-size: 11px;">SEDES ACTIVAS</span>
-                    <h3 id="kpiSedesVisitadas" class="fw-bold text-info mb-0">0</h3>
+                    <span class="text-muted fw-bold" style="font-size: 10px;">SEDES ACTIVAS</span>
+                    <h4 id="kpiSedesVisitadas" class="fw-bold text-info mb-0">0</h4>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="kpi-card" style="border-left-color: #198754;">
-                    <span class="text-muted fw-bold" style="font-size: 11px;">BALANCE GENERAL (LAB / DESC)</span>
-                    <h5 id="kpiDiasBalance" class="fw-bold text-success mb-0">0 / 0</h5>
+                    <span class="text-muted fw-bold" style="font-size: 10px;">BALANCE GENERAL (LAB / DESC)</span>
+                    <h6 id="kpiDiasBalance" class="fw-bold text-success mb-0">0 / 0</h6>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- GRÁFICOS -->
-    <div class="container-fluid px-4 flex-grow-1 mb-5">
+    <!-- GRÁFICOS (ALTURAS REDUCIDAS) -->
+    <div class="container-fluid px-4 flex-grow-1 mb-4">
         <div class="row">
             <!-- Gráfico de Trámites por Remesa -->
             <div class="col-12">
                 <div class="card-grafico">
-                    <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-graph-up-arrow"></i> Trámites por Remesa (Comparativa por Módulo)</h5>
-                    <canvas id="chartRemesas" height="90"></canvas>
+                    <h6 class="fw-bold text-secondary mb-2" style="font-size: 13px;"><i class="bi bi-graph-up-arrow"></i> Trámites por Remesa (Comparativa por Módulo)</h6>
+                    <canvas id="chartRemesas" height="55"></canvas>
                 </div>
             </div>
             
             <div class="col-lg-8">
                 <div class="card-grafico">
-                    <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-bar-chart-fill"></i> Comparativa General de Trámites por Módulo</h5>
-                    <canvas id="chartEvolucion" height="130"></canvas>
+                    <h6 class="fw-bold text-secondary mb-2" style="font-size: 13px;"><i class="bi bi-bar-chart-fill"></i> Comparativa General de Trámites por Módulo</h6>
+                    <canvas id="chartEvolucion" height="85"></canvas>
                 </div>
             </div>
             <div class="col-lg-4">
                 <div class="card-grafico">
-                    <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-pie-chart-fill"></i> Distribución de Tipos de Trámite</h5>
-                    <canvas id="chartTiposTramites" height="260"></canvas>
+                    <h6 class="fw-bold text-secondary mb-2" style="font-size: 13px;"><i class="bi bi-pie-chart-fill"></i> Distribución de Tipos de Trámite</h6>
+                    <canvas id="chartTiposTramites" height="150"></canvas>
                 </div>
             </div>
 
-            <!-- Gráfico de Sedes con Selector Exclusivo por Módulo (Muestra TODAS las sedes sin recortes) -->
+            <!-- Gráfico de Sedes -->
             <div class="col-lg-6">
                 <div class="card-grafico">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="fw-bold text-secondary mb-0"><i class="bi bi-geo-alt-fill"></i> Frecuencia de Visitas por Sede</h5>
-                        <select id="selectModuloSedes" class="form-select form-select-sm w-auto fw-bold text-primary">
-                            <option value="050351">Módulo 050351 (Monclova)</option>
-                            <option value="050353" selected>Módulo 050353 (Semifijo)</option>
-                            <option value="050354">Módulo 050354 (Móvil)</option>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="fw-bold text-secondary mb-0" style="font-size: 13px;"><i class="bi bi-geo-alt-fill"></i> Frecuencia de Visitas por Sede</h6>
+                        <select id="selectModuloSedes" class="form-select form-select-sm w-auto fw-bold text-primary py-0" style="font-size: 11px;">
+                            <option value="050351">050351 (Monclova)</option>
+                            <option value="050353" selected>050353 (Semifijo)</option>
+                            <option value="050354">050354 (Móvil)</option>
                         </select>
                     </div>
-                    <canvas id="chartSedes" height="160"></canvas>
+                    <canvas id="chartSedes" height="95"></canvas>
                 </div>
             </div>
 
-            <!-- Gráfico de Días Laborados vs Descansos con Selector por Módulo -->
+            <!-- Gráfico de Días Laborados vs Descansos -->
             <div class="col-lg-6">
                 <div class="card-grafico">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="fw-bold text-secondary mb-0"><i class="bi bi-calendar-check-fill"></i> Días Laborados vs Descansos</h5>
-                        <select id="selectModuloDias" class="form-select form-select-sm w-auto fw-bold text-primary">
-                            <option value="050351">Módulo 050351 (Monclova)</option>
-                            <option value="050353" selected>Módulo 050353 (Semifijo)</option>
-                            <option value="050354">Módulo 050354 (Móvil)</option>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="fw-bold text-secondary mb-0" style="font-size: 13px;"><i class="bi bi-calendar-check-fill"></i> Días Laborados vs Descansos</h6>
+                        <select id="selectModuloDias" class="form-select form-select-sm w-auto fw-bold text-primary py-0" style="font-size: 11px;">
+                            <option value="050351">050351 (Monclova)</option>
+                            <option value="050353" selected>050353 (Semifijo)</option>
+                            <option value="050354">050354 (Móvil)</option>
                         </select>
                     </div>
-                    <canvas id="chartDias" height="160"></canvas>
+                    <canvas id="chartDias" height="95"></canvas>
                 </div>
             </div>
         </div>
@@ -178,8 +178,8 @@
     <div class="modal fade" id="modalMetaDistrital" tabindex="-1" aria-labelledby="modalMetaLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-scrollable">
             <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title fw-bold" id="modalMetaLabel"><i class="bi bi-table"></i> Control de Meta Distrital</h5>
+                <div class="modal-header bg-primary text-white py-2">
+                    <h6 class="modal-title fw-bold" id="modalMetaLabel"><i class="bi bi-table"></i> Control de Meta Distrital</h6>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body bg-light">
@@ -309,9 +309,9 @@
                         </table>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary fw-bold" data-bs-dismiss="modal">Cerrar</button>
-                    <button type="button" class="btn btn-primary fw-bold" onclick="guardarMetasBD()"><i class="bi bi-save"></i> Guardar Metas</button>
+                <div class="modal-footer py-1">
+                    <button type="button" class="btn btn-secondary btn-sm fw-bold" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-primary btn-sm fw-bold" onclick="guardarMetasBD()"><i class="bi bi-save"></i> Guardar Metas</button>
                 </div>
             </div>
         </div>
@@ -563,7 +563,6 @@
             
             let sedesSet = new Set(datosFiltrados.map(i => i['SEDES_NORMALIZADAS']).filter(s => s && s !== 'Sin Sede' && s !== '0' && s !== 0));
 
-            // --- CÁLCULO INDEPENDIENTE DE DÍAS LABORADOS Y DESCANSOS POR MÓDULO ---
             let moduloDiasSel = document.getElementById('selectModuloDias').value;
             let datosModuloDias = datosFiltrados.filter(item => String(obtenerValorFlexible(item, 'MODULO') || '').trim().includes(moduloDiasSel));
             
@@ -594,7 +593,7 @@
             document.getElementById('kpiTotalTramites').innerText = totalTramites.toLocaleString();
             document.getElementById('kpiTotalMovimientos').innerText = totalMovimientos.toLocaleString();
             document.getElementById('kpiSedesVisitadas').innerText = sedesSet.size;
-            document.getElementById('kpiDiasBalance').innerText = `${diasLabMod} Lab / ${diasDescMod} Desc (Mod)`;
+            document.getElementById('kpiDiasBalance').innerText = `${diasLabMod} Lab / ${diasDescMod} Desc`;
 
             // Gráfico de Remesas
             let remesasMap = {};
@@ -632,7 +631,7 @@
                 options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
             });
 
-            // Gráfico Evolución por Módulo
+            // Gráfico Evolución
             let modulosList = ['050351', '050353', '050354'];
             let tramitesPorModulo = { '050351': 0, '050353': 0, '050354': 0 };
             let movimientosPorModulo = { '050351': 0, '050353': 0, '050354': 0 };
@@ -663,7 +662,7 @@
                 options: { responsive: true, plugins: { legend: { position: 'top' } } }
             });
 
-            // Gráfico Tipos de Trámite
+            // Gráfico Tipos
             let sumInscripciones = datosFiltrados.reduce((acc, curr) => acc + (parseFloat(obtenerValorFlexible(curr, 'INSCRIPCIONES')) || 0), 0);
             let sumCambioDom = datosFiltrados.reduce((acc, curr) => acc + (parseFloat(obtenerValorFlexible(curr, 'CAMBIO_DE_DOMICILIO')) || 0), 0);
             let sumReposicion = datosFiltrados.reduce((acc, curr) => acc + (parseFloat(obtenerValorFlexible(curr, 'REPOSICION') || obtenerValorFlexible(curr, 'REPOSICION_REIMPRESIONES')) || 0), 0);
@@ -683,7 +682,7 @@
                 options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
             });
 
-            // --- GRÁFICO DE SEDES (MOSTRANDO TODAS LAS SEDES DEL MÓDULO SELECCIONADO) ---
+            // Gráfico Sedes
             let moduloSedesSel = document.getElementById('selectModuloSedes').value;
             let sedesCount = {};
             datosFiltrados.forEach(item => {
@@ -695,7 +694,6 @@
                     }
                 }
             });
-            // Ordenadas de mayor a menor frecuencia, sin recortar a 6 (muestra todas)
             let sortedSedes = Object.entries(sedesCount).sort((a,b) => b[1] - a[1]);
 
             if (chartSedesObj) chartSedesObj.destroy();
@@ -712,7 +710,7 @@
                 options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } }
             });
 
-            // Gráfico Días Laborados vs Descansos (Independiente por Módulo)
+            // Gráfico Días
             if (chartDiasObj) chartDiasObj.destroy();
             chartDiasObj = new Chart(document.getElementById('chartDias'), {
                 type: 'bar',
@@ -720,7 +718,7 @@
                     labels: ['Días Laborados', 'Días Descanso / Festivos'],
                     datasets: [{
                         label: 'Cantidad de Días',
-                        data: [diasLabMod, diasDescDescMod = diasDescMod],
+                        data: [diasLabMod, diasDescMod],
                         backgroundColor: ['#198754', '#dc3545']
                     }]
                 },
