@@ -1,207 +1,29 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gráficas y Estadísticas por Campaña y Sedes - INE</title>
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Chart.js para gráficas animadas -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Firebase SDKs (compat) -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-    <style>
-        body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .card-custom { border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: none; margin-bottom: 20px; }
-        .chart-container { position: relative; width: 100%; height: 260px; max-height: 280px; }
-        .table-compact th, .table-compact td { padding: 8px 12px; font-size: 0.9rem; }
-    </style>
-</head>
-<body>
-
-    <!-- Barra superior unificada -->
-    <nav class="navbar navbar-dark bg-dark px-4 shadow-sm">
-        <a class="navbar-brand fw-bold" href="modulosmac.html">📊 Módulos MAC - Gráficas y Remesas</a>
-        <div>
-            <a href="modulosmac.html" class="btn btn-outline-light btn-sm me-2">Volver al Menú</a>
-            <a href="index.html" class="btn btn-danger btn-sm">Cerrar Sesión</a>
-        </div>
-    </nav>
-
-    <div class="container my-4">
-        <h2 class="mb-3 text-secondary fw-bold">Análisis Operativo por Campaña y Sedes</h2>
-        
-        <!-- Panel de Filtros -->
-        <div class="card card-custom p-3 bg-white">
-            <div class="row g-3">
-                <div class="col-md-5">
-                    <label class="form-label fw-semibold">Seleccionar Campaña / Remesas:</label>
-                    <select id="filtroCampana" class="form-select form-select-sm" onchange="cargarDatosFirebase()">
-                        <option value="202428-202440">Actualización Permanente 2024 (202428 - 202440)</option>
-                        <option value="202441-202507">Anual Intensa 2024-2025 (202441 - 202507)</option>
-                        <option value="202508-202510">Reposiciones 2025 (202508 - 202510)</option>
-                        <option value="202511-202524">Reimpresiones 2025 (202511 - 202524)</option>
-                        <option value="202525-202526">Credencialización 2025 (202525 - 202526)</option>
-                        <option value="202528-202540">Actualización Permanente 2025 (202528 - 202540)</option>
-                        <option value="202541-202556">Anual Intensa 2025 (202541 - 202556)</option>
-                        <option value="202557-202636">Actualización Permanente 2025-2026 (202557 - 202636)</option>
-                        <option value="202637-202655" selected>Anual Intensa 2026-2027 (202637 - 202655)</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label fw-semibold">Módulo:</label>
-                    <select id="filtroModulo" class="form-select form-select-sm" onchange="cargarDatosFirebase()">
-                        <option value="TODOS">Todos los Módulos</option>
-                        <option value="50351">Módulo 50351 (Monclova)</option>
-                        <option value="50353">Módulo 50353 (Región Norte/Sabinas)</option>
-                        <option value="50354">Módulo 50354 (Castaños / Ruta Ejidos)</option>
-                    </select>
-                </div>
-                <div class="col-md-4 d-flex align-items-end">
-                    <button class="btn btn-primary btn-sm w-100 fw-semibold" onclick="cargarDatosFirebase()">🔄 Actualizar con Datos Reales</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Sección de Gráficas Compactas y Dinámicas -->
-        <div class="row">
-            <div class="col-lg-6">
-                <div class="card card-custom p-3">
-                    <h6 class="text-dark fw-bold mb-2">📍 Trámites vs Entregas por Sede</h6>
-                    <div class="chart-container">
-                        <canvas id="graficaTramites"></canvas>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-6">
-                <div class="card card-custom p-3">
-                    <h6 class="text-dark fw-bold mb-2">📊 Frecuencia de Visitas a Localidades</h6>
-                    <div class="chart-container">
-                        <canvas id="graficaVisitas"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Sección de Tablas de Control -->
-        <div class="row">
-            <div class="col-lg-6">
-                <div class="card card-custom p-3">
-                    <h6 class="text-dark fw-bold mb-3">📋 Resumen de Visitas por Sede</h6>
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover table-compact mb-0">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th>Módulo</th>
-                                    <th>Localidad / Sede</th>
-                                    <th class="text-center">Visitas / Días</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tablaVisitasBody">
-                                <tr><td colspan="3" class="text-center text-muted">Cargando datos de Firebase...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-6">
-                <div class="card card-custom p-3">
-                    <h6 class="text-dark fw-bold mb-3">⚠️ Credenciales Pendientes de Entrega</h6>
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover table-compact mb-0">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th>Localidad / Sede</th>
-                                    <th class="text-center">Trámites Realizados</th>
-                                    <th class="text-center text-warning">Pendientes / Disponibles</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tablaPendientesBody">
-                                <tr><td colspan="3" class="text-center text-muted">Cargando datos de Firebase...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Script con conexión real a Firebase y lógica de cálculo -->
-    <script>
-        // --- CANDADO DE SEGURIDAD INTEGRADO ---
-        document.addEventListener("DOMContentLoaded", function() {
-            let paginaActual = window.location.pathname.split("/").pop();
-            let paginasLibres = ["index.html", "modulosmac.html", "cifrasmodulo.html", "reporte_dias.html", "graficos.html", "bdtotales.html", ""];
-
-            if (!paginasLibres.includes(paginaActual)) {
-                if (sessionStorage.getItem('sesion_autorizada') !== 'true') {
-                    alert("⚠️ Acceso restringido. Debe ingresar la contraseña desde el menú principal.");
-                    window.location.href = 'index.html';
-                }
-            }
-            cargarDatosFirebase();
-        });
-
-        // Configuración Firebase
-        const firebaseConfig = {  
-            apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo",  
-            authDomain: "cifrasmac.firebaseapp.com",  
-            databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com",  
-            projectId: "cifrasmac"  
-        };
-        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-
-        let chartTramites = null;
-        let chartVisitas = null;
-
-        function cargarDatosFirebase() {
-            database.ref('bdtotales').once('value').then((snapshot) => {
-                let data = snapshot.val() || [];
-                let registros = Array.isArray(data) ? data : Object.values(data);
-
-                let campanaRange = document.getElementById('filtroCampana').value;
-                let [remesaMin, remesaMax] = campanaRange.split('-').map(Number);
-                let moduloSel = document.getElementById('filtroModulo').value;
-
-                // Filtrar registros por rango de remesa y módulo
-                let filtrados = registros.filter(item => {
-                    let remVal = parseInt(item.REMESA || item.remesa || 0);
-                    let modVal = String(item.MODULO || item.modulo || "").trim();
-
-                    let pasaRemesa = (remVal >= remesaMin && remVal <= remesaMax);
-                    let pasaModulo = (moduloSel === 'TODOS' || modVal.includes(moduloSel));
-
-                    return pasaRemesa && pasaModulo;
-                });
-
-                procesarYGraficar(filtrados);
-            }).catch(err => {
-                console.error("Error al leer Firebase:", err);
-            });
-        }
-
-        function procesarYGraficar(registros) {
+function procesarYGraficar(registros) {
             let sedesMap = {};
 
             registros.forEach(item => {
-                let sede = (item.SEDES || item.sedes || "SIN SEDE").toUpperCase().trim();
-                let mod = String(item.MODULO || item.modulo || "00000").trim();
+                // Limpiar y obtener el nombre real de la sede
+                let sedeRaw = String(item.SEDES || item.sedes || item.SEDE || item.sede || "").toUpperCase().trim();
+                
+                // Omitir si la sede viene vacía, es un "0", o dice "SIN SEDE"
+                if (!sedeRaw || sedeRaw === "0" || sedeRaw === "SIN SEDE" || sedeRaw === "NULL") {
+                    return; 
+                }
+
+                let mod = String(item.MODULO || item.modulo || "").trim();
                 let tramites = parseInt(item.TOTAL_DE_TRAMITES || item.total_de_tramites || 0);
                 let entregas = parseInt(item.ENTREGADAS || item.entregas || 0);
                 let diasTrabajados = parseInt(item.DIAS_TRABAJADOS || item.dias_trabajados || 1);
                 let disponibles = parseInt(item.DISPONIBLES_TOTAL || item.disponibles_total || 0);
 
-                if (!sedesMap[sede]) {
-                    sedesMap[sede] = { modulo: mod, tramites: 0, entregas: 0, visitas: 0, pendientes: 0 };
+                if (!sedesMap[sedeRaw]) {
+                    sedesMap[sedeRaw] = { modulo: mod, tramites: 0, entregas: 0, visitas: 0, pendientes: 0 };
                 }
 
-                sedesMap[sede].tramites += tramites;
-                sedesMap[sede].entregas += entregas;
-                // Sumamos días trabajados reales o contamos el registro como visita
-                sedesMap[sede].visitas += (diasTrabajados > 0 ? diasTrabajados : 6); 
-                sedesMap[sede].pendientes += disponibles;
+                sedesMap[sedeRaw].tramites += tramites;
+                sedesMap[sedeRaw].entregas += entregas;
+                sedesMap[sedeRaw].visitas += (diasTrabajados > 0 ? diasTrabajados : 6); 
+                sedesMap[sedeRaw].pendientes += disponibles;
             });
 
             let labels = Object.keys(sedesMap);
@@ -209,13 +31,13 @@
             let datosEntregas = labels.map(s => sedesMap[s].entregas);
             let datosVisitas = labels.map(s => sedesMap[s].visitas);
 
-            // Actualizar o crear Gráfica de Trámites vs Entregas
+            // Actualizar Gráfica de Trámites vs Entregas
             const ctx1 = document.getElementById('graficaTramites').getContext('2d');
             if (chartTramites) chartTramites.destroy();
             chartTramites = new Chart(ctx1, {
                 type: 'bar',
                 data: {
-                    labels: labels.length > 0 ? labels : ['Sin datos'],
+                    labels: labels.length > 0 ? labels : ['Sin datos válidos'],
                     datasets: [
                         { label: 'Trámites', data: datosTramites.length > 0 ? datosTramites : [0], backgroundColor: 'rgba(13, 110, 253, 0.7)', borderRadius: 4 },
                         { label: 'Entregas', data: datosEntregas.length > 0 ? datosEntregas : [0], backgroundColor: 'rgba(25, 135, 84, 0.7)', borderRadius: 4 }
@@ -224,13 +46,13 @@
                 options: { responsive: true, maintainAspectRatio: false, animation: { duration: 1000 }, scales: { y: { beginAtZero: true } } }
             });
 
-            // Actualizar o crear Gráfica de Visitas
+            // Actualizar Gráfica de Visitas
             const ctx2 = document.getElementById('graficaVisitas').getContext('2d');
             if (chartVisitas) chartVisitas.destroy();
             chartVisitas = new Chart(ctx2, {
                 type: 'line',
                 data: {
-                    labels: labels.length > 0 ? labels : ['Sin datos'],
+                    labels: labels.length > 0 ? labels : ['Sin datos válidos'],
                     datasets: [{
                         label: 'Días / Visitas a Sede',
                         data: datosVisitas.length > 0 ? datosVisitas : [0],
@@ -244,13 +66,13 @@
                 options: { responsive: true, maintainAspectRatio: false, animation: { duration: 1200 }, scales: { y: { beginAtZero: true } } }
             });
 
-            // Poblar Tablas de Control Reales
+            // Poblar Tablas de Control
             let tbodyVisitas = '';
             let tbodyPendientes = '';
 
             if (labels.length === 0) {
-                tbodyVisitas = `<tr><td colspan="3" class="text-center text-muted">No hay registros para este filtro.</td></tr>`;
-                tbodyPendientes = `<tr><td colspan="3" class="text-center text-muted">No hay registros para este filtro.</td></tr>`;
+                tbodyVisitas = `<tr><td colspan="3" class="text-center text-muted">No hay registros válidos para este filtro.</td></tr>`;
+                tbodyPendientes = `<tr><td colspan="3" class="text-center text-muted">No hay registros válidos para este filtro.</td></tr>`;
             } else {
                 labels.forEach(sede => {
                     let info = sedesMap[sede];
@@ -262,6 +84,3 @@
             document.getElementById('tablaVisitasBody').innerHTML = tbodyVisitas;
             document.getElementById('tablaPendientesBody').innerHTML = tbodyPendientes;
         }
-    </script>
-</body>
-</html>
