@@ -131,7 +131,7 @@ function renderTabla() {
     const ESTRUCTURA_21 = [
         { tipo: "NEGRO", modulo: "50351", inicial: "2605035108669", finalDefault: "2605035130714" },
         { tipo: "ROJO",  modulo: "50351", inicial: "2605035100001", final: "2605035108668" },
-        { tipo: "ROJO",  modulo: "50351", inicial: "25050351125557", final: "2505035139930" },
+        { tipo: "ROJO",  modulo: "50351", inicial: "2505035125557", final: "2505035139930" },
         { tipo: "ROJO",  modulo: "50351", inicial: "25050351109053", final: "25050351125556" },
         { tipo: "ROJO",  modulo: "50351", inicial: "2505035100001", final: "2505035109052" },
         { tipo: "ROJO",  modulo: "50351", inicial: "24050351119618", final: "24050351132139" },
