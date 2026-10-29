@@ -165,13 +165,13 @@
                 let [remesaMin, remesaMax] = campanaRange.split('-').map(Number);
                 let moduloSel = document.getElementById('filtroModulo').value;
 
-                // Filtrar registros por rango de remesa y módulo
+                // Filtrar registros usando idmac / modulo y remesa
                 let filtrados = registros.filter(item => {
-                    let remVal = parseInt(item.REMESA || item.remesa || 0);
-                    let modVal = String(item.MODULO || item.modulo || "").trim();
+                    let remVal = parseInt(item.REMESA || item.remesa || item.Remesa || 0);
+                    let idMacVal = String(item.IDMAC || item.idmac || item.ID_MAC || item.MODULO || item.modulo || "").trim();
 
                     let pasaRemesa = (remVal >= remesaMin && remVal <= remesaMax);
-                    let pasaModulo = (moduloSel === 'TODOS' || modVal.includes(moduloSel));
+                    let pasaModulo = (moduloSel === 'TODOS' || idMacVal.includes(moduloSel));
 
                     return pasaRemesa && pasaModulo;
                 });
@@ -193,16 +193,17 @@
                     return; 
                 }
 
-                let mod = String(item.MODULO || item.modulo || "").trim();
-                let tramites = parseInt(item.TOTAL_DE_TRAMITES || item.total_de_tramites || 0);
-                let entregas = parseInt(item.ENTREGADAS || item.entregas || 0);
+                let mod = String(item.IDMAC || item.idmac || item.ID_MAC || item.MODULO || item.modulo || "").trim();
+                let tramites = parseInt(item.TOTAL_DE_TRAMITES || item.total_de_tramites || item.TRAMITES || 0);
+                let entregas = parseInt(item.ENTREGADAS || item.entregas || item.Entregadas || 0);
                 let diasTrabajados = parseInt(item.DIAS_TRABAJADOS || item.dias_trabajados || 1);
-                let disponibles = parseInt(item.DISPONIBLES_TOTAL || item.disponibles_total || 0);
+                let disponibles = parseInt(item.DISPONIBLES_TOTAL || item.disponibles_total || item.DISPONIBLES || 0);
 
                 if (!sedesMap[sedeRaw]) {
                     sedesMap[sedeRaw] = { modulo: mod, tramites: 0, entregas: 0, visitas: 0, pendientes: 0 };
                 }
 
+                sedesMap[sedeRaw].modulo = mod;
                 sedesMap[sedeRaw].tramites += tramites;
                 sedesMap[sedeRaw].entregas += entregas;
                 sedesMap[sedeRaw].visitas += (diasTrabajados > 0 ? diasTrabajados : 6); 
@@ -226,7 +227,7 @@
                         { label: 'Entregas', data: datosEntregas.length > 0 ? datosEntregas : [0], backgroundColor: 'rgba(25, 135, 84, 0.7)', borderRadius: 4 }
                     ]
                 },
-                options: { responsive: true, maintainAspectRatio: false, animation: { duration: 1000 }, scales: { y: { beginAtZero: true } } }
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
             });
 
             // Actualizar Gráfica de Visitas
@@ -246,7 +247,7 @@
                         fill: true
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, animation: { duration: 1200 }, scales: { y: { beginAtZero: true } } }
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
             });
 
             // Poblar Tablas de Control
