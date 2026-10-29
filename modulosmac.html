@@ -44,7 +44,15 @@
             color: #d81b60 !important;
         }
 
-        .header-box { background: #ffffff; border-bottom: 2px solid #1b396b; padding: 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        /* Caja de título compacta para eliminar el espacio en blanco */
+        .header-box { 
+            background: #ffffff; 
+            border-bottom: 2px solid #1b396b; 
+            padding: 8px 15px; 
+            margin-bottom: 10px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
+        }
+        
         .card-modulo { cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; border: 2px solid #cbd5e1; }
         .card-modulo:hover { transform: translateY(-5px); box-shadow: 0 6px 16px rgba(0,0,0,0.15); border-color: #0d6efd; }
         .card-img-icon {
@@ -97,18 +105,19 @@
       </div>
     </nav>
 
+    <!-- TÍTULO COMPACTO Y PEGADO A LA BARRA -->
     <div class="header-box text-center">
-        <h4 class="fw-bold text-primary mb-1">DIRECCIÓN EJECUTIVA DEL REGISTRO FEDERAL DE ELECTORES</h4>
-        <h5 class="fw-bold text-secondary mb-0">SISTEMA DE REPORTES DE CIFRAS POR DÍA - MÓDULOS MAC DTTO 03</h5>
+        <h5 class="fw-bold text-primary mb-1" style="font-size: 1rem;">DIRECCIÓN EJECUTIVA DEL REGISTRO FEDERAL DE ELECTORES</h5>
+        <h6 class="fw-bold text-secondary mb-0" style="font-size: 0.85rem;">SISTEMA DE REPORTES DE CIFRAS POR DÍA - MÓDULOS MAC DTTO 03</h6>
     </div>
 
     <!-- VISTA DE SELECCIÓN DE MÓDULO -->
-    <div class="container py-3 mb-5">
-        <div class="text-center mb-4">
-            <h3 class="fw-bold text-dark">Seleccione el Módulo a Gestionar</h3>
-            <p class="text-secondary small">Elija el módulo correspondiente para acceder a su reporte sincronizado en la nube</p>
+    <div class="container py-2 mb-4">
+        <div class="text-center mb-3">
+            <h4 class="fw-bold text-dark fs-5">Seleccione el Módulo a Gestionar</h4>
+            <p class="text-secondary small mb-2">Elija el módulo correspondiente para acceder a su reporte sincronizado en la nube</p>
         </div>
-        <div class="row justify-content-center g-4 mb-4">
+        <div class="row justify-content-center g-3 mb-3">
             <!-- Módulo 50351 -->
             <div class="col-md-4">
                 <div class="card card-modulo text-center p-3 bg-white" onclick="abrirModalPassword('50351', '351', false)">
