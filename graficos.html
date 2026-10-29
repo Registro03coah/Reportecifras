@@ -6,7 +6,7 @@
     <title>Gráficos y Estadísticas - Sistema MAC</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <!-- Chart.js para gráficos interactivos -->
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         @media (max-width: 768px) {
@@ -55,47 +55,44 @@
       </div>
     </nav>
 
-    <!-- BANNER DE GRÁFICOS -->
+    <!-- BANNER -->
     <div class="header-banner text-center d-flex justify-content-center align-items-center shadow-sm">
         <div>
             <h1 class="fw-bold mb-0"><i class="bi bi-pie-chart-fill"></i> Panel de Gráficos e Inteligencia Operativa</h1>
-            <p class="lead mb-0">Análisis visual de trámites, sedes, avances y días laborados</p>
+            <p class="lead mb-0">Comparativa simultánea de los 3 Módulos (050351 Monclova, 050353 y 050354)</p>
         </div>
     </div>
 
-    <!-- CONTROLES Y FILTROS -->
+    <!-- CONTROLES Y FILTROS DINÁMICOS -->
     <div class="container-fluid px-4 mb-3">
         <div class="card shadow-sm p-3 bg-light">
             <div class="row align-items-center g-3">
-                <div class="col-md-4 d-flex align-items-center gap-2">
-                    <label class="fw-bold text-secondary mb-0">Módulo:</label>
-                    <select id="filtroModulo" class="form-select form-select-sm fw-bold">
-                        <option value="TODOS">Todos los Módulos</option>
-                        <option value="50351">Módulo 50351</option>
-                        <option value="50353">Módulo 50353</option>
-                        <option value="50354">Módulo 50354</option>
-                    </select>
-                </div>
-                <div class="col-md-4 d-flex align-items-center gap-2">
+                <div class="col-md-3 d-flex align-items-center gap-2">
                     <label class="fw-bold text-secondary mb-0">Periodo:</label>
-                    <select id="filtroPeriodo" class="form-select form-select-sm fw-bold">
+                    <select id="filtroTipoPeriodo" class="form-select form-select-sm fw-bold">
+                        <option value="ANIO">Por Año</option>
                         <option value="MES">Por Mes</option>
-                        <option value="ANIO" selected>Por Año</option>
                     </select>
                 </div>
-                <div class="col-md-4 text-end">
+                <div class="col-md-4 d-flex align-items-center gap-2">
+                    <label class="fw-bold text-secondary mb-0" id="lblSelectPeriodo">Año:</label>
+                    <select id="filtroValorPeriodo" class="form-select form-select-sm fw-bold">
+                        <!-- Llenado dinámico -->
+                    </select>
+                </div>
+                <div class="col-md-5 text-end">
                     <div id="semaforoConexion" class="badge bg-success">Conectado</div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- TARJETAS KPI DE RESUMEN RÁPIDO -->
+    <!-- TARJETAS KPI DE RESUMEN GLOBAL -->
     <div class="container-fluid px-4 mb-4">
         <div class="row g-3">
             <div class="col-md-3">
                 <div class="kpi-card">
-                    <span class="text-muted fw-bold" style="font-size: 11px;">TOTAL TRÁMITES</span>
+                    <span class="text-muted fw-bold" style="font-size: 11px;">TOTAL TRÁMITES (3 MÓDULOS)</span>
                     <h3 id="kpiTotalTramites" class="fw-bold text-primary mb-0">0</h3>
                 </div>
             </div>
@@ -107,47 +104,47 @@
             </div>
             <div class="col-md-3">
                 <div class="kpi-card" style="border-left-color: #0dcaf0;">
-                    <span class="text-muted fw-bold" style="font-size: 11px;">SEDES VISITADAS</span>
+                    <span class="text-muted fw-bold" style="font-size: 11px;">SEDES ACTIVAS</span>
                     <h3 id="kpiSedesVisitadas" class="fw-bold text-info mb-0">0</h3>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="kpi-card" style="border-left-color: #198754;">
-                    <span class="text-muted fw-bold" style="font-size: 11px;">LABORADOS vs DESCANSOS</span>
+                    <span class="text-muted fw-bold" style="font-size: 11px;">DÍAS LABORADOS / DESCANSOS</span>
                     <h5 id="kpiDiasBalance" class="fw-bold text-success mb-0">0 / 0</h5>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- CONTENEDOR DE GRÁFICOS ESTADÍSTICOS -->
+    <!-- GRÁFICOS ESTADÍSTICOS COMPARATIVOS -->
     <div class="container-fluid px-4 flex-grow-1 mb-5">
         <div class="row">
-            <!-- Gráfico 1: Trámites por Periodo (Líneas/Barras) -->
+            <!-- Gráfico 1: Comparativa de Trámites entre los 3 Módulos -->
             <div class="col-lg-8">
                 <div class="card-grafico">
-                    <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-graph-up"></i> Evolución de Trámites y Movimientos</h5>
+                    <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-bar-chart-fill"></i> Comparativa de Trámites por Módulo</h5>
                     <canvas id="chartEvolucion" height="130"></canvas>
                 </div>
             </div>
-            <!-- Gráfico 2: Tipos de Trámite (Dona) -->
+            <!-- Gráfico 2: Tipos de Trámite General (Dona) -->
             <div class="col-lg-4">
                 <div class="card-grafico">
-                    <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-pie-chart"></i> Distribución por Tipo de Trámite</h5>
+                    <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-pie-chart-fill"></i> Distribución de Tipos de Trámite</h5>
                     <canvas id="chartTiposTramites" height="260"></canvas>
                 </div>
             </div>
-            <!-- Gráfico 3: Sedes más Visitadas (Barras Horizontales) -->
+            <!-- Gráfico 3: Sedes más Visitadas (Incluyendo Monclova fija para 050351) -->
             <div class="col-lg-6">
                 <div class="card-grafico">
-                    <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-geo-alt-fill"></i> Frecuencia de Visitas por Sede</h5>
+                    <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-geo-alt-fill"></i> Frecuencia de Visitas por Sede (Móviles y Semifijos)</h5>
                     <canvas id="chartSedes" height="140"></canvas>
                 </div>
             </div>
-            <!-- Gráfico 4: Días Laborados vs Descansos (Barras) -->
+            <!-- Gráfico 4: Días Laborados vs Días No Laborados (Descansos / Festivos detectados) -->
             <div class="col-lg-6">
                 <div class="card-grafico">
-                    <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-calendar-check"></i> Días Laborados vs Días No Laborados (Descansos)</h5>
+                    <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-calendar-check-fill"></i> Días Laborados vs Días Inactivos (Descansos / Festivos)</h5>
                     <canvas id="chartDias" height="140"></canvas>
                 </div>
             </div>
@@ -161,7 +158,7 @@
         </small>
     </footer>
 
-    <!-- SCRIPT DE CONEXIÓN A FIREBASE Y GENERACIÓN DE GRÁFICOS -->
+    <!-- SCRIPT DE INTELIGENCIA Y GRÁFICOS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -197,11 +194,24 @@
             return found !== undefined ? obj[found] : "";
         }
 
-        // Cargar datos de BD Madre y BD Totales
+        // Cargar datos de Firebase y normalizar sedes (050351 siempre es Monclova)
         Promise.all([get(ref(db, 'bd_madre')), get(ref(db, 'bdtotales'))]).then(([sM, sT]) => {
             let aM = sM.exists() ? (Array.isArray(sM.val()) ? sM.val() : Object.values(sM.val())) : [];
             let aT = sT.exists() ? (Array.isArray(sT.val()) ? sT.val() : Object.values(sT.val())) : [];
-            datosGlobales = [...aM, ...aT].map(normalizarObj);
+            
+            datosGlobales = [...aM, [...aT]].flat().map(item => {
+                let norm = normalizarObj(item);
+                let mod = String(norm['MODULO'] || '').trim();
+                // Regla de sede: Si es módulo 050351, la sede es fija "Monclova"
+                if (mod.includes('050351')) {
+                    norm['SEDES_NORMALIZADAS'] = 'Monclova';
+                } else {
+                    norm['SEDES_NORMALIZADAS'] = norm['SEDES'] || norm['SEDE'] || 'Sin Sede';
+                }
+                return norm;
+            });
+
+            poblarFiltrosPeriodo();
             procesarYRenderizarGraficos();
         });
 
@@ -211,78 +221,141 @@
             return l; 
         }
 
-        document.getElementById('filtroModulo').addEventListener('change', procesarYRenderizarGraficos);
-        document.getElementById('filtroPeriodo').addEventListener('change', procesarYRenderizarGraficos);
+        document.getElementById('filtroTipoPeriodo').addEventListener('change', () => {
+            poblarFiltrosPeriodo();
+            procesarYRenderizarGraficos();
+        });
+        document.getElementById('filtroValorPeriodo').addEventListener('change', procesarYRenderizarGraficos);
+
+        function poblarFiltrosPeriodo() {
+            let tipo = document.getElementById('filtroTipoPeriodo').value;
+            let selectVal = document.getElementById('filtroValorPeriodo');
+            let lbl = document.getElementById('lblSelectPeriodo');
+            selectVal.innerHTML = '';
+
+            let valoresSet = new Set();
+            datosGlobales.forEach(item => {
+                let fecha = String(obtenerValorFlexible(item, 'FECHA') || '');
+                if (fecha.includes('-') || fecha.includes('/')) {
+                    let partes = fecha.split(/[-/]/);
+                    if (partes.length >= 3) {
+                        let anio = partes[2].length === 4 ? partes[2] : `20${partes[2]}`;
+                        if (tipo === 'ANIO') {
+                            valoresSet.add(anio);
+                        } else if (tipo === 'MES') {
+                            let mes = partes[1].padStart(2, '0');
+                            valoresSet.add(`${mes}/${anio}`);
+                        }
+                    }
+                }
+            });
+
+            let arrValores = Array.from(valoresSet).sort().reverse();
+            if (arrValores.length === 0) arrValores.push('GENERAL');
+
+            lbl.innerText = tipo === 'ANIO' ? 'Año:' : 'Mes/Año:';
+            arrValores.forEach(v => {
+                let opt = document.createElement('option');
+                opt.value = v;
+                opt.innerText = v;
+                selectVal.appendChild(opt);
+            });
+        }
 
         function procesarYRenderizarGraficos() {
             if (datosGlobales.length === 0) return;
 
-            let modFiltro = document.getElementById('filtroModulo').value;
-            let periodoFiltro = document.getElementById('filtroPeriodo').value;
+            let tipoPeriodo = document.getElementById('filtroTipoPeriodo').value;
+            let valorPeriodo = document.getElementById('filtroValorPeriodo').value;
 
-            // Filtrar por módulo seleccionado
+            // Filtrar por periodo seleccionado
             let datosFiltrados = datosGlobales.filter(item => {
-                let mod = String(obtenerValorFlexible(item, 'MODULO') || '').trim();
-                return modFiltro === 'TODOS' || mod.includes(modFiltro);
+                if (valorPeriodo === 'GENERAL') return true;
+                let fecha = String(obtenerValorFlexible(item, 'FECHA') || '');
+                if (!fecha) return false;
+                if (tipoPeriodo === 'ANIO') {
+                    return fecha.includes(valorPeriodo);
+                } else {
+                    let partes = fecha.split(/[-/]/);
+                    if (partes.length >= 3) {
+                        let anio = partes[2].length === 4 ? partes[2] : `20${partes[2]}`;
+                        let mes = partes[1].padStart(2, '0');
+                        return `${mes}/${anio}` === valorPeriodo;
+                    }
+                }
+                return false;
             });
 
-            // 1. KPIs
+            // 1. KPIs Globales
             let totalTramites = datosFiltrados.reduce((acc, curr) => acc + (parseFloat(obtenerValorFlexible(curr, 'TOTAL_DE_TRAMITES')) || 0), 0);
             let totalMovimientos = datosFiltrados.reduce((acc, curr) => acc + (parseFloat(obtenerValorFlexible(curr, 'TOTAL_DE_MOVIMIENTOS')) || 0), 0);
             
-            let sedesSet = new Set(datosFiltrados.map(i => obtenerValorFlexible(i, 'SEDES') || obtenerValorFlexible(i, 'SEDE')).filter(s => s));
+            let sedesSet = new Set(datosFiltrados.map(i => i['SEDES_NORMALIZADAS']).filter(s => s && s !== 'Sin Sede'));
             
-            // Días laborados (registros con fecha o día activo)
-            let diasLaboradosSet = new Set(datosFiltrados.map(i => obtenerValorFlexible(i, 'FECHA') || obtenerValorFlexible(i, 'DIA')).filter(d => d));
-            let diasLaborados = diasLaboradosSet.size;
-            
-            // Días no laborados (descansos estimados: total días en el rango menos laborados, excluyendo domingos si hay fechas)
-            let diasDescanso = Math.max(0, 30 - diasLaborados); // Estimación base ajustable por meses activos
+            // Días Laborados vs Días Inactivos (Detectando festivos/descansos: registros con 0, vacíos y no domingo)
+            let diasLaboradosCount = 0;
+            let diasInactivosCount = 0;
+
+            datosFiltrados.forEach(item => {
+                let inicial = parseFloat(obtenerValorFlexible(item, 'INICIAL')) || 0;
+                let tramites = parseFloat(obtenerValorFlexible(item, 'TOTAL_DE_TRAMITES')) || 0;
+                let fechaStr = String(obtenerValorFlexible(item, 'FECHA') || '');
+                
+                // Verificar si es domingo
+                let esDomingo = false;
+                if (fechaStr.includes('-') || fechaStr.includes('/')) {
+                    let p = fechaStr.split(/[-/]/);
+                    if (p.length >= 3) {
+                        let d = new Date(`${p[2].length === 4 ? p[2] : '20' + p[2]}-${p[1]}-${p[0]}`);
+                        if (d.getDay() === 0) esDomingo = true;
+                    }
+                }
+
+                if (inicial > 0 || tramites > 0) {
+                    diasLaboradosCount++;
+                } else if (!esDomingo) {
+                    // Si no tiene trámites ni inicial y no es domingo, cuenta como día no laborado / festivo / descanso
+                    diasInactivosCount++;
+                }
+            });
 
             document.getElementById('kpiTotalTramites').innerText = totalTramites.toLocaleString();
             document.getElementById('kpiTotalMovimientos').innerText = totalMovimientos.toLocaleString();
             document.getElementById('kpiSedesVisitadas').innerText = sedesSet.size;
-            document.getElementById('kpiDiasBalance').innerText = `${diasLaborados} Lab / ${diasDescanso} Desc`;
+            document.getElementById('kpiDiasBalance').innerText = `${diasLaboradosCount} Lab / ${diasInactivosCount} Desc`;
 
-            // 2. Procesar datos para Gráfico 1: Evolución temporal (Mes / Año)
-            let evolucionMap = {};
+            // 2. Gráfico 1: Comparativa de Trámites entre los 3 Módulos
+            let modulosList = ['050351', '050353', '050354'];
+            let tramitesPorModulo = { '050351': 0, '050353': 0, '050354': 0 };
+            let movimientosPorModulo = { '050351': 0, '050353': 0, '050354': 0 };
+
             datosFiltrados.forEach(item => {
-                let fechaStr = String(obtenerValorFlexible(item, 'FECHA') || '');
-                let claveTiempo = 'Sin Fecha';
-                if (fechaStr.includes('-') || fechaStr.includes('/')) {
-                    let partes = fechaStr.split(/[-/]/);
-                    if (periodoFiltro === 'ANIO' && partes.length >= 3) {
-                        claveTiempo = partes[2].length === 4 ? partes[2] : `20${partes[2]}`;
-                    } else if (periodoFiltro === 'MES' && partes.length >= 2) {
-                        claveTiempo = `${partes[1]}/${partes[2] || '2026'}`;
+                let mod = String(obtenerValorFlexible(item, 'MODULO') || '').trim();
+                let t = parseFloat(obtenerValorFlexible(item, 'TOTAL_DE_TRAMITES')) || 0;
+                let m = parseFloat(obtenerValorFlexible(item, 'TOTAL_DE_MOVIMIENTOS')) || 0;
+                
+                modulosList.forEach(mTarget => {
+                    if (mod.includes(mTarget)) {
+                        tramitesPorModulo[mTarget] += t;
+                        movimientosPorModulo[mTarget] += m;
                     }
-                } else {
-                    claveTiempo = 'General';
-                }
-
-                if (!evolucionMap[claveTiempo]) evolucionMap[claveTiempo] = { tramites: 0, movimientos: 0 };
-                evolucionMap[claveTiempo].tramites += parseFloat(obtenerValorFlexible(item, 'TOTAL_DE_TRAMITES')) || 0;
-                evolucionMap[claveTiempo].movimientos += parseFloat(obtenerValorFlexible(item, 'TOTAL_DE_MOVIMIENTOS')) || 0;
+                });
             });
-
-            let labelsEvolucion = Object.keys(evolucionMap).sort();
-            let dataTramites = labelsEvolucion.map(k => evolucionMap[k].tramites);
-            let dataMovimientos = labelsEvolucion.map(k => evolucionMap[k].movimientos);
 
             if (chartEvolucionObj) chartEvolucionObj.destroy();
             chartEvolucionObj = new Chart(document.getElementById('chartEvolucion'), {
                 type: 'bar',
                 data: {
-                    labels: labelsEvolucion,
+                    labels: ['Módulo 050351 (Monclova)', 'Módulo 050353 (Semifijo)', 'Módulo 050354 (Móvil)'],
                     datasets: [
-                        { label: 'Total Trámites', data: dataTramites, backgroundColor: '#1b396b' },
-                        { label: 'Total Movimientos', data: dataMovimientos, backgroundColor: '#ffc107' }
+                        { label: 'Total Trámites', data: [tramitesPorModulo['050351'], tramitesPorModulo['050353'], tramitesPorModulo['050354']], backgroundColor: '#1b396b' },
+                        { label: 'Total Movimientos', data: [movimientosPorModulo['050351'], movimientosPorModulo['050353'], movimientosPorModulo['050354']], backgroundColor: '#ffc107' }
                     ]
                 },
                 options: { responsive: true, plugins: { legend: { position: 'top' } } }
             });
 
-            // 3. Procesar datos para Gráfico 2: Tipos de Trámite (Dona)
+            // 3. Gráfico 2: Tipos de Trámite (Dona)
             let sumInscripciones = datosFiltrados.reduce((acc, curr) => acc + (parseFloat(obtenerValorFlexible(curr, 'INSCRIPCIONES')) || 0), 0);
             let sumCambioDom = datosFiltrados.reduce((acc, curr) => acc + (parseFloat(obtenerValorFlexible(curr, 'CAMBIO_DE_DOMICILIO')) || 0), 0);
             let sumReposicion = datosFiltrados.reduce((acc, curr) => acc + (parseFloat(obtenerValorFlexible(curr, 'REPOSICION') || obtenerValorFlexible(curr, 'REPOSICION_REIMPRESIONES')) || 0), 0);
@@ -302,13 +375,15 @@
                 options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
             });
 
-            // 4. Procesar datos para Gráfico 3: Sedes más visitadas (Barras Horizontales)
+            // 4. Gráfico 3: Sedes más visitadas
             let sedesCount = {};
             datosFiltrados.forEach(item => {
-                let sede = obtenerValorFlexible(item, 'SEDES') || obtenerValorFlexible(item, 'SEDE') || 'No Especificada';
-                sedesCount[sede] = (sedesCount[sede] || 0) + 1;
+                let sede = item['SEDES_NORMALIZADAS'];
+                if (sede && sede !== 'Sin Sede') {
+                    sedesCount[sede] = (sedesCount[sede] || 0) + 1;
+                }
             });
-            let sortedSedes = Object.entries(sedesCount).sort((a,b) => b[1] - a[1]).slice(0, 5);
+            let sortedSedes = Object.entries(sedesCount).sort((a,b) => b[1] - a[1]).slice(0, 6);
 
             if (chartSedesObj) chartSedesObj.destroy();
             chartSedesObj = new Chart(document.getElementById('chartSedes'), {
@@ -316,7 +391,7 @@
                 data: {
                     labels: sortedSedes.map(s => s[0]),
                     datasets: [{
-                        label: 'Veces Visitada',
+                        label: 'Frecuencia de Visita',
                         data: sortedSedes.map(s => s[1]),
                         backgroundColor: '#0dcaf0'
                     }]
@@ -324,16 +399,16 @@
                 options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } }
             });
 
-            // 5. Procesar datos para Gráfico 4: Días Laborados vs Descansos
+            // 5. Gráfico 4: Días Laborados vs Descansos / Festivos
             if (chartDiasObj) chartDiasObj.destroy();
             chartDiasObj = new Chart(document.getElementById('chartDias'), {
                 type: 'bar',
                 data: {
-                    labels: ['Días Laborados', 'Días Descanso (Inactivos)'],
+                    labels: ['Días Laborados', 'Días Descanso / Festivos'],
                     datasets: [{
                         label: 'Cantidad de Días',
-                        data: [diasLaborados, diasDescanso],
-                        backgroundColor: ['#198754', '#6c757d']
+                        data: [diasLaboradosCount, diasInactivosCount],
+                        backgroundColor: ['#198754', '#dc3545']
                     }]
                 },
                 options: { responsive: true, plugins: { legend: { display: false } } }
