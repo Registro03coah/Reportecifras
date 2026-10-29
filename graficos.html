@@ -3,53 +3,342 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gráficos MAC</title>
+    <title>Gráficos y Estadísticas - Sistema MAC</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <style>body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }</style>
+    <!-- Chart.js para gráficos interactivos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @media (max-width: 768px) {
+            html, body {
+                overflow-x: hidden !important;
+                overflow-y: auto !important;
+                width: 100% !important;
+                height: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+            }
+            .container, .container-fluid {
+                padding-left: 8px !important;
+                padding-right: 8px !important;
+            }
+        }
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .header-banner { background: linear-gradient(135deg, #ff66b2, #d81b60); color: white; padding: 12px 0; border-bottom: 4px solid #ad1457; margin-bottom: 15px; }
+        .navbar-nav .nav-link { font-size: 11px !important; }
+        .navbar-brand { font-size: 14px !important; }
+        nav.navbar { padding: 2px 15px !important; }
+        .card-grafico { background: white; border-radius: 8px; border: 1px solid #ced4da; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; padding: 15px; }
+        .kpi-card { border-left: 4px solid #1b396b; background: white; border-radius: 6px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
-    <style>
-    .navbar-nav .nav-link { font-size: 11px !important; }
-    .navbar-brand { font-size: 14px !important; }
-    nav.navbar, .fixed-top-nav .navbar { padding: 2px 15px !important; }
-    .header-banner { padding: 10px 0 !important; margin-bottom: 15px !important; }
-    .header-banner h1 { font-size: 1.4rem !important; }
-    .header-banner p { font-size: 0.85rem !important; }
-</style>
-<nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #1b396b; width: 100%;">
-  <div class="container-fluid px-3">
-    <a class="navbar-brand fw-bold" href="https://registro03coah.github.io/mimenu/"><i class="bi bi-hdd-network"></i> SISTEMA MAC</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav ms-auto gap-2">
-        <li class="nav-item"><a class="nav-link text-light px-2" href="index.html"><i class="bi bi-pencil-square"></i> Vaciado de Datos</a></li>
-        <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_dias.html"><i class="bi bi-calendar3"></i> Reporte Días</a></li>
-        <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_semanal.html"><i class="bi bi-calendar-week"></i> Reporte Semanal</a></li>
-        <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_campana.html"><i class="bi bi-bar-chart-fill"></i> Reporte Campaña</a></li>
-        <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_acumulado.html"><i class="bi bi-archive-fill"></i> Reporte Acumulado</a></li>
-        <li class="nav-item"><a class="nav-link active bg-primary rounded px-2 text-white fw-bold" href="graficos.html"><i class="bi bi-pie-chart-fill"></i> Gráficos</a></li>
-        <li class="nav-item"><a class="nav-link text-light px-2" href="bd_madre.html"><i class="bi bi-database-fill"></i> BD Principal</a></li>
-        <li class="nav-item"><a class="nav-link text-light px-2" href="bdtotales.html"><i class="bi bi-database-fill-gear"></i> BD Totales</a></li>
-      </ul>
-    </div>
-  </div>
-</nav>
-    <div class="header-banner text-center d-flex justify-content-center align-items-center shadow-sm" style="background: linear-gradient(135deg, #ff66b2, #d81b60); color: white; padding: 12px 0; border-bottom: 4px solid #ad1457;">
-        <div><h1 class="fw-bold mb-0"><i class="bi bi-pie-chart-fill"></i> Panel de Gráficos</h1><p class="lead mb-0">Visualización interactiva de estadísticas</p></div>
-    </div>
-    <div class="container-fluid px-4 flex-grow-1 text-center mt-5">
-        <h4 class="text-muted"><i class="bi bi-tools"></i> En construcción...</h4>
-        <p>Este espacio está reservado para los futuros gráficos circulares y de barras.</p>
-    </div>
-    
-<footer class="text-center py-2 mt-auto text-white shadow-sm" style="background-color: #1b396b; width: 100%; position: relative; bottom: 0;">
-    <small>
-        &copy; 2026 Todos los derechos reservados. Desarrollado por <span class="text-info fw-bold">Carrivers Desing</span> para Módulos MAC. Versión 1.0.19
-    </small>
-</footer>
 
+    <!-- BARRA DE NAVEGACIÓN INSTITUCIONAL -->
+    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #1b396b; width: 100%;">
+      <div class="container-fluid px-3">
+        <a class="navbar-brand fw-bold" href="https://registro03coah.github.io/mimenu/"><i class="bi bi-hdd-network"></i> SISTEMA MAC</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto gap-2">
+            <li class="nav-item"><a class="nav-link text-light px-2" href="index.html"><i class="bi bi-pencil-square"></i> Vaciado de Datos</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_dias.html"><i class="bi bi-calendar3"></i> Reporte Días</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_semanal.html"><i class="bi bi-calendar-week"></i> Reporte Semanal</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_campana.html"><i class="bi bi-bar-chart-fill"></i> Reporte Campaña</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_acumulado.html"><i class="bi bi-archive-fill"></i> Reporte Acumulado</a></li>
+            <li class="nav-item"><a class="nav-link active bg-primary rounded px-2 text-white fw-bold" href="graficos.html"><i class="bi bi-pie-chart-fill"></i> Gráficos</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-2" href="bd_madre.html"><i class="bi bi-database-fill"></i> BD Principal</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-2" href="bdtotales.html"><i class="bi bi-database-fill-gear"></i> BD Totales</a></li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <!-- BANNER DE GRÁFICOS -->
+    <div class="header-banner text-center d-flex justify-content-center align-items-center shadow-sm">
+        <div>
+            <h1 class="fw-bold mb-0"><i class="bi bi-pie-chart-fill"></i> Panel de Gráficos e Inteligencia Operativa</h1>
+            <p class="lead mb-0">Análisis visual de trámites, sedes, avances y días laborados</p>
+        </div>
+    </div>
+
+    <!-- CONTROLES Y FILTROS -->
+    <div class="container-fluid px-4 mb-3">
+        <div class="card shadow-sm p-3 bg-light">
+            <div class="row align-items-center g-3">
+                <div class="col-md-4 d-flex align-items-center gap-2">
+                    <label class="fw-bold text-secondary mb-0">Módulo:</label>
+                    <select id="filtroModulo" class="form-select form-select-sm fw-bold">
+                        <option value="TODOS">Todos los Módulos</option>
+                        <option value="50351">Módulo 50351</option>
+                        <option value="50353">Módulo 50353</option>
+                        <option value="50354">Módulo 50354</option>
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex align-items-center gap-2">
+                    <label class="fw-bold text-secondary mb-0">Periodo:</label>
+                    <select id="filtroPeriodo" class="form-select form-select-sm fw-bold">
+                        <option value="MES">Por Mes</option>
+                        <option value="ANIO" selected>Por Año</option>
+                    </select>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div id="semaforoConexion" class="badge bg-success">Conectado</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TARJETAS KPI DE RESUMEN RÁPIDO -->
+    <div class="container-fluid px-4 mb-4">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <div class="kpi-card">
+                    <span class="text-muted fw-bold" style="font-size: 11px;">TOTAL TRÁMITES</span>
+                    <h3 id="kpiTotalTramites" class="fw-bold text-primary mb-0">0</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="kpi-card" style="border-left-color: #ffc107;">
+                    <span class="text-muted fw-bold" style="font-size: 11px;">TOTAL MOVIMIENTOS</span>
+                    <h3 id="kpiTotalMovimientos" class="fw-bold text-warning mb-0">0</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="kpi-card" style="border-left-color: #0dcaf0;">
+                    <span class="text-muted fw-bold" style="font-size: 11px;">SEDES VISITADAS</span>
+                    <h3 id="kpiSedesVisitadas" class="fw-bold text-info mb-0">0</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="kpi-card" style="border-left-color: #198754;">
+                    <span class="text-muted fw-bold" style="font-size: 11px;">LABORADOS vs DESCANSOS</span>
+                    <h5 id="kpiDiasBalance" class="fw-bold text-success mb-0">0 / 0</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTENEDOR DE GRÁFICOS ESTADÍSTICOS -->
+    <div class="container-fluid px-4 flex-grow-1 mb-5">
+        <div class="row">
+            <!-- Gráfico 1: Trámites por Periodo (Líneas/Barras) -->
+            <div class="col-lg-8">
+                <div class="card-grafico">
+                    <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-graph-up"></i> Evolución de Trámites y Movimientos</h5>
+                    <canvas id="chartEvolucion" height="130"></canvas>
+                </div>
+            </div>
+            <!-- Gráfico 2: Tipos de Trámite (Dona) -->
+            <div class="col-lg-4">
+                <div class="card-grafico">
+                    <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-pie-chart"></i> Distribución por Tipo de Trámite</h5>
+                    <canvas id="chartTiposTramites" height="260"></canvas>
+                </div>
+            </div>
+            <!-- Gráfico 3: Sedes más Visitadas (Barras Horizontales) -->
+            <div class="col-lg-6">
+                <div class="card-grafico">
+                    <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-geo-alt-fill"></i> Frecuencia de Visitas por Sede</h5>
+                    <canvas id="chartSedes" height="140"></canvas>
+                </div>
+            </div>
+            <!-- Gráfico 4: Días Laborados vs Descansos (Barras) -->
+            <div class="col-lg-6">
+                <div class="card-grafico">
+                    <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-calendar-check"></i> Días Laborados vs Días No Laborados (Descansos)</h5>
+                    <canvas id="chartDias" height="140"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PIE DE PÁGINA -->
+    <footer class="text-center py-2 mt-auto text-white shadow-sm" style="background-color: #1b396b; width: 100%;">
+        <small>
+            &copy; 2026 Todos los derechos reservados. Desarrollado por <span class="text-info fw-bold">Carrivers Desing</span> para Módulos MAC. Versión 1.0.19
+        </small>
+    </footer>
+
+    <!-- SCRIPT DE CONEXIÓN A FIREBASE Y GENERACIÓN DE GRÁFICOS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, get, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = { apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo", authDomain: "cifrasmac.firebaseapp.com", databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com", projectId: "cifrasmac", storageBucket: "cifrasmac.firebasestorage.app", messagingSenderId: "916644687837", appId: "1:916644687837:web:03d346cc48a071af1ed034" };
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        let datosGlobales = [];
+        let chartEvolucionObj = null;
+        let chartTiposObj = null;
+        let chartSedesObj = null;
+        let chartDiasObj = null;
+
+        onValue(ref(db, ".info/connected"), (s) => {
+            let sem = document.getElementById("semaforoConexion");
+            if(sem) {
+                sem.className = s.val() ? "badge bg-success text-white ms-2" : "badge bg-danger text-white ms-2";
+                sem.innerHTML = s.val() ? '<i class="bi bi-check-circle"></i> ONLINE' : '<i class="bi bi-x-circle"></i> OFFLINE';
+            }
+        });
+
+        function limpiarStr(str) {
+            return String(str || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
+        }
+
+        function obtenerValorFlexible(obj, clave) {
+            if (!obj) return "";
+            if (obj[clave] !== undefined) return obj[clave];
+            let kClean = limpiarStr(clave);
+            let found = Object.keys(obj).find(k => limpiarStr(k) === kClean);
+            return found !== undefined ? obj[found] : "";
+        }
+
+        // Cargar datos de BD Madre y BD Totales
+        Promise.all([get(ref(db, 'bd_madre')), get(ref(db, 'bdtotales'))]).then(([sM, sT]) => {
+            let aM = sM.exists() ? (Array.isArray(sM.val()) ? sM.val() : Object.values(sM.val())) : [];
+            let aT = sT.exists() ? (Array.isArray(sT.val()) ? sT.val() : Object.values(sT.val())) : [];
+            datosGlobales = [...aM, ...aT].map(normalizarObj);
+            procesarYRenderizarGraficos();
+        });
+
+        function normalizarObj(i) { 
+            let l = {}; 
+            for(let k in i) l[k.toUpperCase().trim()] = i[k]; 
+            return l; 
+        }
+
+        document.getElementById('filtroModulo').addEventListener('change', procesarYRenderizarGraficos);
+        document.getElementById('filtroPeriodo').addEventListener('change', procesarYRenderizarGraficos);
+
+        function procesarYRenderizarGraficos() {
+            if (datosGlobales.length === 0) return;
+
+            let modFiltro = document.getElementById('filtroModulo').value;
+            let periodoFiltro = document.getElementById('filtroPeriodo').value;
+
+            // Filtrar por módulo seleccionado
+            let datosFiltrados = datosGlobales.filter(item => {
+                let mod = String(obtenerValorFlexible(item, 'MODULO') || '').trim();
+                return modFiltro === 'TODOS' || mod.includes(modFiltro);
+            });
+
+            // 1. KPIs
+            let totalTramites = datosFiltrados.reduce((acc, curr) => acc + (parseFloat(obtenerValorFlexible(curr, 'TOTAL_DE_TRAMITES')) || 0), 0);
+            let totalMovimientos = datosFiltrados.reduce((acc, curr) => acc + (parseFloat(obtenerValorFlexible(curr, 'TOTAL_DE_MOVIMIENTOS')) || 0), 0);
+            
+            let sedesSet = new Set(datosFiltrados.map(i => obtenerValorFlexible(i, 'SEDES') || obtenerValorFlexible(i, 'SEDE')).filter(s => s));
+            
+            // Días laborados (registros con fecha o día activo)
+            let diasLaboradosSet = new Set(datosFiltrados.map(i => obtenerValorFlexible(i, 'FECHA') || obtenerValorFlexible(i, 'DIA')).filter(d => d));
+            let diasLaborados = diasLaboradosSet.size;
+            
+            // Días no laborados (descansos estimados: total días en el rango menos laborados, excluyendo domingos si hay fechas)
+            let diasDescanso = Math.max(0, 30 - diasLaborados); // Estimación base ajustable por meses activos
+
+            document.getElementById('kpiTotalTramites').innerText = totalTramites.toLocaleString();
+            document.getElementById('kpiTotalMovimientos').innerText = totalMovimientos.toLocaleString();
+            document.getElementById('kpiSedesVisitadas').innerText = sedesSet.size;
+            document.getElementById('kpiDiasBalance').innerText = `${diasLaborados} Lab / ${diasDescanso} Desc`;
+
+            // 2. Procesar datos para Gráfico 1: Evolución temporal (Mes / Año)
+            let evolucionMap = {};
+            datosFiltrados.forEach(item => {
+                let fechaStr = String(obtenerValorFlexible(item, 'FECHA') || '');
+                let claveTiempo = 'Sin Fecha';
+                if (fechaStr.includes('-') || fechaStr.includes('/')) {
+                    let partes = fechaStr.split(/[-/]/);
+                    if (periodoFiltro === 'ANIO' && partes.length >= 3) {
+                        claveTiempo = partes[2].length === 4 ? partes[2] : `20${partes[2]}`;
+                    } else if (periodoFiltro === 'MES' && partes.length >= 2) {
+                        claveTiempo = `${partes[1]}/${partes[2] || '2026'}`;
+                    }
+                } else {
+                    claveTiempo = 'General';
+                }
+
+                if (!evolucionMap[claveTiempo]) evolucionMap[claveTiempo] = { tramites: 0, movimientos: 0 };
+                evolucionMap[claveTiempo].tramites += parseFloat(obtenerValorFlexible(item, 'TOTAL_DE_TRAMITES')) || 0;
+                evolucionMap[claveTiempo].movimientos += parseFloat(obtenerValorFlexible(item, 'TOTAL_DE_MOVIMIENTOS')) || 0;
+            });
+
+            let labelsEvolucion = Object.keys(evolucionMap).sort();
+            let dataTramites = labelsEvolucion.map(k => evolucionMap[k].tramites);
+            let dataMovimientos = labelsEvolucion.map(k => evolucionMap[k].movimientos);
+
+            if (chartEvolucionObj) chartEvolucionObj.destroy();
+            chartEvolucionObj = new Chart(document.getElementById('chartEvolucion'), {
+                type: 'bar',
+                data: {
+                    labels: labelsEvolucion,
+                    datasets: [
+                        { label: 'Total Trámites', data: dataTramites, backgroundColor: '#1b396b' },
+                        { label: 'Total Movimientos', data: dataMovimientos, backgroundColor: '#ffc107' }
+                    ]
+                },
+                options: { responsive: true, plugins: { legend: { position: 'top' } } }
+            });
+
+            // 3. Procesar datos para Gráfico 2: Tipos de Trámite (Dona)
+            let sumInscripciones = datosFiltrados.reduce((acc, curr) => acc + (parseFloat(obtenerValorFlexible(curr, 'INSCRIPCIONES')) || 0), 0);
+            let sumCambioDom = datosFiltrados.reduce((acc, curr) => acc + (parseFloat(obtenerValorFlexible(curr, 'CAMBIO_DE_DOMICILIO')) || 0), 0);
+            let sumReposicion = datosFiltrados.reduce((acc, curr) => acc + (parseFloat(obtenerValorFlexible(curr, 'REPOSICION') || obtenerValorFlexible(curr, 'REPOSICION_REIMPRESIONES')) || 0), 0);
+            let sumCorreccion = datosFiltrados.reduce((acc, curr) => acc + (parseFloat(obtenerValorFlexible(curr, 'CORRECCION_DE_DATOS_PERSONALES')) || 0), 0);
+            let sumReincorporacion = datosFiltrados.reduce((acc, curr) => acc + (parseFloat(obtenerValorFlexible(curr, 'REINCORPORACION')) || 0), 0);
+
+            if (chartTiposObj) chartTiposObj.destroy();
+            chartTiposObj = new Chart(document.getElementById('chartTiposTramites'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Inscripciones', 'Cambio Domicilio', 'Reposiciones', 'Correcciones', 'Reincorporación'],
+                    datasets: [{
+                        data: [sumInscripciones, sumCambioDom, sumReposicion, sumCorreccion, sumReincorporacion],
+                        backgroundColor: ['#1b396b', '#0dcaf0', '#ffc107', '#198754', '#d81b60']
+                    }]
+                },
+                options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+            });
+
+            // 4. Procesar datos para Gráfico 3: Sedes más visitadas (Barras Horizontales)
+            let sedesCount = {};
+            datosFiltrados.forEach(item => {
+                let sede = obtenerValorFlexible(item, 'SEDES') || obtenerValorFlexible(item, 'SEDE') || 'No Especificada';
+                sedesCount[sede] = (sedesCount[sede] || 0) + 1;
+            });
+            let sortedSedes = Object.entries(sedesCount).sort((a,b) => b[1] - a[1]).slice(0, 5);
+
+            if (chartSedesObj) chartSedesObj.destroy();
+            chartSedesObj = new Chart(document.getElementById('chartSedes'), {
+                type: 'bar',
+                data: {
+                    labels: sortedSedes.map(s => s[0]),
+                    datasets: [{
+                        label: 'Veces Visitada',
+                        data: sortedSedes.map(s => s[1]),
+                        backgroundColor: '#0dcaf0'
+                    }]
+                },
+                options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } }
+            });
+
+            // 5. Procesar datos para Gráfico 4: Días Laborados vs Descansos
+            if (chartDiasObj) chartDiasObj.destroy();
+            chartDiasObj = new Chart(document.getElementById('chartDias'), {
+                type: 'bar',
+                data: {
+                    labels: ['Días Laborados', 'Días Descanso (Inactivos)'],
+                    datasets: [{
+                        label: 'Cantidad de Días',
+                        data: [diasLaborados, diasDescanso],
+                        backgroundColor: ['#198754', '#6c757d']
+                    }]
+                },
+                options: { responsive: true, plugins: { legend: { display: false } } }
+            });
+        }
+    </script>
 </body>
 </html>
