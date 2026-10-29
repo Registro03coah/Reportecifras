@@ -59,11 +59,11 @@
     <div class="header-banner text-center d-flex justify-content-center align-items-center shadow-sm">
         <div>
             <h1 class="fw-bold mb-0"><i class="bi bi-pie-chart-fill"></i> Panel de Gráficos e Inteligencia Operativa</h1>
-            <p class="lead mb-0">Comparativa simultánea de los 3 Módulos (050351 Monclova, 050353 y 050354)</p>
+            <p class="lead mb-0">Comparativa simultánea de los 3 Módulos y Control de Metas Distritales</p>
         </div>
     </div>
 
-    <!-- CONTROLES Y FILTROS DINÁMICOS -->
+    <!-- CONTROLES Y FILTROS -->
     <div class="container-fluid px-4 mb-3">
         <div class="card shadow-sm p-3 bg-light">
             <div class="row align-items-center g-3">
@@ -76,18 +76,19 @@
                 </div>
                 <div class="col-md-4 d-flex align-items-center gap-2">
                     <label class="fw-bold text-secondary mb-0" id="lblSelectPeriodo">Año:</label>
-                    <select id="filtroValorPeriodo" class="form-select form-select-sm fw-bold">
-                        <!-- Llenado dinámico -->
-                    </select>
+                    <select id="filtroValorPeriodo" class="form-select form-select-sm fw-bold"></select>
                 </div>
-                <div class="col-md-5 text-end">
+                <div class="col-md-5 text-end d-flex justify-content-end align-items-center gap-2">
+                    <button class="btn btn-warning btn-sm fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalMetaDistrital">
+                        <i class="bi bi-table"></i> Ver Meta Distrital
+                    </button>
                     <div id="semaforoConexion" class="badge bg-success">Conectado</div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- TARJETAS KPI DE RESUMEN GLOBAL -->
+    <!-- TARJETAS KPI -->
     <div class="container-fluid px-4 mb-4">
         <div class="row g-3">
             <div class="col-md-3">
@@ -117,35 +118,174 @@
         </div>
     </div>
 
-    <!-- GRÁFICOS ESTADÍSTICOS COMPARATIVOS -->
+    <!-- GRÁFICOS -->
     <div class="container-fluid px-4 flex-grow-1 mb-5">
         <div class="row">
-            <!-- Gráfico 1: Comparativa de Trámites entre los 3 Módulos -->
             <div class="col-lg-8">
                 <div class="card-grafico">
                     <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-bar-chart-fill"></i> Comparativa de Trámites por Módulo</h5>
                     <canvas id="chartEvolucion" height="130"></canvas>
                 </div>
             </div>
-            <!-- Gráfico 2: Tipos de Trámite General (Dona) -->
             <div class="col-lg-4">
                 <div class="card-grafico">
                     <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-pie-chart-fill"></i> Distribución de Tipos de Trámite</h5>
                     <canvas id="chartTiposTramites" height="260"></canvas>
                 </div>
             </div>
-            <!-- Gráfico 3: Sedes más Visitadas (Incluyendo Monclova fija para 050351) -->
             <div class="col-lg-6">
                 <div class="card-grafico">
-                    <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-geo-alt-fill"></i> Frecuencia de Visitas por Sede (Móviles y Semifijos)</h5>
+                    <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-geo-alt-fill"></i> Frecuencia de Visitas por Sede (Depurado sin ceros)</h5>
                     <canvas id="chartSedes" height="140"></canvas>
                 </div>
             </div>
-            <!-- Gráfico 4: Días Laborados vs Días No Laborados (Descansos / Festivos detectados) -->
             <div class="col-lg-6">
                 <div class="card-grafico">
                     <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-calendar-check-fill"></i> Días Laborados vs Días Inactivos (Descansos / Festivos)</h5>
                     <canvas id="chartDias" height="140"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VENTANA FLOTANTE (MODAL): TABLA META DISTRITAL -->
+    <div class="modal fade" id="modalMetaDistrital" tabindex="-1" aria-labelledby="modalMetaLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold" id="modalMetaLabel"><i class="bi bi-table"></i> Control de Meta Distrital</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body bg-light">
+                    <p class="text-muted small">Seguimiento mensual de trámites reales por módulo frente a las metas establecidas. Puedes editar las metas directamente y se guardarán en la nube.</p>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm text-center align-middle bg-white" id="tablaMetaDistrital" style="font-size: 11px;">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>MAC</th>
+                                    <th>Total CAI</th>
+                                    <th>Enero</th>
+                                    <th>Febrero</th>
+                                    <th>Marzo</th>
+                                    <th>Abril</th>
+                                    <th>Mayo</th>
+                                    <th>Junio</th>
+                                    <th>Julio</th>
+                                    <th>Agosto</th>
+                                    <th>Septiembre</th>
+                                    <th>Octubre</th>
+                                    <th>Noviembre</th>
+                                    <th>Diciembre</th>
+                                </tr>
+                                <tr class="bg-secondary text-white" id="filaMetasHeader">
+                                    <th>Meta:</th>
+                                    <th><input type="number" class="form-control form-control-sm text-center fw-bold meta-input" data-mes="total" value="38800"></th>
+                                    <th><input type="number" class="form-control form-control-sm text-center fw-bold meta-input" data-mes="01" value="10200"></th>
+                                    <th><input type="number" class="form-control form-control-sm text-center fw-bold meta-input" data-mes="02" value="4700"></th>
+                                    <th><input type="number" class="form-control form-control-sm text-center fw-bold meta-input" data-mes="03" value="3200"></th>
+                                    <th><input type="number" class="form-control form-control-sm text-center fw-bold meta-input" data-mes="04" value="2900"></th>
+                                    <th><input type="number" class="form-control form-control-sm text-center fw-bold meta-input" data-mes="05" value="2400"></th>
+                                    <th><input type="number" class="form-control form-control-sm text-center fw-bold meta-input" data-mes="06" value="4800"></th>
+                                    <th><input type="number" class="form-control form-control-sm text-center fw-bold meta-input" data-mes="07" value="5500"></th>
+                                    <th><input type="number" class="form-control form-control-sm text-center fw-bold meta-input" data-mes="08" value="5100"></th>
+                                    <th><input type="number" class="form-control form-control-sm text-center fw-bold meta-input" data-mes="09" value="0"></th>
+                                    <th><input type="number" class="form-control form-control-sm text-center fw-bold meta-input" data-mes="10" value="0"></th>
+                                    <th><input type="number" class="form-control form-control-sm text-center fw-bold meta-input" data-mes="11" value="0"></th>
+                                    <th><input type="number" class="form-control form-control-sm text-center fw-bold meta-input" data-mes="12" value="0"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="fw-bold bg-light">DISTRITO 03</td>
+                                    <td id="metaDistritoTotal" class="fw-bold">0</td>
+                                    <td id="metaDistrito01" class="fw-bold">0</td>
+                                    <td id="metaDistrito02" class="fw-bold">0</td>
+                                    <td id="metaDistrito03" class="fw-bold">0</td>
+                                    <td id="metaDistrito04" class="fw-bold">0</td>
+                                    <td id="metaDistrito05" class="fw-bold">0</td>
+                                    <td id="metaDistrito06" class="fw-bold">0</td>
+                                    <td id="metaDistrito07" class="fw-bold">0</td>
+                                    <td id="metaDistrito08" class="fw-bold">0</td>
+                                    <td id="metaDistrito09" class="fw-bold">0</td>
+                                    <td id="metaDistrito10" class="fw-bold">0</td>
+                                    <td id="metaDistrito11" class="fw-bold">0</td>
+                                    <td id="metaDistrito12" class="fw-bold">0</td>
+                                </tr>
+                                <tr class="table-secondary fw-bold">
+                                    <td>Módulos / Trámites</td>
+                                    <td colspan="13">Trámites Reales por Mes</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">50351</td>
+                                    <td id="mod51_total">0</td>
+                                    <td id="mod51_01">0</td>
+                                    <td id="mod51_02">0</td>
+                                    <td id="mod51_03">0</td>
+                                    <td id="mod51_04">0</td>
+                                    <td id="mod51_05">0</td>
+                                    <td id="mod51_06">0</td>
+                                    <td id="mod51_07">0</td>
+                                    <td id="mod51_08">0</td>
+                                    <td id="mod51_09">0</td>
+                                    <td id="mod51_10">0</td>
+                                    <td id="mod51_11">0</td>
+                                    <td id="mod51_12">0</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">50353</td>
+                                    <td id="mod53_total">0</td>
+                                    <td id="mod53_01">0</td>
+                                    <td id="mod53_02">0</td>
+                                    <td id="mod53_03">0</td>
+                                    <td id="mod53_04">0</td>
+                                    <td id="mod53_05">0</td>
+                                    <td id="mod53_06">0</td>
+                                    <td id="mod53_07">0</td>
+                                    <td id="mod53_08">0</td>
+                                    <td id="mod53_09">0</td>
+                                    <td id="mod53_10">0</td>
+                                    <td id="mod53_11">0</td>
+                                    <td id="mod53_12">0</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">50354</td>
+                                    <td id="mod54_total">0</td>
+                                    <td id="mod54_01">0</td>
+                                    <td id="mod54_02">0</td>
+                                    <td id="mod54_03">0</td>
+                                    <td id="mod54_04">0</td>
+                                    <td id="mod54_05">0</td>
+                                    <td id="mod54_06">0</td>
+                                    <td id="mod54_07">0</td>
+                                    <td id="mod54_08">0</td>
+                                    <td id="mod54_09">0</td>
+                                    <td id="mod54_10">0</td>
+                                    <td id="mod54_11">0</td>
+                                    <td id="mod54_12">0</td>
+                                </tr>
+                                <tr class="fw-bold text-danger bg-warning-subtle">
+                                    <td>FALTAN</td>
+                                    <td id="faltan_total">0</td>
+                                    <td id="faltan_01">0</td>
+                                    <td id="faltan_02">0</td>
+                                    <td id="faltan_03">0</td>
+                                    <td id="faltan_04">0</td>
+                                    <td id="faltan_05">0</td>
+                                    <td id="faltan_06">0</td>
+                                    <td id="faltan_07">0</td>
+                                    <td id="faltan_08">0</td>
+                                    <td id="faltan_09">0</td>
+                                    <td id="faltan_10">0</td>
+                                    <td id="faltan_11">0</td>
+                                    <td id="faltan_12">0</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary fw-bold" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-primary fw-bold" onclick="guardarMetasBD()"><i class="bi bi-save"></i> Guardar Metas</button>
                 </div>
             </div>
         </div>
@@ -158,11 +298,11 @@
         </small>
     </footer>
 
-    <!-- SCRIPT DE INTELIGENCIA Y GRÁFICOS -->
+    <!-- SCRIPT -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, get, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, get, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = { apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo", authDomain: "cifrasmac.firebaseapp.com", databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com", projectId: "cifrasmac", storageBucket: "cifrasmac.firebasestorage.app", messagingSenderId: "916644687837", appId: "1:916644687837:web:03d346cc48a071af1ed034" };
         const app = initializeApp(firebaseConfig);
@@ -194,7 +334,34 @@
             return found !== undefined ? obj[found] : "";
         }
 
-        // Cargar datos de Firebase y normalizar sedes (050351 siempre es Monclova)
+        // Cargar metas guardadas en Firebase
+        onValue(ref(db, 'configuracion/metas_distritales'), (snapshot) => {
+            if (snapshot.exists()) {
+                let metas = snapshot.val();
+                document.querySelectorAll('.meta-input').forEach(inp => {
+                    let mes = inp.getAttribute('data-mes');
+                    if (metas[mes] !== undefined) {
+                        inp.value = metas[mes];
+                    }
+                });
+            }
+            calcularTablaMetaDistrital();
+        });
+
+        window.guardarMetasBD = function() {
+            let metasObj = {};
+            document.querySelectorAll('.meta-input').forEach(inp => {
+                let mes = inp.getAttribute('data-mes');
+                metasObj[mes] = parseFloat(inp.value) || 0;
+            });
+
+            set(ref(db, 'configuracion/metas_distritales'), metasObj).then(() => {
+                alert("¡Metas distritales guardadas correctamente en la nube!");
+                calcularTablaMetaDistrital();
+            }).catch(err => alert("Error al guardar metas: " + err.message));
+        };
+
+        // Cargar datos de Firebase
         Promise.all([get(ref(db, 'bd_madre')), get(ref(db, 'bdtotales'))]).then(([sM, sT]) => {
             let aM = sM.exists() ? (Array.isArray(sM.val()) ? sM.val() : Object.values(sM.val())) : [];
             let aT = sT.exists() ? (Array.isArray(sT.val()) ? sT.val() : Object.values(sT.val())) : [];
@@ -202,17 +369,19 @@
             datosGlobales = [...aM, [...aT]].flat().map(item => {
                 let norm = normalizarObj(item);
                 let mod = String(norm['MODULO'] || '').trim();
-                // Regla de sede: Si es módulo 050351, la sede es fija "Monclova"
                 if (mod.includes('050351')) {
                     norm['SEDES_NORMALIZADAS'] = 'Monclova';
                 } else {
-                    norm['SEDES_NORMALIZADAS'] = norm['SEDES'] || norm['SEDE'] || 'Sin Sede';
+                    let s = norm['SEDES'] || norm['SEDE'] || '';
+                    // Filtrar estrictamente para ignorar ceros, nulos o cadenas vacías
+                    norm['SEDES_NORMALIZADAS'] = (s && s !== '0' && s !== 0 && s !== '0' && s !== '') ? s : 'Sin Sede';
                 }
                 return norm;
             });
 
             poblarFiltrosPeriodo();
             procesarYRenderizarGraficos();
+            calcularTablaMetaDistrital();
         });
 
         function normalizarObj(i) { 
@@ -226,6 +395,10 @@
             procesarYRenderizarGraficos();
         });
         document.getElementById('filtroValorPeriodo').addEventListener('change', procesarYRenderizarGraficos);
+        
+        document.querySelectorAll('.meta-input').forEach(inp => {
+            inp.addEventListener('input', calcularTablaMetaDistrital);
+        });
 
         function poblarFiltrosPeriodo() {
             let tipo = document.getElementById('filtroTipoPeriodo').value;
@@ -262,13 +435,88 @@
             });
         }
 
+        function calcularTablaMetaDistrital() {
+            if (datosGlobales.length === 0) return;
+
+            let mesesMap = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
+            let modulosObj = {
+                '50351': { total: 0, meses: {} },
+                '50353': { total: 0, meses: {} },
+                '50354': { total: 0, meses: {} }
+            };
+            mesesMap.forEach(m => {
+                modulosObj['50351'].meses[m] = 0;
+                modulosObj['50353'].meses[m] = 0;
+                modulosObj['50354'].meses[m] = 0;
+            });
+
+            datosGlobales.forEach(item => {
+                let mod = String(obtenerValorFlexible(item, 'MODULO') || '').trim();
+                let tramites = parseFloat(obtenerValorFlexible(item, 'TOTAL_DE_TRAMITES')) || 0;
+                let fecha = String(obtenerValorFlexible(item, 'FECHA') || '');
+
+                let mKey = '01';
+                if (fecha.includes('-') || fecha.includes('/')) {
+                    let partes = fecha.split(/[-/]/);
+                    if (partes.length >= 2) {
+                        mKey = partes[1].padStart(2, '0');
+                    }
+                }
+
+                ['50351', '50353', '50354'].forEach(mTarget => {
+                    if (mod.includes(mTarget)) {
+                        modulosObj[mTarget].total += tramites;
+                        if (modulosObj[mTarget].meses[mKey] !== undefined) {
+                            modulosObj[mTarget].meses[mKey] += tramites;
+                        }
+                    }
+                });
+            });
+
+            let distritoTotalReales = 0;
+            let distritoMesesReales = {};
+            mesesMap.forEach(m => distritoMesesReales[m] = 0);
+
+            ['50351', '50353', '50354'].forEach(mTarget => {
+                let prefix = mTarget === '050351' ? 'mod51' : (mTarget === '050353' ? 'mod53' : 'mod54');
+                document.getElementById(`${prefix}_total`).innerText = modulosObj[mTarget].total.toLocaleString();
+                
+                let modSumMeses = 0;
+                mesesMap.forEach(m => {
+                    let val = modulosObj[mTarget].meses[m];
+                    document.getElementById(`${prefix}_${m}`).innerText = val.toLocaleString();
+                    modSumMeses += val;
+                    distritoMesesReales[m] += val;
+                });
+                distritoTotalReales += modulosObj[mTarget].total;
+            });
+
+            document.getElementById('metaDistritoTotal').innerText = distritoTotalReales.toLocaleString();
+            mesesMap.forEach(m => {
+                document.getElementById(`metaDistrito${m}`).innerText = distritoMesesReales[m].toLocaleString();
+            });
+
+            let metaTotalVal = parseFloat(document.querySelector('.meta-input[data-mes="total"]').value) || 0;
+            let faltanTotal = metaTotalVal - distritoTotalReales;
+            let elFiltTotal = document.getElementById('faltan_total');
+            elFiltTotal.innerText = faltanTotal.toLocaleString();
+            elFiltTotal.className = faltanTotal < 0 ? 'fw-bold text-danger' : 'fw-bold text-success';
+
+            mesesMap.forEach(m => {
+                let metaMesVal = parseFloat(document.querySelector(`.meta-input[data-mes="${m}"]`).value) || 0;
+                let faltanMes = metaMesVal - distritoMesesReales[m];
+                let elM = document.getElementById(`faltan_${m}`);
+                elM.innerText = faltanMes.toLocaleString();
+                elM.className = faltanMes < 0 ? 'fw-bold text-danger' : 'fw-bold text-success';
+            });
+        }
+
         function procesarYRenderizarGraficos() {
             if (datosGlobales.length === 0) return;
 
             let tipoPeriodo = document.getElementById('filtroTipoPeriodo').value;
             let valorPeriodo = document.getElementById('filtroValorPeriodo').value;
 
-            // Filtrar por periodo seleccionado
             let datosFiltrados = datosGlobales.filter(item => {
                 if (valorPeriodo === 'GENERAL') return true;
                 let fecha = String(obtenerValorFlexible(item, 'FECHA') || '');
@@ -286,13 +534,12 @@
                 return false;
             });
 
-            // 1. KPIs Globales
             let totalTramites = datosFiltrados.reduce((acc, curr) => acc + (parseFloat(obtenerValorFlexible(curr, 'TOTAL_DE_TRAMITES')) || 0), 0);
             let totalMovimientos = datosFiltrados.reduce((acc, curr) => acc + (parseFloat(obtenerValorFlexible(curr, 'TOTAL_DE_MOVIMIENTOS')) || 0), 0);
             
-            let sedesSet = new Set(datosFiltrados.map(i => i['SEDES_NORMALIZADAS']).filter(s => s && s !== 'Sin Sede'));
+            // Excluir estrictamente ceros o nulos en las sedes
+            let sedesSet = new Set(datosFiltrados.map(i => i['SEDES_NORMALIZADAS']).filter(s => s && s !== 'Sin Sede' && s !== '0' && s !== 0 && s !== '0'));
             
-            // Días Laborados vs Días Inactivos (Detectando festivos/descansos: registros con 0, vacíos y no domingo)
             let diasLaboradosCount = 0;
             let diasInactivosCount = 0;
 
@@ -301,7 +548,6 @@
                 let tramites = parseFloat(obtenerValorFlexible(item, 'TOTAL_DE_TRAMITES')) || 0;
                 let fechaStr = String(obtenerValorFlexible(item, 'FECHA') || '');
                 
-                // Verificar si es domingo
                 let esDomingo = false;
                 if (fechaStr.includes('-') || fechaStr.includes('/')) {
                     let p = fechaStr.split(/[-/]/);
@@ -314,7 +560,6 @@
                 if (inicial > 0 || tramites > 0) {
                     diasLaboradosCount++;
                 } else if (!esDomingo) {
-                    // Si no tiene trámites ni inicial y no es domingo, cuenta como día no laborado / festivo / descanso
                     diasInactivosCount++;
                 }
             });
@@ -324,7 +569,6 @@
             document.getElementById('kpiSedesVisitadas').innerText = sedesSet.size;
             document.getElementById('kpiDiasBalance').innerText = `${diasLaboradosCount} Lab / ${diasInactivosCount} Desc`;
 
-            // 2. Gráfico 1: Comparativa de Trámites entre los 3 Módulos
             let modulosList = ['050351', '050353', '050354'];
             let tramitesPorModulo = { '050351': 0, '050353': 0, '050354': 0 };
             let movimientosPorModulo = { '050351': 0, '050353': 0, '050354': 0 };
@@ -355,7 +599,6 @@
                 options: { responsive: true, plugins: { legend: { position: 'top' } } }
             });
 
-            // 3. Gráfico 2: Tipos de Trámite (Dona)
             let sumInscripciones = datosFiltrados.reduce((acc, curr) => acc + (parseFloat(obtenerValorFlexible(curr, 'INSCRIPCIONES')) || 0), 0);
             let sumCambioDom = datosFiltrados.reduce((acc, curr) => acc + (parseFloat(obtenerValorFlexible(curr, 'CAMBIO_DE_DOMICILIO')) || 0), 0);
             let sumReposicion = datosFiltrados.reduce((acc, curr) => acc + (parseFloat(obtenerValorFlexible(curr, 'REPOSICION') || obtenerValorFlexible(curr, 'REPOSICION_REIMPRESIONES')) || 0), 0);
@@ -375,11 +618,11 @@
                 options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
             });
 
-            // 4. Gráfico 3: Sedes más visitadas
+            // Gráfico 3 (Excluyendo nulos, vacíos y "0")
             let sedesCount = {};
             datosFiltrados.forEach(item => {
                 let sede = item['SEDES_NORMALIZADAS'];
-                if (sede && sede !== 'Sin Sede') {
+                if (sede && sede !== 'Sin Sede' && sede !== '0' && sede !== 0 && sede !== '0') {
                     sedesCount[sede] = (sedesCount[sede] || 0) + 1;
                 }
             });
@@ -399,7 +642,6 @@
                 options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } }
             });
 
-            // 5. Gráfico 4: Días Laborados vs Descansos / Festivos
             if (chartDiasObj) chartDiasObj.destroy();
             chartDiasObj = new Chart(document.getElementById('chartDias'), {
                 type: 'bar',
