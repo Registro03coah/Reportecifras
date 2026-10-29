@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Reportes - Módulos MAC (Nube)</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Estilos personalizados -->
+    <link rel="stylesheet" href="css/styles.css">
+    <!-- Firebase SDKs (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+</head>
+<body>
+
+    <!-- Botón Flotante para Regresar al Menú Principal -->
+    <a href="index.html" class="btn-regresar-menu" title="Regresar al Centro de Mando">
+        <i class="fas fa-home"></i> <span>Menú Principal</span>
+    </a>
+
+    <!-- MODAL DE CAMBIO DE CONTRASEÑA -->
+    <div class="modal fade" id="modalCambiarPassword" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark py-2">
+                    <h5 class="modal-title fs-6">🔑 Cambiar Contraseña del Módulo (Sincronizado)</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="mb-2">
+                        <label class="form-label small fw-bold">Contraseña Actual:</label>
+                        <input type="password" id="txtPwdActual" class="form-control form-control-sm text-center w-75 mx-auto" placeholder="Clave actual">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small fw-bold">Nueva Contraseña:</label>
+                        <input type="password" id="txtPwdNueva" class="form-control form-control-sm text-center w-75 mx-auto" placeholder="Nueva clave">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Confirmar Nueva Contraseña:</label>
+                        <input type="password" id="txtPwdConfirmar" class="form-control form-control-sm text-center w-75 mx-auto" placeholder="Repite nueva clave">
+                    </div>
+                </div>
+                <div class="modal-footer py-1">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-warning btn-sm fw-bold" onclick="guardarNuevaPasswordFirebase()">Actualizar en la Nube</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE REMESAS ARCHIVADAS (SOLO ADMIN) -->
+    <div class="modal fade" id="modalRemesasAdmin" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white py-2">
+                    <h5 class="modal-title fs-6">📂 Historial de Remesas Archivadas (1 a 75 Columnas)</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="contenedorListaRemesas">
+                        <p class="text-muted small">Seleccione un registro guardado para visualizar y copiar sus datos, o bórrelo de requerirlo:</p>
+                        <div class="table-responsive mb-3" style="max-height: 200px; overflow-y: auto;">
+                            <table class="table table-sm table-bordered table-striped text-center" style="font-size: 0.68rem;">
+                                <thead class="table-dark sticky-top">
+                                    <tr>
+                                        <th>Módulo MAC</th>
+                                        <th>Remesa</th>
+                                        <th>Fecha y Hora</th>
+                                        <th>Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cuerpoTablaRemesasArchivadas">
+                                    <tr><td colspan="4" class="text-muted">Cargando registros...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Vista detallada de la remesa seleccionada con botón de copiar -->
+                    <div id="detalleRemesaContainer" style="display: none;">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="fw-bold text-primary m-0" id="lblDetalleRemesaTitulo">Detalle de Remesa</h6>
+                            <div>
+                                <button class="btn btn-success btn-sm fw-bold py-1 px-2" onclick="copiarRemesaSeleccionadaAlPortapapeles()">📋 Copiar Tabla para Excel (1-75)</button>
+                                <button class="btn btn-outline-secondary btn-sm py-1 px-2" onclick="volverListaRemesas()">⬅ Volver a Lista</button>
+                            </div>
+                        </div>
+                        <div class="table-responsive" style="max-height: 350px; overflow-x: auto; overflow-y: auto;">
+                            <table class="table table-sm table-bordered text-center excel-table" style="font-size: 0.65rem;" id="tablaDetalleArchivada">
+                                <thead class="table-secondary"></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer py-1">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VISTA DE APLICACIÓN DE REPORTE -->
+    <div id="vistaReporte" class="container-fluid p-2">
+        <!-- Encabezado Institucional -->
+        <div class="header-box d-flex justify-content-between align-items-center">
+            <div class="d-flex gap-1">
+                <button type="button" id="btnVolver" class="btn btn-sm btn-outline-secondary py-0 px-2 fw-bold" style="font-size: 0.65rem;">⬅ Volver al Menú</button>
+                <button type="button" id="btnCerrarSesion" class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold" style="font-size: 0.65rem;">🔒 Cerrar Sesión</button>
+            </div>
+            <div class="text-center flex-grow-1">
+                <h6 class="fw-bold m-0 text-dark" style="font-size: 0.75rem;">DIRECCIÓN EJECUTIVA DEL REGISTRO FEDERAL DE ELECTORES</h6>
+                <h6 class="fw-bold text-secondary" style="font-size: 0.7rem;">COORDINACIÓN DE ACTUALIZACIÓN EN CAMPO DEL PADRÓN ELECTORAL - CAI 2026</h6>
+                <h5 class="fw-bold text-primary mt-1" id="lblEncabezadoReporte" style="font-size: 0.85rem;">REPORTE DIARIO DE SOLICITUDES Y OPERACIÓN</h5>
+            </div>
+            <div class="d-flex gap-1">
+                <button type="button" class="btn btn-sm btn-outline-warning py-0 px-2 fw-bold text-dark" style="font-size: 0.65rem;" onclick="abrirModalCambiarPassword()">🔑 Cambiar Clave</button>
+                <button type="button" id="btnGuardar" class="btn btn-sm btn-outline-primary py-0 px-2 fw-bold" style="font-size: 0.65rem;">💾 Guardar en Nube</button>
+            </div>
+        </div>
+
+        <!-- Panel de Control para Admin -->
+        <div id="panelSelectorAdmin" class="section-card bg-light border-dark mb-2" style="display: none;">
+            <div class="row align-items-center justify-content-center g-2">
+                <div class="col-auto fw-bold text-dark">🛠 MÓDULO EN GESTIÓN (ADMINISTRADOR):</div>
+                <div class="col-auto">
+                    <select id="comboAdminModulo" class="form-select form-select-sm fw-bold text-primary" onchange="cambiarModuloAdmin(this.value)">
+                        <option value="50351">Módulo 50351</option>
+                        <option value="50353">Módulo 50353</option>
+                        <option value="50354">Módulo 50354</option>
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <button type="button" class="btn btn-dark btn-sm fw-bold px-3 py-1" onclick="abrirModalRemesasArchivadas()">
+                        📂 Ver Remesas Archivadas (Admin)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Datos Generales Compactos -->
+        <div class="section-card" style="height: auto;">
+            <div class="row g-1 align-items-center justify-content-between text-center mb-1">
+                <div class="col-auto">
+                    <strong>ENTIDAD:</strong> <input type="text" id="txtEntidadGlobal" class="cell-input d-inline-block fw-bold text-primary text-center" style="width: 95px;" value="COAHUILA 05" oninput="actualizarEntidadGlobal(this.value); guardarDatosLocales();">
+                </div>
+                <div class="col-auto">
+                    <strong>DISTRITO:</strong> <input type="text" id="txtDistritoGlobal" class="cell-input d-inline-block fw-bold text-primary text-center" style="width: 40px;" value="03" oninput="actualizarDistritoGlobal(this.value); guardarDatosLocales();">
+                </div>
+                <div class="col-auto">
+                    <strong>REMESA:</strong> <input type="text" id="txtRemesaGlobal" class="cell-input d-inline-block fw-bold text-primary text-center" style="width: 75px;" value="202640" oninput="actualizarRemesaGlobal(this.value); guardarDatosLocales();">
+                </div>
+            </div>
+            <div class="row g-1 align-items-center justify-content-between text-center">
+                <div class="col-auto">
+                    <strong>MÓDULO:</strong> <input type="text" id="txtModulo" class="cell-input d-inline-block fw-bold text-primary text-center" style="width: 75px;" value="" readonly style="background-color: #e9ecef;">
+                </div>
+                <div class="col-auto">
+                    <strong>CONF.:</strong> <input type="text" id="txtConfGlobal" class="cell-input d-inline-block fw-bold text-primary text-center" style="width: 50px;" value="" oninput="actualizarConfGlobal(this.value); guardarDatosLocales();">
+                </div>
+                <div class="col-auto">
+                    <strong>RESPONSABLE:</strong> <input type="text" id="txtResponsable" class="cell-input d-inline-block text-center" style="width: 220px;" value="" oninput="guardarDatosLocales()">
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla Principal Completa con Totales -->
+        <div class="section-card" style="height: auto;">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="text-primary fw-bold m-0" style="font-size: 0.75rem;">📋 Reporte Diario Digital</h6>
+                <div>
+                    <button type="button" id="btnCopiar" class="btn btn-sm btn-outline-success fw-bold py-0 px-2 me-1" style="font-size: 0.65rem;">📋 Copiar Tabla Completa</button>
+                    <button type="button" id="btnBorrar" class="btn btn-sm btn-danger fw-bold py-0 px-2" style="font-size: 0.65rem;">🗑️ Borrar Módulo / Limpiar</button>
+                </div>
+            </div>
+
+            <div class="table-container" id="contenedorTablaPrincipal">
+                <table class="excel-table" id="tablaCompleta">
+                    <thead>
+                        <tr>
+                            <th rowspan="2">DÍA</th>
+                            <th rowspan="2">FECHA</th>
+                            <th rowspan="2">HORAS</th>
+                            <th rowspan="2">SEDE</th>
+                            <th colspan="3">FOLIOS</th>
+                            <th colspan="9">FORMATOS ÚNICOS (8-16)</th>
+                            <th colspan="14">ESTADÍSTICAS Y MOVIMIENTOS (17-30)</th>
+                            <th colspan="10" class="col-oculta-modulo">INDICADORES Y CREDENCIALES (31-40)</th>
+                            <th colspan="35" class="col-oculta-modulo">REGISTROS Y CONFIGURACIÓN ADICIONAL (41-75)</th>
+                        </tr>
+                        <tr>
+                            <th>INICIAL</th>
+                            <th>FINAL</th>
+                            <th>TOTAL</th>
+                            <th>INSCRIP.</th>
+                            <th>CORR. DATOS</th>
+                            <th>CAMBIO DOM.</th>
+                            <th>REPOSICIÓN</th>
+                            <th>CORR. DE DATOS DIRECCION</th>
+                            <th>REINCORP.</th>
+                            <th>REEMPLAZO</th>
+                            <th>REIMPRESIONES</th>
+                            <th>Total Tramites</th>
+                            <th>CANCELADOS</th>
+                            <th>TOTAL ANEXO RECHAZO</th>
+                            <th>CPV devuelta entrega</th>
+                            <th>DISPONIBLES AL DIA ANTERIOR (iniciales)</th>
+                            <th>RECIBIDAS Actualizacion</th>
+                            <th>RECIBIDAS OTROS TIPOS</th>
+                            <th>ENTREGADAS</th>
+                            <th>RECIBO Y/O EXTRAVIO</th>
+                            <th>ANEXAS A FUAR</th>
+                            <th>DATOS ERRONEOS</th>
+                            <th>FOTO MAL IMPRESA</th>
+                            <th>REIMPRESION</th>
+                            <th>RETIRADAS POR CAUSA</th>
+                            <th>DISPONIBLES</th>
+                            <th class="col-oculta-modulo">credenciales x canje</th>
+                            <th class="col-oculta-modulo">fichas Entregadas</th>
+                            <th class="col-oculta-modulo">fichas atendidas</th>
+                            <th class="col-oculta-modulo">Dias trabajados</th>
+                            <th class="col-oculta-modulo">SOLICITUD EXPEDICIÒN</th>
+                            <th class="col-oculta-modulo">SOLICITUD EXPEDICIÒN ORDINARIA</th>
+                            <th class="col-oculta-modulo">SOLICITU DE RECTIFICACIÓN</th>
+                            <th class="col-oculta-modulo">DEMANDA DE JUICIO</th>
+                            <th class="col-oculta-modulo">REMESA</th>
+                            <th class="col-oculta-modulo">Total de movimientos</th>
+                            <th class="col-oculta-modulo">DEVUELTAS POR TERCEROS</th>
+                            <th class="col-oculta-modulo">34 Imagen inconsistente</th>
+                            <th class="col-oculta-modulo">35 Movimiento posterior</th>
+                            <th class="col-oculta-modulo">CONFIGURACION</th>
+                            <th class="col-oculta-modulo">ENT</th>
+                            <th class="col-oculta-modulo">DTTO</th>
+                            <th class="col-oculta-modulo">MODULO</th>
+                            <th class="col-oculta-modulo">RESGUARDO</th>
+                            <th class="col-oculta-modulo">SOLICITUD DE REIMPRESION</th>
+                            <th class="col-oculta-modulo">CPV devuelta entrega</th>
+                            <th class="col-oculta-modulo">Script ejecutados</th>
+                            <th class="col-oculta-modulo">FOLIO NEC</th>
+                            <th class="col-oculta-modulo">Número de trámites aplicados</th>
+                            <th class="col-oculta-modulo">Número de fichas requisitadas</th>
+                            <th class="col-oculta-modulo">Número de Archivos de Transacción aceptados</th>
+                            <th class="col-oculta-modulo">Total de Archivos de Transacción procesados</th>
+                            <th class="col-oculta-modulo">Credenciales recibidas</th>
+                            <th class="col-oculta-modulo">Credenciales inconsistentes</th>
+                            <th class="col-oculta-modulo">Credenciales en resguardo</th>
+                            <th class="col-oculta-modulo">Credenciales totales en SIIRFE disponibles para entrega</th>
+                            <th class="col-oculta-modulo">Total de credenciales entregadas</th>
+                            <th class="col-oculta-modulo">Total de credenciales solicitadas</th>
+                            <th class="col-oculta-modulo" style="background-color: #d7ccc8; color: #3e2723;">IMPORTADAS</th>
+                            <th class="col-oculta-modulo" style="background-color: #d7ccc8; color: #3e2723;">EXPORTADAS</th>
+                            <th class="col-oculta-modulo">reposiciones + reimpresiones</th>
+                            <th class="col-oculta-modulo" style="background-color: #673ab7; color: white;">MAL IMPRESA</th>
+                            <th class="col-oculta-modulo" style="background-color: #673ab7; color: white;">ERROR EN CARTOGRAFIA</th>
+                            <th class="col-oculta-modulo" style="background-color: #673ab7; color: white;">DEFUNCION</th>
+                            <th class="col-oculta-modulo" style="background-color: #673ab7; color: white;">SUSPENSION</th>
+                            <th class="col-oculta-modulo" style="background-color: #673ab7; color: white;">DUPLICADO</th>
+                            <th class="col-oculta-modulo" style="background-color: #673ab7; color: white;">ERROR EN NUM. DE EMISION</th>
+                            <th class="col-oculta-modulo" style="background-color: #673ab7; color: white;">PERDIDA DE VIGENCIA</th>
+                            <th class="col-oculta-modulo" style="background-color: #673ab7; color: white;">MOV.POST.</th>
+                            <th class="col-oculta-modulo" style="background-color: #673ab7; color: white;">ANEXAS A SOLICITUD</th>
+                            <th class="col-oculta-modulo" style="background-color: #673ab7; color: white;">OTRAS BAJAS</th>
+                        </tr>
+                        <tr class="row-index" id="filaConsecutivos"></tr>
+                    </thead>
+                    <tbody id="cuerpoTablaCompleta"></tbody>
+                    <tfoot>
+                        <tr class="row-total" id="filaTotales">
+                            <td colspan="4" class="text-end">LÍNEA TOTALES:</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- SECCIONES ADICIONALES INFERIORES -->
+        <div class="row g-2">
+            <!-- BLOQUE DE ANEXOS UNIDOS LADO A LADO -->
+            <div class="col-xl-6">
+                <div class="section-card">
+                    <h6 class="fw-bold text-center mb-1" style="background: #ffeb3b; padding: 4px; border: 1px solid #fbc02d; font-size: 0.65rem;">* ANEXO A RECHAZOS</h6>
+                    <div class="table-responsive">
+                        <table class="sub-table" id="tablaRechazos">
+                            <thead>
+                                <tr style="background-color: #ffe082;">
+                                    <th style="width: 75px;">FECHA DE OPERACIÓN</th>
+                                    <th>Residencia 00</th>
+                                    <th>Datos Null</th>
+                                    <th>Colonia Mayor</th>
+                                    <th>Identificado s/clave elector anterior</th>
+                                    <th>Imagen inconsistente identificada por CECYR</th>
+                                    <th>Sin Firma o imagen No corresponde a la firma</th>
+                                    <th>Fecha Clave Electoral (no trae formato aamm)</th>
+                                    <th>sin huella o Minucia</th>
+                                    <th>34 Imagen inconsistente</th>
+                                    <th>35 Movimiento posterior</th>
+                                    <th style="background-color: #e2e8f0; width: 35px;">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-6">
+                <div class="section-card">
+                    <h6 class="fw-bold text-center text-white mb-1" style="background: #673ab7; padding: 4px; font-size: 0.65rem;">** ANEXO DE CREDENCIALES RETIRADAS POR CAUSA</h6>
+                    <div class="table-responsive">
+                        <table class="sub-table" id="tablaRetiradasCausa">
+                            <thead>
+                                <tr style="background-color: #d1c4e9;">
+                                    <th style="width: 75px;">FECHA DE OPERACIÓN</th>
+                                    <th>MAL IMPRESA</th>
+                                    <th>ERROR EN CARTOGRAFIA</th>
+                                    <th>DEFUNCION</th>
+                                    <th>SUSPENSION</th>
+                                    <th>DUPLICADO</th>
+                                    <th>ERROR EN NUM. DE EMISION</th>
+                                    <th>PERDIDA DE VIGENCIA</th>
+                                    <th>MOV.POST.</th>
+                                    <th>ANEXAS A SOLICITUD</th>
+                                    <th>OTRAS BAJAS</th>
+                                    <th style="background-color: #e2e8f0; width: 35px;">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BLOQUE DE LAS 5 TABLAS JUNTAS EN FILA -->
+            <div class="col-xl-3 col-md-4">
+                <div class="section-card d-flex flex-column">
+                    <h6 class="fw-bold text-center text-white mb-1" style="background: #e65100; padding: 4px; font-size: 0.55rem;">RECIBIDAS OTROS TIPOS</h6>
+                    <div class="table-responsive flex-grow-1">
+                        <table class="sub-table" id="tablaCredRecibidas">
+                            <thead>
+                                <tr style="background-color: #ffe0b2;">
+                                    <th style="width: 38px;">DÍA</th>
+                                    <th style="background-color: #ef6c00; color: white; font-size: 0.48rem;">RECIBIDAS POR REIMPRESIÓN</th>
+                                    <th style="background-color: #ef6c00; color: white; font-size: 0.48rem;">INSTANCIAS ADMINISTRATIVAS</th>
+                                    <th style="background-color: #ef6c00; color: white; font-size: 0.48rem;">DEMANDAS DE JUICIO</th>
+                                    <th style="background-color: #4e5b31; color: white; font-size: 0.48rem;">RESGUARDO</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-3">
+                <div class="section-card d-flex flex-column">
+                    <h6 class="fw-bold text-center text-white mb-1" style="background: #ef5350; color: white; padding: 4px; font-size: 0.55rem;">*** CANCELADOS</h6>
+                    <div class="table-responsive flex-grow-1">
+                        <table class="sub-table" id="tablaCancelados">
+                            <thead>
+                                <tr style="background-color: #ef5350; color: white;">
+                                    <th style="background-color: #ef5350; color: white; font-size: 0.46rem;">No cerrar sesion adecuadamente LT</th>
+                                    <th style="background-color: #ef5350; color: white; font-size: 0.46rem;">Falla de Energia Eléctrica</th>
+                                    <th style="background-color: #ef5350; color: white; font-size: 0.46rem;">Error de Captura</th>
+                                    <th style="background-color: #ef5350; color: white; font-size: 0.46rem;">Fallas del Sistema</th>
+                                    <th style="background-color: #ef5350; color: white; font-size: 0.46rem;">No guardar las minusias correctamente</th>
+                                    <th style="background-color: #ef5350; color: white; font-size: 0.46rem; width: 35px;">TOTAL</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-2 col-md-2">
+                <div class="section-card d-flex flex-column">
+                    <h6 class="fw-bold text-center text-white mb-1" style="background: #90caf9; color: #0d47a1; padding: 4px; font-size: 0.55rem;">INSTANCIAS Y DEMANDAS DE JUICIO</h6>
+                    <div class="table-responsive flex-grow-1">
+                        <table class="sub-table" id="tablaInstancias">
+                            <thead>
+                                <tr style="background-color: #90caf9; color: #000;">
+                                    <th style="background-color: #90caf9; color: #000; font-size: 0.46rem;">SOLICITUD EXPEDICIÓN ORDINARIA</th>
+                                    <th style="background-color: #90caf9; color: #000; font-size: 0.46rem;">SOLICITUD EXPEDICIÓN REPATRIADOS</th>
+                                    <th style="background-color: #90caf9; color: #000; font-size: 0.46rem;">SOLICITU DE RECTIFICACIÓN</th>
+                                    <th style="background-color: #90caf9; color: #000; font-size: 0.46rem;">DEMANDA DE JUICIO</th>
+                                    <th style="background-color: #90caf9; color: red; font-size: 0.46rem; width: 35px; font-weight: bold;">TOTAL</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-2 col-md-2">
+                <div class="section-card d-flex flex-column">
+                    <h6 class="fw-bold text-center text-white mb-1" style="background: #d7ccc8; padding: 4px; border: 1px solid #bcaaa4; font-size: 0.55rem; color: #3e2723;">IMPORTADAS / EXPORTADAS</h6>
+                    <div class="table-responsive flex-grow-1">
+                        <table class="sub-table" id="tablaImpExp" style="table-layout: auto;">
+                            <thead>
+                                <tr style="background-color: #efebe9;">
+                                    <th style="width: 45px;">IMP.</th>
+                                    <th style="width: 45px;">EXP.</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-2 col-md-2">
+                <div class="section-card d-flex flex-column">
+                    <h6 class="fw-bold text-center mb-1" style="background: #b2dfdb; padding: 4px; border: 1px solid #80cbc4; font-size: 0.55rem;">Lotes Recibidos</h6>
+                    <div class="table-responsive flex-grow-1">
+                        <table class="sub-table" id="tablaLotes">
+                            <thead>
+                                <tr style="background-color: #e0f2f1;">
+                                    <th>Lote</th>
+                                    <th style="width: 32px;">Cant</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controles y Observaciones Finales -->
+            <div class="col-12 mb-5">
+                <div class="section-card">
+                    <div class="row g-2 align-items-center">
+                        <div class="col-md-3">
+                            <div class="d-flex align-items-center mb-1">
+                                <span class="fw-bold me-2">CREDENCIALES POR CANJE:</span>
+                                <input type="text" id="inputCanjeGlobal" class="cell-input fw-bold text-center cell-formula" style="width: 70px;" value="" readonly>
+                            </div>
+                            <div class="d-flex align-items-center mb-1">
+                                <span class="fw-bold me-2">Script ejecutados</span>
+                                <input type="text" id="inputScriptGlobal" class="cell-input text-center" style="width: 70px;" value="" oninput="recalcularTodo(); guardarDatosLocales();">
+                                <div style="width: 25px; height: 18px; background: red; margin-left: 8px; display: inline-block;"></div>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <span class="fw-bold me-2">FOLIO ENTREGA NEC</span>
+                                <input type="text" id="inputFolioNecGlobal" class="cell-input text-center" style="width: 140px;" value="" oninput="recalcularTodo(); guardarDatosLocales();">
+                            </div>
+                        </div>
+                        <div class="col-md-5 border-start border-end">
+                            <div class="row g-2 align-items-center mb-2">
+                                <div class="col-auto"><span class="fw-bold">Instalación del Padron:</span></div>
+                                <div class="col-auto">
+                                    <select id="inputInstPadron" class="cell-input fw-bold text-center" style="width: 70px;" onchange="guardarDatosLocales()">
+                                        <option value=""></option>
+                                        <option value="SI">SI</option>
+                                        <option value="NO">NO</option>
+                                    </select>
+                                </div>
+                                <div class="col-auto offset-md-1"><span class="fw-bold">Instalación del Cartografía:</span></div>
+                                <div class="col-auto">
+                                    <select id="inputInstCarto" class="cell-input fw-bold text-center" style="width: 70px;" onchange="guardarDatosLocales()">
+                                        <option value=""></option>
+                                        <option value="SI">SI</option>
+                                        <option value="NO">NO</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row g-2 align-items-center">
+                                <div class="col-auto"><span class="fw-bold">Num. Registros Cargados:</span></div>
+                                <div class="col-md-3"><input type="text" id="inputNumReg" class="cell-input text-center" style="background-color: #ffebee;" value="" oninput="guardarDatosLocales()"></div>
+                                <div class="col-auto"><span class="fw-bold">Remesa Instalada:</span></div>
+                                <div class="col-md-3"><input type="text" id="inputRemInst" class="cell-input text-center" style="background-color: #ffcdd2;" value="" oninput="guardarDatosLocales()"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="border p-1" style="background: #f8f9fa; min-height: 70px;">
+                                <div class="fw-bold text-primary mb-1" style="font-size: 0.65rem;">OBSERVACIONES:</div>
+                                <textarea id="txtObservaciones" class="cell-input text-center fw-bold" style="height: 45px; resize: none;" oninput="guardarDatosLocales()"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PIE DE PÁGINA UNIVERSAL -->
+    <footer>
+        <span>© 2026 Derechos Reservados - Sistema de Reportes Módulos MAC (Nube) | <strong>Versión 11.0</strong></span>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Conexión a Firebase -->
+    <script src="js/firebase-config.js"></script>
+    <!-- Lógica principal del sistema -->
+    <script src="js/app.js"></script>
+</body>
+</html>

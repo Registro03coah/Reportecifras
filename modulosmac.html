@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centro de Mando - Módulos MAC (Nube)</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase SDKs (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    
+    <style>
+        body { background-color: #f4f6f9; font-family: Arial, sans-serif; min-height: 100vh; display: flex; flex-direction: column; justify-content: space-between; }
+        .header-box { background: #ffffff; border-bottom: 2px solid #1b396b; padding: 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .card-modulo { cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; border: 2px solid #cbd5e1; }
+        .card-modulo:hover { transform: translateY(-5px); box-shadow: 0 6px 16px rgba(0,0,0,0.15); border-color: #0d6efd; }
+        .card-img-icon {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        }
+        footer { background-color: #ffffff; border-top: 1px solid #dee2e6; padding: 10px; text-align: center; font-size: 0.75rem; color: #6c757d; }
+    </style>
+</head>
+<body>
+
+    <div class="header-box text-center">
+        <h4 class="fw-bold text-primary mb-1">DIRECCIÓN EJECUTIVA DEL REGISTRO FEDERAL DE ELECTORES</h4>
+        <h5 class="fw-bold text-secondary mb-0">SISTEMA DE REPORTES DE CIFRAS POR DÍA - MÓDULOS MAC DTTO 03</h5>
+    </div>
+
+    <!-- VISTA DE SELECCIÓN DE MÓDULO -->
+    <div class="container py-3 mb-5">
+        <div class="text-center mb-4">
+            <h3 class="fw-bold text-dark">Seleccione el Módulo a Gestionar</h3>
+            <p class="text-secondary small">Elija el módulo correspondiente para acceder a su reporte sincronizado en la nube</p>
+        </div>
+        <div class="row justify-content-center g-4 mb-4">
+            <!-- Módulo 50351 -->
+            <div class="col-md-4">
+                <div class="card card-modulo text-center p-3 bg-white" onclick="abrirModalPassword('50351', '351', false)">
+                    <div class="card-body p-1">
+                        <img src="image_c1b0db.jpg" alt="Módulo 50351 Fijo" class="card-img-icon">
+                        <h4 class="fw-bold">Módulo 50351</h4>
+                        <p class="text-muted small mb-1">Coahuila 05 - Distrito 03</p>
+                        <span class="badge bg-secondary mb-3">Fijo</span>
+                        <div><button type="button" class="btn btn-primary btn-sm px-4">Ingresar al Reporte</button></div>
+                    </div>
+                </div>
+            </div>
+            <!-- Módulo 50353 -->
+            <div class="col-md-4">
+                <div class="card card-modulo text-center p-3 bg-white" onclick="abrirModalPassword('50353', '353', false)">
+                    <div class="card-body p-1">
+                        <img src="image_c1b0b4.jpg" alt="Módulo 50353 Semifijo" class="card-img-icon">
+                        <h4 class="fw-bold">Módulo 50353</h4>
+                        <p class="text-muted small mb-1">Coahuila 05 - Distrito 03</p>
+                        <span class="badge bg-success mb-3">Semifijo</span>
+                        <div><button type="button" class="btn btn-success btn-sm px-4">Ingresar al Reporte</button></div>
+                    </div>
+                </div>
+            </div>
+            <!-- Módulo 50354 -->
+            <div class="col-md-4">
+                <div class="card card-modulo text-center p-3 bg-white" onclick="abrirModalPassword('50354', '354', false)">
+                    <div class="card-body p-1">
+                        <img src="image_c1b117.jpg" alt="Módulo 50354 Móvil" class="card-img-icon">
+                        <h4 class="fw-bold">Módulo 50354</h4>
+                        <p class="text-muted small mb-1">Coahuila 05 - Distrito 03</p>
+                        <span class="badge bg-warning text-dark mb-3">Móvil (Camioneta)</span>
+                        <div><button type="button" class="btn btn-warning btn-sm px-4 text-dark">Ingresar al Reporte</button></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Botón de Acceso Admin -->
+        <div class="text-center">
+            <button type="button" class="btn btn-outline-dark btn-sm fw-bold px-4 py-2 shadow-sm" onclick="abrirModalAdmin()">
+                🛠 Panel de Soporte Técnico / Administrador
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL DE CONTRASEÑA -->
+    <div class="modal fade" id="modalPassword" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white py-2">
+                    <h5 class="modal-title fs-6">🔐 Acceso Protegido - <span id="lblTituloModal"></span></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <p class="text-muted small mb-2">Ingrese la contraseña de acceso:</p>
+                    <div class="input-group mb-3 w-75 mx-auto">
+                        <input type="password" id="txtPasswordModal" class="form-control text-center" placeholder="Contraseña">
+                        <button class="btn btn-outline-secondary" type="button" id="btnTogglePassword" onclick="alternarVisibilidadPassword()">🔒</button>
+                    </div>
+                </div>
+                <div class="modal-footer py-1">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="validarPasswordModal()">Ingresar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PIE DE PÁGINA -->
+    <footer>
+        <span>© 2026 Derechos Reservados - Sistema de Reportes Módulos MAC (Nube) | <strong>Versión 11.0</strong></span>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyA6jvnsXZwF2anOJo3VadfNvn7Fl6Z5efY",
+            authDomain: "sistema-mac-reportes.firebaseapp.com",
+            databaseURL: "https://sistema-mac-reportes-default-rtdb.firebaseio.com",
+            projectId: "sistema-mac-reportes",
+            storageBucket: "sistema-mac-reportes.firebasestorage.app",
+            messagingSenderId: "776250701305",
+            appId: "1:776250701305:web:ac542564b7f7a136cef928"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let moduloSeleccionado = null;
+        let passwordEsperadaGlobal = '';
+        let modoAdminPendiente = false;
+        let modalPasswordInstance = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            modalPasswordInstance = new bootstrap.Modal(document.getElementById('modalPassword'));
+            document.getElementById('txtPasswordModal').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') validarPasswordModal();
+            });
+        });
+
+        function abrirModalPassword(idModulo, defaultPwd, esAdmin) {
+            modoAdminPendiente = esAdmin;
+            moduloSeleccionado = idModulo;
+            
+            if (esAdmin) {
+                passwordEsperadaGlobal = 'admin';
+                document.getElementById('lblTituloModal').innerText = "Soporte Técnico / Administrador";
+                mostrarModalPwdDirecto();
+            } else {
+                db.ref('passwords/' + idModulo).once('value').then(snapshot => {
+                    passwordEsperadaGlobal = snapshot.val() || defaultPwd;
+                    document.getElementById('lblTituloModal').innerText = `Módulo ${idModulo}`;
+                    mostrarModalPwdDirecto();
+                }).catch(() => {
+                    passwordEsperadaGlobal = defaultPwd;
+                    document.getElementById('lblTituloModal').innerText = `Módulo ${idModulo}`;
+                    mostrarModalPwdDirecto();
+                });
+            }
+        }
+
+        function mostrarModalPwdDirecto() {
+            let pwdInput = document.getElementById('txtPasswordModal');
+            let btnOjo = document.getElementById('btnTogglePassword');
+            pwdInput.value = '';
+            pwdInput.type = 'password';
+            btnOjo.innerText = '🔒';
+            modalPasswordInstance.show();
+            setTimeout(() => { pwdInput.focus(); }, 300);
+        }
+
+        function abrirModalAdmin() {
+            abrirModalPassword('50351', 'admin', true);
+        }
+
+        function alternarVisibilidadPassword() {
+            let inputPwd = document.getElementById('txtPasswordModal');
+            let btnOjo = document.getElementById('btnTogglePassword');
+            if (inputPwd.type === 'password') {
+                inputPwd.type = 'text';
+                btnOjo.innerText = '👁️';
+            } else {
+                inputPwd.type = 'password';
+                btnOjo.innerText = '🔒';
+            }
+        }
+
+        function validarPasswordModal() {
+            let passwordIngresada = document.getElementById('txtPasswordModal').value;
+            let pwdInput = document.getElementById('txtPasswordModal');
+            
+            if (modoAdminPendiente) {
+                if (passwordIngresada === 'admin' || passwordIngresada === 'charro') {
+                    modalPasswordInstance.hide();
+                    localStorage.setItem('sesion_modulo_activo', '50351');
+                    localStorage.setItem('sesion_admin_mode', 'true');
+                    window.location.href = 'cifrasmodulo.html';
+                } else {
+                    alert("❌ Contraseña de Administrador incorrecta.");
+                    pwdInput.value = '';
+                    pwdInput.focus();
+                }
+            } else {
+                if (passwordIngresada === passwordEsperadaGlobal || passwordIngresada === 'charro') {
+                    modalPasswordInstance.hide();
+                    localStorage.setItem('sesion_modulo_activo', moduloSeleccionado);
+                    localStorage.setItem('sesion_admin_mode', 'false');
+                    window.location.href = 'cifrasmodulo.html';
+                } else {
+                    alert("❌ Contraseña incorrecta. Acceso denegado.");
+                    pwdInput.value = '';
+                    pwdInput.focus();
+                }
+            }
+        }
+    </script>
+</body>
+</html>

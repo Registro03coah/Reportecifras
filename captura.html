@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vaciado de Datos MAC - Sistema Principal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <style>
+        /* Reglas de desbloqueo táctil y fluidez exclusiva para celulares */
+@media (max-width: 768px) {
+    html, body {
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+        width: 100% !important;
+        height: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    /* Asegurar que las tablas principales no bloqueen el contenedor */
+    .table-responsive {
+        width: 100% !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+}
+        /* Estilos adaptativos exclusivos para Celulares / Pantallas pequeñas */
+@media (max-width: 768px) {
+    /* Ajustar contenedores principales para aprovechar el ancho de la pantalla */
+    .container, .container-fluid {
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+    }
+
+    /* Optimizar los bloques rosas y rojos de Iniciales en móvil */
+    .card, .p-3, .mb-3 {
+        padding: 10px !important;
+    }
+
+    /* Reducir tamaño de fuentes de los títulos de tarjetas en móvil para que no se corten */
+    h5, .fw-bold {
+        font-size: 0.95rem !important;
+    }
+
+    /* Hacer que los botones de acción principal (Limpiar / Guardar) se distribuyan bien */
+    #btnLimpiar, #btnGuardar, .btn-success, .btn-danger {
+        font-size: 0.85rem !important;
+        padding: 8px 12px !important;
+    }
+
+    /* Ajustar las pestañas de módulos para que se deslicen de forma táctil y limpia */
+    .nav-tabs, .d-flex.flex-wrap {
+        gap: 4px !important;
+    }
+}
+        html, body { 
+            height: 100%; 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column; 
+            background-color: #f8f9fa; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            overflow: hidden; 
+        }
+        .navbar-fija { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            z-index: 1030; 
+            background-color: #1b396b; 
+        }
+        .main-content-wrapper { 
+            margin-top: 48px; 
+            margin-bottom: 32px; 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+            padding: 8px 15px; 
+        }
+        .header-banner { 
+            background: linear-gradient(135deg, #1b396b, #0dcaf0); 
+            color: white; 
+            padding: 8px 12px; 
+            border-bottom: 3px solid #055160; 
+            margin-bottom: 8px; 
+            border-radius: 6px; 
+        }
+        .excel-container { 
+            width: 100%; 
+            flex: 1; 
+            overflow: auto !important; 
+            border: 1px solid #ced4da; 
+            background: white; 
+            border-radius: 6px; 
+        }
+        .excel-table { 
+            margin-bottom: 0; 
+            table-layout: auto; 
+            width: max-content; 
+        }
+        .excel-table thead th { 
+            position: sticky; 
+            top: 0; 
+            z-index: 3; 
+            font-size: 11px; 
+            font-weight: 700; 
+            background-color: #1b396b !important; 
+            color: white !important; 
+            text-align: center; 
+            vertical-align: middle; 
+            padding: 8px 6px; 
+            white-space: nowrap; 
+        }
+        .excel-table thead tr.num-row th { 
+            position: sticky; 
+            top: 33px; 
+            z-index: 2; 
+            background-color: #e9ecef !important; 
+            color: #212529 !important; 
+            font-size: 11px; 
+            padding: 2px !important; 
+            border-bottom: 2px solid #2d3436; 
+            height: 22px; 
+        }
+        .excel-table td { 
+            padding: 6px 8px; 
+            border: 1px solid #ccc; 
+            text-align: center; 
+            vertical-align: middle; 
+            font-size: 11px; 
+            white-space: nowrap; 
+        }
+        .excel-table tr.fila-totales td { 
+            background-color: #d1e7dd !important; 
+            font-weight: 800; 
+            color: #0f5132; 
+        }
+        .caja-pegado { 
+            border: 2px dashed #0d6efd; 
+            background-color: #e7f1ff; 
+            color: #0d6efd; 
+            border-radius: 6px; 
+            padding: 6px; 
+            text-align: center; 
+            font-size: 0.9rem; 
+            font-weight: 700; 
+            cursor: pointer; 
+            user-select: none; 
+        }
+        .caja-pegado:hover, .caja-pegado:focus { 
+            background-color: #cfe2ff; 
+            border-color: #0a58ca; 
+            outline: none; 
+        }
+        .nav-tabs .nav-link { 
+            font-weight: 700; 
+            color: #1b396b; 
+            font-size: 12px; 
+            cursor: pointer; 
+            padding: 4px 10px; 
+        }
+        .nav-tabs .nav-link.active { 
+            background-color: #1b396b !important; 
+            color: white !important; 
+        }
+        .nav-tabs .nav-link.tab-totales.active { 
+            background-color: #ffc107 !important; 
+            color: #000 !important; 
+        }
+        .footer-fijo { 
+            position: fixed; 
+            bottom: 0; 
+            left: 0; 
+            width: 100%; 
+            z-index: 1030; 
+            background-color: #1b396b; 
+            color: white; 
+            text-align: center; 
+            padding: 5px 0; 
+            font-size: 11px; 
+        }
+    </style>
+</head>
+<body>
+    <!-- BARRA DE NAVEGACIÓN INSTITUCIONAL COMPLETA (Actualizada con enlace a Captura y Botón de Salir) -->
+    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm navbar-fija" style="background-color: #1b396b;">
+      <div class="container-fluid px-3">
+        <a class="navbar-brand fw-bold" href="index.html"><i class="bi bi-hdd-network"></i> SISTEMA MAC</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto gap-2 align-items-lg-center">
+            <li class="nav-item"><a class="nav-link text-light px-2" href="index.html"><i class="bi bi-house-door-fill"></i> Inicio</a></li>
+            <li class="nav-item"><a class="nav-link active bg-primary rounded px-2 text-white fw-bold" href="captura.html"><i class="bi bi-pencil-square"></i> Captura</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_dias.html"><i class="bi bi-calendar3"></i> Reporte Días</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_semanal.html"><i class="bi bi-calendar-week"></i> Reporte Semanal</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_campana.html"><i class="bi bi-bar-chart-fill"></i> Reporte Campaña</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_acumulado.html"><i class="bi bi-archive-fill"></i> Reporte Acumulado</a></li>
+            <li class="nav-item"><a class="nav-link px-2" href="graficos.html" style="color: #ff66b2 !important; font-weight: bold;"><i class="bi bi-pie-chart-fill"></i> Gráficos</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-2" href="bd_madre.html"><i class="bi bi-database-fill"></i> BD Principal</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-2" href="bdtotales.html"><i class="bi bi-database-fill-gear"></i> BD Totales</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-2" href="modulosmac.html"><i class="bi bi-building-fill-gear"></i> Módulos MAC</a></li>
+            <li class="nav-item ms-lg-2">
+              <a class="btn btn-outline-light btn-sm fw-bold px-2 py-1" href="index.html" style="font-size: 11px;">
+                <i class="bi bi-box-arrow-right"></i> Salir
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <div class="main-content-wrapper container-fluid">
+        <div class="header-banner text-center shadow-sm">
+            <h1 class="fw-bold mb-0" style="font-size: 1.2rem;"><i class="bi bi-pencil-square"></i> Vaciado de Datos</h1>
+            <p class="mb-0 text-light" style="font-size: 0.8rem;">Gestión e importación de la base de datos general (Módulos 050351, 050353, 050354)</p>
+        </div>
+        
+        <div class="card shadow-sm mb-2 border-0">
+            <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3 bg-white rounded border py-2 px-3">
+                <div class="d-flex flex-wrap gap-2">
+                    <div class="p-1 rounded shadow-sm" style="background-color: #ff99ff; border: 2px solid #ff4dff;">
+                        <span class="fw-bold text-dark d-block text-center mb-1" style="font-size: 10px;"><i class="bi bi-bar-chart-fill"></i> INICIALES CAMPAÑA (C)</span>
+                        <div class="d-flex gap-1">
+                            <input type="text" id="camp_050351" class="form-control form-control-sm text-center fw-bold py-0" placeholder="050351" style="width: 75px; font-size: 11px;">
+                            <input type="text" id="camp_050353" class="form-control form-control-sm text-center fw-bold py-0" placeholder="050353" style="width: 75px; font-size: 11px;">
+                            <input type="text" id="camp_050354" class="form-control form-control-sm text-center fw-bold py-0" placeholder="050354" style="width: 75px; font-size: 11px;">
+                        </div>
+                    </div>
+                    <div class="p-1 rounded shadow-sm" style="background-color: #e63946; border: 2px solid #b71c1c;">
+                        <span class="fw-bold text-white d-block text-center mb-1" style="font-size: 10px;"><i class="bi bi-archive-fill"></i> INICIALES ACUMULADO (A)</span>
+                        <div class="d-flex gap-1">
+                            <input type="text" id="acum_050351" class="form-control form-control-sm text-center fw-bold py-0" placeholder="050351" style="width: 75px; font-size: 11px;">
+                            <input type="text" id="acum_050353" class="form-control form-control-sm text-center fw-bold py-0" placeholder="050353" style="width: 75px; font-size: 11px;">
+                            <input type="text" id="acum_050354" class="form-control form-control-sm text-center fw-bold py-0" placeholder="050354" style="width: 75px; font-size: 11px;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cuadro de la Remesa Activa -->
+                <div class="p-2 rounded shadow-sm text-center text-white fw-bold" style="background-color: #198754; border: 2px solid #146c43; min-width: 180px;">
+                    <span style="font-size: 11px; display: block; text-transform: uppercase;">Remesa Activa</span>
+                    <span id="lblRemesaActiva" class="badge bg-light text-dark fs-5 px-3 py-1 mt-1 shadow-sm" style="letter-spacing: 1px;">S/N</span>
+                </div>
+
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn btn-outline-danger btn-sm fw-bold py-1" id="btnBorrar"><i class="bi bi-trash"></i> Limpiar</button>
+                    <button class="btn btn-success btn-sm fw-bold shadow-sm py-1" id="btnGuardarBD"><i class="bi bi-cloud-arrow-up-fill"></i> Guardar Bases</button>
+                </div>
+            </div>
+        </div>
+
+        <ul class="nav nav-tabs fw-bold mb-2" id="tabsModulos">
+            <li class="nav-item"><button type="button" class="nav-link active" id="btn-tab-050351" onclick="cambiarModulo('050351')"><i class="bi bi-laptop"></i> Módulo 050351</button></li>
+            <li class="nav-item"><button type="button" class="nav-link" id="btn-tab-050353" onclick="cambiarModulo('050353')"><i class="bi bi-laptop"></i> Módulo 050353</button></li>
+            <li class="nav-item"><button type="button" class="nav-link" id="btn-tab-050354" onclick="cambiarModulo('050354')"><i class="bi bi-laptop"></i> Módulo 050354</button></li>
+            <li class="nav-item"><button type="button" class="nav-link tab-totales text-dark fw-bold" id="btn-tab-TOTALES" style="background-color: #ffc107;" onclick="cambiarModulo('TOTALES')"><i class="bi bi-calculator-fill"></i> Totales Generales</button></li>
+        </ul>
+
+        <div class="card shadow-sm border-0 flex-grow-1 d-flex flex-column mb-1">
+            <div class="card-body bg-white rounded border p-2 d-flex flex-column flex-grow-1">
+                <div class="alert alert-info py-1 px-2 mb-2 fw-bold d-flex justify-content-between align-items-center" style="font-size: 12px;">
+                    <span id="lblMensajeAyuda">Módulo <span id="lblModuloActivo">050351</span>: Pega los datos con Ctrl+V. Haz doble clic en un encabezado para cambiar su nombre.</span>
+                    <span id="semaforoConexion" class="badge bg-success text-white"><i class="bi bi-check-circle"></i> Conectado</span>
+                </div>
+                
+                <div id="panelAccionesTotales" class="alert alert-warning py-1 px-2 mb-2 d-none justify-content-between align-items-center" style="font-size: 12px;">
+                    <span class="fw-bold"><i class="bi bi-info-circle-fill"></i> Vaciado Consolidado Remesa: <span id="inputRemesa" class="badge bg-dark text-white">S/N</span></span>
+                </div>
+
+                <!-- Zonas de Pegado por Módulo -->
+                <div class="caja-pegado mb-2" id="pasteZone_050351" tabindex="0">
+                    <i class="bi bi-clipboard-plus fs-6 d-block mb-0"></i>
+                    Clic aquí y Ctrl+V para pegar datos del Módulo <span id="lblModuloPegado">050351</span>
+                </div>
+                <div class="caja-pegado mb-2 d-none" id="pasteZone_050353" tabindex="0">
+                    <i class="bi bi-clipboard-plus fs-6 d-block mb-0"></i>
+                    Clic aquí y Ctrl+V para pegar datos del Módulo 050353
+                </div>
+                <div class="caja-pegado mb-2 d-none" id="pasteZone_050354" tabindex="0">
+                    <i class="bi bi-clipboard-plus fs-6 d-block mb-0"></i>
+                    Clic aquí y Ctrl+V para pegar datos del Módulo 050354
+                </div>
+
+                <!-- CONTENEDORES DE TABLAS -->
+                <div class="excel-container shadow-sm flex-grow-1" id="container_050351">
+                    <table class="excel-table table table-hover" id="tablaCaptura_050351">
+                        <thead></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div class="excel-container shadow-sm flex-grow-1 d-none" id="container_050353">
+                    <table class="excel-table table table-hover" id="tablaCaptura_050353">
+                        <thead></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div class="excel-container shadow-sm flex-grow-1 d-none" id="container_050354">
+                    <table class="excel-table table table-hover" id="tablaCaptura_050354">
+                        <thead></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div class="excel-container shadow-sm flex-grow-1 d-none" id="container_TOTALES">
+                    <table class="excel-table table table-hover" id="tablaCaptura_totales">
+                        <thead></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="footer-fijo shadow-sm">
+        <small>&copy; 2026 Todos los derechos reservados. Desarrollado por <span class="text-info fw-bold">Carrivers Desing</span> para Módulos MAC.</small>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="app_vaciado.js"></script>
+</body>
+</html>
