@@ -15,7 +15,12 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
     
     <style>
-        body { background-color: #f4f6f9; font-family: Arial, sans-serif; min-height: 100vh; display: flex; flex-direction: column; justify-content: space-between; }
+        body { 
+            background-color: #f4f6f9; 
+            font-family: Arial, sans-serif; 
+            margin: 0;
+            padding-bottom: 40px;
+        }
         
         /* Barra superior de estilo vintage / institucional clásico */
         .navbar-vintage {
@@ -44,12 +49,12 @@
             color: #d81b60 !important;
         }
 
-        /* Caja de título compacta para eliminar el espacio en blanco */
+        /* Caja de título con tamaño original y pegada a la barra */
         .header-box { 
             background: #ffffff; 
             border-bottom: 2px solid #1b396b; 
-            padding: 8px 15px; 
-            margin-bottom: 10px; 
+            padding: 15px; 
+            margin-bottom: 20px; 
             box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
         }
         
@@ -64,7 +69,15 @@
             margin-bottom: 12px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.08);
         }
-        footer { background-color: #ffffff; border-top: 1px solid #dee2e6; padding: 10px; text-align: center; font-size: 0.75rem; color: #6c757d; }
+        footer { 
+            background-color: #ffffff; 
+            border-top: 1px solid #dee2e6; 
+            padding: 15px; 
+            text-align: center; 
+            font-size: 0.75rem; 
+            color: #6c757d; 
+            margin-top: 40px;
+        }
     </style>
 </head>
 <body>
@@ -105,19 +118,19 @@
       </div>
     </nav>
 
-    <!-- TÍTULO COMPACTO Y PEGADO A LA BARRA -->
+    <!-- TÍTULO CON TAMAÑO ORIGINAL Y PEGADO A LA BARRA -->
     <div class="header-box text-center">
-        <h5 class="fw-bold text-primary mb-1" style="font-size: 1rem;">DIRECCIÓN EJECUTIVA DEL REGISTRO FEDERAL DE ELECTORES</h5>
-        <h6 class="fw-bold text-secondary mb-0" style="font-size: 0.85rem;">SISTEMA DE REPORTES DE CIFRAS POR DÍA - MÓDULOS MAC DTTO 03</h6>
+        <h4 class="fw-bold text-primary mb-1">DIRECCIÓN EJECUTIVA DEL REGISTRO FEDERAL DE ELECTORES</h4>
+        <h5 class="fw-bold text-secondary mb-0">SISTEMA DE REPORTES DE CIFRAS POR DÍA - MÓDULOS MAC DTTO 03</h5>
     </div>
 
     <!-- VISTA DE SELECCIÓN DE MÓDULO -->
-    <div class="container py-2 mb-4">
-        <div class="text-center mb-3">
-            <h4 class="fw-bold text-dark fs-5">Seleccione el Módulo a Gestionar</h4>
-            <p class="text-secondary small mb-2">Elija el módulo correspondiente para acceder a su reporte sincronizado en la nube</p>
+    <div class="container py-3 mb-4">
+        <div class="text-center mb-4">
+            <h3 class="fw-bold text-dark">Seleccione el Módulo a Gestionar</h3>
+            <p class="text-secondary small">Elija el módulo correspondiente para acceder a su reporte sincronizado en la nube</p>
         </div>
-        <div class="row justify-content-center g-3 mb-3">
+        <div class="row justify-content-center g-4 mb-4">
             <!-- Módulo 50351 -->
             <div class="col-md-4">
                 <div class="card card-modulo text-center p-3 bg-white" onclick="abrirModalPassword('50351', '351', false)">
