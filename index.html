@@ -9,6 +9,35 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
+        /* Estilos adaptativos exclusivos para Celulares / Pantallas pequeñas */
+@media (max-width: 768px) {
+    /* Ajustar contenedores principales para aprovechar el ancho de la pantalla */
+    .container, .container-fluid {
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+    }
+
+    /* Optimizar los bloques rosas y rojos de Iniciales en móvil */
+    .card, .p-3, .mb-3 {
+        padding: 10px !important;
+    }
+
+    /* Reducir tamaño de fuentes de los títulos de tarjetas en móvil para que no se corten */
+    h5, .fw-bold {
+        font-size: 0.95rem !important;
+    }
+
+    /* Hacer que los botones de acción principal (Limpiar / Guardar) se distribuyan bien */
+    #btnLimpiar, #btnGuardar, .btn-success, .btn-danger {
+        font-size: 0.85rem !important;
+        padding: 8px 12px !important;
+    }
+
+    /* Ajustar las pestañas de módulos para que se deslicen de forma táctil y limpia */
+    .nav-tabs, .d-flex.flex-wrap {
+        gap: 4px !important;
+    }
+}
         html, body { 
             height: 100%; 
             margin: 0; 
