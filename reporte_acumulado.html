@@ -153,16 +153,17 @@
     document.addEventListener("DOMContentLoaded", function() {
         let paginaActual = window.location.pathname.split("/").pop();
 
+        // Páginas libres (el candado las deja pasar sin pedir la contraseña "charro")
         let paginasLibres = [
             "index.html", 
             "modulosmac.html", 
+            "cifrasmodulo.html", // <--- ¡Agregamos esta para que no estorbe con las claves de los módulos!
             "reporte_dias.html", 
             "graficos.html",
             ""
         ];
 
         if (!paginasLibres.includes(paginaActual)) {
-            // Validamos el pase con sessionStorage
             if (sessionStorage.getItem('sesion_autorizada') !== 'true') {
                 alert("⚠️ Acceso restringido. Debe ingresar la contraseña desde el menú principal.");
                 window.location.href = 'index.html';
