@@ -22,168 +22,166 @@
             }
         }
         body { 
-            background-color: #f8f9fa; 
+            /* Fondo con la imagen subida a GitHub y una capa semitransparente para legibilidad */
+            background: linear-gradient(rgba(27, 57, 107, 0.85), rgba(13, 202, 240, 0.75)), url('escritorio-6318.avif');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
+            height: 100vh;
+            overflow: hidden; 
+        }
+        @media (max-width: 768px) {
+            body { height: auto; overflow: auto; }
         }
         .hero-banner { 
-            background: linear-gradient(135deg, #1b396b, #0dcaf0); 
+            background: rgba(27, 57, 107, 0.9); 
             color: white; 
             padding: 15px 10px; 
             border-bottom: 3px solid #055160; 
+            backdrop-filter: blur(5px);
         }
         .menu-card {
-            background: white;
-            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 8px;
             border: none;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-            transition: transform 0.25s ease, box-shadow 0.25s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
             height: 100%;
-            cursor: pointer;
+            backdrop-filter: blur(5px);
         }
         .menu-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 22px rgba(0,0,0,0.3);
         }
         .card-icon {
-            font-size: 2.2rem;
+            font-size: 1.8rem;
             color: #1b396b;
-            transition: transform 0.3s ease, color 0.3s ease;
-        }
-        /* Animación de movimiento para los iconos al pasar el cursor */
-        .menu-card:hover .card-icon {
-            transform: scale(1.15) translateY(-3px);
-            color: #0dcaf0;
         }
     </style>
 </head>
-<body>
+<body class="d-flex flex-column justify-content-between">
 
     <!-- BANNER PRINCIPAL COMPACTO -->
     <div class="hero-banner text-center shadow-sm">
         <div class="container">
-            <h3 class="fw-bold mb-1"><i class="bi bi-hdd-network"></i> Sistema de Reportes Diarios - Módulos MAC</h3>
-            <p class="mb-2" style="font-size: 0.85rem;">Instituto Nacional Electoral | Distrito 03 Coahuila</p>
-            <div id="semaforoConexion" class="badge bg-warning text-dark px-2 py-1" style="font-size: 11px;">
-                <i class="bi bi-arrow-repeat"></i> Verificando conexión...
+            <h3 class="fw-bold mb-1 text-white"><i class="bi bi-hdd-network"></i> Sistema de Reportes Diarios - Módulos MAC</h3>
+            <p class="mb-2 text-light" style="font-size: 0.85rem;">Instituto Nacional Electoral | Distrito 03 Coahuila</p>
+            <div id="semaforoConexion" class="badge bg-warning text-dark px-2 py-1 shadow-sm" style="font-size: 11px;">
+                <i class="bi bi-arrow-repeat spin"></i> Verificando conexión...
             </div>
         </div>
     </div>
 
-    <!-- CONTENEDOR DE TARJETAS (3 FILAS DE 3 COLUMNAS) -->
-    <div class="container px-4 my-3">
-        <div class="row text-center g-3 justify-content-center">
+    <!-- CONTENEDOR DE TARJETAS COMPACTAS -->
+    <div class="container px-3 my-auto">
+        <div class="row text-center g-2">
             
-            <!-- RENGLÓN 1 -->
-            <!-- 1. Módulos MAC (Libre) -->
-            <div class="col-md-4">
-                <div class="card menu-card p-3" onclick="gestionarAcceso('modulosmac.html', false)">
+            <!-- Vaciado de Datos (Apunta a captura.html) -->
+            <div class="col-md-3">
+                <div class="card menu-card p-2">
                     <div class="card-body d-flex flex-column align-items-center py-2">
-                        <div class="card-icon mb-2 text-primary"><i class="bi bi-building-fill-gear"></i></div>
-                        <h5 class="fw-bold text-dark mb-1">Módulos MAC</h5>
-                        <p class="text-muted small mb-3">Gestión por módulo, folios y soporte técnico.</p>
-                        <span class="btn btn-outline-primary btn-sm fw-bold mt-auto w-100 rounded-pill">Acceder</span>
+                        <div class="card-icon mb-1"><i class="bi bi-pencil-square"></i></div>
+                        <h6 class="fw-bold text-dark mb-1" style="font-size: 13px;">Vaciado de Datos</h6>
+                        <p class="text-muted small mb-2" style="font-size: 10px; line-height: 1.2;">Captura diaria de operaciones y folios.</p>
+                        <a href="captura.html" class="btn btn-outline-primary btn-sm fw-bold mt-auto w-100 py-0" style="font-size: 11px;">Acceder</a>
                     </div>
                 </div>
             </div>
 
-            <!-- 2. Vaciado de Datos (Protegido) -->
-            <div class="col-md-4">
-                <div class="card menu-card p-3" onclick="gestionarAcceso('cifrasmodulo.html', true)">
+            <!-- Reporte Días -->
+            <div class="col-md-3">
+                <div class="card menu-card p-2">
                     <div class="card-body d-flex flex-column align-items-center py-2">
-                        <div class="card-icon mb-2"><i class="bi bi-pencil-square"></i></div>
-                        <h5 class="fw-bold text-dark mb-1">Vaciado de Datos</h5>
-                        <p class="text-muted small mb-3">Captura diaria de operaciones y folios.</p>
-                        <span class="btn btn-outline-primary btn-sm fw-bold mt-auto w-100 rounded-pill">Acceder 🔒</span>
+                        <div class="card-icon mb-1 text-success"><i class="bi bi-calendar3"></i></div>
+                        <h6 class="fw-bold text-dark mb-1" style="font-size: 13px;">Reporte Días</h6>
+                        <p class="text-muted small mb-2" style="font-size: 10px; line-height: 1.2;">Producción operativa por jornadas.</p>
+                        <a href="reporte_dias.html" class="btn btn-outline-success btn-sm fw-bold mt-auto w-100 py-0" style="font-size: 11px;">Acceder</a>
                     </div>
                 </div>
             </div>
 
-            <!-- 3. Reporte Días (Libre) -->
-            <div class="col-md-4">
-                <div class="card menu-card p-3" onclick="gestionarAcceso('reporte_dias.html', false)">
+            <!-- Reporte Semanal -->
+            <div class="col-md-3">
+                <div class="card menu-card p-2">
                     <div class="card-body d-flex flex-column align-items-center py-2">
-                        <div class="card-icon mb-2 text-success"><i class="bi bi-calendar3"></i></div>
-                        <h5 class="fw-bold text-dark mb-1">Reporte Días</h5>
-                        <p class="text-muted small mb-3">Producción operativa por jornadas.</p>
-                        <span class="btn btn-outline-success btn-sm fw-bold mt-auto w-100 rounded-pill">Acceder</span>
+                        <div class="card-icon mb-1 text-warning"><i class="bi bi-calendar-week"></i></div>
+                        <h6 class="fw-bold text-dark mb-1" style="font-size: 13px;">Reporte Semanal</h6>
+                        <p class="text-muted small mb-2" style="font-size: 10px; line-height: 1.2;">Resumen consolidado semanal.</p>
+                        <a href="reporte_semanal.html" class="btn btn-outline-warning btn-sm fw-bold mt-auto w-100 text-dark py-0" style="font-size: 11px;">Acceder</a>
                     </div>
                 </div>
             </div>
 
-            <!-- RENGLÓN 2 -->
-            <!-- 4. Reporte Semanal (Protegido) -->
-            <div class="col-md-4">
-                <div class="card menu-card p-3" onclick="gestionarAcceso('reporte_semanal.html', true)">
+            <!-- Reporte Campaña -->
+            <div class="col-md-3">
+                <div class="card menu-card p-2">
                     <div class="card-body d-flex flex-column align-items-center py-2">
-                        <div class="card-icon mb-2 text-warning"><i class="bi bi-calendar-week"></i></div>
-                        <h5 class="fw-bold text-dark mb-1">Reporte Semanal</h5>
-                        <p class="text-muted small mb-3">Resumen consolidado semanal.</p>
-                        <span class="btn btn-outline-warning btn-sm fw-bold mt-auto w-100 text-dark rounded-pill">Acceder 🔒</span>
+                        <div class="card-icon mb-1 text-info"><i class="bi bi-bar-chart-fill"></i></div>
+                        <h6 class="fw-bold text-dark mb-1" style="font-size: 13px;">Reporte Campaña</h6>
+                        <p class="text-muted small mb-2" style="font-size: 10px; line-height: 1.2;">Rendimiento operativo de campaña.</p>
+                        <a href="reporte_campana.html" class="btn btn-outline-info btn-sm fw-bold mt-auto w-100 py-0" style="font-size: 11px;">Acceder</a>
                     </div>
                 </div>
             </div>
 
-            <!-- 5. Reporte Campaña (Protegido) -->
-            <div class="col-md-4">
-                <div class="card menu-card p-3" onclick="gestionarAcceso('reporte_campana.html', true)">
+            <!-- Reporte Acumulado -->
+            <div class="col-md-3">
+                <div class="card menu-card p-2">
                     <div class="card-body d-flex flex-column align-items-center py-2">
-                        <div class="card-icon mb-2 text-info"><i class="bi bi-bar-chart-fill"></i></div>
-                        <h5 class="fw-bold text-dark mb-1">Reporte Campaña</h5>
-                        <p class="text-muted small mb-3">Rendimiento operativo de campaña.</p>
-                        <span class="btn btn-outline-info btn-sm fw-bold mt-auto w-100 rounded-pill">Acceder 🔒</span>
+                        <div class="card-icon mb-1 text-secondary"><i class="bi bi-archive-fill"></i></div>
+                        <h6 class="fw-bold text-dark mb-1" style="font-size: 13px;">Reporte Acumulado</h6>
+                        <p class="text-muted small mb-2" style="font-size: 10px; line-height: 1.2;">21 renglones institucionales.</p>
+                        <a href="reporte_acumulado.html" class="btn btn-outline-secondary btn-sm fw-bold mt-auto w-100 py-0" style="font-size: 11px;">Acceder</a>
                     </div>
                 </div>
             </div>
 
-            <!-- 6. Reporte Acumulado (Protegido) -->
-            <div class="col-md-4">
-                <div class="card menu-card p-3" onclick="gestionarAcceso('reporte_acumulado.html', true)">
+            <!-- Panel de Gráficos -->
+            <div class="col-md-3">
+                <div class="card menu-card p-2" style="border-top: 3px solid #ff66b2;">
                     <div class="card-body d-flex flex-column align-items-center py-2">
-                        <div class="card-icon mb-2 text-secondary"><i class="bi bi-archive-fill"></i></div>
-                        <h5 class="fw-bold text-dark mb-1">Reporte Acumulado</h5>
-                        <p class="text-muted small mb-3">21 renglones institucionales.</p>
-                        <span class="btn btn-outline-secondary btn-sm fw-bold mt-auto w-100 rounded-pill">Acceder 🔒</span>
+                        <div class="card-icon mb-1" style="color: #ff66b2;"><i class="bi bi-pie-chart-fill"></i></div>
+                        <h6 class="fw-bold text-dark mb-1" style="font-size: 13px;">Gráficos y Metas</h6>
+                        <p class="text-muted small mb-2" style="font-size: 10px; line-height: 1.2;">Sedes, días y Meta Distrital.</p>
+                        <a href="graficos.html" class="btn btn-sm fw-bold mt-auto w-100 text-white py-0" style="background-color: #ff66b2; font-size: 11px;">Acceder</a>
                     </div>
                 </div>
             </div>
 
-            <!-- RENGLÓN 3 -->
-            <!-- 7. Gráficos y Metas (Libre) -->
-            <div class="col-md-4">
-                <div class="card menu-card p-3" style="border-top: 3px solid #ff66b2;" onclick="gestionarAcceso('graficos.html', false)">
+            <!-- Base de Datos Principal (BD Madre) -->
+            <div class="col-md-3">
+                <div class="card menu-card p-2">
                     <div class="card-body d-flex flex-column align-items-center py-2">
-                        <div class="card-icon mb-2" style="color: #ff66b2;"><i class="bi bi-pie-chart-fill"></i></div>
-                        <h5 class="fw-bold text-dark mb-1">Gráficos y Metas</h5>
-                        <p class="text-muted small mb-3">Sedes, días y Meta Distrital.</p>
-                        <span class="btn btn-sm fw-bold mt-auto w-100 text-white rounded-pill" style="background-color: #ff66b2;">Acceder</span>
+                        <div class="card-icon mb-1 text-danger"><i class="bi bi-database-fill"></i></div>
+                        <h6 class="fw-bold text-dark mb-1" style="font-size: 13px;">BD Principal</h6>
+                        <p class="text-muted small mb-2" style="font-size: 10px; line-height: 1.2;">Edición en ventana flotante y respaldo.</p>
+                        <a href="bd_madre.html" class="btn btn-outline-danger btn-sm fw-bold mt-auto w-100 py-0" style="font-size: 11px;">Acceder</a>
                     </div>
                 </div>
             </div>
 
-            <!-- 8. BD Principal (Protegido) -->
-            <div class="col-md-4">
-                <div class="card menu-card p-3" onclick="gestionarAcceso('bd_madre.html', true)">
+            <!-- BD Totales -->
+            <div class="col-md-3">
+                <div class="card menu-card p-2">
                     <div class="card-body d-flex flex-column align-items-center py-2">
-                        <div class="card-icon mb-2 text-danger"><i class="bi bi-database-fill"></i></div>
-                        <h5 class="fw-bold text-dark mb-1">BD Principal</h5>
-                        <p class="text-muted small mb-3">Edición en ventana flotante y respaldo.</p>
-                        <span class="btn btn-outline-danger btn-sm fw-bold mt-auto w-100 rounded-pill">Acceder 🔒</span>
+                        <div class="card-icon mb-1 text-dark"><i class="bi bi-database-fill-gear"></i></div>
+                        <h6 class="fw-bold text-dark mb-1" style="font-size: 13px;">BD Totales</h6>
+                        <p class="text-muted small mb-2" style="font-size: 10px; line-height: 1.2;">Control de registros totales.</p>
+                        <a href="bdtotales.html" class="btn btn-outline-dark btn-sm fw-bold mt-auto w-100 py-0" style="font-size: 11px;">Acceder</a>
                     </div>
                 </div>
             </div>
 
-            <!-- 9. BD Totales (Protegido) -->
-            <div class="col-md-4">
-                <div class="card menu-card p-3" onclick="gestionarAcceso('bdtotales.html', true)">
+            <!-- Módulos MAC -->
+            <div class="col-md-3">
+                <div class="card menu-card p-2" style="border-top: 3px solid #1b396b;">
                     <div class="card-body d-flex flex-column align-items-center py-2">
-                        <div class="card-icon mb-2 text-dark"><i class="bi bi-database-fill-gear"></i></div>
-                        <h5 class="fw-bold text-dark mb-1">BD Totales</h5>
-                        <p class="text-muted small mb-3">Control de registros totales.</p>
-                        <span class="btn btn-outline-dark btn-sm fw-bold mt-auto w-100 rounded-pill">Acceder 🔒</span>
+                        <div class="card-icon mb-1 text-primary"><i class="bi bi-building-fill-gear"></i></div>
+                        <h6 class="fw-bold text-dark mb-1" style="font-size: 13px;">Módulos MAC</h6>
+                        <p class="text-muted small mb-2" style="font-size: 10px; line-height: 1.2;">Gestión por módulo y soporte.</p>
+                        <a href="modulosmac.html" class="btn btn-outline-primary btn-sm fw-bold mt-auto w-100 py-0" style="font-size: 11px;">Acceder</a>
                     </div>
                 </div>
             </div>
@@ -191,34 +189,14 @@
         </div>
     </div>
 
-    <!-- MODAL DE CONTRASEÑA -->
-    <div class="modal fade" id="modalPasswordIndex" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header bg-dark text-white py-2">
-                    <h5 class="modal-title fs-6">🔐 Acceso Protegido</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body text-center">
-                    <p class="text-muted small mb-2">Ingrese la contraseña para continuar:</p>
-                    <input type="password" id="txtPasswordIndex" class="form-control text-center w-75 mx-auto" placeholder="Contraseña">
-                </div>
-                <div class="modal-footer py-1">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary btn-sm fw-bold" onclick="validarPasswordIndex()">Ingresar</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- PIE DE PÁGINA -->
-    <footer class="text-center py-2 text-white shadow-sm" style="background-color: #1b396b; width: 100%;">
+    <!-- PIE DE PÁGINA COMPACTO -->
+    <footer class="text-center py-2 text-white shadow-sm" style="background-color: rgba(27, 57, 107, 0.95); width: 100%;">
         <small style="font-size: 11px;">
-            &copy; 2026 Todos los derechos reservados. Desarrollado por <span class="text-info fw-bold">Carrivers Desing</span> para Módulos MAC. Versión 1.0.20
+            &copy; 2026 Todos los derechos reservados. Desarrollado por <span class="text-info fw-bold">Carrivers Desing</span> para Módulos MAC. Versión 1.0.19
         </small>
     </footer>
 
-    <!-- SCRIPT FIREBASE Y LÓGICA DE ACCESO -->
+    <!-- SCRIPT FIREBASE -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         const firebaseConfig = {
@@ -240,44 +218,6 @@
                 sem.innerHTML = s.val() ? '<i class="bi bi-check-circle"></i> En línea' : '<i class="bi bi-x-circle"></i> Desconectado';
             }
         });
-
-        let urlDestinoPendiente = "";
-        let modalPwdInstance = null;
-
-        document.addEventListener('DOMContentLoaded', function() {
-            modalPwdInstance = new bootstrap.Modal(document.getElementById('modalPasswordIndex'));
-            let txtPwd = document.getElementById('txtPasswordIndex');
-            if(txtPwd) {
-                txtPwd.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') validarPasswordIndex();
-                });
-            }
-        });
-
-        function gestionarAcceso(url, requierePassword) {
-            if (requierePassword) {
-                urlDestinoPendiente = url;
-                let inputPwd = document.getElementById('txtPasswordIndex');
-                inputPwd.value = '';
-                modalPwdInstance.show();
-                setTimeout(() => { inputPwd.focus(); }, 300);
-            } else {
-                window.location.href = url;
-            }
-        }
-
-        function validarPasswordIndex() {
-            let pwdIngresada = document.getElementById('txtPasswordIndex').value;
-            if (pwdIngresada === "charro" || pwdIngresada === "admin") {
-                modalPwdInstance.hide();
-                window.location.href = urlDestinoPendiente;
-            } else {
-                alert("❌ Contraseña incorrecta. Acceso denegado.");
-                let inputPwd = document.getElementById('txtPasswordIndex');
-                inputPwd.value = '';
-                inputPwd.focus();
-            }
-        }
     </script>
 </body>
 </html>
