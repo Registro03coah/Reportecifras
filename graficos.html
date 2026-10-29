@@ -114,7 +114,7 @@
                                 <tr>
                                     <th>Localidad / Sede</th>
                                     <th class="text-center">Trámites Realizados</th>
-                                    <th class="text-center text-warning">Pendientes / Disponibles</th>
+                                    <th class="text-center text-warning">Pendientes / Disponibles (Último Corte)</th>
                                 </tr>
                             </thead>
                             <tbody id="tablaPendientesBody">
@@ -127,7 +127,7 @@
         </div>
     </div>
 
-    <!-- Script con conexión robusta a bd_madre y filtro por idmac compuesto -->
+    <!-- Script con lógica de último corte para disponibles -->
     <script>
         // --- CANDADO DE SEGURIDAD INTEGRADO ---
         document.addEventListener("DOMContentLoaded", function() {
@@ -167,15 +167,13 @@
 
                 let campanaRange = document.getElementById('filtroCampana').value;
                 let [remesaMin, remesaMax] = campanaRange.split('-').map(Number);
-                let moduloSel = String(document.getElementById('filtroModulo').value).trim(); // ej: "50353"
+                let moduloSel = String(document.getElementById('filtroModulo').value).trim();
 
                 let filtrados = registros.filter(item => {
                     let remVal = parseInt(item.REMESA || item.remesa || item.Remesa || 0);
                     let idMacVal = String(item.IDMAC || item.idmac || item.ID_MAC || item.MODULO || item.modulo || "").trim();
 
                     let pasaRemesa = (remVal >= remesaMin && remVal <= remesaMax);
-                    
-                    // Validación flexible para el idmac compuesto (ej. 5326442210 con 50353)
                     let pasaModulo = (moduloSel === 'TODOS' || 
                                       idMacVal === moduloSel || 
                                       idMacVal.includes(moduloSel) || 
@@ -210,23 +208,35 @@
 
                 let mod = String(item.IDMAC || item.idmac || item.ID_MAC || item.MODULO || item.modulo || "").trim();
                 let tramites = parseInt(item.TOTAL_DE_TRAMITES || item.total_de_tramites || item.TRAMITES || item.tramites || 0);
-                let entregas = parseInt(item.ENTREGADAS || item.entregas || item.Entregadas || 0);
                 let disponibles = parseInt(item.DISPONIBLES_TOTAL || item.disponibles_total || item.DISPONIBLES || item.disponibles || 0);
+                
+                // Obtener un indicador de fecha o remesa para identificar el registro más reciente
+                let remVal = parseInt(item.REMESA || item.remesa || item.Remesa || 0);
 
                 if (!sedesMap[sedeRaw]) {
-                    sedesMap[sedeRaw] = { modulo: mod, tramites: 0, entregas: 0, visitas: 0, pendientes: 0 };
+                    sedesMap[sedeRaw] = { 
+                        modulo: mod, 
+                        tramites: 0, 
+                        visitas: 0, 
+                        ultimoRemesa: -1, 
+                        pendientes: 0 
+                    };
                 }
 
                 sedesMap[sedeRaw].modulo = mod;
                 sedesMap[sedeRaw].tramites += tramites;
-                sedesMap[sedeRaw].entregas += entregas;
-                sedesMap[sedeRaw].visitas += 1; // Cada registro diario en bd_madre es un día/visita
-                sedesMap[sedeRaw].pendientes += disponibles;
+                sedesMap[sedeRaw].visitas += 1; // Cada registro diario es un día/visita
+
+                // Guardar el stock disponible únicamente del registro con la remesa/fecha más alta (último corte)
+                if (remVal >= sedesMap[sedeRaw].ultimoRemesa) {
+                    sedesMap[sedeRaw].ultimoRemesa = remVal;
+                    sedesMap[sedeRaw].pendientes = disponibles; // Stock final del último día visitado
+                }
             });
 
             let labels = Object.keys(sedesMap);
             let datosTramites = labels.map(s => sedesMap[s].tramites);
-            let datosEntregas = labels.map(s => sedesMap[s].entregas);
+            let datosEntregas = labels.map(s => sedesMap[s].tramites - sedesMap[s].pendientes); // Estimado analítico o basado en registros
             let datosVisitas = labels.map(s => sedesMap[s].visitas);
 
             // Actualizar Gráfica de Trámites vs Entregas
@@ -238,7 +248,7 @@
                     labels: labels.length > 0 ? labels : ['Sin datos para este Módulo'],
                     datasets: [
                         { label: 'Trámites', data: datosTramites.length > 0 ? datosTramites : [0], backgroundColor: 'rgba(13, 110, 253, 0.7)', borderRadius: 4 },
-                        { label: 'Entregas', data: datosEntregas.length > 0 ? datosEntregas : [0], backgroundColor: 'rgba(25, 135, 84, 0.7)', borderRadius: 4 }
+                        { label: 'Pendientes (Stock Final)', data: labels.map(s => sedesMap[s].pendientes), backgroundColor: 'rgba(220, 53, 69, 0.7)', borderRadius: 4 }
                     ]
                 },
                 options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
