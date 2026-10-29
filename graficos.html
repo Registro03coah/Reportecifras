@@ -22,7 +22,7 @@
 
     <!-- Barra superior unificada -->
     <nav class="navbar navbar-dark bg-dark px-4 shadow-sm">
-        <a class="navbar-brand fw-bold" href="modulosmac.html">📊 Módulos MAC - Gráficas y Remesas</a>
+        <a class="navbar-brand fw-bold" href="modulosmac.html">📊 Módulos MAC - Gráficas y Remesas (BD Madre)</a>
         <div>
             <a href="modulosmac.html" class="btn btn-outline-light btn-sm me-2">Volver al Menú</a>
             <a href="index.html" class="btn btn-danger btn-sm">Cerrar Sesión</a>
@@ -30,7 +30,7 @@
     </nav>
 
     <div class="container my-4">
-        <h2 class="mb-3 text-secondary fw-bold">Análisis Operativo por Campaña y Sedes</h2>
+        <h2 class="mb-3 text-secondary fw-bold">Análisis Operativo por Campaña y Sedes (Datos Diarios)</h2>
         
         <!-- Panel de Filtros -->
         <div class="card card-custom p-3 bg-white">
@@ -59,7 +59,7 @@
                     </select>
                 </div>
                 <div class="col-md-4 d-flex align-items-end">
-                    <button class="btn btn-primary btn-sm w-100 fw-semibold" onclick="cargarDatosFirebase()">🔄 Actualizar con Datos Reales</button>
+                    <button class="btn btn-primary btn-sm w-100 fw-semibold" onclick="cargarDatosFirebase()">🔄 Actualizar con Datos de BD Madre</button>
                 </div>
             </div>
         </div>
@@ -99,7 +99,7 @@
                                 </tr>
                             </thead>
                             <tbody id="tablaVisitasBody">
-                                <tr><td colspan="3" class="text-center text-muted">Cargando datos de Firebase...</td></tr>
+                                <tr><td colspan="3" class="text-center text-muted">Cargando datos de bd_madre...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -118,7 +118,7 @@
                                 </tr>
                             </thead>
                             <tbody id="tablaPendientesBody">
-                                <tr><td colspan="3" class="text-center text-muted">Cargando datos de Firebase...</td></tr>
+                                <tr><td colspan="3" class="text-center text-muted">Cargando datos de bd_madre...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -127,7 +127,7 @@
         </div>
     </div>
 
-    <!-- Script con conexión real a Firebase y lógica de cálculo -->
+    <!-- Script con conexión a bd_madre y lógica de cálculo -->
     <script>
         // --- CANDADO DE SEGURIDAD INTEGRADO ---
         document.addEventListener("DOMContentLoaded", function() {
@@ -157,7 +157,8 @@
         let chartVisitas = null;
 
         function cargarDatosFirebase() {
-            database.ref('bdtotales').once('value').then((snapshot) => {
+            // APUNTANDO CORRECTAMENTE A bd_madre
+            database.ref('bd_madre').once('value').then((snapshot) => {
                 let data = snapshot.val() || [];
                 let registros = Array.isArray(data) ? data : Object.values(data);
 
@@ -165,7 +166,7 @@
                 let [remesaMin, remesaMax] = campanaRange.split('-').map(Number);
                 let moduloSel = document.getElementById('filtroModulo').value;
 
-                // Filtrar registros usando idmac / modulo y remesa
+                // Filtrar registros usando remesa y idmac / modulo
                 let filtrados = registros.filter(item => {
                     let remVal = parseInt(item.REMESA || item.remesa || item.Remesa || 0);
                     let idMacVal = String(item.IDMAC || item.idmac || item.ID_MAC || item.MODULO || item.modulo || "").trim();
@@ -178,7 +179,7 @@
 
                 procesarYGraficar(filtrados);
             }).catch(err => {
-                console.error("Error al leer Firebase:", err);
+                console.error("Error al leer Firebase (bd_madre):", err);
             });
         }
 
@@ -194,10 +195,9 @@
                 }
 
                 let mod = String(item.IDMAC || item.idmac || item.ID_MAC || item.MODULO || item.modulo || "").trim();
-                let tramites = parseInt(item.TOTAL_DE_TRAMITES || item.total_de_tramites || item.TRAMITES || 0);
+                let tramites = parseInt(item.TOTAL_DE_TRAMITES || item.total_de_tramites || item.TRAMITES || item.tramites || 0);
                 let entregas = parseInt(item.ENTREGADAS || item.entregas || item.Entregadas || 0);
-                let diasTrabajados = parseInt(item.DIAS_TRABAJADOS || item.dias_trabajados || 1);
-                let disponibles = parseInt(item.DISPONIBLES_TOTAL || item.disponibles_total || item.DISPONIBLES || 0);
+                let disponibles = parseInt(item.DISPONIBLES_TOTAL || item.disponibles_total || item.DISPONIBLES || item.disponibles || 0);
 
                 if (!sedesMap[sedeRaw]) {
                     sedesMap[sedeRaw] = { modulo: mod, tramites: 0, entregas: 0, visitas: 0, pendientes: 0 };
@@ -206,7 +206,8 @@
                 sedesMap[sedeRaw].modulo = mod;
                 sedesMap[sedeRaw].tramites += tramites;
                 sedesMap[sedeRaw].entregas += entregas;
-                sedesMap[sedeRaw].visitas += (diasTrabajados > 0 ? diasTrabajados : 6); 
+                // En bd_madre, cada registro diario cuenta como 1 visita/día trabajado en esa sede
+                sedesMap[sedeRaw].visitas += 1; 
                 sedesMap[sedeRaw].pendientes += disponibles;
             });
 
@@ -255,8 +256,8 @@
             let tbodyPendientes = '';
 
             if (labels.length === 0) {
-                tbodyVisitas = `<tr><td colspan="3" class="text-center text-muted">No hay registros válidos para este filtro.</td></tr>`;
-                tbodyPendientes = `<tr><td colspan="3" class="text-center text-muted">No hay registros válidos para este filtro.</td></tr>`;
+                tbodyVisitas = `<tr><td colspan="3" class="text-center text-muted">No hay registros en bd_madre para este filtro.</td></tr>`;
+                tbodyPendientes = `<tr><td colspan="3" class="text-center text-muted">No hay registros en bd_madre para este filtro.</td></tr>`;
             } else {
                 labels.forEach(sede => {
                     let info = sedesMap[sede];
