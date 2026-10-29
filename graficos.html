@@ -59,7 +59,7 @@
                     </select>
                 </div>
                 <div class="col-md-4 d-flex align-items-end">
-                    <button class="btn btn-primary btn-sm w-100 fw-semibold" onclick="cargarDatosFirebase()">🔄 Actualizar con Datos de BD Madre</button>
+                    <button id="btnActualizar" class="btn btn-primary btn-sm w-100 fw-semibold" onclick="cargarDatosFirebase()">🔄 Actualiza Datos</button>
                 </div>
             </div>
         </div>
@@ -127,7 +127,7 @@
         </div>
     </div>
 
-    <!-- Script con conexión a bd_madre y lógica de cálculo -->
+    <!-- Script con conexión robusta a bd_madre y filtro por idmac compuesto -->
     <script>
         // --- CANDADO DE SEGURIDAD INTEGRADO ---
         document.addEventListener("DOMContentLoaded", function() {
@@ -157,29 +157,43 @@
         let chartVisitas = null;
 
         function cargarDatosFirebase() {
-            // APUNTANDO CORRECTAMENTE A bd_madre
+            let btn = document.getElementById('btnActualizar');
+            btn.innerHTML = '⏳ Actualizando...';
+            btn.disabled = true;
+
             database.ref('bd_madre').once('value').then((snapshot) => {
                 let data = snapshot.val() || [];
                 let registros = Array.isArray(data) ? data : Object.values(data);
 
                 let campanaRange = document.getElementById('filtroCampana').value;
                 let [remesaMin, remesaMax] = campanaRange.split('-').map(Number);
-                let moduloSel = document.getElementById('filtroModulo').value;
+                let moduloSel = String(document.getElementById('filtroModulo').value).trim(); // ej: "50353"
 
-                // Filtrar registros usando remesa y idmac / modulo
                 let filtrados = registros.filter(item => {
                     let remVal = parseInt(item.REMESA || item.remesa || item.Remesa || 0);
                     let idMacVal = String(item.IDMAC || item.idmac || item.ID_MAC || item.MODULO || item.modulo || "").trim();
 
                     let pasaRemesa = (remVal >= remesaMin && remVal <= remesaMax);
-                    let pasaModulo = (moduloSel === 'TODOS' || idMacVal.includes(moduloSel));
+                    
+                    // Validación flexible para el idmac compuesto (ej. 5326442210 con 50353)
+                    let pasaModulo = (moduloSel === 'TODOS' || 
+                                      idMacVal === moduloSel || 
+                                      idMacVal.includes(moduloSel) || 
+                                      idMacVal.startsWith(moduloSel.slice(-2)) || 
+                                      idMacVal.startsWith(moduloSel.slice(-3)) ||
+                                      idMacVal.startsWith(moduloSel.replace("50", "")));
 
                     return pasaRemesa && pasaModulo;
                 });
 
                 procesarYGraficar(filtrados);
+
+                btn.innerHTML = '🔄 Actualiza Datos';
+                btn.disabled = false;
             }).catch(err => {
                 console.error("Error al leer Firebase (bd_madre):", err);
+                btn.innerHTML = '🔄 Actualiza Datos';
+                btn.disabled = false;
             });
         }
 
@@ -206,8 +220,7 @@
                 sedesMap[sedeRaw].modulo = mod;
                 sedesMap[sedeRaw].tramites += tramites;
                 sedesMap[sedeRaw].entregas += entregas;
-                // En bd_madre, cada registro diario cuenta como 1 visita/día trabajado en esa sede
-                sedesMap[sedeRaw].visitas += 1; 
+                sedesMap[sedeRaw].visitas += 1; // Cada registro diario en bd_madre es un día/visita
                 sedesMap[sedeRaw].pendientes += disponibles;
             });
 
@@ -222,7 +235,7 @@
             chartTramites = new Chart(ctx1, {
                 type: 'bar',
                 data: {
-                    labels: labels.length > 0 ? labels : ['Sin datos válidos'],
+                    labels: labels.length > 0 ? labels : ['Sin datos para este Módulo'],
                     datasets: [
                         { label: 'Trámites', data: datosTramites.length > 0 ? datosTramites : [0], backgroundColor: 'rgba(13, 110, 253, 0.7)', borderRadius: 4 },
                         { label: 'Entregas', data: datosEntregas.length > 0 ? datosEntregas : [0], backgroundColor: 'rgba(25, 135, 84, 0.7)', borderRadius: 4 }
@@ -237,7 +250,7 @@
             chartVisitas = new Chart(ctx2, {
                 type: 'line',
                 data: {
-                    labels: labels.length > 0 ? labels : ['Sin datos válidos'],
+                    labels: labels.length > 0 ? labels : ['Sin datos para este Módulo'],
                     datasets: [{
                         label: 'Días / Visitas a Sede',
                         data: datosVisitas.length > 0 ? datosVisitas : [0],
@@ -256,8 +269,8 @@
             let tbodyPendientes = '';
 
             if (labels.length === 0) {
-                tbodyVisitas = `<tr><td colspan="3" class="text-center text-muted">No hay registros en bd_madre para este filtro.</td></tr>`;
-                tbodyPendientes = `<tr><td colspan="3" class="text-center text-muted">No hay registros en bd_madre para este filtro.</td></tr>`;
+                tbodyVisitas = `<tr><td colspan="3" class="text-center text-muted">No hay registros para este módulo en esta campaña.</td></tr>`;
+                tbodyPendientes = `<tr><td colspan="3" class="text-center text-muted">No hay registros para este módulo en esta campaña.</td></tr>`;
             } else {
                 labels.forEach(sede => {
                     let info = sedesMap[sede];
