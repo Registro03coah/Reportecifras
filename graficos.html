@@ -229,5 +229,18 @@
 
         window.onload = inicializarGraficas;
     </script>
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        let paginaActual = window.location.pathname.split("/").pop();
+        let paginasLibres = ["index.html", "modulosmac.html", "cifrasmodulo.html", "reporte_dias.html", "graficos.html", ""];
+
+        if (!paginasLibres.includes(paginaActual)) {
+            if (sessionStorage.getItem('sesion_autorizada') !== 'true') {
+                alert("⚠️ Acceso restringido. Debe ingresar la contraseña desde el menú principal.");
+                window.location.href = 'index.html';
+            }
+        }
+    });
+</script>
 </body>
 </html>
