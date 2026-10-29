@@ -238,7 +238,7 @@
             let pass = document.getElementById('inputPassAcceso').value.trim();
             if (pass === "charro") {
                 // Otorgamos el pase de acceso autorizado
-                localStorage.setItem('sesion_autorizada', 'true');
+                sessionStorage.setItem('sesion_autorizada', 'true');
                 
                 modalPass.hide();
                 window.location.href = paginaDestino;
