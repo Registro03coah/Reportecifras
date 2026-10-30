@@ -233,7 +233,7 @@
       </div>
     </div>
 
-    <!-- Script corregido y depurado -->
+    <!-- Script depurado sin errores de sintaxis -->
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             let paginaActual = window.location.pathname.split("/").pop();
@@ -409,7 +409,19 @@
 
                     let celdaModMes = document.getElementById(`mod_${mod}_${mes}`);
                     if(celdaModMes) {
-                        celdaModMes.innerText = sumMes > 0 ? sumMes : (mod === '50351' ? (mes==='enero'?6196:mes==='febrero'?4116:mes==='marzo'?1256:45:0) : 0); 
+                        if(sumMes > 0) {
+                            celdaModMes.innerText = sumMes;
+                        } else {
+                            if(mod === '50351') {
+                                if(mes === 'enero') celdaModMes.innerText = 6196;
+                                else if(mes === 'febrero') celdaModMes.innerText = 4116;
+                                else if(mes === 'marzo') celdaModMes.innerText = 1256;
+                                else if(mes === 'abril') celdaModMes.innerText = 45;
+                                else celdaModMes.innerText = 0;
+                            } else {
+                                celdaModMes.innerText = 0;
+                            }
+                        }
                     }
                 });
             });
