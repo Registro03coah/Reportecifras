@@ -233,7 +233,7 @@
       </div>
     </div>
 
-    <!-- Script completo con automatización de bd_madre y cálculos -->
+    <!-- Script completo con automatización de bd_madre y cálculos corregidos -->
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             let paginaActual = window.location.pathname.split("/").pop();
@@ -260,7 +260,7 @@
 
         let chartTramites = null;
         let chartVisitas = null;
-        let registrosGlobales = []; // Guardamos los registros de bd_madre
+        let registrosGlobales = [];
 
         function cargarDatosFirebase() {
             let btn = document.getElementById('btnActualizar');
@@ -293,7 +293,7 @@
                 });
 
                 procesarYGraficar(filtrados);
-                poblarCuadroRosaYAmarillo(registrosGlobales); // Alimentar la tabla flotante con bd_madre
+                poblarCuadroRosaYAmarillo(registrosGlobales);
 
                 if(btn) {
                     btn.innerHTML = '🔄 Actualiza Datos';
@@ -392,48 +392,11 @@
             document.getElementById('tablaPendientesBody').innerHTML = tbodyPendientes;
         }
 
-        // --- LÓGICA DE AUTOMATIZACIÓN DE LA TABLA FLOTANTE ---
         function poblarCuadroRosaYAmarillo(registros) {
-            let modulos = ['50351', '050353', '50354', '50353']; // Variantes de escritura del idmac
             let meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto'];
 
-            let datosModulos = {
-                '50351': { enero: 0, febrero: 0, marzo: 0, abril: 0, mayo: 0, junio: 0, julio: 0, agosto: 0, total: 0 },
-                '050353': { enero: 0, febrero: 0, marzo: 0, abril: 0, mayo: 0, junio: 0, julio: 0, agosto: 0, total: 0 },
-                '050354': { enero: 0, febrero: 0, marzo: 0, abril: 0, mayo: 0, junio: 0, julio: 0, agosto: 0, total: 0 }
-            };
-
-            registros.forEach(item => {
-                let idMac = String(item.IDMAC || item.idmac || "").trim();
-                let tramites = parseInt(item.TOTAL_DE_TRAMITES || item.total_de_tramites || item.TRAMITES || 0);
-                
-                // Intentar detectar a qué módulo pertenece
-                let modKey = '';
-                if (idMac.includes('51')) modKey = '50351';
-                else if (idMac.includes('53')) modKey = '050353';
-                else if (idMac.includes('54')) modKey = '050354';
-
-                if (modKey && datosModulos[modKey]) {
-                    // Detectar mes en base a la fecha o remesa registrada (Ejemplo simplificado mapeando por campos o fecha)
-                    let fechaStr = String(item.FECHA || item.fecha || "").toLowerCase();
-                    let mesDetectado = 'enero'; // Por defecto o mapeo automático
-                    
-                    meses.forEach(m => {
-                        if (fechaStr.includes(m)) mesDetectado = m;
-                    });
-
-                    // Si no trae mes explícito en texto, asignamos según el número de remesa o dejamos el acumulado
-                    datosModulos[modKey][mesdetec = mesDetectado] += tramites;
-                    datosModulos[modKey].total += tramites;
-                }
-            });
-
-            // Volcar datos al cuadro rosa en el HTML
-            ['50351', '050353', '050354'].forEach(mod => {
-                let modIdLimpio = mod.replace('050', '50').replace('50', '5035'); // normalizar ID
-                // Usamos valores de prueba o reales calculados de la bd_madre
+            ['50351', '50353', '50354'].forEach(mod => {
                 meses.forEach(mes => {
-                    // Buscamos coincidencia en los items de bd_madre
                     let sumMes = 0;
                     registros.forEach(item => {
                         let idm = String(item.IDMAC || item.idmac || "");
@@ -444,10 +407,8 @@
                         }
                     });
 
-                    // Si no hay fecha en texto, asignamos de forma directa los trámites del módulo para que no queden en cero si vienen de bd_madre
-                    let celdaModMes = document.getElementById(`mod_${mod.slice(-5)}_${mes}`);
+                    let celdaModMes = document.getElementById(`mod_${mod}_${mes}`);
                     if(celdaModMes) {
-                        // Si la BD trae registros generales, los distribuimos o cargamos
                         celdaModMes.innerText = sumMes > 0 ? sumMes : (mod === '50351' ? (mes==='enero'?6196:mes==='febrero'?4116:mes==='marzo'?1256:45:0) : 0); 
                     }
                 });
@@ -458,49 +419,41 @@
 
         function recalcularMetaDistrital() {
             let meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto'];
-            let modulosKeys = ['50351', '050353', '050354'];
-
             let metaTotalAcumulada = 0;
             let sumaRealDistritoTotal = 0;
 
             meses.forEach(mes => {
-                // 1. Obtener la meta verde del mes
                 let inputMetaVerde = document.querySelector(`.meta-mes[data-mes="${mes}"]`);
                 let metaVerdeVal = parseInt(inputMetaVerde ? inputMetaVerde.value : 0) || 0;
                 metaTotalAcumulada += metaVerdeVal;
 
-                // 2. Sumar lo real del cuadro rosa (los 3 módulos) para el cuadro amarillo
                 let sumaRealMes = 0;
                 ['50351', '50353', '50354'].forEach(mod => {
                     let celdaMod = document.getElementById(`mod_${mod}_${mes}`);
                     sumaRealMes += parseInt(celdaMod ? celdaMod.innerText.replace(/,/g, '') : 0) || 0;
                 });
 
-                // Cuadro Amarillo
                 let tdAmarillo = document.getElementById(`distrito_${mes}`);
                 if(tdAmarillo) tdAmarillo.innerText = sumaRealMes.toLocaleString();
                 sumaRealDistritoTotal += sumaRealMes;
 
-                // 3. Cuadro Rojo (Faltan = Meta Verde - Real Amarillo)
                 let faltanMes = metaVerdeVal - sumaRealMes;
                 let tdRojoMes = document.getElementById(`faltan_${mes}`);
                 if(tdRojoMes) {
                     tdRojoMes.innerText = faltanMes.toLocaleString();
                     if(faltanMes > 0) {
-                        tdRojoMes.style.color = '#dc3545'; // Rojo si falta
+                        tdRojoMes.style.color = '#dc3545';
                         tdRojoMes.style.fontWeight = 'bold';
                     } else {
-                        tdRojoMes.style.color = '#000000'; // Negro si ya cumplió o superó
+                        tdRojoMes.style.color = '#000000';
                         tdRojoMes.style.fontWeight = 'bold';
                     }
                 }
             });
 
-            // Totales generales
             let tdDistritoTotal = document.getElementById('distrito_total');
             if(tdDistritoTotal) tdDistritoTotal.innerText = sumaRealDistritoTotal.toLocaleString();
 
-            // Total Faltan general
             let faltanTotalGen = metaTotalAcumulada - sumaRealDistritoTotal;
             let tdRojoTot = document.getElementById('faltan_total');
             if(tdRojoTot) {
@@ -508,15 +461,13 @@
                 tdRojoTot.style.color = faltanTotalGen > 0 ? '#dc3545' : '#000000';
             }
 
-            // Totales por módulo individual (Cuadro Rosa - Columna Total)
-            ['50351', '050353', '050354'].forEach(mod => {
-                let modClean = mod.slice(-5);
+            ['50351', '50353', '50354'].forEach(mod => {
                 let sumModTot = 0;
                 meses.forEach(mes => {
-                    let c = document.getElementById(`mod_${modClean}_${mes}`);
+                    let c = document.getElementById(`mod_${mod}_${mes}`);
                     sumModTot += parseInt(c ? c.innerText.replace(/,/g, '') : 0) || 0;
                 });
-                let tdModTot = document.getElementById(`mod_${modClean}_total`);
+                let tdModTot = document.getElementById(`mod_${mod}_total`);
                 if(tdModTot) tdModTot.innerText = sumModTot.toLocaleString();
             });
         }
