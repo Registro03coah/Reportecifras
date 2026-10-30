@@ -67,7 +67,6 @@
             padding-bottom: 2px !important;
         }
 
-        /* Botones de menú superior extra pequeños */
         .navbar .nav-link {
             font-size: 11px !important;
             padding: 2px 5px !important;
@@ -79,8 +78,8 @@
         }
 
         .main-content-wrapper { 
-            margin-top: 38px; /* Ajustado para barra más delgada */
-            margin-bottom: 22px; /* Ajustado para footer más delgado */
+            margin-top: 38px; 
+            margin-bottom: 22px; 
             flex: 1; 
             display: flex; 
             flex-direction: column; 
@@ -112,38 +111,42 @@
             width: max-content; 
         }
 
+        /* ENCABEZADOS DE TABLA ULTRA COMPACTOS */
         .excel-table thead th { 
             position: sticky; 
             top: 0; 
             z-index: 3; 
-            font-size: 10px; 
+            font-size: 9px; 
             font-weight: 700; 
             background-color: #1b396b !important; 
             color: white !important; 
             text-align: center; 
             vertical-align: middle; 
-            padding: 4px 4px; 
+            padding: 2px 3px !important; 
             white-space: nowrap; 
         }
 
         .excel-table thead tr.num-row th { 
             position: sticky; 
-            top: 25px; 
+            top: 20px; 
             z-index: 2; 
             background-color: #e9ecef !important; 
             color: #212529 !important; 
-            font-size: 10px; 
-            padding: 1px !important; 
+            font-size: 9px; 
+            padding: 0px !important; 
             border-bottom: 1px solid #2d3436; 
-            height: 18px; 
+            height: 14px !important; 
         }
 
+        /* RENGLONES DE LA TABLA MÁS DELGADOS Y ALTURA MÍNIMA */
         .excel-table td { 
-            padding: 3px 6px; 
+            padding: 1px 4px !important; /* Reducido al mínimo para menor altura */
             border: 1px solid #ccc; 
             text-align: center; 
             vertical-align: middle; 
             font-size: 10px; 
+            height: 18px !important; /* Altura de renglón más delgada */
+            line-height: 1;
             white-space: nowrap; 
         }
 
@@ -158,9 +161,9 @@
             background-color: #e7f1ff; 
             color: #0d6efd; 
             border-radius: 4px; 
-            padding: 3px; 
+            padding: 2px; 
             text-align: center; 
-            font-size: 0.75rem; 
+            font-size: 0.7rem; 
             font-weight: 700; 
             cursor: pointer; 
             user-select: none; 
@@ -233,8 +236,8 @@
 
     <div class="main-content-wrapper container-fluid">
         <div class="header-banner text-center shadow-sm">
-            <h1 class="fw-bold mb-0" style="font-size: 1rem;"><i class="bi bi-pencil-square"></i> Vaciado de Datos</h1>
-            <p class="mb-0 text-light" style="font-size: 0.7rem;">Gestión e importación de la base de datos general (Módulos 050351, 050353, 050354)</p>
+            <h1 class="fw-bold mb-0" style="font-size: 0.95rem;"><i class="bi bi-pencil-square"></i> Vaciado de Datos</h1>
+            <p class="mb-0 text-light" style="font-size: 0.65rem;">Gestión e importación de la base de datos general (Módulos 050351, 050353, 050354)</p>
         </div>
         
         <div class="card shadow-sm mb-1 border-0">
@@ -243,49 +246,49 @@
                     <div class="p-1 rounded shadow-sm" style="background-color: #ff99ff; border: 1.5px solid #ff4dff;">
                         <span class="fw-bold text-dark d-block text-center mb-0" style="font-size: 9px;"><i class="bi bi-bar-chart-fill"></i> INICIALES CAMPAÑA (C)</span>
                         <div class="d-flex gap-1">
-                            <input type="text" id="camp_050351" class="form-control form-control-sm text-center fw-bold py-0 px-1" placeholder="050351" style="width: 65px; font-size: 10px; height: 20px;">
-                            <input type="text" id="camp_050353" class="form-control form-control-sm text-center fw-bold py-0 px-1" placeholder="050353" style="width: 65px; font-size: 10px; height: 20px;">
-                            <input type="text" id="camp_050354" class="form-control form-control-sm text-center fw-bold py-0 px-1" placeholder="050354" style="width: 65px; font-size: 10px; height: 20px;">
+                            <input type="text" id="camp_050351" class="form-control form-control-sm text-center fw-bold py-0 px-1" placeholder="050351" style="width: 60px; font-size: 10px; height: 18px;">
+                            <input type="text" id="camp_050353" class="form-control form-control-sm text-center fw-bold py-0 px-1" placeholder="050353" style="width: 60px; font-size: 10px; height: 18px;">
+                            <input type="text" id="camp_050354" class="form-control form-control-sm text-center fw-bold py-0 px-1" placeholder="050354" style="width: 60px; font-size: 10px; height: 18px;">
                         </div>
                     </div>
                     <div class="p-1 rounded shadow-sm" style="background-color: #e63946; border: 1.5px solid #b71c1c;">
                         <span class="fw-bold text-white d-block text-center mb-0" style="font-size: 9px;"><i class="bi bi-archive-fill"></i> INICIALES ACUMULADO (A)</span>
                         <div class="d-flex gap-1">
-                            <input type="text" id="acum_050351" class="form-control form-control-sm text-center fw-bold py-0 px-1" placeholder="050351" style="width: 65px; font-size: 10px; height: 20px;">
-                            <input type="text" id="acum_050353" class="form-control form-control-sm text-center fw-bold py-0 px-1" placeholder="050353" style="width: 65px; font-size: 10px; height: 20px;">
-                            <input type="text" id="acum_050354" class="form-control form-control-sm text-center fw-bold py-0 px-1" placeholder="050354" style="width: 65px; font-size: 10px; height: 20px;">
+                            <input type="text" id="acum_050351" class="form-control form-control-sm text-center fw-bold py-0 px-1" placeholder="050351" style="width: 60px; font-size: 10px; height: 18px;">
+                            <input type="text" id="acum_050353" class="form-control form-control-sm text-center fw-bold py-0 px-1" placeholder="050353" style="width: 60px; font-size: 10px; height: 18px;">
+                            <input type="text" id="acum_050354" class="form-control form-control-sm text-center fw-bold py-0 px-1" placeholder="050354" style="width: 60px; font-size: 10px; height: 18px;">
                         </div>
                     </div>
                 </div>
 
                 <!-- Cuadro de la Remesa Activa -->
-                <div class="p-1 rounded shadow-sm text-center text-white fw-bold" style="background-color: #198754; border: 1.5px solid #146c43; min-width: 140px;">
+                <div class="p-1 rounded shadow-sm text-center text-white fw-bold" style="background-color: #198754; border: 1.5px solid #146c43; min-width: 130px;">
                     <span style="font-size: 9px; display: block; text-transform: uppercase;">Remesa Activa</span>
                     <span id="lblRemesaActiva" class="badge bg-light text-dark fs-6 px-2 py-0 mt-0 shadow-sm" style="letter-spacing: 0.5px;">S/N</span>
                 </div>
 
                 <div class="d-flex align-items-center gap-1">
                     <button class="btn btn-outline-danger btn-sm fw-bold py-0 px-2" id="btnBorrar" style="font-size: 10px;"><i class="bi bi-trash"></i> Limpiar</button>
-                    <button class="btn btn-success btn-sm fw-bold shadow-sm py-0 px-2" id="btnGuardarBD" style="font-size: 10px;"><i class="bi bi-cloud-arrow-up-fill"></i> Guardar Bases</button>
+                    <button class="btn btn-success btn-sm fw-bold shadow-sm py-0 px-2" id="btnGuardarBD" style="font-size: 10px;"><i class="bi bi-cloud-arrow-up-fill"></i> Guardar</button>
                 </div>
             </div>
         </div>
 
         <ul class="nav nav-tabs fw-bold mb-1" id="tabsModulos">
-            <li class="nav-item"><button type="button" class="nav-link active py-1" id="btn-tab-050351" onclick="cambiarModulo('050351')"><i class="bi bi-laptop"></i> Módulo 050351</button></li>
-            <li class="nav-item"><button type="button" class="nav-link py-1" id="btn-tab-050353" onclick="cambiarModulo('050353')"><i class="bi bi-laptop"></i> Módulo 050353</button></li>
-            <li class="nav-item"><button type="button" class="nav-link py-1" id="btn-tab-050354" onclick="cambiarModulo('050354')"><i class="bi bi-laptop"></i> Módulo 050354</button></li>
+            <li class="nav-item"><button type="button" class="nav-link active py-1" id="btn-tab-050351" onclick="cambiarModulo('050351')"><i class="bi bi-laptop"></i> 050351</button></li>
+            <li class="nav-item"><button type="button" class="nav-link py-1" id="btn-tab-050353" onclick="cambiarModulo('050353')"><i class="bi bi-laptop"></i> 050353</button></li>
+            <li class="nav-item"><button type="button" class="nav-link py-1" id="btn-tab-050354" onclick="cambiarModulo('050354')"><i class="bi bi-laptop"></i> 050354</button></li>
             <li class="nav-item"><button type="button" class="nav-link tab-totales text-dark fw-bold py-1" id="btn-tab-TOTALES" style="background-color: #ffc107;" onclick="cambiarModulo('TOTALES')"><i class="bi bi-calculator-fill"></i> Totales</button></li>
         </ul>
 
         <div class="card shadow-sm border-0 flex-grow-1 d-flex flex-column mb-0">
             <div class="card-body bg-white rounded border p-1 d-flex flex-column flex-grow-1">
-                <div class="alert alert-info py-0 px-2 mb-1 fw-bold d-flex justify-content-between align-items-center" style="font-size: 10px;">
-                    <span id="lblMensajeAyuda">Módulo <span id="lblModuloActivo">050351</span>: Pega los datos con Ctrl+V. Doble clic en encabezado para renombrar.</span>
-                    <span id="semaforoConexion" class="badge bg-success text-white py-0"><i class="bi bi-check-circle"></i> Conectado</span>
+                <div class="alert alert-info py-0 px-2 mb-1 fw-bold d-flex justify-content-between align-items-center" style="font-size: 9px;">
+                    <span id="lblMensajeAyuda">Módulo <span id="lblModuloActivo">050351</span>: Clic y Ctrl+V para pegar. Doble clic en encabezado renombra.</span>
+                    <span id="semaforoConexion" class="badge bg-success text-white py-0" style="font-size: 9px;"><i class="bi bi-check-circle"></i> Conectado</span>
                 </div>
                 
-                <div id="panelAccionesTotales" class="alert alert-warning py-0 px-2 mb-1 d-none justify-content-between align-items-center" style="font-size: 10px;">
+                <div id="panelAccionesTotales" class="alert alert-warning py-0 px-2 mb-1 d-none justify-content-between align-items-center" style="font-size: 9px;">
                     <span class="fw-bold"><i class="bi bi-info-circle-fill"></i> Vaciado Consolidado Remesa: <span id="inputRemesa" class="badge bg-dark text-white">S/N</span></span>
                 </div>
 
@@ -300,27 +303,27 @@
                     <i class="bi bi-clipboard-plus d-inline me-1"></i> Clic aquí y Ctrl+V para pegar datos del Módulo 050354
                 </div>
 
-                <!-- CONTENEDORES DE TABLAS -->
+                <!-- CONTENEDORES DE TABLAS (Renglones Compactos) -->
                 <div class="excel-container shadow-sm flex-grow-1" id="container_050351">
-                    <table class="excel-table table table-hover" id="tablaCaptura_050351">
+                    <table class="excel-table table table-hover table-sm" id="tablaCaptura_050351">
                         <thead></thead>
                         <tbody></tbody>
                     </table>
                 </div>
                 <div class="excel-container shadow-sm flex-grow-1 d-none" id="container_050353">
-                    <table class="excel-table table table-hover" id="tablaCaptura_050353">
+                    <table class="excel-table table table-hover table-sm" id="tablaCaptura_050353">
                         <thead></thead>
                         <tbody></tbody>
                     </table>
                 </div>
                 <div class="excel-container shadow-sm flex-grow-1 d-none" id="container_050354">
-                    <table class="excel-table table table-hover" id="tablaCaptura_050354">
+                    <table class="excel-table table table-hover table-sm" id="tablaCaptura_050354">
                         <thead></thead>
                         <tbody></tbody>
                     </table>
                 </div>
                 <div class="excel-container shadow-sm flex-grow-1 d-none" id="container_TOTALES">
-                    <table class="excel-table table table-hover" id="tablaCaptura_totales">
+                    <table class="excel-table table table-hover table-sm" id="tablaCaptura_totales">
                         <thead></thead>
                         <tbody></tbody>
                     </table>
