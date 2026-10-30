@@ -189,7 +189,7 @@
                             <td class="fw-bold">Tramites</td>
                             <td>Trámites</td><td>Trámites</td><td>Trámites</td><td>Trámites</td><td>Trámites</td><td>Trámites</td><td>Trámites</td><td>Trámites</td>
                         </tr>
-                        <!-- CUADRO ROSA: MÓDULOS 50351, 050353, 050354 (CARGADOS DE BD_MADRE) -->
+                        <!-- CUADRO ROSA: MÓDULOS 50351, 50353, 50354 -->
                         <tr>
                             <td class="fw-bold text-start">50351</td>
                             <td id="mod_50351_total" class="fw-bold" style="background-color: #ffe5d0;">0</td>
@@ -205,7 +205,7 @@
                             <td id="mod_50354_total" class="fw-bold" style="background-color: #ffe5d0;">0</td>
                             <td id="mod_50354_enero">0</td><td id="mod_50354_febrero">0</td><td id="mod_50354_marzo">0</td><td id="mod_50354_abril">0</td><td id="mod_50354_mayo">0</td><td id="mod_50354_junio">0</td><td id="mod_50354_julio">0</td><td id="mod_50354_agosto">0</td>
                         </tr>
-                        <!-- CUADRO ROJO: FALTAN (DINÁMICO SEGÚN METAS VS REAL) -->
+                        <!-- CUADRO ROJO: FALTAN -->
                         <tr class="fw-bold" style="background-color: #f8d7da;">
                             <td class="text-start text-danger">FALTAN</td>
                             <td id="faltan_total" class="text-danger">0</td>
@@ -233,7 +233,7 @@
       </div>
     </div>
 
-    <!-- Script completo con automatización de bd_madre y cálculos corregidos -->
+    <!-- Script corregido y depurado -->
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             let paginaActual = window.location.pathname.split("/").pop();
