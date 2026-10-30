@@ -22,7 +22,7 @@
 
     <!-- Barra superior unificada -->
     <nav class="navbar navbar-dark bg-dark px-4 shadow-sm">
-        <a class="navbar-brand fw-bold" href="index.html">📊 Módulos MAC - Gráficas y Remesas (BD Madre)</a>
+        <a class="navbar-brand fw-bold" href="modulosmac.html">📊 Módulos MAC - Gráficas y Remesas (BD Madre)</a>
         <div>
             <a href="modulosmac.html" class="btn btn-outline-light btn-sm me-2">Volver al Menú</a>
             <a href="index.html" class="btn btn-danger btn-sm">Cerrar Sesión</a>
@@ -59,7 +59,8 @@
                     </select>
                 </div>
                 <div class="col-md-4 d-flex align-items-end">
-                    <button id="btnActualizar" class="btn btn-primary btn-sm w-100 fw-semibold" onclick="cargarDatosFirebase()">🔄 Actualiza Datos</button>
+                    <!-- Botón amarillo institucional recuperado -->
+                    <button id="btnActualizar" class="btn btn-warning btn-sm w-100 fw-bold text-dark shadow-sm" onclick="cargarDatosFirebase()">🔄 Actualiza Datos</button>
                 </div>
             </div>
         </div>
@@ -127,7 +128,7 @@
         </div>
     </div>
 
-    <!-- Script con lógica de último corte para disponibles -->
+    <!-- Script de conexión a bd_madre y lógica con botón amarillo -->
     <script>
         // --- CANDADO DE SEGURIDAD INTEGRADO ---
         document.addEventListener("DOMContentLoaded", function() {
@@ -201,7 +202,6 @@
             registros.forEach(item => {
                 let sedeRaw = String(item.SEDES || item.sedes || item.SEDE || item.sede || "").toUpperCase().trim();
                 
-                // Omitir valores vacíos, ceros o sin sede
                 if (!sedeRaw || sedeRaw === "0" || sedeRaw === "SIN SEDE" || sedeRaw === "NULL") {
                     return; 
                 }
@@ -209,8 +209,6 @@
                 let mod = String(item.IDMAC || item.idmac || item.ID_MAC || item.MODULO || item.modulo || "").trim();
                 let tramites = parseInt(item.TOTAL_DE_TRAMITES || item.total_de_tramites || item.TRAMITES || item.tramites || 0);
                 let disponibles = parseInt(item.DISPONIBLES_TOTAL || item.disponibles_total || item.DISPONIBLES || item.disponibles || 0);
-                
-                // Obtener un indicador de fecha o remesa para identificar el registro más reciente
                 let remVal = parseInt(item.REMESA || item.remesa || item.Remesa || 0);
 
                 if (!sedesMap[sedeRaw]) {
@@ -225,21 +223,19 @@
 
                 sedesMap[sedeRaw].modulo = mod;
                 sedesMap[sedeRaw].tramites += tramites;
-                sedesMap[sedeRaw].visitas += 1; // Cada registro diario es un día/visita
+                sedesMap[sedeRaw].visitas += 1; 
 
-                // Guardar el stock disponible únicamente del registro con la remesa/fecha más alta (último corte)
                 if (remVal >= sedesMap[sedeRaw].ultimoRemesa) {
                     sedesMap[sedeRaw].ultimoRemesa = remVal;
-                    sedesMap[sedeRaw].pendientes = disponibles; // Stock final del último día visitado
+                    sedesMap[sedeRaw].pendientes = disponibles; 
                 }
             });
 
             let labels = Object.keys(sedesMap);
             let datosTramites = labels.map(s => sedesMap[s].tramites);
-            let datosEntregas = labels.map(s => sedesMap[s].tramites - sedesMap[s].pendientes); // Estimado analítico o basado en registros
             let datosVisitas = labels.map(s => sedesMap[s].visitas);
 
-            // Actualizar Gráfica de Trámites vs Entregas
+            // Actualizar Gráfica de Trámites vs Pendientes
             const ctx1 = document.getElementById('graficaTramites').getContext('2d');
             if (chartTramites) chartTramites.destroy();
             chartTramites = new Chart(ctx1, {
