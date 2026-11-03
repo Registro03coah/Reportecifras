@@ -76,7 +76,7 @@
         <li class="nav-item"><a class="nav-link text-light px-2" href="bdtotales.html" style="font-size: 11px;"><i class="bi bi-database-fill-gear"></i> BD Totales</a></li>
         <li class="nav-item"><a class="nav-link text-light px-2" href="modulosmac.html" style="font-size: 11px;"><i class="bi bi-building-fill-gear"></i> Módulos MAC</a></li>
         
-        <!-- Botón de Salir (Manda al enlace externo que pediste) -->
+        <!-- Botón de Salir -->
         <li class="nav-item ms-lg-2">
           <a class="btn btn-outline-light btn-sm fw-bold px-2 py-1" href="https://registro03coah.github.io/mimenu/" style="font-size: 11px;">
             <i class="bi bi-box-arrow-right"></i> Salir
@@ -100,9 +100,12 @@
                 <strong>BD Madre:</strong> Muestra todos los registros diarios ordenados por Remesa (mayor a menor) y por Módulo (050351, 050353, 050354).
             </div>
             <div class="d-flex align-items-center gap-2">
-                <button class="btn btn-sm btn-success fw-bold" onclick="exportarBDMadre()"><i class="bi bi-download"></i> Descargar Respaldo</button>
+                <!-- NUEVO BOTÓN DE DESCARGA A EXCEL DIRECTO -->
+                <button class="btn btn-sm btn-success fw-bold text-white" style="background-color: #198754;" onclick="exportarBDMadreExcel()"><i class="bi bi-file-earmark-excel-fill"></i> Descargar Excel</button>
+                
+                <button class="btn btn-sm btn-secondary fw-bold" onclick="exportarBDMadre()"><i class="bi bi-download"></i> Respaldo JSON</button>
                 <label class="btn btn-sm btn-warning fw-bold mb-0" style="cursor: pointer;">
-                    <i class="bi bi-upload"></i> Subir / Restaurar <input type="file" id="inputArchivoBD" accept=".json" style="display: none;" onchange="importarBDMadre(event)">
+                    <i class="bi bi-upload"></i> Restaurar <input type="file" id="inputArchivoBD" accept=".json" style="display: none;" onchange="importarBDMadre(event)">
                 </label>
                 <button class="btn btn-sm btn-danger fw-bold" onclick="vaciarBDMadre()"><i class="bi bi-trash-fill"></i> Vaciar BD</button>
                 <div id="semaforoConexion" class="badge bg-success">Conectado</div>
@@ -248,7 +251,52 @@
             tbody.innerHTML = htmlB;
         });
 
-        // Abrir ventana flotante (Modal) cargando los datos de la línea seleccionada
+        // NUEVA FUNCIÓN PARA EXPORTAR DIRECTAMENTE A EXCEL (.XLS / CSV con formato tabulado)
+        window.exportarBDMadreExcel = function() {
+            if (!bdMadreDataGlobal) {
+                alert("No hay datos disponibles en la BD Principal para exportar.");
+                return;
+            }
+            let arr = Array.isArray(bdMadreDataGlobal) ? bdMadreDataGlobal : Object.values(bdMadreDataGlobal);
+            if (arr.length === 0) {
+                alert("La BD Madre está vacía.");
+                return;
+            }
+
+            arr.sort((a, b) => {
+                let remA = String(a.REMESA || '').trim();
+                let remB = String(b.REMESA || '').trim();
+                if (remA !== remB) return remB.localeCompare(remA, undefined, { numeric: true });
+                return String(a.MODULO || '').trim().localeCompare(String(b.MODULO || '').trim());
+            });
+
+            let csvContent = "\uFEFF"; // BOM para asegurar caracteres UTF-8 en Excel
+            
+            // Fila de Encabezados
+            let headers = NOMBRES_ESTANDAR_BD.map(k => k.replace(/_/g, ' '));
+            csvContent += headers.join("\t") + "\n";
+
+            // Filas de Datos
+            arr.forEach(item => {
+                let filaValores = NOMBRES_ESTANDAR_BD.map(k => {
+                    let cleanKey = getClaveLimpia(k);
+                    let val = item[cleanKey] !== undefined && item[cleanKey] !== null ? item[cleanKey] : (item[k] !== undefined ? item[k] : '');
+                    return String(val).replace(/(\r\n|\n|\r)/g, " ").trim();
+                });
+                csvContent += filaValores.join("\t") + "\n";
+            });
+
+            let blob = new Blob([csvContent], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+            let url = URL.createObjectURL(blob);
+            let downloadAnchor = document.createElement('a');
+            downloadAnchor.href = url;
+            downloadAnchor.download = "BD_Madre_Principal_Respaldo.xls";
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            document.body.removeChild(downloadAnchor);
+            URL.revokeObjectURL(url);
+        };
+
         window.abrirModalEditarBdMadre = function(index) {
             let data = bdMadreDataGlobal;
             let arr = data ? (Array.isArray(data) ? data : Object.values(data)) : [];
@@ -284,7 +332,6 @@
             modal.show();
         };
 
-        // Guardar cambios del registro editado en la BD Madre
         window.guardarCambiosRegistroBD = function() {
             let index = parseInt(document.getElementById('editIndexBD').value, 10);
             let dbRef = database.ref('bd_madre');
@@ -306,7 +353,6 @@
                     return;
                 }
 
-                // Recoger valores editados de los inputs del modal
                 let inputs = document.querySelectorAll('.input-editable');
                 inputs.forEach(inp => {
                     let key = inp.getAttribute('data-key');
@@ -389,27 +435,18 @@
             reader.readAsText(file);
         };
     </script>
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        let paginaActual = window.location.pathname.split("/").pop();
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            let paginaActual = window.location.pathname.split("/").pop();
+            let paginasLibres = ["index.html", "modulosmac.html", "cifrasmodulo.html", "reporte_dias.html", "graficos.html", ""];
 
-        // Lista de páginas libres que no exigen la contraseña general "charro"
-        let paginasLibres = [
-            "index.html", 
-            "modulosmac.html", 
-            "cifrasmodulo.html", // <--- Importante para que respete la contraseña de cada módulo
-            "reporte_dias.html", 
-            "graficos.html",
-            ""
-        ];
-
-        if (!paginasLibres.includes(paginaActual)) {
-            if (sessionStorage.getItem('sesion_autorizada') !== 'true') {
-                alert("⚠️ Acceso restringido. Debe ingresar la contraseña desde el menú principal.");
-                window.location.href = 'index.html';
+            if (!paginasLibres.includes(paginaActual)) {
+                if (sessionStorage.getItem('sesion_autorizada') !== 'true') {
+                    alert("⚠️ Acceso restringido. Debe ingresar la contraseña desde el menú principal.");
+                    window.location.href = 'index.html';
+                }
             }
-        }
-    });
-</script>
+        });
+    </script>
 </body>
 </html>
