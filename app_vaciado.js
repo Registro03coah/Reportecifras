@@ -158,6 +158,37 @@ function calcularCamposDerivados(fila) {
     }
 }
 
+// NUEVA FUNCIÓN: Suma automática vertical de Lunes a Domingo para la Fila de Totales
+function calcularFilaTotalesModulo(tbody) {
+    const filas = tbody.querySelectorAll('tr');
+    if (filas.length < 8) return;
+
+    let filaTotales = filas[7]; // La octava fila es la línea de totales
+    let inputsTotales = filaTotales.querySelectorAll('input');
+
+    // Recorrer cada columna (desde la 1 hasta la 74)
+    for (let c = 1; c < TOTAL_COLUMNAS; c++) {
+        let sumaColumna = 0;
+        
+        // Sumar los valores de las 7 filas de días (de Lunes a Domingo: índices 0 al 6)
+        for (let r = 0; r < 7; r++) {
+            let inputsDia = filas[r].querySelectorAll('input');
+            if (inputsDia[c - 1]) {
+                let val = parseFloat(inputsDia[c - 1].value) || 0;
+                sumaColumna += val;
+            }
+        }
+
+        // Asignar a la celda de totales correspondiente
+        if (inputsTotales[c - 1]) {
+            inputsTotales[c - 1].value = sumaColumna;
+        }
+    }
+
+    // Aplicar campos derivados también en la línea de totales
+    calcularCamposDerivados(filaTotales);
+}
+
 function construirHeaderTabla(tableEl, isTotales = false) {
     if (!tableEl) return;
     let thead = tableEl.querySelector('thead');
@@ -213,6 +244,7 @@ function inicializarEncabezadosYTablas() {
                     
                     input.addEventListener('input', () => {
                         calcularCamposDerivados(tr);
+                        calcularFilaTotalesModulo(tbody);
                         actualizarRemesaVisualizador();
                     });
 
@@ -397,6 +429,8 @@ function configurarPegadoPortapapeles() {
                 calcularCamposDerivados(targetRow);
             });
 
+            // Recalcular los totales de la semana tras pegar
+            calcularFilaTotalesModulo(tbody);
             sincronizarTotales();
             actualizarRemesaVisualizador();
         };
@@ -418,6 +452,8 @@ function calcularTotalesGenerales() {
 
         if (!filaTotalesModulo || !filaDestinoTotales) return;
 
+        // Asegurar que la fila de totales del módulo esté actualizada antes de pasarla al general
+        calcularFilaTotalesModulo(tbodyMod);
         calcularCamposDerivados(filaTotalesModulo);
 
         for (let c = 1; c < TOTAL_COLUMNAS; c++) {
@@ -461,19 +497,18 @@ function cargarDatosDesdeFirebase() {
                                         inputs[cIdx - 1].value = (val !== "" && val !== undefined && val !== null ? val : "0");
                                     }
                                 });
-                                calcularCamposDerivados(filas[rIdx]);
+                                if (rIdx < 7) {
+                                    calcularCamposDerivados(filas[rIdx]);
+                                }
                             }
                         });
+                        calcularFilaTotalesModulo(tbody);
                     }
                 }
             });
             actualizarRemesaVisualizador();
         }
     });
-}
-
-function guardarBasesInFirebase() {
-    // ...
 }
 
 function guardarBasesEnFirebase() {
@@ -489,11 +524,16 @@ function guardarBasesEnFirebase() {
     MODULOS.forEach(mod => {
         const tablaEl = document.querySelector(`#tablaCaptura_${mod}`);
         if (!tablaEl) return;
+        const tbody = tablaEl.querySelector('tbody');
+        if (tbody) calcularFilaTotalesModulo(tbody); // Forzar cálculo de totales antes de guardar
+
         const filas = tablaEl.querySelectorAll('tbody tr');
         let datosTabla = [];
         
         filas.forEach((fila, rowIndex) => {
-            calcularCamposDerivados(fila);
+            if (rowIndex < 7) {
+                calcularCamposDerivados(fila);
+            }
 
             let filaArray = [];
             let objFilaDia = {};
