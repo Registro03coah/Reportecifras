@@ -42,16 +42,6 @@ const INDEX_COLUMNA_REMESA = 38;
 const INDEX_COLUMNA_FECHA = 1;   
 const INDEX_COLUMNA_MODULO = 45; 
 
-const IDX_REPOSICION = NOMBRES_ESTANDAR_BD.indexOf("REPOSICION");                   
-const IDX_REIMPRESION = NOMBRES_ESTANDAR_BD.indexOf("REIMPRESION");                
-const IDX_REPOS_REIMP = NOMBRES_ESTANDAR_BD.indexOf("REPOSISION_REIMPRESIONES");     
-const IDX_TOTAL_FOLIOS = NOMBRES_ESTANDAR_BD.indexOf("TOTAL_DE_FOLIOS");             
-const IDX_FICHAS_REQ = NOMBRES_ESTANDAR_BD.indexOf("NUMERO_DE_FICHAS_REQUISITADAS"); 
-const IDX_FICHAS_ATEN = NOMBRES_ESTANDAR_BD.indexOf("NUMERO_DE_FICHAS_ATENDIDAS");   
-const IDX_TOTAL_TRAMITES = NOMBRES_ESTANDAR_BD.indexOf("TOTAL_DE_TRAMITES");
-const IDX_CANCELADOS = NOMBRES_ESTANDAR_BD.indexOf("CANCELADOS");
-const IDX_TOTAL_MOVIMIENTOS = NOMBRES_ESTANDAR_BD.indexOf("TOTAL_DE_MOVIMIENTOS");
-
 document.addEventListener("DOMContentLoaded", () => {
     inicializarEncabezadosYTablas();
     configurarTabs();
@@ -107,88 +97,6 @@ function generarIdMacTotales(mod, remesa) {
     return `${mod2}${rem4}`;
 }
 
-function calcularCamposDerivados(fila) {
-    const inputs = fila.querySelectorAll('input');
-    
-    inputs.forEach(inp => {
-        if (inp.value.trim() === "") inp.value = "0";
-    });
-
-    // 1. Suma de Reposición + Reimpresión hacia REPOSISION_REIMPRESIONES
-    if (IDX_REPOSICION !== -1 && IDX_REIMPRESION !== -1 && IDX_REPOS_REIMP !== -1) {
-        const inputRepo = inputs[IDX_REPOSICION - 1];
-        const inputReimp = inputs[IDX_REIMPRESION - 1];
-        const inputSuma = inputs[IDX_REPOS_REIMP - 1];
-
-        if (inputRepo && inputReimp && inputSuma) {
-            const valRepo = parseFloat(inputRepo.value) || 0;
-            const valReimp = parseFloat(inputReimp.value) || 0;
-            inputSuma.value = valRepo + valReimp;
-        }
-    }
-
-    // 2. Duplicar Total de Folios a Fichas Requisitadas y Atendidas
-    if (IDX_TOTAL_FOLIOS !== -1) {
-        const inputTotalFolios = inputs[IDX_TOTAL_FOLIOS - 1];
-        if (inputTotalFolios) {
-            const valFolios = inputTotalFolios.value || "0";
-            
-            if (IDX_FICHAS_REQ !== -1) {
-                const inputReq = inputs[IDX_FICHAS_REQ - 1];
-                if (inputReq) inputReq.value = valFolios;
-            }
-            if (IDX_FICHAS_ATEN !== -1) {
-                const inputAten = inputs[IDX_FICHAS_ATEN - 1];
-                if (inputAten) inputAten.value = valFolios;
-            }
-        }
-    }
-
-    // 3. Resta de Total de Trámites - Cancelados hacia Total de Movimientos
-    if (IDX_TOTAL_TRAMITES !== -1 && IDX_CANCELADOS !== -1 && IDX_TOTAL_MOVIMIENTOS !== -1) {
-        const inputTramites = inputs[IDX_TOTAL_TRAMITES - 1];
-        const inputCancelados = inputs[IDX_CANCELADOS - 1];
-        const inputMovimientos = inputs[IDX_TOTAL_MOVIMIENTOS - 1];
-
-        if (inputTramites && inputCancelados && inputMovimientos) {
-            const valTramites = parseFloat(inputTramites.value) || 0;
-            const valCancelados = parseFloat(inputCancelados.value) || 0;
-            inputMovimientos.value = valTramites - valCancelados;
-        }
-    }
-}
-
-// NUEVA FUNCIÓN: Suma automática vertical de Lunes a Domingo para la Fila de Totales
-function calcularFilaTotalesModulo(tbody) {
-    const filas = tbody.querySelectorAll('tr');
-    if (filas.length < 8) return;
-
-    let filaTotales = filas[7]; // La octava fila es la línea de totales
-    let inputsTotales = filaTotales.querySelectorAll('input');
-
-    // Recorrer cada columna (desde la 1 hasta la 74)
-    for (let c = 1; c < TOTAL_COLUMNAS; c++) {
-        let sumaColumna = 0;
-        
-        // Sumar los valores de las 7 filas de días (de Lunes a Domingo: índices 0 al 6)
-        for (let r = 0; r < 7; r++) {
-            let inputsDia = filas[r].querySelectorAll('input');
-            if (inputsDia[c - 1]) {
-                let val = parseFloat(inputsDia[c - 1].value) || 0;
-                sumaColumna += val;
-            }
-        }
-
-        // Asignar a la celda de totales correspondiente
-        if (inputsTotales[c - 1]) {
-            inputsTotales[c - 1].value = sumaColumna;
-        }
-    }
-
-    // Aplicar campos derivados también en la línea de totales
-    calcularCamposDerivados(filaTotales);
-}
-
 function construirHeaderTabla(tableEl, isTotales = false) {
     if (!tableEl) return;
     let thead = tableEl.querySelector('thead');
@@ -227,6 +135,7 @@ function inicializarEncabezadosYTablas() {
         if (!tbody) return;
         tbody.innerHTML = "";
         
+        // 7 días de la semana (Lunes a Domingo) totalmente editables
         const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
         dias.forEach(dia => {
             let tr = document.createElement('tr');
@@ -239,12 +148,9 @@ function inicializarEncabezadosYTablas() {
                     let input = document.createElement('input');
                     input.type = "text";
                     input.className = "form-control form-control-sm text-center p-0 border-0 bg-transparent";
-                    
-                    input.value = (i === INDEX_COLUMNA_REMESA ? "202643" : (i === INDEX_COLUMNA_MODULO ? mod : (i === INDEX_COLUMNA_FECHA ? "" : "0")));
+                    input.value = (i === INDEX_COLUMNA_REMESA ? "202643" : (i === INDEX_COLUMNA_MODULO ? mod : "0"));
                     
                     input.addEventListener('input', () => {
-                        calcularCamposDerivados(tr);
-                        calcularFilaTotalesModulo(tbody);
                         actualizarRemesaVisualizador();
                     });
 
@@ -255,6 +161,7 @@ function inicializarEncabezadosYTablas() {
             tbody.appendChild(tr);
         });
 
+        // Fila 8: LÍNEA TOTALES (Ahora totalmente editable y lista para pegado directo)
         let trTot = document.createElement('tr');
         trTot.className = "fila-totales fw-bold";
         for (let i = 0; i < TOTAL_COLUMNAS; i++) {
@@ -267,9 +174,7 @@ function inicializarEncabezadosYTablas() {
                 input.type = "text";
                 input.className = "form-control form-control-sm text-center p-0 border-0 bg-transparent fw-bold";
                 input.value = "0";
-                if (i === IDX_REPOS_REIMP || i === IDX_FICHAS_REQ || i === IDX_FICHAS_ATEN || i === IDX_TOTAL_MOVIMIENTOS) {
-                    input.readOnly = true;
-                }
+                // Ya no hay campos readOnly, todo se puede editar y pegar libremente
                 td.appendChild(input);
             }
             trTot.appendChild(td);
@@ -402,20 +307,21 @@ function configurarPegadoPortapapeles() {
             let trs = tbody.querySelectorAll('tr');
             let rowOffset = 0;
 
+            // Permite pegar hasta 8 filas (Lunes a Domingo + Línea de Totales)
             filasPegadas.forEach((rowStr, rIdx) => {
-                if (rIdx + rowOffset >= 7) return; 
+                if (rIdx + rowOffset >= 8) return; 
                 let targetRow = trs[rIdx + rowOffset];
                 if (!targetRow) return;
 
                 let celdasDatos = rowStr.split('\t');
                 
-                if (rIdx === 0 && (celdasDatos[0].toUpperCase().includes("DIA") || celdasDatos[0].toUpperCase().includes("DÍA"))) {
+                if (rIdx === 0 && (celdasDatos[0].toUpperCase().includes("DIA") || celdasDatos[0].toUpperCase().includes("DÍA") || celdasDatos[0].toUpperCase().includes("LÍNEA"))) {
                     rowOffset++;
                     return;
                 }
 
                 let editableInputs = targetRow.querySelectorAll('input');
-                let startIndex = (celdasDatos.length >= TOTAL_COLUMNAS || celdasDatos[0].toLowerCase().includes('lunes') || celdasDatos[0].toLowerCase().includes('martes') || celdasDatos[0].toLowerCase().includes('línea')) ? 1 : 0;
+                let startIndex = (celdasDatos.length >= TOTAL_COLUMNAS || celdasDatos[0].toLowerCase().includes('lunes') || celdasDatos[0].toLowerCase().includes('martes') || celdasDatos[0].toLowerCase().includes('línea') || celdasDatos[0].toLowerCase().includes('totales')) ? 1 : 0;
 
                 editableInputs.forEach((input, cIdx) => {
                     let valorCelda = celdasDatos[cIdx + startIndex];
@@ -425,12 +331,8 @@ function configurarPegadoPortapapeles() {
                         input.value = "0";
                     }
                 });
-
-                calcularCamposDerivados(targetRow);
             });
 
-            // Recalcular los totales de la semana tras pegar
-            calcularFilaTotalesModulo(tbody);
             sincronizarTotales();
             actualizarRemesaVisualizador();
         };
@@ -447,14 +349,10 @@ function calcularTotalesGenerales() {
         const tbodyTot = document.querySelector('#tablaCaptura_totales tbody');
         if (!tbodyMod || !tbodyTot) return;
 
-        let filaTotalesModulo = tbodyMod.querySelectorAll('tr')[7];
+        let filaTotalesModulo = tbodyMod.querySelectorAll('tr')[7]; // La fila 8 es la de totales del módulo
         let filaDestinoTotales = tbodyTot.querySelectorAll('tr')[modIdx];
 
         if (!filaTotalesModulo || !filaDestinoTotales) return;
-
-        // Asegurar que la fila de totales del módulo esté actualizada antes de pasarla al general
-        calcularFilaTotalesModulo(tbodyMod);
-        calcularCamposDerivados(filaTotalesModulo);
 
         for (let c = 1; c < TOTAL_COLUMNAS; c++) {
             let valOrigen = filaTotalesModulo.querySelectorAll('td')[c].querySelector('input').value;
@@ -497,12 +395,8 @@ function cargarDatosDesdeFirebase() {
                                         inputs[cIdx - 1].value = (val !== "" && val !== undefined && val !== null ? val : "0");
                                     }
                                 });
-                                if (rIdx < 7) {
-                                    calcularCamposDerivados(filas[rIdx]);
-                                }
                             }
                         });
-                        calcularFilaTotalesModulo(tbody);
                     }
                 }
             });
@@ -524,17 +418,11 @@ function guardarBasesEnFirebase() {
     MODULOS.forEach(mod => {
         const tablaEl = document.querySelector(`#tablaCaptura_${mod}`);
         if (!tablaEl) return;
-        const tbody = tablaEl.querySelector('tbody');
-        if (tbody) calcularFilaTotalesModulo(tbody); // Forzar cálculo de totales antes de guardar
 
         const filas = tablaEl.querySelectorAll('tbody tr');
         let datosTabla = [];
         
         filas.forEach((fila, rowIndex) => {
-            if (rowIndex < 7) {
-                calcularCamposDerivados(fila);
-            }
-
             let filaArray = [];
             let objFilaDia = {};
             let esFilaTotales = rowIndex === 7;
@@ -582,6 +470,7 @@ function guardarBasesEnFirebase() {
             objFilaDia["IDMAC"] = idMacGenerado;
             datosTabla.push(filaArray);
 
+            // Guardar en bd_madre solo los registros diarios (Lunes a Domingo), excluyendo la fila 8 de totales
             if (!esFilaTotales) {
                 objFilaDia["MODULO"] = mod;
                 objFilaDia["REMESA"] = remesaActual;
@@ -612,8 +501,6 @@ function guardarBasesEnFirebase() {
         MODULOS.forEach((mod, i) => {
             const filaModulo = filasTotales[i];
             if (!filaModulo) return;
-
-            calcularCamposDerivados(filaModulo);
 
             let objFilaTotal = {};
             const idMacTotalesGenerado = generarIdMacTotales(mod, remesaActual);
@@ -685,7 +572,7 @@ function guardarBasesEnFirebase() {
                 let actualTotales = snapshot.val() || [];
                 actualTotales = Array.isArray(actualTotales) ? actualTotales : Object.values(actualTotales);
 
-                let totalesFiltrados = actualTotales.filter(item => String(item.REMESA) !== String(remesaActual));
+                let totalesFiltrados = actualTotales.filter(item =>String(item.REMESA) !== String(remesaActual));
                 const fusionFinalTotales = [...totalesFiltrados, ...registrosTotalesParaBD];
                 return set(dbRefTotales, fusionFinalTotales);
             })
