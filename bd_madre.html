@@ -12,7 +12,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <style>
-        /* Reglas completas de adaptación y fluidez táctil exclusiva para celulares */
         @media (max-width: 768px) {
             html, body {
                 overflow-x: hidden !important;
@@ -60,7 +59,6 @@
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav ms-auto gap-1 align-items-lg-center">
-        <!-- Botón de Casita (Manda a index.html) -->
         <li class="nav-item">
           <a class="nav-link text-light px-2" href="index.html" style="font-size: 11px;" title="Inicio / Portada">
             <i class="bi bi-house-door-fill fs-6"></i>
@@ -76,7 +74,6 @@
         <li class="nav-item"><a class="nav-link text-light px-2" href="bdtotales.html" style="font-size: 11px;"><i class="bi bi-database-fill-gear"></i> BD Totales</a></li>
         <li class="nav-item"><a class="nav-link text-light px-2" href="modulosmac.html" style="font-size: 11px;"><i class="bi bi-building-fill-gear"></i> Módulos MAC</a></li>
         
-        <!-- Botón de Salir -->
         <li class="nav-item ms-lg-2">
           <a class="btn btn-outline-light btn-sm fw-bold px-2 py-1" href="https://registro03coah.github.io/mimenu/" style="font-size: 11px;">
             <i class="bi bi-box-arrow-right"></i> Salir
@@ -100,7 +97,7 @@
                 <strong>BD Madre:</strong> Muestra todos los registros diarios ordenados por Remesa (mayor a menor) y por Módulo (050351, 050353, 050354).
             </div>
             <div class="d-flex align-items-center gap-2">
-                <!-- NUEVO BOTÓN DE DESCARGA A EXCEL DIRECTO -->
+                <!-- Botón de Descarga directa a Excel -->
                 <button class="btn btn-sm btn-success fw-bold text-white" style="background-color: #198754;" onclick="exportarBDMadreExcel()"><i class="bi bi-file-earmark-excel-fill"></i> Descargar Excel</button>
                 
                 <button class="btn btn-sm btn-secondary fw-bold" onclick="exportarBDMadre()"><i class="bi bi-download"></i> Respaldo JSON</button>
@@ -119,19 +116,19 @@
         </div>
     </div>
 
-    <!-- VENTANA FLOTANTE (MODAL) PARA EDITAR REGISTRO -->
+    <!-- VENTANA FLOTANTE (MODAL) PARA EDITAR REGISTRO CON TODOS LOS CAMPOS DE GOLPE -->
     <div class="modal fade" id="modalEditarRegistro" tabindex="-1" aria-labelledby="modalEditarLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title fw-bold" id="modalEditarLabel"><i class="bi bi-pencil-square"></i> Editar Registro de BD Madre</h5>
+                    <h5 class="modal-title fw-bold" id="modalEditarLabel"><i class="bi bi-pencil-square"></i> Editar Registro de BD Madre (Edición Libre)</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body bg-light">
                     <form id="formEditarRegistro">
                         <input type="hidden" id="editIndexBD">
                         <div class="row g-3" id="contenedorCamposEdicion">
-                            <!-- Los inputs se generan dinámicamente según las columnas -->
+                            <!-- Los inputs de las 75 columnas se generan dinámicamente de golpe -->
                         </div>
                     </form>
                 </div>
@@ -251,7 +248,7 @@
             tbody.innerHTML = htmlB;
         });
 
-        // NUEVA FUNCIÓN PARA EXPORTAR DIRECTAMENTE A EXCEL (.XLS / CSV con formato tabulado)
+        // Función para exportar directamente a Excel (.xls)
         window.exportarBDMadreExcel = function() {
             if (!bdMadreDataGlobal) {
                 alert("No hay datos disponibles en la BD Principal para exportar.");
@@ -270,13 +267,10 @@
                 return String(a.MODULO || '').trim().localeCompare(String(b.MODULO || '').trim());
             });
 
-            let csvContent = "\uFEFF"; // BOM para asegurar caracteres UTF-8 en Excel
-            
-            // Fila de Encabezados
+            let csvContent = "\uFEFF"; // BOM UTF-8 para Excel
             let headers = NOMBRES_ESTANDAR_BD.map(k => k.replace(/_/g, ' '));
             csvContent += headers.join("\t") + "\n";
 
-            // Filas de Datos
             arr.forEach(item => {
                 let filaValores = NOMBRES_ESTANDAR_BD.map(k => {
                     let cleanKey = getClaveLimpia(k);
@@ -297,6 +291,7 @@
             URL.revokeObjectURL(url);
         };
 
+        // VENTANA FLOTANTE: Muestra TODOS los campos de golpe para edición libre
         window.abrirModalEditarBdMadre = function(index) {
             let data = bdMadreDataGlobal;
             let arr = data ? (Array.isArray(data) ? data : Object.values(data)) : [];
@@ -313,8 +308,9 @@
 
             document.getElementById('editIndexBD').value = index;
             let contenedor = document.getElementById('contenedorCamposEdicion');
-            contenedor.innerHTML = '';
+            contenedor.innerHTML = ''; // Limpiar campos previos
 
+            // Genera de golpe los inputs de las columnas para corrección libre
             NOMBRES_ESTANDAR_BD.forEach(k => {
                 let cleanKey = getClaveLimpia(k);
                 let val = registro[cleanKey] !== undefined && registro[cleanKey] !== null ? registro[cleanKey] : (registro[k] !== undefined ? registro[k] : '');
@@ -353,6 +349,7 @@
                     return;
                 }
 
+                // Recoger todos los cambios modificados en el modal
                 let inputs = document.querySelectorAll('.input-editable');
                 inputs.forEach(inp => {
                     let key = inp.getAttribute('data-key');
