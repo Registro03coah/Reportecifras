@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, get, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getDatabase, ref, get, set, update, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const firebaseConfig = { apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo", authDomain: "cifrasmac.firebaseapp.com", databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com", projectId: "cifrasmac", storageBucket: "cifrasmac.firebasestorage.app", messagingSenderId: "916644687837", appId: "1:916644687837:web:03d346cc48a071af1ed034" };
 const app = initializeApp(firebaseConfig); 
@@ -184,7 +184,6 @@ function renderTabla() {
             });
         });
 
-        // Para CONFIGURACION: tomamos el valor del último registro (remesa más grande) de este módulo
         if(uReg) {
             sumasMod['CONFIGURACION'] = obtenerValorFlexible(uReg, 'CONFIGURACION');
         } else {
@@ -247,7 +246,6 @@ function renderTabla() {
                     tdDet.className = "text-danger fw-bold";
                 }
             } else if(col === 'CONFIGURACION') {
-                // En configuración no sumamos, mostramos el valor asignado por módulo en la línea negra
                 if(isNegro && item.sumas) {
                     valDet = item.sumas['CONFIGURACION'] !== undefined ? item.sumas['CONFIGURACION'] : "";
                 } else {
@@ -274,7 +272,6 @@ function renderTabla() {
         if(col === 'MODULO') {
             td.innerText = "TOTAL";
         } else if (['ENT', 'DTTO', 'INICIAL', 'FINAL', 'INICIALES_A', 'INICIALES_C', 'CONFIGURACION'].includes(col)) {
-            // Se excluye el total de Iniciales y Configuración según solicitud
             td.innerText = "";
         } else { 
             td.innerText = acumuladorGranTotal[col] || 0; 
@@ -331,6 +328,83 @@ if(btnGuardarAcumulado) {
         });
     });
 }
+
+// ==========================================
+// FUNCIÓN PERMANENTE PARA LA CAJITA DE AJUSTES EN FIREBASE (bdtotales)
+// ==========================================
+window.aplicarAjusteManual = function() {
+    let moduloSel = document.getElementById('selectAjusteModulo').value;
+    let columnaSel = document.getElementById('inputAjusteColumna').value.trim().toUpperCase();
+    let operacion = document.getElementById('selectAjusteOperacion').value;
+    let cantidad = parseFloat(document.getElementById('inputAjusteCantidad').value) || 0;
+
+    if (!columnaSel) {
+        alert("Por favor escribe el nombre de la columna que deseas ajustar (ej. INSCRIPCIONES, CAMBIO_DE_DOMICILIO, etc.).");
+        return;
+    }
+
+    if (cantidad <= 0) {
+        alert("Por favor ingresa una cantidad válida mayor a 0.");
+        return;
+    }
+
+    // Buscamos la última remesa o el registro activo de ese módulo en bdtotales para aplicarle el ajuste permanente
+    const dbRefTotales = ref(db, 'bdtotales');
+    get(dbRefTotales).then((snapshot) => {
+        if (!snapshot.exists()) {
+            alert("No hay registros en la base de datos de totales.");
+            return;
+        }
+
+        let datos = snapshot.val();
+        let arr = Array.isArray(datos) ? datos : Object.entries(datos);
+        
+        // Encontrar el registro más reciente (remesa más alta) de ese módulo específico
+        let indexEncontrado = -1;
+        let remesaMax = -1;
+        let registroObjetivo = null;
+
+        arr.forEach(([key, reg], idx) => {
+            let modReg = String(obtenerValorFlexible(reg, 'MODULO') || '').trim();
+            if (modReg.includes(moduloSel)) {
+                let remNum = parseInt(obtenerValorFlexible(reg, 'REMESA'), 10) || 0;
+                if (remNum >= remesaMax) {
+                    remesaMax = remNum;
+                    indexEncontrado = key; // Puede ser índice numérico o llave de Firebase
+                    registroObjetivo = reg;
+                }
+            }
+        });
+
+        if (indexEncontrado === -1 || !registroObjetivo) {
+            alert(`No se encontró ningún registro para el Módulo ${moduloSel} en las remesas.`);
+            return;
+        }
+
+        // Determinar la llave exacta en la base de datos para la columna solicitada
+        let claveReal = Object.keys(registroObjetivo).find(k => limpiarStr(k) === limpiarStr(columnaSel));
+        if (!claveReal) {
+            claveReal = columnaSel; // Si no existe exacta, se crea
+        }
+
+        let valorActual = parseFloat(obtenerValorFlexible(registroObjetivo, claveReal)) || 0;
+        let nuevoValor = operacion === 'sumar' ? (valorActual + cantidad) : (valorActual - cantidad);
+        if (nuevoValor < 0) nuevoValor = 0;
+
+        // Actualizar directamente en Firebase de forma permanente
+        let rutaActualizacion = ref(db, `bdtotales/${indexEncontrado}/${claveReal}`);
+        set(rutaActualizacion, nuevoValor).then(() => {
+            alert(`¡Ajuste permanente guardado con éxito!\nSe aplicó un ${operacion} de ${cantidad} en la columna [${claveReal}] del módulo ${moduloSel} (Remesa ${remesaMax}).`);
+            // Recargar datos locales
+            location.reload();
+        }).catch((err) => {
+            alert("Error al guardar el ajuste en Firebase: " + err.message);
+        });
+
+    }).catch((err) => {
+        alert("Error al conectar con la base de datos: " + err.message);
+    });
+};
 
 construirHeaderTabla();
 crearBotonFlotanteRemesas();
