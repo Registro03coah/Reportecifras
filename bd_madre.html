@@ -97,7 +97,7 @@
                 <strong>BD Madre:</strong> Muestra todos los registros diarios ordenados por Remesa (mayor a menor) y por Módulo (050351, 050353, 050354).
             </div>
             <div class="d-flex align-items-center gap-2">
-                <!-- Botón de Descarga directa a Excel -->
+                <!-- Botón de Descarga directa a Excel con celdas separadas -->
                 <button class="btn btn-sm btn-success fw-bold text-white" style="background-color: #198754;" onclick="exportarBDMadreExcel()"><i class="bi bi-file-earmark-excel-fill"></i> Descargar Excel</button>
                 
                 <button class="btn btn-sm btn-secondary fw-bold" onclick="exportarBDMadre()"><i class="bi bi-download"></i> Respaldo JSON</button>
@@ -142,7 +142,7 @@
 
     <footer class="text-center py-3 mt-auto text-white" style="background-color: #1b396b;">
         <small>
-            &copy; 2026 Todos los derechos reservados.<br>
+            &copy; 2026 Todos los derechos reservados. Version 1.0<br>
             Desarrollado por <span class="text-info fw-bold">Carrivers Desing</span> para Módulos MAC.
         </small>
     </footer>
@@ -248,7 +248,7 @@
             tbody.innerHTML = htmlB;
         });
 
-        // Función para exportar directamente a Excel (.xls)
+        // FUNCIÓN DE EXPORTACIÓN A EXCEL CON CELDAS SEPARADAS (TABLA XML NATIVA)
         window.exportarBDMadreExcel = function() {
             if (!bdMadreDataGlobal) {
                 alert("No hay datos disponibles en la BD Principal para exportar.");
@@ -267,20 +267,28 @@
                 return String(a.MODULO || '').trim().localeCompare(String(b.MODULO || '').trim());
             });
 
-            let csvContent = "\uFEFF"; // BOM UTF-8 para Excel
-            let headers = NOMBRES_ESTANDAR_BD.map(k => k.replace(/_/g, ' '));
-            csvContent += headers.join("\t") + "\n";
+            let htmlTabla = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
+            htmlTabla += '<head><meta charset="UTF-8"></head><body>';
+            htmlTabla += '<table border="1"><thead><tr style="background-color: #1b396b; color: white;">';
+
+            NOMBRES_ESTANDAR_BD.forEach(k => {
+                htmlTabla += `<th>${k.replace(/_/g, ' ')}</th>`;
+            });
+            htmlTabla += '</tr></thead><tbody>';
 
             arr.forEach(item => {
-                let filaValores = NOMBRES_ESTANDAR_BD.map(k => {
+                htmlTabla += '<tr>';
+                NOMBRES_ESTANDAR_BD.forEach(k => {
                     let cleanKey = getClaveLimpia(k);
                     let val = item[cleanKey] !== undefined && item[cleanKey] !== null ? item[cleanKey] : (item[k] !== undefined ? item[k] : '');
-                    return String(val).replace(/(\r\n|\n|\r)/g, " ").trim();
+                    htmlTabla += `<td>${val}</td>`;
                 });
-                csvContent += filaValores.join("\t") + "\n";
+                htmlTabla += '</tr>';
             });
 
-            let blob = new Blob([csvContent], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+            htmlTabla += '</tbody></table></body></html>';
+
+            let blob = new Blob([htmlTabla], { type: 'application/vnd.ms-excel;charset=utf-8;' });
             let url = URL.createObjectURL(blob);
             let downloadAnchor = document.createElement('a');
             downloadAnchor.href = url;
@@ -308,9 +316,8 @@
 
             document.getElementById('editIndexBD').value = index;
             let contenedor = document.getElementById('contenedorCamposEdicion');
-            contenedor.innerHTML = ''; // Limpiar campos previos
+            contenedor.innerHTML = '';
 
-            // Genera de golpe los inputs de las columnas para corrección libre
             NOMBRES_ESTANDAR_BD.forEach(k => {
                 let cleanKey = getClaveLimpia(k);
                 let val = registro[cleanKey] !== undefined && registro[cleanKey] !== null ? registro[cleanKey] : (registro[k] !== undefined ? registro[k] : '');
@@ -349,7 +356,6 @@
                     return;
                 }
 
-                // Recoger todos los cambios modificados en el modal
                 let inputs = document.querySelectorAll('.input-editable');
                 inputs.forEach(inp => {
                     let key = inp.getAttribute('data-key');
