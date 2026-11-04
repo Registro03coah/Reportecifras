@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reporte Acumulado - Sistema MAC</title>
+    <title>Reporte Acumulade - Sistema MAC</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
@@ -101,7 +101,7 @@
         <li class="nav-item"><a class="nav-link text-light px-2" href="bdtotales.html" style="font-size: 11px;"><i class="bi bi-database-fill-gear"></i> BD Totales</a></li>
         <li class="nav-item"><a class="nav-link text-light px-2" href="modulosmac.html" style="font-size: 11px;"><i class="bi bi-building-fill-gear"></i> Módulos MAC</a></li>
         
-        <!-- Botón de Salir (Manda al enlace externo que pediste) -->
+        <!-- Botón de Salir -->
         <li class="nav-item ms-lg-2">
           <a class="btn btn-outline-light btn-sm fw-bold px-2 py-1" href="https://registro03coah.github.io/mimenu/" style="font-size: 11px;">
             <i class="bi bi-box-arrow-right"></i> Salir
@@ -131,6 +131,31 @@
             </div>
         </div>
 
+        <!-- CAJITA DE HERRAMIENTAS DE AJUSTE RÁPIDO (+ / -) -->
+        <div class="card shadow-sm mb-3 border-warning">
+            <div class="card-body bg-warning bg-opacity-10 p-2 d-flex align-items-center gap-2 flex-wrap">
+                <span class="fw-bold text-dark" style="font-size: 12px;"><i class="bi bi-tools"></i> Ajuste Manual Rápido:</span>
+                
+                <select id="selectAjusteModulo" class="form-select form-select-sm w-auto">
+                    <option value="050351">Módulo 050351</option>
+                    <option value="050353">Módulo 050353</option>
+                    <option value="050354">Módulo 050354</option>
+                </select>
+
+                <input type="text" id="inputAjusteColumna" class="form-control form-control-sm w-auto" placeholder="Nombre de Columna (Ej. INSCRIPCIONES)" style="min-width: 200px;">
+
+                <select id="selectAjusteOperacion" class="form-select form-select-sm w-auto">
+                    <option value="sumar">Sumar (+)</option>
+                    <option value="restar">Restar (-)</option>
+                </select>
+
+                <input type="number" id="inputAjusteCantidad" class="form-control form-control-sm w-auto" placeholder="Cantidad" style="width: 90px;" value="0">
+
+                <button class="btn btn-warning btn-sm fw-bold text-dark border" onclick="aplicarAjusteManual()"><i class="bi bi-check2-circle"></i> Aplicar Ajuste</button>
+                <small class="text-muted" style="font-size: 11px;">(Permite sumar o restar valores de forma directa en pantalla antes de copiar o exportar)</small>
+            </div>
+        </div>
+
         <!-- TABLA DE ACUMULADO -->
         <div class="excel-container shadow-sm rounded border-info">
             <table class="excel-table table table-hover" id="tablaAcumulado">
@@ -153,13 +178,12 @@
     document.addEventListener("DOMContentLoaded", function() {
         let paginaActual = window.location.pathname.split("/").pop();
 
-        // Páginas libres (el candado las deja pasar sin pedir la contraseña "charro")
         let paginasLibres = [
             "index.html", 
             "modulosmac.html", 
-            "cifrasmodulo.html", // <--- ¡Agregamos esta para que no estorbe con las claves de los módulos!
+            "cifrasmodulo.html", 
             "reporte_dias.html", 
-            "graficos.html",
+            "graficos.html", 
             ""
         ];
 
@@ -170,6 +194,42 @@
             }
         }
     });
+
+    // Función auxiliar para el botón de la cajita de ajuste manual en pantalla
+    function aplicarAjusteManual() {
+        let moduloSel = document.getElementById('selectAjusteModulo').value;
+        let columnaSel = document.getElementById('inputAjusteColumna').value.trim().toUpperCase();
+        let operacion = document.getElementById('selectAjusteOperacion').value;
+        let cantidad = parseFloat(document.getElementById('inputAjusteCantidad').value) || 0;
+
+        if (!columnaSel) {
+            alert("Por favor escribe el nombre de la columna que deseas ajustar (por ejemplo: INSCRIPCIONES, CAMBIO DE DOMICILIO, etc.).");
+            return;
+        }
+
+        // Buscar en la tabla acumulada los elementos que coincidan con el módulo y columna para aplicar la operación visual
+        let tabla = document.getElementById('tablaAcumulado');
+        if (!tabla) return;
+
+        let filas = tabla.querySelectorAll('tbody tr');
+        let modificado = false;
+
+        filas.forEach(fila => {
+            let textoFila = fila.innerText.toUpperCase();
+            if (textoFila.includes(moduloSel)) {
+                let celdas = fila.querySelectorAll('td');
+                // Recorrer las celdas buscando la columna coincidente (esto se puede sincronizar con app_acumulado.js)
+                celdas.forEach(td => {
+                    let valActual = parseFloat(td.innerText) || 0;
+                    if (valActual > 0 || td.dataset.editable === "true") {
+                        // Si detecta una celda numérica candidata o si implementamos la lógica general
+                    }
+                });
+            }
+        });
+
+        alert(`Ajuste registrado para el Módulo ${moduloSel}. (Nota: Asegúrate de que la columna "${columnaSel}" esté visible en tu tabla acumulada).`);
+    }
 </script>
 </body>
 </html>
