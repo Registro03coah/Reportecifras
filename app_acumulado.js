@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, get, set, update, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getDatabase, ref, get, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const firebaseConfig = { apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo", authDomain: "cifrasmac.firebaseapp.com", databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com", projectId: "cifrasmac", storageBucket: "cifrasmac.firebasestorage.app", messagingSenderId: "916644687837", appId: "1:916644687837:web:03d346cc48a071af1ed034" };
 const app = initializeApp(firebaseConfig); 
@@ -330,7 +330,7 @@ if(btnGuardarAcumulado) {
 }
 
 // ==========================================
-// FUNCIÓN PERMANENTE PARA LA CAJITA DE AJUSTES EN FIREBASE (bdtotales)
+// FUNCIÓN DE AJUSTE PERMANENTE CORREGIDA (bdtotales)
 // ==========================================
 window.aplicarAjusteManual = function() {
     let moduloSel = document.getElementById('selectAjusteModulo').value;
@@ -348,7 +348,6 @@ window.aplicarAjusteManual = function() {
         return;
     }
 
-    // Buscamos la última remesa o el registro activo de ese módulo en bdtotales para aplicarle el ajuste permanente
     const dbRefTotales = ref(db, 'bdtotales');
     get(dbRefTotales).then((snapshot) => {
         if (!snapshot.exists()) {
@@ -357,21 +356,24 @@ window.aplicarAjusteManual = function() {
         }
 
         let datos = snapshot.val();
-        let arr = Array.isArray(datos) ? datos : Object.entries(datos);
+        let arr = Array.isArray(datos) ? datos : Object.values(datos);
+        let llaves = Array.isArray(datos) ? datos.map((_, idx) => idx) : Object.keys(datos);
         
-        // Encontrar el registro más reciente (remesa más alta) de ese módulo específico
         let indexEncontrado = -1;
         let remesaMax = -1;
         let registroObjetivo = null;
 
-        arr.forEach(([key, reg], idx) => {
-            let modReg = String(obtenerValorFlexible(reg, 'MODULO') || '').trim();
-            if (modReg.includes(moduloSel)) {
-                let remNum = parseInt(obtenerValorFlexible(reg, 'REMESA'), 10) || 0;
-                if (remNum >= remesaMax) {
-                    remesaMax = remNum;
-                    indexEncontrado = key; // Puede ser índice numérico o llave de Firebase
-                    registroObjetivo = reg;
+        llaves.forEach((key, idx) => {
+            let reg = arr[idx];
+            if (reg) {
+                let modReg = String(obtenerValorFlexible(reg, 'MODULO') || '').trim();
+                if (modReg.includes(moduloSel)) {
+                    let remNum = parseInt(obtenerValorFlexible(reg, 'REMESA'), 10) || 0;
+                    if (remNum >= remesaMax) {
+                        remesaMax = remNum;
+                        indexEncontrado = key;
+                        registroObjetivo = reg;
+                    }
                 }
             }
         });
@@ -381,21 +383,18 @@ window.aplicarAjusteManual = function() {
             return;
         }
 
-        // Determinar la llave exacta en la base de datos para la columna solicitada
         let claveReal = Object.keys(registroObjetivo).find(k => limpiarStr(k) === limpiarStr(columnaSel));
         if (!claveReal) {
-            claveReal = columnaSel; // Si no existe exacta, se crea
+            claveReal = columnaSel;
         }
 
         let valorActual = parseFloat(obtenerValorFlexible(registroObjetivo, claveReal)) || 0;
         let nuevoValor = operacion === 'sumar' ? (valorActual + cantidad) : (valorActual - cantidad);
         if (nuevoValor < 0) nuevoValor = 0;
 
-        // Actualizar directamente en Firebase de forma permanente
         let rutaActualizacion = ref(db, `bdtotales/${indexEncontrado}/${claveReal}`);
         set(rutaActualizacion, nuevoValor).then(() => {
             alert(`¡Ajuste permanente guardado con éxito!\nSe aplicó un ${operacion} de ${cantidad} en la columna [${claveReal}] del módulo ${moduloSel} (Remesa ${remesaMax}).`);
-            // Recargar datos locales
             location.reload();
         }).catch((err) => {
             alert("Error al guardar el ajuste en Firebase: " + err.message);
