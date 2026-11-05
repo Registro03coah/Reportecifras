@@ -17,7 +17,7 @@ const COLUMNAS_ACUMULADO_KEYS = [
     "RETIRADAS_POR_CAUSA", "SOBRANTES", "DUPLICADOS", "DISPONIBLES_TOTAL", 
     "DISPONIBLES_DE_SOL_DE_EXP", "REIMPRE_FUERA_DEL_SISTEMA", "CREDEN_DEVUELTAS_POR_TERCEROS", 
     "CRED_PRODUCTO_DE_REGISTRO_DUPLICADO", "CRED_PROD_CANJE_POR_NUEVA", 
-    "DIAS_TRABAJADOS", "CONFIGURACION"
+    "DIAS_TRABAJADOS", "CONFIGURACION", "REMESA"
 ];
 
 const MAPA_NUMEROS = {};
@@ -71,7 +71,7 @@ function construirHeaderTabla() {
     let trN = document.createElement('tr'); 
     trN.className = 'num-row';
     
-    COLUMNAS_ACUMULADO_KEYS.forEach(col => {
+    COLUMNAS_ACUMULADO_KEYS.filter(c => c !== 'REMESA').forEach(col => {
         let th = document.createElement('th'); 
         th.innerText = col.replace(/_/g, ' '); 
         th.style.minWidth = ['MODULO','ENT','DTTO'].includes(col) ? "70px" : "90px";
@@ -176,7 +176,7 @@ function renderTabla() {
 
         let sumasMod = {};
         COLUMNAS_ACUMULADO_KEYS.forEach(col => {
-            if(!['ENT', 'DTTO', 'MODULO', 'INICIAL', 'FINAL', 'TOTAL_DE_FOLIOS', 'CONFIGURACION'].includes(col)) {
+            if(!['ENT', 'DTTO', 'MODULO', 'INICIAL', 'FINAL', 'TOTAL_DE_FOLIOS', 'CONFIGURACION', 'REMESA'].includes(col)) {
                 sumasMod[col] = 0;
             }
         });
@@ -223,7 +223,7 @@ function renderTabla() {
             acumuladorGranTotal['TOTAL_DE_FOLIOS'] += foliosDet;
         }
 
-        COLUMNAS_ACUMULADO_KEYS.forEach(col => {
+        COLUMNAS_ACUMULADO_KEYS.filter(c => c !== 'REMESA').forEach(col => {
             let tdDet = document.createElement('td');
             let valDet = "";
 
@@ -271,7 +271,7 @@ function renderTabla() {
     
     let trT = document.createElement('tr'); 
     trT.className = 'fila-totales fw-bold';
-    COLUMNAS_ACUMULADO_KEYS.forEach(col => {
+    COLUMNAS_ACUMULADO_KEYS.filter(c => c !== 'REMESA').forEach(col => {
         let td = document.createElement('td');
         if(col === 'MODULO') {
             td.innerText = "TOTAL";
@@ -284,59 +284,57 @@ function renderTabla() {
     });
     tbody.appendChild(trT);
 
-    // Llenar el contenido del modal de remesas
-    llenarModalRemesas(remesasDisponibles, dataF);
+    // Llenar el modal de remesas desglosado con todas las columnas por módulo
+    llenarModalRemesas(dataF);
 }
 
-function llenarModalRemesas(listaRemesas, dataF) {
+function llenarModalRemesas(dataF) {
     let contenedor = document.getElementById('contenidoRemesasModal');
     if (!contenedor) return;
 
-    if (listaRemesas.length === 0) {
-        contenedor.innerHTML = `<p class="text-muted text-center py-3">No hay remesas registradas en la base de datos.</p>`;
+    if (dataF.length === 0) {
+        contenedor.innerHTML = `<p class="text-muted text-center py-3">No hay registros de remesas en la base de datos.</p>`;
         return;
     }
 
     let html = `
         <div class="d-flex justify-content-between align-items-center mb-2">
-            <span class="fw-bold text-dark" style="font-size: 12px;">Total de remesas encontradas: ${listaRemesas.length}</span>
-            <button class="btn btn-sm btn-outline-success fw-bold py-0 px-2" onclick="copiarTablaExcel('tablaRemesasModal')">
+            <span class="fw-bold text-dark" style="font-size: 12px;">Desglose completo de registros por remesa y módulo</span>
+            <button class="btn btn-sm btn-success fw-bold py-1 px-2" onclick="copiarTablaExcel('tablaRemesasModalCompleta')">
                 <i class="bi bi-file-excel"></i> Copiar a Excel
             </button>
         </div>
-        <table class="table table-sm table-bordered table-striped" id="tablaRemesasModal" style="font-size: 11px;">
-            <thead class="table-dark text-center">
-                <tr>
-                    <th>#</th>
-                    <th>Remesa / Identificador</th>
-                    <th>Módulos Registrados</th>
-                    <th>Total Trámites</th>
-                </tr>
-            </thead>
-            <tbody>
+        <div class="table-responsive">
+            <table class="table table-sm table-bordered table-striped excel-table" id="tablaRemesasModalCompleta" style="font-size: 10px; width: max-content;">
+                <thead class="table-dark text-center">
+                    <tr>
     `;
 
-    listaRemesas.forEach((rem, idx) => {
-        let regsRemesa = dataF.filter(r => String(obtenerValorFlexible(r, 'REMESA')) === String(rem));
-        let modulosEnRemesa = [...new Set(regsRemesa.map(r => obtenerValorFlexible(r, 'MODULO')))].filter(m => m !== "").join(", ");
-        
-        let sumaTramitesRemesa = 0;
-        regsRemesa.forEach(r => {
-            let t = parseFloat(obtenerValorFlexible(r, 'TOTAL_DE_TRAMITES')) || 0;
-            sumaTramitesRemesa += t;
-        });
-
-        html += `
-            <tr class="text-center">
-                <td>${idx + 1}</td>
-                <td class="fw-bold text-primary">${rem}</td>
-                <td>${modulosEnRemesa || 'N/D'}</td>
-                <td>${sumaTramitesRemesa}</td>
-            </tr>
-        `;
+    // Cabeceras del modal con todas las columnas de acumulado
+    COLUMNAS_ACUMULADO_KEYS.forEach(col => {
+        html += `<th>${col.replace(/_/g, ' ')}</th>`;
     });
 
-    html += `</tbody></table>`;
+    html += `</tr></thead><tbody>`;
+
+    // Ordenar los registros por remesa y módulo
+    let registrosOrdenados = [...dataF].sort((a, b) => {
+        let rA = parseInt(obtenerValorFlexible(a, 'REMESA'), 10) || 0;
+        let rB = parseInt(obtenerValorFlexible(b, 'REMESA'), 10) || 0;
+        if(rA !== rB) return rA - rB;
+        return String(obtenerValorFlexible(a, 'MODULO')).localeCompare(String(obtenerValorFlexible(b, 'MODULO')));
+    });
+
+    registrosOrdenados.forEach(reg => {
+        html += `<tr>`;
+        COLUMNAS_ACUMULADO_KEYS.forEach(col => {
+            let val = obtenerValorFlexible(reg, col);
+            html += `<td class="text-center">${val !== undefined && val !== "" ? val : ""}</td>`;
+        });
+        html += `</tr>`;
+    });
+
+    html += `</tbody></table></div>`;
     contenedor.innerHTML = html;
 }
 
