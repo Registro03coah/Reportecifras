@@ -109,13 +109,17 @@ function renderTabla() {
     }
 
     let dataF = bdtotalesGlobal.length > 0 ? bdtotalesGlobal : bdMadreGlobal;
-    let remesasDisponibles = [...new Set(dataF.map(x => parseInt(obtenerValorFlexible(x, 'REMESA'), 10)))].filter(x => !isNaN(x)).sort((a, b) => a - b);
+    let remesasDisponibles = [...new Set(dataF.map(x => obtenerValorFlexible(x, 'REMESA')))].filter(x => x !== "").sort((a, b) => {
+        let numA = parseInt(a, 10) || 0;
+        let numB = parseInt(b, 10) || 0;
+        return numA - numB;
+    });
     
     let rIniVal = document.getElementById('inputAcumuladoInicio')?.value.trim() || '';
     let rFinVal = document.getElementById('inputAcumuladoFin')?.value.trim() || '';
 
-    let rIni = rIniVal !== "" ? parseInt(rIniVal, 10) : (remesasDisponibles[0] || 1);
-    let remesaMaximaBD = remesasDisponibles.length > 0 ? remesasDisponibles[remesasDisponibles.length - 1] : 999;
+    let rIni = rIniVal !== "" ? parseInt(rIniVal, 10) : (parseInt(remesasDisponibles[0], 10) || 1);
+    let remesaMaximaBD = remesasDisponibles.length > 0 ? (parseInt(remesasDisponibles[remesasDisponibles.length - 1], 10) || 999) : 999;
     let rFin = rFinVal !== "" ? parseInt(rFinVal, 10) : remesaMaximaBD;
 
     let inputFinEl = document.getElementById('inputAcumuladoFin');
@@ -279,6 +283,61 @@ function renderTabla() {
         trT.appendChild(td);
     });
     tbody.appendChild(trT);
+
+    // Llenar el contenido del modal de remesas
+    llenarModalRemesas(remesasDisponibles, dataF);
+}
+
+function llenarModalRemesas(listaRemesas, dataF) {
+    let contenedor = document.getElementById('contenidoRemesasModal');
+    if (!contenedor) return;
+
+    if (listaRemesas.length === 0) {
+        contenedor.innerHTML = `<p class="text-muted text-center py-3">No hay remesas registradas en la base de datos.</p>`;
+        return;
+    }
+
+    let html = `
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="fw-bold text-dark" style="font-size: 12px;">Total de remesas encontradas: ${listaRemesas.length}</span>
+            <button class="btn btn-sm btn-outline-success fw-bold py-0 px-2" onclick="copiarTablaExcel('tablaRemesasModal')">
+                <i class="bi bi-file-excel"></i> Copiar a Excel
+            </button>
+        </div>
+        <table class="table table-sm table-bordered table-striped" id="tablaRemesasModal" style="font-size: 11px;">
+            <thead class="table-dark text-center">
+                <tr>
+                    <th>#</th>
+                    <th>Remesa / Identificador</th>
+                    <th>Módulos Registrados</th>
+                    <th>Total Trámites</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    listaRemesas.forEach((rem, idx) => {
+        let regsRemesa = dataF.filter(r => String(obtenerValorFlexible(r, 'REMESA')) === String(rem));
+        let modulosEnRemesa = [...new Set(regsRemesa.map(r => obtenerValorFlexible(r, 'MODULO')))].filter(m => m !== "").join(", ");
+        
+        let sumaTramitesRemesa = 0;
+        regsRemesa.forEach(r => {
+            let t = parseFloat(obtenerValorFlexible(r, 'TOTAL_DE_TRAMITES')) || 0;
+            sumaTramitesRemesa += t;
+        });
+
+        html += `
+            <tr class="text-center">
+                <td>${idx + 1}</td>
+                <td class="fw-bold text-primary">${rem}</td>
+                <td>${modulosEnRemesa || 'N/D'}</td>
+                <td>${sumaTramitesRemesa}</td>
+            </tr>
+        `;
+    });
+
+    html += `</tbody></table>`;
+    contenedor.innerHTML = html;
 }
 
 function crearBotonFlotanteRemesas() {
@@ -329,9 +388,6 @@ if(btnGuardarAcumulado) {
     });
 }
 
-// ==========================================
-// FUNCIÓN DE AJUSTE PERMANENTE CORREGIDA (bdtotales)
-// ==========================================
 window.aplicarAjusteManual = function() {
     let moduloSel = document.getElementById('selectAjusteModulo').value;
     let columnaSel = document.getElementById('inputAjusteColumna').value.trim().toUpperCase();
@@ -414,7 +470,11 @@ Promise.all([get(ref(db, 'bd_madre')), get(ref(db, 'bdtotales'))]).then(([sM, sT
     bdtotalesGlobal = aT;
     bdMadreGlobal = aM;
 
-    let todasRemesas = [...new Set([...aT, ...aM].map(x => parseInt(obtenerValorFlexible(x, 'REMESA'), 10)))].filter(x => !isNaN(x)).sort((a, b) => a - b);
+    let todasRemesas = [...new Set([...aT, ...aM].map(x => obtenerValorFlexible(x, 'REMESA')))].filter(x => x !== "").sort((a, b) => {
+        let numA = parseInt(a, 10) || 0;
+        let numB = parseInt(b, 10) || 0;
+        return numA - numB;
+    });
     
     if(todasRemesas.length > 0) {
         let remesaMax = todasRemesas[todasRemesas.length - 1];
