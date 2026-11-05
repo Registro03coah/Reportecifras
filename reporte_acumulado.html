@@ -3,50 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reporte Acumulade - Sistema MAC</title>
+    <title>Reporte Acumulado - Sistema MAC</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
-        /* Reglas completas de adaptación y fluidez táctil exclusiva para celulares */
-@media (max-width: 768px) {
-    /* Desbloqueo de scroll y fluidez vertical en móviles */
-    html, body {
-        overflow-x: hidden !important;
-        overflow-y: auto !important;
-        width: 100% !important;
-        height: auto !important;
-        -webkit-overflow-scrolling: touch !important;
-    }
-
-    /* Asegurar que las tablas y contenedores no bloqueen el desplazamiento horizontal/vertical */
-    .table-responsive {
-        width: 100% !important;
-        overflow-x: auto !important;
-        -webkit-overflow-scrolling: touch !important;
-    }
-
-    /* Márgenes y espaciados limpios para aprovechar la pantalla del celular */
-    .container, .container-fluid {
-        padding-left: 8px !important;
-        padding-right: 8px !important;
-    }
-
-    /* Ajuste de tipografías generales en móvil */
-    h5, .fw-bold {
-        font-size: 0.95rem !important;
-    }
-
-    /* Ergonomía para botones en pantallas pequeñas */
-    .btn {
-        font-size: 0.85rem !important;
-        padding: 8px 12px !important;
-    }
-}
+        @media (max-width: 768px) {
+            html, body {
+                overflow-x: hidden !important;
+                overflow-y: auto !important;
+                width: 100% !important;
+                height: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+            }
+            .table-responsive {
+                width: 100% !important;
+                overflow-x: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+            }
+            .container, .container-fluid {
+                padding-left: 8px !important;
+                padding-right: 8px !important;
+            }
+            h5, .fw-bold {
+                font-size: 0.95rem !important;
+            }
+            .btn {
+                font-size: 0.85rem !important;
+                padding: 8px 12px !important;
+            }
+        }
         body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        /* Banner distintivo para acumulado */
         .header-banner { background: linear-gradient(135deg, #2c3e50, #1a252f); color: white; border-bottom: 4px solid #1b396b; }
-        
-        /* Ajustado para mostrar los 21 renglones y la fila de totales de golpe sin scroll vertical */
         .excel-container { 
             width: 100%; 
             max-height: none !important; 
@@ -56,9 +43,7 @@
             background: white; 
             margin-bottom: 15px; 
         }
-        
         .excel-table { margin-bottom: 0; width: max-content; border-collapse: separate; border-spacing: 0; }
-        
         .excel-table thead tr:first-child th { position: sticky; top: 0; z-index: 3; font-size: 10px; text-transform: uppercase; background-color: #e9ecef; height: 50px; text-align: center; vertical-align: middle; padding: 6px 8px; border: 1px solid #ccc; }
         .excel-table thead tr.num-row th { position: sticky; top: 50px; z-index: 2; background-color: #d6d8db !important; color: #212529 !important; font-size: 10px; text-align: center; padding: 4px; border-bottom: 2px solid #2d3436; border: 1px solid #ccc; }
         .excel-table td { padding: 6px 8px; border: 1px solid #ccc; text-align: center; vertical-align: middle; font-size: 11px; white-space: nowrap; }
@@ -76,7 +61,7 @@
         .header-banner p { font-size: 0.85rem !important; }
     </style>
     
-<!-- BARRA DE NAVEGACIÓN INSTITUCIONAL COMPLETA -->
+<!-- BARRA DE NAVEGACIÓN INSTITUCIONAL -->
 <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #1b396b; width: 100%;">
   <div class="container-fluid px-3">
     <a class="navbar-brand fw-bold" href="index.html" style="font-size: 14px;"><i class="bi bi-hdd-network"></i> SISTEMA MAC</a>
@@ -85,7 +70,6 @@
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav ms-auto gap-1 align-items-lg-center">
-        <!-- Botón de Casita (Manda a index.html) -->
         <li class="nav-item">
           <a class="nav-link text-light px-2" href="index.html" style="font-size: 11px;" title="Inicio / Portada">
             <i class="bi bi-house-door-fill fs-6"></i>
@@ -100,8 +84,6 @@
         <li class="nav-item"><a class="nav-link text-light px-2" href="bd_madre.html" style="font-size: 11px;"><i class="bi bi-database-fill"></i> BD Principal</a></li>
         <li class="nav-item"><a class="nav-link text-light px-2" href="bdtotales.html" style="font-size: 11px;"><i class="bi bi-database-fill-gear"></i> BD Totales</a></li>
         <li class="nav-item"><a class="nav-link text-light px-2" href="modulosmac.html" style="font-size: 11px;"><i class="bi bi-building-fill-gear"></i> Módulos MAC</a></li>
-        
-        <!-- Botón de Salir -->
         <li class="nav-item ms-lg-2">
           <a class="btn btn-outline-light btn-sm fw-bold px-2 py-1" href="https://registro03coah.github.io/mimenu/" style="font-size: 11px;">
             <i class="bi bi-box-arrow-right"></i> Salir
@@ -112,7 +94,7 @@
   </div>
 </nav>
 
-    <!-- BANNER DE ACUMULADO -->
+    <!-- BANNER -->
     <div class="header-banner text-center d-flex justify-content-center align-items-center">
         <div><h1 class="fw-bold mb-0"><i class="bi bi-archive-fill text-warning"></i> Reporte Acumulado de Módulos</h1></div>
     </div>
@@ -131,10 +113,10 @@
             </div>
         </div>
 
-        <!-- CAJITA DE HERRAMIENTAS DE AJUSTE RÁPIDO (+ / -) -->
+        <!-- CAJITA DE HERRAMIENTAS DE AJUSTE RÁPIDO -->
         <div class="card shadow-sm mb-3 border-warning">
             <div class="card-body bg-warning bg-opacity-10 p-2 d-flex align-items-center gap-2 flex-wrap">
-                <span class="fw-bold text-dark" style="font-size: 12px;"><i class="bi bi-tools"></i> Ajuste Manual Rápido:</span>
+                <span class="fw-bold text-dark" style="font-size: 12px;"><i class="bi bi-tools"></i> Ajuste Manual Rápido (BD Totales):</span>
                 
                 <select id="selectAjusteModulo" class="form-select form-select-sm w-auto">
                     <option value="050351">Módulo 050351</option>
@@ -151,8 +133,7 @@
 
                 <input type="number" id="inputAjusteCantidad" class="form-control form-control-sm w-auto" placeholder="Cantidad" style="width: 90px;" value="0">
 
-                <button class="btn btn-warning btn-sm fw-bold text-dark border" onclick="aplicarAjusteManual()"><i class="bi bi-check2-circle"></i> Aplicar Ajuste</button>
-                <small class="text-muted" style="font-size: 11px;">(Permite sumar o restar valores de forma directa en pantalla antes de copiar o exportar)</small>
+                <button class="btn btn-warning btn-sm fw-bold text-dark border" onclick="aplicarAjusteManual()"><i class="bi bi-check2-circle"></i> Aplicar Ajuste Permanente</button>
             </div>
         </div>
 
@@ -165,6 +146,26 @@
         </div>
     </div>
     
+    <!-- MODAL PARA VER REMESAS -->
+    <div class="modal fade" id="modalRemesasAcumulado" tabindex="-1" aria-labelledby="modalRemesasLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+          <div class="modal-header bg-dark text-white py-2">
+            <h5 class="modal-title fs-6" id="modalRemesasLabel"><i class="bi bi-list-columns"></i> Listado de Remesas Registradas</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body bg-light">
+            <div id="contenidoRemesasModal" class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                <p class="text-muted text-center py-3">Cargando lista de remesas...</p>
+            </div>
+          </div>
+          <div class="modal-footer py-1">
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- PIE DE PÁGINA -->
     <footer class="text-center py-2 mt-auto text-white shadow-sm" style="background-color: #1b396b; width: 100%; position: relative; bottom: 0;">
         <small>
@@ -177,16 +178,7 @@
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         let paginaActual = window.location.pathname.split("/").pop();
-
-        let paginasLibres = [
-            "index.html", 
-            "modulosmac.html", 
-            "cifrasmodulo.html", 
-            "reporte_dias.html", 
-            "graficos.html", 
-            ""
-        ];
-
+        let paginasLibres = ["index.html", "modulosmac.html", "cifrasmodulo.html", "reporte_dias.html", "graficos.html", ""];
         if (!paginasLibres.includes(paginaActual)) {
             if (sessionStorage.getItem('sesion_autorizada') !== 'true') {
                 alert("⚠️ Acceso restringido. Debe ingresar la contraseña desde el menú principal.");
@@ -194,42 +186,6 @@
             }
         }
     });
-
-    // Función auxiliar para el botón de la cajita de ajuste manual en pantalla
-    function aplicarAjusteManual() {
-        let moduloSel = document.getElementById('selectAjusteModulo').value;
-        let columnaSel = document.getElementById('inputAjusteColumna').value.trim().toUpperCase();
-        let operacion = document.getElementById('selectAjusteOperacion').value;
-        let cantidad = parseFloat(document.getElementById('inputAjusteCantidad').value) || 0;
-
-        if (!columnaSel) {
-            alert("Por favor escribe el nombre de la columna que deseas ajustar (por ejemplo: INSCRIPCIONES, CAMBIO DE DOMICILIO, etc.).");
-            return;
-        }
-
-        // Buscar en la tabla acumulada los elementos que coincidan con el módulo y columna para aplicar la operación visual
-        let tabla = document.getElementById('tablaAcumulado');
-        if (!tabla) return;
-
-        let filas = tabla.querySelectorAll('tbody tr');
-        let modificado = false;
-
-        filas.forEach(fila => {
-            let textoFila = fila.innerText.toUpperCase();
-            if (textoFila.includes(moduloSel)) {
-                let celdas = fila.querySelectorAll('td');
-                // Recorrer las celdas buscando la columna coincidente (esto se puede sincronizar con app_acumulado.js)
-                celdas.forEach(td => {
-                    let valActual = parseFloat(td.innerText) || 0;
-                    if (valActual > 0 || td.dataset.editable === "true") {
-                        // Si detecta una celda numérica candidata o si implementamos la lógica general
-                    }
-                });
-            }
-        });
-
-        alert(`Ajuste registrado para el Módulo ${moduloSel}. (Nota: Asegúrate de que la columna "${columnaSel}" esté visible en tu tabla acumulada).`);
-    }
 </script>
 </body>
 </html>
