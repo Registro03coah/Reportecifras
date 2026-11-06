@@ -166,7 +166,7 @@ function renderTabla() {
             .sort((a,b)=>parseInt(obtenerValorFlexible(a, 'REMESA')) - parseInt(obtenerValorFlexible(b, 'REMESA')));
         
         let uReg = regsMod.length > 0 ? regsMod[regsMod.length - 1] : null;
-        let pReg = regsMod.length > 0 ? regsMod[0] : null; // Primer registro de la remesa inicial en el rango para este módulo
+        let pReg = regsMod.length > 0 ? regsMod[0] : null; 
         let indexNegro = modTarget === '50351' ? 0 : (modTarget === '50353' ? 7 : 14);
         
         if(uReg && obtenerValorFlexible(uReg, 'FINAL')) {
@@ -177,7 +177,8 @@ function renderTabla() {
 
         let sumasMod = {};
         COLUMNAS_ACUMULADO_KEYS.forEach(col => {
-            if(!['ENT', 'DTTO', 'MODULO', 'INICIAL', 'FINAL', 'TOTAL_DE_FOLIOS', 'CONFIGURACION', 'INICIALES_A', 'REMESA'].includes(col)) {
+            // Excluimos de la suma automática las columnas que se manejan por valores fijos/extremos (inicio/fin)
+            if(!['ENT', 'DTTO', 'MODULO', 'INICIAL', 'FINAL', 'TOTAL_DE_FOLIOS', 'CONFIGURACION', 'INICIALES_A', 'DISPONIBLES_TOTAL', 'REMESA'].includes(col)) {
                 sumasMod[col] = 0;
             }
         });
@@ -191,11 +192,13 @@ function renderTabla() {
 
         if(uReg) {
             sumasMod['CONFIGURACION'] = obtenerValorFlexible(uReg, 'CONFIGURACION');
+            // DISPONIBLES_TOTAL muestra el valor de la última remesa en el rango
+            sumasMod['DISPONIBLES_TOTAL'] = obtenerValorFlexible(uReg, 'DISPONIBLES_TOTAL');
         } else {
             sumasMod['CONFIGURACION'] = "";
+            sumasMod['DISPONIBLES_TOTAL'] = "";
         }
 
-        // Obtener el valor de INICIALES_A de la primer remesa configurada en el rango para este módulo
         if(pReg) {
             sumasMod['INICIALES_A'] = obtenerValorFlexible(pReg, 'INICIALES_A');
         } else {
@@ -269,10 +272,18 @@ function renderTabla() {
                 } else {
                     valDet = "";
                 }
+            } else if(col === 'DISPONIBLES_TOTAL') {
+                if(isNegro && item.sumas) {
+                    valDet = item.sumas['DISPONIBLES_TOTAL'] !== undefined ? item.sumas['DISPONIBLES_TOTAL'] : "";
+                    // Si deseas que este valor también se sume en el Gran Total general, descomenta la línea de abajo:
+                    // acumuladorGranTotal[col] += (parseFloat(valDet) || 0);
+                } else {
+                    valDet = "";
+                }
             } else {
                 if(isNegro && item.sumas && item.sumas[col] !== undefined) {
                     valDet = item.sumas[col];
-                    acumuladorGranTotal[col] += valDet;
+                    acumuladorGranTotal[col] += (parseFloat(valDet) || 0);
                 } else {
                     valDet = "";
                 }
@@ -289,7 +300,8 @@ function renderTabla() {
         let td = document.createElement('td');
         if(col === 'MODULO') {
             td.innerText = "TOTAL";
-        } else if (['ENT', 'DTTO', 'INICIAL', 'FINAL', 'INICIALES_A', 'INICIALES_C', 'CONFIGURACION'].includes(col)) {
+        } else if (['ENT', 'DTTO', 'INICIAL', 'FINAL', 'INICIALES_A', 'INICIALES_C', 'CONFIGURACION', 'DISPONIBLES_TOTAL'].includes(col)) {
+            // Se excluyen de la suma de totales por defecto (puedes incluir DISPONIBLES_TOTAL en esta lista si no debe sumarse abajo)
             td.innerText = "";
         } else { 
             td.innerText = acumuladorGranTotal[col] || 0; 
