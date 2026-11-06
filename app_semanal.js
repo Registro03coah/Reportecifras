@@ -65,18 +65,86 @@ function construirHeaderTabla() {
     let trT = document.createElement('tr'); 
     let trN = document.createElement('tr'); 
     trN.className = 'num-row';
-    
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte Semanal MAC</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .header-banner { background: linear-gradient(135deg, #ff9800, #ff5722); color: white; border-bottom: 4px solid #1b396b; }
+        .excel-container { width: 100%; max-height: 65vh; overflow: auto; border: 1px solid #ddd; background: white; margin-bottom: 15px; }
+        .excel-table { margin-bottom: 0; table-layout: fixed; }
+        .excel-table thead tr:first-child th { position: sticky; top: 0; z-index: 3; font-size: 9px; text-transform: uppercase; background-color: #e9ecef; height: 50px; text-align: center; vertical-align: middle; }
+        .excel-table thead tr.num-row th { position: sticky; top: 50px; z-index: 2; background-color: #d6d8db !important; color: #212529 !important; font-size: 10px; text-align: center; padding: 2px; border-bottom: 2px solid #2d3436; }
+        .excel-table td { padding: 4px; border: 1px solid #ccc; text-align: center; vertical-align: middle; font-size: 11px;}
+        .bg-folios { background-color: #f4b084 !important; }
+        .fila-totales td { background-color: #d1e7dd !important; font-weight: bold; }
+    </style>
+</head>
+<body class="d-flex flex-column min-vh-100">
+    <style>
+    .navbar-nav .nav-link { font-size: 11px !important; }
+    .navbar-brand { font-size: 14px !important; }
+    nav.navbar, .fixed-top-nav .navbar { padding: 2px 15px !important; }
+    .header-banner { padding: 10px 0 !important; margin-bottom: 15px !important; }
+    .header-banner h1 { font-size: 1.4rem !important; }
+    .header-banner p { font-size: 0.85rem !important; }
+</style>
+<nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #1b396b; width: 100%;">
+  <div class="container-fluid px-3">
+    <a class="navbar-brand fw-bold" href="https://registro03coah.github.io/mimenu/"><i class="bi bi-hdd-network"></i> SISTEMA MAC</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto gap-2">
+        <li class="nav-item"><a class="nav-link text-light px-2" href="index.html"><i class="bi bi-pencil-square"></i> Vaciado de Datos</a></li>
+        <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_dias.html"><i class="bi bi-calendar3"></i> Reporte Días</a></li>
+        <li class="nav-item"><a class="nav-link active bg-primary rounded px-2 text-white fw-bold" href="reporte_semanal.html"><i class="bi bi-calendar-week"></i> Reporte Semanal</a></li>
+        <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_campana.html"><i class="bi bi-bar-chart-fill"></i> Reporte Campaña</a></li>
+        <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_acumulado.html"><i class="bi bi-archive-fill"></i> Reporte Acumulado</a></li>
+        <li class="nav-item"><a class="nav-link px-2" href="graficos.html" style="color: #ff66b2 !important; font-weight: bold;"><i class="bi bi-pie-chart-fill"></i> Gráficos</a></li>
+        <li class="nav-item"><a class="nav-link text-light px-2" href="bd_madre.html"><i class="bi bi-database-fill"></i> BD Principal</a></li>
+        <li class="nav-item"><a class="nav-link text-light px-2" href="bdtotales.html"><i class="bi bi-database-fill-gear"></i> BD Totales</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+    <div class="header-banner text-center d-flex justify-content-center align-items-center">
+        <div><h1 class="fw-bold mb-0"><i class="bi bi-calendar-week"></i> Reporte Semanal</h1><p class="lead mb-0">Totales Generales Remesa a Remesa</p></div>
+    </div>
+    <div class="container-fluid px-4 flex-grow-1">
+        <div class="row align-items-center mb-3 p-2 bg-white shadow-sm rounded">
+            <div class="col-md-4">
+                <label for="inputRemesaFiltro" class="form-label fw-bold mb-1" style="font-size:12px;">Buscar Remesa:</label>
+                <input type="text" id="inputRemesaFiltro" class="form-control form-control-sm" placeholder="Ej. 202643">
+            </div>
+            <div class="col-md-3 text-center">
+                <span id="lblRemesaActiva" class="badge bg-secondary fs-6 px-3 py-2">Cargando...</span>
+            </div>
+            <div class="col-md-5 text-end">
+                <button class="btn btn-sm btn-info fw-bold me-2" onclick="copiarTablaExcel('tablaSemanal')"><i class="bi bi-file-excel"></i> Copiar a Excel</button>
+                <div id="semaforoConexion" class="badge bg-secondary">Conectando...</div>
+            </div>
+        </div>
+        <div class="excel-container shadow-sm rounded border-warning">
+            <table class="excel-table table table-hover" id="tablaSemanal">
+                <thead></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
     COLUMNAS_SEMANAL_KEYS.forEach(col => {
         let th = document.createElement('th'); 
         th.innerText = col.replace(/_/g, ' '); 
-        
-        if(['INICIAL', 'FINAL'].includes(col)) {
-            th.style.minWidth = "170px";
-        } else if(['MODULO','ENT','DTTO','REMESA'].includes(col)) {
-            th.style.minWidth = "70px";
-        } else {
-            th.style.minWidth = "95px";
-        }
+        if(['INICIAL', 'FINAL'].includes(col)) th.style.minWidth = "170px";
+        else if(['MODULO','ENT','DTTO','REMESA'].includes(col)) th.style.minWidth = "70px";
+        else th.style.minWidth = "95px";
 
         if(['INICIAL','FINAL','TOTAL_DE_FOLIOS'].includes(col)) th.classList.add('bg-folios');
         trT.appendChild(th);
@@ -107,29 +175,29 @@ function renderTablaSemanal() {
     if(!tbody) return; 
     tbody.innerHTML = "";
 
-    get(ref(db, 'bd_madre')).then((snapshot) => {
+    get(ref(db, 'bdtotales')).then((snapshot) => {
         if (!snapshot.exists()) {
-            tbody.innerHTML = `<tr><td colspan="${COLUMNAS_SEMANAL_KEYS.length}" class="text-center text-muted py-3">No hay datos en bd_madre.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="${COLUMNAS_SEMANAL_KEYS.length}" class="text-center text-muted py-3">No hay datos en bdtotales.</td></tr>`;
             return;
         }
 
         let rawData = snapshot.val();
-        let dataM = (Array.isArray(rawData) ? rawData : Object.values(rawData)).map(i => {
+        let dataT = (Array.isArray(rawData) ? rawData : Object.values(rawData)).map(i => {
             let l = {};
             for(let k in i) l[k.toUpperCase().trim()] = i[k];
             return l;
         });
 
-        // Obtener la última remesa subida
-        let remesas = [...new Set(dataM.map(x => parseInt(obtenerValorFlexible(x, 'REMESA'), 10)))].filter(x => !isNaN(x)).sort((a, b) => a - b);
+        // 1. Obtener estrictamente solo los registros de la última remesa
+        let remesas = [...new Set(dataT.map(x => parseInt(obtenerValorFlexible(x, 'REMESA'), 10)))].filter(x => !isNaN(x)).sort((a, b) => a - b);
         let ultimaRemesa = remesas.length > 0 ? remesas[remesas.length - 1] : 0;
-
-        let registrosUltimaRemesa = dataM.filter(r => parseInt(obtenerValorFlexible(r, 'REMESA'), 10) === ultimaRemesa);
+        let registrosUltimaRemesa = dataT.filter(r => parseInt(obtenerValorFlexible(r, 'REMESA'), 10) === ultimaRemesa);
 
         let acumuladorTotales = {};
         COLUMNAS_SEMANAL_KEYS.forEach(col => { acumuladorTotales[col] = 0; });
         let hayValidos = false;
 
+        // 2. Pintar únicamente las filas de los módulos encontrados en esa última remesa (sin estructura de 21 renglones)
         registrosUltimaRemesa.forEach(reg => {
             let tr = document.createElement('tr');
             COLUMNAS_SEMANAL_KEYS.forEach(col => {
@@ -149,12 +217,13 @@ function renderTablaSemanal() {
             tbody.appendChild(tr);
         });
 
+        // 3. Fila de Totales final
         let trT = document.createElement('tr');
         trT.className = 'fila-totales fw-bold';
         COLUMNAS_SEMANAL_KEYS.forEach(col => {
             let td = document.createElement('td');
             if (col === 'MODULO') {
-                td.innerText = "TOTALES";
+                td.innerText = "TOTAL";
             } else if (['ENT', 'DTTO', 'REMESA', 'INICIAL', 'FINAL', 'INICIALES_A', 'CONFIGURACION'].includes(col)) {
                 td.innerText = "";
             } else {
@@ -164,9 +233,7 @@ function renderTablaSemanal() {
         });
         tbody.appendChild(trT);
 
-        // ==========================================
-        // SINCRONIZACIÓN AUTOMÁTICA CON EL ESPEJO EN FIREBASE
-        // ==========================================
+        // Sincronizar espejo en Firebase para Reportesdto03
         let tablaEl = document.getElementById('tablaSemanal');
         if (tablaEl) {
             let theadEl = tablaEl.querySelector('thead');
