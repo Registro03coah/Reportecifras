@@ -65,7 +65,8 @@ onValue(ref(db, ".info/connected"), (s) => {
 });
 
 function construirHeaderTabla() {
-    const thead = document.querySelector('#tablaAcumulado thead'); if(!thead) return;
+    const thead = document.querySelector('#tablaAcumulado thead'); 
+    if(!thead) return;
     thead.innerHTML = ""; 
     let trT = document.createElement('tr'); 
     let trN = document.createElement('tr'); 
@@ -100,30 +101,32 @@ function obtenerValorFlexible(objetoRegistro, claveBuscada) {
 }
 
 function renderTabla() {
-    const tbody = document.querySelector('#tablaAcumulado tbody'); if(!tbody) return; tbody.innerHTML = "";
+    const tbody = document.querySelector('#tablaAcumulado tbody'); 
+    if(!tbody) return; 
+    tbody.innerHTML = "";
     
-    const contenedorTabla = document.querySelector('#tablaAcumulado')?.closest('.table-responsive');
-    if(contenedorTabla) {
-        contenedorTabla.style.maxHeight = "none";
-        contenedorTabla.style.overflowY = "visible";
-    }
-
     let dataF = bdtotalesGlobal.length > 0 ? bdtotalesGlobal : bdMadreGlobal;
-    let remesasDisponibles = [...new Set(dataF.map(x => obtenerValorFlexible(x, 'REMESA')))].filter(x => x !== "").sort((a, b) => {
-        let numA = parseInt(a, 10) || 0;
-        let numB = parseInt(b, 10) || 0;
-        return numA - numB;
-    });
-    
-    let rIniVal = document.getElementById('inputAcumuladoInicio')?.value.trim() || '';
-    let rFinVal = document.getElementById('inputAcumuladoFin')?.value.trim() || '';
+    if(dataF.length === 0) return;
 
-    let rIni = rIniVal !== "" ? parseInt(rIniVal, 10) : (parseInt(remesasDisponibles[0], 10) || 1);
-    let remesaMaximaBD = remesasDisponibles.length > 0 ? (parseInt(remesasDisponibles[remesasDisponibles.length - 1], 10) || 999) : 999;
+    let remesasDisponibles = [...new Set(dataF.map(x => parseInt(obtenerValorFlexible(x, 'REMESA'), 10)))].filter(x => !isNaN(x)).sort((a, b) => a - b);
+    if(remesasDisponibles.length === 0) return;
+    
+    let remesaMinimaBD = remesasDisponibles[0];
+    let remesaMaximaBD = remesasDisponibles[remesasDisponibles.length - 1];
+
+    let inputInicioEl = document.getElementById('inputAcumuladoInicio');
+    let inputFinEl = document.getElementById('inputAcumuladoFin');
+
+    let rIniVal = inputInicioEl ? inputInicioEl.value.trim() : '';
+    let rFinVal = inputFinEl ? inputFinEl.value.trim() : '';
+
+    let rIni = rIniVal !== "" ? parseInt(rIniVal, 10) : remesaMinimaBD;
     let rFin = rFinVal !== "" ? parseInt(rFinVal, 10) : remesaMaximaBD;
 
-    let inputFinEl = document.getElementById('inputAcumuladoFin');
-    if(inputFinEl && !inputFinEl.value && remesaMaximaBD !== 999) {
+    if(inputInicioEl && !inputInicioEl.value) {
+        inputInicioEl.value = remesaMinimaBD;
+    }
+    if(inputFinEl) {
         inputFinEl.placeholder = `Máx: ${remesaMaximaBD}`;
     }
 
@@ -287,9 +290,7 @@ function renderTabla() {
     });
     tbody.appendChild(trT);
 
-    // ==========================================
-    // SINCRONIZACIÓN AUTOMÁTICA CON FIREBASE (Espejo para Reportesdto03)
-    // ==========================================
+    // SINCRONIZACIÓN AUTOMÁTICA DEL ESPEJO EN FIREBASE
     let tablaEl = document.getElementById('tablaAcumulado');
     if (tablaEl) {
         let theadEl = tablaEl.querySelector('thead');
@@ -303,4 +304,63 @@ function renderTabla() {
     }
 }
 
-// (Resto de funciones de modales, guardado de rangos y ajustes manuales se mantienen igual...)
+function normalizarObj(i) { 
+    let l={}; 
+    for(let k in i) l[k.toUpperCase().trim()] = i[k]; 
+    return l; 
+}
+
+construirHeaderTabla();
+
+const dbRefConfigAcumulado = ref(db, 'configuracion/acumulado');
+onValue(dbRefConfigAcumulado, (snapshot) => {
+    if (snapshot.exists()) {
+        const config = snapshot.val();
+        if (config.inicio !== undefined && document.getElementById('inputAcumuladoInicio')) document.getElementById('inputAcumuladoInicio').value = config.inicio;
+        if (config.fin !== undefined && document.getElementById('inputAcumuladoFin')) document.getElementById('inputAcumuladoFin').value = config.fin;
+    }
+});
+
+const btnGuardarAcumulado = document.getElementById('btnGuardarAcumulado');
+if(btnGuardarAcumulado) {
+    btnGuardarAcumulado.addEventListener('click', () => {
+        let iniVal = document.getElementById('inputAcumuladoInicio')?.value.trim() || '';
+        let finVal = document.getElementById('inputAcumuladoFin')?.value.trim() || '';
+
+        set(dbRefConfigAcumulado, {
+            inicio: iniVal,
+            fin: finVal
+        }).then(() => {
+            alert("¡Rango de acumulado guardado en la nube y sincronizado!");
+            renderTabla();
+        }).catch((error) => {
+            console.error("Error al guardar configuración en Firebase:", error);
+            alert("Hubo un error al guardar el rango en la nube.");
+        });
+    });
+}
+
+Promise.all([get(ref(db, 'bd_madre')), get(ref(db, 'bdtotales'))]).then(([sM, sT]) => {
+    let aM = sM.exists() ? (Array.isArray(sM.val())?sM.val():Object.values(sM.val())).map(normalizarObj) : [];
+    let aT = sT.exists() ? (Array.isArray(sT.val())?sT.val():Object.values(sT.val())).map(normalizarObj) : [];
+    bdtotalesGlobal = aT;
+    bdMadreGlobal = aM;
+
+    let todasRemesas = [...new Set([...aT, ...aM].map(x => parseInt(obtenerValorFlexible(x, 'REMESA'), 10)))].filter(x => !isNaN(x)).sort((a, b) => a - b);
+    
+    if(todasRemesas.length > 0) {
+        let remesaMin = todasRemesas[0];
+        let remesaMax = todasRemesas[todasRemesas.length - 1];
+        let inputInicio = document.getElementById('inputAcumuladoInicio');
+        let inputFin = document.getElementById('inputAcumuladoFin');
+        
+        if(inputInicio && !inputInicio.value) {
+            inputInicio.value = remesaMin;
+        }
+        if(inputFin) {
+            inputFin.placeholder = `Máx: ${remesaMax}`;
+        }
+    }
+
+    renderTabla();
+});
