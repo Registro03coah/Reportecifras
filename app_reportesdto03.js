@@ -35,7 +35,6 @@ onValue(ref(db, ".info/connected"), (s) => {
     }
 });
 
-// Función para pintar las tablas idénticas usando los espejos de Firebase
 function renderizarDesdeEspejo(selectorTabla, data) {
     const tabla = document.querySelector(selectorTabla);
     if (!tabla) return;
@@ -46,11 +45,10 @@ function renderizarDesdeEspejo(selectorTabla, data) {
         if (thead) thead.innerHTML = data.htmlThead;
         if (tbody) tbody.innerHTML = data.htmlTbody;
     } else {
-        if (tbody) tbody.innerHTML = `<tr><td colspan="50" class="text-center text-muted py-3">Esperando sincronización de datos...</td></tr>`;
+        if (tbody) tbody.innerHTML = `<tr><td colspan="50" class="text-center text-muted py-3">Esperando sincronización... Visita la página de este reporte para generar el espejo automático.</td></tr>`;
     }
 }
 
-// Sincronizar en tiempo real cada tabla con su respectivo nodo espejo
 onValue(ref(db, 'configuracion/reportes_dto03/semanal'), (snap) => {
     renderizarDesdeEspejo('#tablaSemanalReporte', snap.val());
 });
