@@ -96,7 +96,7 @@ function obtenerValorFlexible(objetoRegistro, claveBuscada) {
     return "";
 }
 
-// Renderizador para Semanal y Campaña (Listado directo de BD Madre)
+// Renderizador general para Semanal y Campaña
 function renderizarTablaSimple(selectorTbody, registros) {
     const tbody = document.querySelector(selectorTbody);
     if (!tbody) return;
@@ -149,7 +149,7 @@ function renderizarTablaSimple(selectorTbody, registros) {
     tbody.appendChild(trT);
 }
 
-// Renderizador específico para el Acumulado (Estructura exacta de los 21 renglones)
+// Renderizador exacto para el Acumulado (21 renglones)
 function renderizarTablaAcumulado(dataF) {
     const tbody = document.querySelector('#tablaAcumuladoReporte tbody');
     if (!tbody) return;
@@ -316,7 +316,7 @@ construirHeader('#tablaSemanalReporte');
 construirHeader('#tablaCampanaReporte');
 construirHeader('#tablaAcumuladoReporte');
 
-// Cargar bases de datos desde Firebase
+// Cargar bases de datos desde Firebase y separar comportamientos
 Promise.all([
     get(ref(db, 'bdtotales')),
     get(ref(db, 'bd_madre'))
@@ -329,12 +329,15 @@ Promise.all([
     let dataT = normalizar(datosTotales);
     let dataM = normalizar(datosMadre);
 
-    // Cargar Semanal (ejemplo de últimos registros)
-    renderizarTablaSimple('#tablaSemanalReporte tbody', dataM.slice(-3));
+    // 1. SEMANAL: Extraer únicamente los registros de la última remesa subida
+    let remesasMadre = [...new Set(dataM.map(x => parseInt(obtenerValorFlexible(x, 'REMESA'), 10)))].filter(x => !isNaN(x)).sort((a, b) => a - b);
+    let ultimaRemesaNum = remesasMadre.length > 0 ? remesasMadre[remesasMadre.length - 1] : 0;
+    let registrosSemanal = dataM.filter(r => parseInt(obtenerValorFlexible(r, 'REMESA'), 10) === ultimaRemesaNum);
+    renderizarTablaSimple('#tablaSemanalReporte tbody', registrosSemanal);
 
-    // Cargar Campaña (ejemplo de registros globales)
-    renderizarTablaSystemCampaña: renderizarTablaSimple('#tablaCampanaReporte tbody', dataM.slice(-3));
+    // 2. CAMPAÑA: Carga todos los registros globales de la BD Madre (igual a Reporte Campaña)
+    renderizarTablaSimple('#tablaCampanaReporte tbody', dataM);
 
-    // Cargar Acumulado con sus 21 renglones exactos
+    // 3. ACUMULADO: Renderiza los 21 renglones oficiales usando la BD Totales
     renderizarTablaAcumulado(dataT);
 });
