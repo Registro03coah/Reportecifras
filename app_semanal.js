@@ -1,82 +1,33 @@
-/**
- * Sistema de Reportes Diarios - Módulos MAC (Nube)
- * Módulo: Reporte Semanal
- * Versión: 11.1
- */
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getDatabase, ref, get, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-const firebaseConfig = { 
-    apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo", 
-    authDomain: "cifrasmac.firebaseapp.com", 
-    databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com", 
-    projectId: "cifrasmac", 
-    storageBucket: "cifrasmac.firebasestorage.app", 
-    messagingSenderId: "916644687837", 
-    appId: "1:916644687837:web:03d346cc48a071af1ed034" 
-};
-
-const app = initializeApp(firebaseConfig);
+const firebaseConfig = { apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo", authDomain: "cifrasmac.firebaseapp.com", databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com", projectId: "cifrasmac", storageBucket: "cifrasmac.firebasestorage.app", messagingSenderId: "916644687837", appId: "1:916644687837:web:03d346cc48a071af1ed034" };
+const app = initializeApp(firebaseConfig); 
 const db = getDatabase(app);
 
-const ESTRUCTURA_SEMANAL = [
-    { key: 'Ent', num: 45 },
-    { key: 'Dtto', num: 46 },
-    { key: 'Módulo', num: 47 },
-    { key: 'Remesa', num: 39 },
-    { key: 'Inicial', num: 5 },
-    { key: 'Final', num: 6 },
-    { key: 'Total_de_folios', num: 7 },
-    { key: 'no_utilizados', num: 88 },
-    { key: 'Inscripciones', num: 8 },
-    { key: 'Corrección_de_datos_personales', num: 9 },
-    { key: 'Cambio_de_domicilio', num: 10 },
-    { key: 'Reposición', num: 11 },
-    { key: 'Corr._de_datos_dirección', num: 12 },
-    { key: 'Reincorporación', num: 13 },
-    { key: 'Reemplazo', num: 14 },
-    { key: 'ReimpresiOn', num: 15 },
-    { key: 'Total_de_trámites', num: 16 },
-    { key: 'Rechazos_de_MAC_34', num: 42 },
-    { key: 'Rechazos_de_MAC_35', num: 43 },
-    { key: 'Cancelados', num: 17 },
-    { key: 'Total_de_movimientos', num: 40 },
-    { key: 'Cif-05', num: 35 },
-    { key: 'SOLICITUD_EXPEDICION_ORDINARIA', num: 36 },
-    { key: 'SOLICITUD_DE_RECTIFICACION', num: 37 },
-    { key: 'Demanda_de_juicio', num: 38 },
-    { key: 'Iniciales_S', num: 78 },
-    { key: 'Actualización', num: 21 },
-    { key: 'Recibidas_de_otros_tipos', num: 22 },
-    { key: 'Importadas', num: 63 },
-    { key: 'Exportadas', num: 64 },
-    { key: 'Entregadas', num: 23 },
-    { key: 'Anexas_a_fuar', num: 25 },
-    { key: 'Resguardo', num: 48 },
-    { key: 'Solicitud_de_reimpresión', num: 28 },
-    { key: 'ROBO_Y_O_EXTRAVIO', num: 24 },
-    { key: 'Retiradas_por_causa', num: 29 },
-    { key: 'SobranteS', num: 80 },
-    { key: 'DuplicadoS', num: 70 },
-    { key: 'DISPONIBLES_TOTAL', num: 30 },
-    { key: 'Disponibles_de_sol_de_exp', num: 81 },
-    { key: 'Reimpre_fuera_del_sistema', num: 82 },
-    { key: 'creden_devueltas_por_terceros', num: 83 },
-    { key: 'cred_producto_de_registro_duplicado', num: 84 },
-    { key: 'CRED_PROD_CANJE_POR_NUEVA', num: 31 },
-    { key: 'Días_trabajados', num: 34 },
-    { key: 'Configuración', num: 44 }
+const COLUMNAS_SEMANAL_KEYS = [
+    'ENT', 'DTTO', 'MODULO', 'REMESA', 'INICIAL', 'FINAL', 'TOTAL_DE_FOLIOS', 'NO_UTILIZADOS', 
+    'INSCRIPCIONES', 'CORRECCION_DE_DATOS_PERSONALES', 'CAMBIO_DE_DOMICILIO', 
+    'REPOSICION', 'CORR_DE_DATOS_DIRECCION', 'REINCORPORACION', 'REEMPLAZO', 
+    'REIMPRESION', 'TOTAL_DE_TRAMITES', 'RECHAZOS_DE_MAC_34', 'RECHAZOS_DE_MAC_35', 
+    'CANCELADOS', 'TOTAL_DE_MOVIMIENTOS', 'CIF_05', 'SOLICITUD_EXPEDICION_ORDINARIA', 
+    'SOLICITUD_DE_RECTIFICACION', 'DEMANDA_DE_JUICIO', 'INICIALES_A', 'ACTUALIZACION', 
+    'RECIBIDAS_DE_OTROS_TIPOS', 'IMPORTADAS', 'EXPORTADAS', 'ENTREGADAS', 
+    'ANEXAS_A_FUAR', 'RESGUARDO', 'SOLICITUD_DE_REIMPRESION', 'ROBO_Y_O_EXTRAVIO', 
+    'RETIRADAS_POR_CAUSA', 'SOBRANTES', 'DUPLICADOS', 'DISPONIBLES_TOTAL', 
+    'DISPONIBLES_DE_SOL_DE_EXP', 'REIMPRE_FUERA_DEL_SISTEMA', 'CREDEN_DEVUELTAS_POR_TERCEROS', 
+    'CRED_PRODUCTO_DE_REGISTRO_DUPLICADO', 'CRED_PROD_CANJE_POR_NUEVA', 
+    'DIAS_TRABAJADOS', 'CONFIGURACION'
 ];
 
-let bdTotalesGlobal = [];
-let anchosGuardados = JSON.parse(localStorage.getItem('anchosColumnasSemanal')) || {};
+const MAPA_NUMEROS = { "DIA": 1, "FECHA": 2, "HORAS_TRABAJADAS": 3, "SEDES": 4, "INICIAL": 5, "FINAL": 6, "TOTAL_DE_FOLIOS": 7, "INSCRIPCIONES": 8, "CORRECCION_DE_DATOS_PERSONALES": 9, "CAMBIO_DE_DOMICILIO": 10, "REPOSISION": 11, "CORR__DE_DATOS_DIRECCION": 12, "REINCORPORACION": 13, "REEMPLAZO": 14, "REIMPRESION": 15, "TOTAL_DE_TRAMITES": 16, "CANCELADOS": 17, "TOTAL_DE_ANEXOS_POR_RECHAZO": 18, "CPV_DEVUELA_ENTREGA": 19, "DISPONIBLES_AL_DIA_ANTERIOR": 20, "ACTUALIZACION": 21, "RECIBIDAS_DE_OTROS_TIPOS": 22, "ENTREGADAS": 23, "RECIBO_Y_O_EXTRAVIO": 24, "ANEXAS_A_FUAR": 25, "DATOS_ERRONEOS": 26, "FOTO_MAL_IMPRESA": 27, "SOLICITU_DE_REIMPRESION": 28, "RETIRADAS_POR_OTRA_CAUSA": 29, "DISPONIBLES": 30, "CREDENCIALES_X_CANJE": 31, "FICHAS_ENTREGADAS": 32, "FICHAS_ATENDIDAS": 33, "DIAS_TRABAJADOS": 34, "CIF_05": 35, "SOLICITUD_EXPEDICION": 36, "SOLICITUD_RECTIFICACION": 37, "DEMANDA_DE_JUICIO": 38, "REMESA": 39, "TOTAL_DE_MOVIMIENTOS": 40, "CREDEN_DEVUELTAS_POR_TERCEROS": 41, "RECHAZOS_DE_MAC_34": 42, "RECHAZOS_DE_MAC_35": 43, "CONFIGURACION": 44, "ENT": 45, "DTTO": 46, "MODULO": 47, "RESGUARDO": 48, "SOLICITUD_DE_REIMPRESION": 49, "CPV_DEVUELA_ENTREGA_2": 50, "SCRIPT_EJECUTADOS": 51, "FOLIO_NEC": 52, "NUMERO_DE_TRAMITES_APLICADOS": 53, "NUMERO_DE_FICHAS_REQUISITADAS": 54, "NUMERO_DE_ARCHIVOS_DE_TRANSACCION_ACEPTADOS": 55, "TOTAL_DE_ARCHIVOS_DE_TRANSACCION_PROCESADOS": 56, "CREDENCIALES_RECIBIDAS": 57, "CREDENCIALES_INCONSISTENTES": 58, "CREDENCIALES_EN_RESGUARDO": 59, "CREDENCIALES_TOTALES_EN_SIIRFE_DISPONIBLES_PARA_ENTREGA": 60, "TOTAL_DE_CREDENCIALES_ENTREGADAS": 61, "TOTAL_DE_CREDENCIALES_SOLICITADAS": 62, "IMPORTADAS": 63, "EXPORTADAS": 64, "REPOSICIONES_REIMPRESIONES": 65, "MAL_IMPRESA": 66, "ERROR_EN_CARTOGRAFIA": 67, "DEFUNCION": 68, "SUSPENSION": 69, "DUPLICADO": 70, "ERROR_EN_NUM_DE_EMISION": 71, "PERDIDA_DE_VIGENCIA": 72, "MOV_POST": 73, "ANEXAS_A_SOLICITUD": 74, "OTRAS_BAJAS": 75, "INICIAL_C": 76, "INICIAL_A": 77, "INICIAL_S": 78, "IDMAC": 79 };
+
+function obtenerNumeroColumna(key) { return MAPA_NUMEROS[key] || '-'; }
 
 window.copiarTablaExcel = function(tablaId) {
     const tabla = document.getElementById(tablaId);
     if (!tabla) return;
     const clone = tabla.cloneNode(true);
-    
     const div = document.createElement('div');
     div.appendChild(clone);
     document.body.appendChild(div);
@@ -87,7 +38,7 @@ window.copiarTablaExcel = function(tablaId) {
     selection.addRange(range);
     try {
         document.execCommand('copy');
-        alert("¡Tabla copiada al portapapeles! Lista para pegar en Excel.");
+        alert("¡Tabla copiada con éxito! Lista para pegar en Excel.");
     } catch (err) {
         alert("Error al intentar copiar.");
     }
@@ -95,245 +46,140 @@ window.copiarTablaExcel = function(tablaId) {
     selection.removeAllRanges();
 };
 
+onValue(ref(db, ".info/connected"), (s) => { 
+    let sem = document.getElementById("semaforoConexion"); 
+    if(!sem) return;
+    if (s.val() === true) {
+        sem.className = "badge bg-success text-white ms-2";
+        sem.innerHTML = '<i class="bi bi-check-circle"></i> ONLINE';
+    } else {
+        sem.className = "badge bg-danger text-white ms-2";
+        sem.innerHTML = '<i class="bi bi-x-circle"></i> OFFLINE';
+    }
+});
+
 function construirHeaderTabla() {
-    const thead = document.getElementById('cabeceraTablaSemanal'); 
+    const thead = document.querySelector('#tablaSemanal thead'); 
     if(!thead) return;
-    thead.innerHTML = "";
+    thead.innerHTML = ""; 
     let trT = document.createElement('tr'); 
     let trN = document.createElement('tr'); 
     trN.className = 'num-row';
     
-    ESTRUCTURA_SEMANAL.forEach((colObj) => {
+    COLUMNAS_SEMANAL_KEYS.forEach(col => {
         let th = document.createElement('th'); 
-        th.setAttribute('data-col', colObj.key);
-        th.innerText = colObj.key.replace(/_/g, ' ');
-        if (anchosGuardados[colObj.key]) { 
-            th.style.width = anchosGuardados[colObj.key]; 
-            th.style.minWidth = anchosGuardados[colObj.key]; 
-        } else { 
-            th.style.minWidth = "90px"; 
+        th.innerText = col.replace(/_/g, ' '); 
+        
+        if(['INICIAL', 'FINAL'].includes(col)) {
+            th.style.minWidth = "170px";
+        } else if(['MODULO','ENT','DTTO','REMESA'].includes(col)) {
+            th.style.minWidth = "70px";
+        } else {
+            th.style.minWidth = "95px";
         }
+
+        if(['INICIAL','FINAL','TOTAL_DE_FOLIOS'].includes(col)) th.classList.add('bg-folios');
         trT.appendChild(th);
         
         let thN = document.createElement('th'); 
-        thN.innerText = colObj.num; 
+        thN.innerText = obtenerNumeroColumna(col); 
         trN.appendChild(thN);
     });
     thead.appendChild(trT); 
     thead.appendChild(trN);
 }
 
-function obtenerValorFila(fila, colObj) {
-    if (!fila) return '';
-    const key = colObj.key;
-    const num = colObj.num;
-
-    if (fila[key] !== undefined && fila[key] !== null) return fila[key];
-    if (num !== undefined) {
-        if (fila[num] !== undefined && fila[num] !== null) return fila[num];
-        if (fila[String(num)] !== undefined && fila[String(num)] !== null) return fila[String(num)];
-    }
-
-    const cleanKey = key.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[_./]/g, '');
-    const foundKey = Object.keys(fila).find(k => {
-        const cleanK = k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[_./]/g, '');
-        return cleanK === cleanKey;
-    });
-
-    if (foundKey && fila[foundKey] !== undefined && fila[foundKey] !== null) return fila[foundKey];
-
-    return '';
+function limpiarStr(str) {
+    return String(str || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
 }
 
-function obtenerUltimaRemesa(datos) {
-    if (!datos || datos.length === 0) return null;
-    let remesas = new Set();
-    const objRemesa = ESTRUCTURA_SEMANAL.find(c => c.key === 'Remesa') || { key: 'Remesa', num: 39 };
-    
-    datos.forEach(fila => {
-        let val = obtenerValorFila(fila, objRemesa);
-        if (val !== undefined && val !== null && String(val).trim() !== "") {
-            remesas.add(String(val).trim());
-        }
-    });
-
-    if (remesas.size === 0) return null;
-
-    let listaRemesas = Array.from(remesas);
-    listaRemesas.sort((a, b) => {
-        let numA = parseFloat(a);
-        let numB = parseFloat(b);
-        if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
-        return a.localeCompare(b);
-    });
-
-    return listaRemesas[listaRemesas.length - 1];
+function obtenerValorFlexible(objetoRegistro, claveBuscada) {
+    if (!objetoRegistro) return "";
+    if (objetoRegistro[claveBuscada] !== undefined) return objetoRegistro[claveBuscada];
+    let claveLimpiada = limpiarStr(claveBuscada);
+    let llaveEncontrada = Object.keys(objetoRegistro).find(k => limpiarStr(k) === claveLimpiada);
+    if (llaveEncontrada !== undefined) return objetoRegistro[llaveEncontrada];
+    return "";
 }
 
-function actualizarContadoresGlobales(datosMostrados, remesaActiva) {
-    const totalLineasElem = document.getElementById('lblTotalLineas');
-    const totalRemesasElem = document.getElementById('lblTotalRemesas');
-    const totalLineas = bdTotalesGlobal.length;
-    
-    const remesasUnicasTotales = new Set();
-    const objRemesa = ESTRUCTURA_SEMANAL.find(c => c.key === 'Remesa') || { key: 'Remesa', num: 39 };
-    
-    bdTotalesGlobal.forEach(fila => {
-        let valRemesa = obtenerValorFila(fila, objRemesa);
-        if (valRemesa !== undefined && valRemesa !== null && String(valRemesa).trim() !== "") {
-            remesasUnicasTotales.add(String(valRemesa).trim());
-        }
-    });
-
-    if (totalLineasElem) totalLineasElem.innerText = totalLineas;
-    if (totalRemesasElem) totalRemesasElem.innerText = remesasUnicasTotales.size;
-
-    const inputRemesa = document.getElementById('remesaFiltroInput');
-    const ultimaRemesaGlobal = obtenerUltimaRemesa(bdTotalesGlobal);
-    if (inputRemesa && ultimaRemesaGlobal) {
-        inputRemesa.placeholder = ultimaRemesaGlobal;
-    }
-
-    const footerVersion = document.getElementById('footerVersion');
-    if (footerVersion) {
-        footerVersion.innerText = "11.1";
-    }
-}
-
-function procesarYMostrarDatosConFiltroRemesa() {
-    const inputRemesa = document.getElementById('remesaFiltroInput'); 
-    let remesaEscrita = inputRemesa ? inputRemesa.value.trim() : '';
-
-    if (inputRemesa) localStorage.setItem('remesaUnicaSemanal_v11', remesaEscrita);
-
-    const objRemesa = ESTRUCTURA_SEMANAL.find(c => c.key === 'Remesa') || { key: 'Remesa', num: 39 };
-    let ultimaRemesaGlobal = obtenerUltimaRemesa(bdTotalesGlobal);
-
-    let remesaEfectiva = remesaEscrita !== "" ? remesaEscrita : ultimaRemesaGlobal;
-
-    let datosFiltrados = bdTotalesGlobal.filter(fila => {
-        let valRemesa = String(obtenerValorFila(fila, objRemesa)).trim();
-        return valRemesa === String(remesaEfectiva);
-    });
-
-    renderizarTablaConTotales(datosFiltrados, datosFiltrados[0]);
-    actualizarContadoresGlobales(datosFiltrados, remesaEfectiva || 'N/A');
-}
-
-function renderizarTablaConTotales(datos, primeraFila) {
-    const tbody = document.getElementById('cuerpoTablaSemanal'); 
-    if(!tbody) return;
+function renderTablaSemanal() {
+    const tbody = document.querySelector('#tablaSemanal tbody'); 
+    if(!tbody) return; 
     tbody.innerHTML = "";
-    
-    if (!datos || datos.length === 0) return;
 
-    let sumatoriasTotales = {};
-    ESTRUCTURA_SEMANAL.forEach(colObj => {
-        sumatoriasTotales[colObj.key] = 0;
-    });
-
-    datos.forEach(fila => {
-        let tr = document.createElement('tr');
-        ESTRUCTURA_SEMANAL.forEach(colObj => {
-            let td = document.createElement('td');
-            let val = obtenerValorFila(fila, colObj);
-            
-            if(typeof val === 'string' && val.includes('T00:00:00')) {
-                val = val.split('T')[0];
-            }
-
-            td.innerText = val;
-            tr.appendChild(td);
-
-            let numVal = parseFloat(val);
-            if (!isNaN(numVal)) {
-                sumatoriasTotales[colObj.key] += numVal;
-            }
-        });
-        tbody.appendChild(tr);
-    });
-
-    let trTotales = document.createElement('tr');
-    trTotales.className = 'fila-totales table-dark fw-bold';
-    
-    // Columnas que se quedan completamente en blanco (incluyendo 'Módulo')
-    const columnasBlanco = ['Ent', 'Módulo', 'Inicial', 'Final', 'Iniciales_S', 'Configuración'];
-    // Columnas cuyos valores se repiten de la primera fila
-    const columnasRepetidas = ['Dtto', 'Remesa'];
-
-    ESTRUCTURA_SEMANAL.forEach((colObj, index) => {
-        let td = document.createElement('td');
-        let nombreKeyNorm = colObj.key;
-
-        if (index === 0) {
-            td.innerText = "TOTALES";
-        } else if (columnasBlanco.some(c => c.toLowerCase() === nombreKeyNorm.toLowerCase())) {
-            td.innerText = ""; // Se quedan en blanco
-        } else if (columnasRepetidas.some(c => c.toLowerCase() === nombreKeyNorm.toLowerCase())) {
-            td.innerText = primeraFila ? obtenerValorFila(primeraFila, colObj) : "0"; // Se repite o 0 si no hay
-        } else {
-            // Para todas las demás columnas numéricas, si hay suma se muestra, si es 0 o vacío se coloca '0'
-            let valSuma = sumatoriasTotales[colObj.key];
-            td.innerText = (valSuma !== undefined && !isNaN(valSuma)) ? valSuma : 0;
+    get(ref(db, 'bd_madre')).then((snapshot) => {
+        if (!snapshot.exists()) {
+            tbody.innerHTML = `<tr><td colspan="${COLUMNAS_SEMANAL_KEYS.length}" class="text-center text-muted py-3">No hay datos en bd_madre.</td></tr>`;
+            return;
         }
-        trTotales.appendChild(td);
-    });
-    tbody.appendChild(trTotales);
-}
 
-document.addEventListener("DOMContentLoaded", () => {
-    const inputRemesa = document.getElementById('remesaFiltroInput');
-
-    if (inputRemesa) {
-        inputRemesa.value = localStorage.getItem('remesaUnicaSemanal_v11') || '';
-        inputRemesa.addEventListener('input', () => {
-            procesarYMostrarDatosConFiltroRemesa();
+        let rawData = snapshot.val();
+        let dataM = (Array.isArray(rawData) ? rawData : Object.values(rawData)).map(i => {
+            let l = {};
+            for(let k in i) l[k.toUpperCase().trim()] = i[k];
+            return l;
         });
-    }
 
-    const inputBuscador = document.getElementById('inputBuscadorSemanal');
-    if (inputBuscador) {
-        inputBuscador.addEventListener('keyup', (e) => {
-            const textoFiltro = e.target.value.toLowerCase().trim();
-            if (textoFiltro === "") {
-                procesarYMostrarDatosConFiltroRemesa();
-                return;
-            }
-            
-            const filtrados = bdTotalesGlobal.filter(fila => {
-                return ESTRUCTURA_SEMANAL.some(colObj => {
-                    let val = String(obtenerValorFila(fila, colObj)).toLowerCase();
-                    return val.includes(textoFiltro);
-                });
+        // Obtener la última remesa subida
+        let remesas = [...new Set(dataM.map(x => parseInt(obtenerValorFlexible(x, 'REMESA'), 10)))].filter(x => !isNaN(x)).sort((a, b) => a - b);
+        let ultimaRemesa = remesas.length > 0 ? remesas[remesas.length - 1] : 0;
+
+        let registrosUltimaRemesa = dataM.filter(r => parseInt(obtenerValorFlexible(r, 'REMESA'), 10) === ultimaRemesa);
+
+        let acumuladorTotales = {};
+        COLUMNAS_SEMANAL_KEYS.forEach(col => { acumuladorTotales[col] = 0; });
+        let hayValidos = false;
+
+        registrosUltimaRemesa.forEach(reg => {
+            let tr = document.createElement('tr');
+            COLUMNAS_SEMANAL_KEYS.forEach(col => {
+                let td = document.createElement('td');
+                let val = obtenerValorFlexible(reg, col);
+
+                if (!['ENT', 'DTTO', 'MODULO', 'REMESA', 'INICIAL', 'FINAL', 'CONFIGURACION', 'INICIALES_A'].includes(col)) {
+                    let numVal = parseFloat(val) || 0;
+                    if (!isNaN(numVal) && val !== "") {
+                        acumuladorTotales[col] += numVal;
+                        hayValidos = true;
+                    }
+                }
+                td.innerText = (val !== undefined && val !== "" && val !== 0) ? val : "";
+                tr.appendChild(td);
             });
-            renderizarTablaConTotales(filtrados, filtrados[0]);
+            tbody.appendChild(tr);
         });
-    }
-});
+
+        let trT = document.createElement('tr');
+        trT.className = 'fila-totales fw-bold';
+        COLUMNAS_SEMANAL_KEYS.forEach(col => {
+            let td = document.createElement('td');
+            if (col === 'MODULO') {
+                td.innerText = "TOTALES";
+            } else if (['ENT', 'DTTO', 'REMESA', 'INICIAL', 'FINAL', 'INICIALES_A', 'CONFIGURACION'].includes(col)) {
+                td.innerText = "";
+            } else {
+                td.innerText = hayValidos ? (acumuladorTotales[col] || 0) : "";
+            }
+            trT.appendChild(td);
+        });
+        tbody.appendChild(trT);
+
+        // ==========================================
+        // SINCRONIZACIÓN AUTOMÁTICA CON EL ESPEJO EN FIREBASE
+        // ==========================================
+        let tablaEl = document.getElementById('tablaSemanal');
+        if (tablaEl) {
+            let theadEl = tablaEl.querySelector('thead');
+            let tbodyEl = tablaEl.querySelector('tbody');
+            if (theadEl && tbodyEl) {
+                set(ref(db, 'configuracion/reportes_dto03/semanal'), {
+                    htmlThead: theadEl.innerHTML,
+                    htmlTbody: tbodyEl.innerHTML
+                });
+            }
+        }
+    });
+}
 
 construirHeaderTabla();
-
-onValue(ref(db, ".info/connected"), (snap) => {
-    const sem = document.getElementById("semaforoConexion");
-    if(!sem) return;
-    if (snap.val() === true) { 
-        sem.className = "badge bg-success text-white fs-6 px-3 py-2 rounded-pill"; 
-        sem.innerHTML = 'ONLINE'; 
-    } else { 
-        sem.className = "badge bg-danger text-white fs-6 px-3 py-2 rounded-pill"; 
-        sem.innerHTML = 'OFFLINE'; 
-    }
-});
-
-onValue(ref(db, 'bdtotales'), (snapshot) => {
-    if (snapshot.exists()) {
-        const data = snapshot.val();
-        bdTotalesGlobal = Array.isArray(data) ? data : Object.values(data);
-        procesarYMostrarDatosConFiltroRemesa();
-    } else {
-        bdTotalesGlobal = [];
-        renderizarTablaConTotales([], null);
-    }
-}, (error) => {
-    console.error("❌ Error al leer 'bdtotales':", error);
-});
+renderTablaSemanal();
