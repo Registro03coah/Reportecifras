@@ -102,7 +102,6 @@ function renderTablaSemanal() {
     if(!tbody) return; 
     tbody.innerHTML = "";
 
-    // CORRECCIÓN: Ahora consultamos directamente bdtotales en lugar de bd_madre
     get(ref(db, 'bdtotales')).then((snapshot) => {
         if (!snapshot.exists()) {
             tbody.innerHTML = `<tr><td colspan="${COLUMNAS_SEMANAL_KEYS.length}" class="text-center text-muted py-3">No hay datos en bdtotales.</td></tr>`;
@@ -116,40 +115,36 @@ function renderTablaSemanal() {
             return l;
         });
 
-        // Obtener la última remesa subida desde bdtotales
+        // 1. Obtener estrictamente solo los registros de la última remesa
         let remesas = [...new Set(dataT.map(x => parseInt(obtenerValorFlexible(x, 'REMESA'), 10)))].filter(x => !isNaN(x)).sort((a, b) => a - b);
         let ultimaRemesa = remesas.length > 0 ? remesas[remesas.length - 1] : 0;
-        let regsUltima = dataT.filter(r => parseInt(obtenerValorFlexible(r, 'REMESA'), 10) === ultimaRemesa);
+        let registrosUltimaRemesa = dataT.filter(r => parseInt(obtenerValorFlexible(r, 'REMESA'), 10) === ultimaRemesa);
 
-        let modulosObjetivo = ['050351', '050353', '050354'];
         let acumuladorTotales = {};
         COLUMNAS_SEMANAL_KEYS.forEach(col => { acumuladorTotales[col] = 0; });
+        let hayValidos = false;
 
-        modulosObjetivo.forEach(modTarget => {
-            let regMod = regsUltima.find(r => String(obtenerValorFlexible(r, 'MODULO')).includes(modTarget));
+        // 2. Pintar únicamente las filas de los módulos encontrados en esa última remesa (sin estructura de 21 renglones)
+        registrosUltimaRemesa.forEach(reg => {
             let tr = document.createElement('tr');
-
             COLUMNAS_SEMANAL_KEYS.forEach(col => {
                 let td = document.createElement('td');
-                let val = regMod ? obtenerValorFlexible(regMod, col) : "";
-
-                if (col === 'ENT') val = "05";
-                if (col === 'DTTO') val = "03";
-                if (col === 'MODULO') val = modTarget;
-                if (col === 'REMESA') val = ultimaRemesa;
+                let val = obtenerValorFlexible(reg, col);
 
                 if (!['ENT', 'DTTO', 'MODULO', 'REMESA', 'INICIAL', 'FINAL', 'CONFIGURACION', 'INICIALES_A'].includes(col)) {
                     let numVal = parseFloat(val) || 0;
-                    if (!isNaN(numVal)) acumuladorTotales[col] += numVal;
+                    if (!isNaN(numVal) && val !== "") {
+                        acumuladorTotales[col] += numVal;
+                        hayValidos = true;
+                    }
                 }
-
                 td.innerText = (val !== undefined && val !== "" && val !== 0) ? val : "";
                 tr.appendChild(td);
             });
             tbody.appendChild(tr);
         });
 
-        // Fila de Totales (Exactamente 4 renglones en total: 3 módulos + 1 totales)
+        // 3. Fila de Totales final
         let trT = document.createElement('tr');
         trT.className = 'fila-totales fw-bold';
         COLUMNAS_SEMANAL_KEYS.forEach(col => {
@@ -159,13 +154,13 @@ function renderTablaSemanal() {
             } else if (['ENT', 'DTTO', 'REMESA', 'INICIAL', 'FINAL', 'INICIALES_A', 'CONFIGURACION'].includes(col)) {
                 td.innerText = "";
             } else {
-                td.innerText = acumuladorTotales[col] || 0;
+                td.innerText = hayValidos ? (acumuladorTotales[col] || 0) : "";
             }
             trT.appendChild(td);
         });
         tbody.appendChild(trT);
 
-        // Sincronizar espejo en Firebase
+        // Sincronizar espejo en Firebase para Reportesdto03
         let tablaEl = document.getElementById('tablaSemanal');
         if (tablaEl) {
             let theadEl = tablaEl.querySelector('thead');
