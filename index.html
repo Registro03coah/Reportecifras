@@ -83,7 +83,7 @@
         </div>
     </div>
 
-    <!-- CONTENEDOR DE TARJETAS ORDENADAS EN 3 RENGLONES -->
+    <!-- CONTENEDOR DE TARJETAS ORDENADAS EN RENGLONES -->
     <div class="container px-3 my-auto py-2">
         
         <!-- RENGLÓN 1: Módulos MAC y Vaciado de Datos -->
@@ -113,7 +113,7 @@
             </div>
         </div>
 
-        <!-- RENGLÓN 2: Los 3 Reportes Juntos -->
+        <!-- RENGLÓN 2: Los 4 Reportes Juntos -->
         <div class="row text-center g-2 justify-content-center mb-2">
             <!-- Reporte Días (Libre) -->
             <div class="col-6 col-md-3">
@@ -164,10 +164,23 @@
             </div>
         </div>
 
-        <!-- RENGLÓN 3: Gráficos y las Bases de Datos -->
+        <!-- RENGLÓN 3: Reportes para JL, Gráficos y Bases de Datos -->
         <div class="row text-center g-2 justify-content-center">
+            
+            <!-- Reportes para JL (Libre Acceso Institucional) -->
+            <div class="col-6 col-md-3">
+                <div class="card menu-card p-2" style="border-top: 3px solid #1b396b;">
+                    <div class="card-body d-flex flex-column align-items-center py-2">
+                        <div class="card-icon mb-1" style="color: #1b396b;"><i class="bi bi-layers-fill"></i></div>
+                        <h6 class="fw-bold text-dark mb-1" style="font-size: 12px;">Reportes para JL</h6>
+                        <p class="text-muted small mb-2" style="font-size: 9px; line-height: 1.1;">Consolidado general Dtto 03.</p>
+                        <a href="Reportesdto03.html" class="btn btn-outline-primary btn-sm fw-bold mt-auto w-100 py-0" style="font-size: 10px;">Acceder</a>
+                    </div>
+                </div>
+            </div>
+
             <!-- Gráficos y Metas (Libre) -->
-            <div class="col-6 col-md-4">
+            <div class="col-6 col-md-3">
                 <div class="card menu-card p-2" style="border-top: 3px solid #ff66b2;">
                     <div class="card-body d-flex flex-column align-items-center py-2">
                         <div class="card-icon mb-1" style="color: #ff66b2;"><i class="bi bi-pie-chart-fill"></i></div>
@@ -179,7 +192,7 @@
             </div>
 
             <!-- BD Principal (Protegido) -->
-            <div class="col-6 col-md-4">
+            <div class="col-6 col-md-3">
                 <div class="card menu-card p-2">
                     <div class="card-body d-flex flex-column align-items-center py-2">
                         <div class="card-icon mb-1 text-danger"><i class="bi bi-database-fill"></i></div>
@@ -191,7 +204,7 @@
             </div>
 
             <!-- BD Totales (Protegido) -->
-            <div class="col-6 col-md-4">
+            <div class="col-6 col-md-3">
                 <div class="card menu-card p-2">
                     <div class="card-body d-flex flex-column align-items-center py-2">
                         <div class="card-icon mb-1 text-dark"><i class="bi bi-database-fill-gear"></i></div>
@@ -288,40 +301,5 @@
             }
         });
     </script>
-    <!-- Botón Flotante para Regresar al Menú Principal -->
-<a href="https://registro03coah.github.io/mimenu/" class="btn-regresar-menu" title="Regresar al Centro de Mando">
-    <i class="fas fa-home"></i> <span>Menú Principal</span>
-</a>
-
-<style>
-    .btn-regresar-menu {
-        position: fixed !important;
-        bottom: 25px !important;
-        left: 25px !important;
-        background: rgba(13, 27, 42, 0.95) !important;
-        color: #fff !important;
-        padding: 10px 18px !important;
-        border-radius: 30px !important;
-        display: flex !important;
-        align-items: center !important;
-        gap: 8px !important;
-        text-decoration: none !important;
-        font-family: system-ui, -apple-system, sans-serif !important;
-        font-size: 0.85rem !important;
-        font-weight: 600 !important;
-        border: 2px solid #4ea8de !important;
-        box-shadow: 0 5px 25px rgba(0, 0, 0, 0.7) !important;
-        backdrop-filter: blur(5px) !important;
-        z-index: 2147483647 !important;
-        transition: all 0.3s ease !important;
-    }
-
-    .btn-regresar-menu:hover {
-        background: #4ea8de !important;
-        color: #0d1b2a !important;
-        transform: translateY(-3px) !important;
-        box-shadow: 0 8px 25px rgba(78, 168, 222, 0.7) !important;
-    }
-</style>
 </body>
 </html>
