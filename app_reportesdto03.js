@@ -20,16 +20,31 @@ const COLUMNAS_KEYS = [
     "DIAS_TRABAJADOS", "CONFIGURACION"
 ];
 
-const MAPA_NUMEROS = {};
-COLUMNAS_KEYS.forEach((col, index) => {
-    MAPA_NUMEROS[col] = index + 1;
-});
-MAPA_NUMEROS["REMESA"] = 45; 
-MAPA_NUMEROS["ENT"] = 46; 
-MAPA_NUMEROS["DTTO"] = 47; 
-MAPA_NUMEROS["MODULO"] = 48;
+// Columnas específicas para Semanal (incluye REMESA)
+const COLUMNAS_SEMANAL_KEYS = [
+    "ENT", "DTTO", "MODULO", "REMESA", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS", "NO_UTILIZADOS", 
+    "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", 
+    "REPOSICION_REIMPRESIONES", "CORR_DE_DATOS_DIRECCION", "REINCORPORACION", 
+    "REEMPLAZO", "TOTAL_DE_TRAMITES", "RECHAZOS_DE_MAC_34", "RECHAZOS_DE_MAC_35", 
+    "CANCELADOS", "TOTAL_DE_MOVIMIENTOS", "CIF_05", "SOLICITUD_EXPEDICION_ORDINARIA", 
+    "SOLICITUD_DE_RECTIFICACION", "DEMANDA_DE_JUICIO", "INICIALES_A", "ACTUALIZACION", 
+    "RECIBIDAS_DE_OTROS_TIPOS", "IMPORTADAS", "EXPORTADAS", "ENTREGADAS", 
+    "ANEXAS_A_FUAR", "RESGUARDO", "SOLICITUD_DE_REIMPRESION", "ROBO_Y_O_EXTRAVIO", 
+    "RETIRADAS_POR_CAUSA", "SOBRANTES", "DUPLICADOS", "DISPONIBLES_TOTAL", 
+    "DISPONIBLES_DE_SOL_DE_EXP", "REIMPRE_FUERA_DEL_SISTEMA", "CREDEN_DEVUELTAS_POR_TERCEROS", 
+    "CRED_PRODUCTO_DE_REGISTRO_DUPLICADO", "CRED_PROD_CANJE_POR_NUEVA", 
+    "DIAS_TRABAJADOS", "CONFIGURACION"
+];
 
-function obtenerNumeroColumna(key) { return MAPA_NUMEROS[key] || '-'; }
+function obtenerMapaNumeros(columnasArr) {
+    let mapa = {};
+    columnasArr.forEach((col, index) => { mapa[col] = index + 1; });
+    mapa["REMESA"] = 45; 
+    mapa["ENT"] = 46; 
+    mapa["DTTO"] = 47; 
+    mapa["MODULO"] = 48;
+    return mapa;
+}
 
 window.copiarTablaExcel = function(tablaId) {
     const tabla = document.getElementById(tablaId);
@@ -61,14 +76,15 @@ onValue(ref(db, ".info/connected"), (s) => {
     }
 });
 
-function construirHeader(selectorTabla) {
+function construirHeader(selectorTabla, columnasArr) {
     const thead = document.querySelector(`${selectorTabla} thead`); if(!thead) return;
     thead.innerHTML = ""; 
     let trT = document.createElement('tr'); 
     let trN = document.createElement('tr'); 
     trN.className = 'num-row';
+    let mapaNum = obtenerMapaNumeros(columnasArr);
     
-    COLUMNAS_KEYS.forEach(col => {
+    columnasArr.forEach(col => {
         let th = document.createElement('th'); 
         th.innerText = col.replace(/_/g, ' '); 
         th.style.minWidth = ['MODULO','ENT','DTTO'].includes(col) ? "70px" : "90px";
@@ -76,7 +92,7 @@ function construirHeader(selectorTabla) {
         trT.appendChild(th);
         
         let thN = document.createElement('th'); 
-        thN.innerText = obtenerNumeroColumna(col); 
+        thN.innerText = mapaNum[col] || '-'; 
         trN.appendChild(thN);
     });
     thead.appendChild(trT); 
@@ -96,37 +112,29 @@ function obtenerValorFlexible(objetoRegistro, claveBuscada) {
     return "";
 }
 
-// Renderizador general para Semanal y Campaña
-function renderizarTablaSimple(selectorTbody, registros) {
-    const tbody = document.querySelector(selectorTbody);
+// 1. RENDERIZAR SEMANAL (Espejo de Reporte Semanal: última remesa)
+function renderizarSemanal(registros) {
+    const tbody = document.querySelector('#tablaSemanalReporte tbody');
     if (!tbody) return;
     tbody.innerHTML = "";
 
     let acumuladorTotales = {};
-    COLUMNAS_KEYS.forEach(col => { acumuladorTotales[col] = 0; });
-    let hayRegistrosValidos = false;
+    COLUMNAS_SEMANAL_KEYS.forEach(col => { acumuladorTotales[col] = 0; });
+    let hayValidos = false;
 
     registros.forEach(reg => {
         let tr = document.createElement('tr');
-        let modVal = String(obtenerValorFlexible(reg, 'MODULO') || '');
-        let isNegro = modVal.includes('50351') || modVal.includes('50353') || modVal.includes('50354');
-
-        COLUMNAS_KEYS.forEach(col => {
+        COLUMNAS_SEMANAL_KEYS.forEach(col => {
             let td = document.createElement('td');
             let val = obtenerValorFlexible(reg, col);
 
-            if (['ENT', 'DTTO', 'MODULO', 'INICIAL', 'FINAL'].includes(col)) {
-                td.className = isNegro ? "fw-bold" : "text-danger fw-bold";
-            }
-
-            if (!['ENT', 'DTTO', 'MODULO', 'INICIAL', 'FINAL', 'CONFIGURACION', 'INICIALES_A'].includes(col)) {
+            if (!['ENT', 'DTTO', 'MODULO', 'REMESA', 'INICIAL', 'FINAL', 'CONFIGURACION', 'INICIALES_A'].includes(col)) {
                 let numVal = parseFloat(val) || 0;
                 if (!isNaN(numVal) && val !== "") {
                     acumuladorTotales[col] += numVal;
-                    hayRegistrosValidos = true;
+                    hayValidos = true;
                 }
             }
-
             td.innerText = (val !== undefined && val !== "" && val !== 0) ? val : "";
             tr.appendChild(td);
         });
@@ -135,22 +143,107 @@ function renderizarTablaSimple(selectorTbody, registros) {
 
     let trT = document.createElement('tr');
     trT.className = 'fila-totales fw-bold';
-    COLUMNAS_KEYS.forEach(col => {
+    COLUMNAS_SEMANAL_KEYS.forEach(col => {
         let td = document.createElement('td');
         if (col === 'MODULO') {
-            td.innerText = "TOTAL";
-        } else if (['ENT', 'DTTO', 'INICIAL', 'FINAL', 'INICIALES_A', 'INICIALES_C', 'CONFIGURACION'].includes(col)) {
+            td.innerText = "TOTALES";
+        } else if (['ENT', 'DTTO', 'REMESA', 'INICIAL', 'FINAL', 'INICIALES_A', 'CONFIGURACION'].includes(col)) {
             td.innerText = "";
         } else {
-            td.innerText = hayRegistrosValidos ? (acumuladorTotales[col] || 0) : "";
+            td.innerText = hayValidos ? (acumuladorTotales[col] || 0) : "";
         }
         trT.appendChild(td);
     });
     tbody.appendChild(trT);
 }
 
-// Renderizador exacto para el Acumulado (21 renglones)
-function renderizarTablaAcumulado(dataF) {
+// 2. RENDERIZAR CAMPAÑA (Espejo de Reporte Campaña: suma acumulada por módulo)
+function renderizarCampana(dataM) {
+    const tbody = document.querySelector('#tablaCampanaReporte tbody');
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    let modulos = ['050351', '050353', '050354'];
+    let acumuladorGranTotal = {};
+    COLUMNAS_KEYS.forEach(col => { acumuladorGranTotal[col] = 0; });
+
+    modulos.forEach(modTarget => {
+        let regsMod = dataM.filter(r => String(obtenerValorFlexible(r, 'MODULO') || '').trim().includes(modTarget))
+            .sort((a,b)=>parseInt(obtenerValorFlexible(a, 'REMESA')) - parseInt(obtenerValorFlexible(b, 'REMESA')));
+        
+        if (regsMod.length === 0) return;
+
+        let pReg = regsMod[0];
+        let uReg = regsMod[regsMod.length - 1];
+
+        let sumasMod = {};
+        COLUMNAS_KEYS.forEach(col => {
+            if(!['ENT', 'DTTO', 'MODULO', 'INICIAL', 'FINAL', 'TOTAL_DE_FOLIOS', 'CONFIGURACION', 'REMESA'].includes(col)) {
+                sumasMod[col] = 0;
+            }
+        });
+
+        regsMod.forEach(r => {
+            Object.keys(sumasMod).forEach(c => {
+                let v = parseFloat(obtenerValorFlexible(r, c) || 0);
+                if(!isNaN(v)) sumasMod[c] += v;
+            });
+        });
+
+        let iniStr = obtenerValorFlexible(pReg, 'INICIAL');
+        let finStr = obtenerValorFlexible(uReg, 'FINAL');
+        let rIniNum = parseFloat(iniStr) || 0;
+        let rFinNum = parseFloat(finStr) || 0;
+        let totalFolios = (rFinNum >= rIniNum && rIniNum > 0) ? (rFinNum - rIniNum + 1) : 0;
+
+        let totalTramites = (sumasMod['INSCRIPCIONES'] || 0) + 
+                            (sumasMod['CORRECCION_DE_DATOS_PERSONALES'] || 0) + 
+                            (sumasMod['CAMBIO_DE_DOMICILIO'] || 0) + 
+                            (sumasMod['REPOSICION_REIMPRESIONES'] || 0) + 
+                            (sumasMod['CORR_DE_DATOS_DIRECCION'] || 0) + 
+                            (sumasMod['REINCORPORACION'] || 0) + 
+                            (sumasMod['REEMPLAZO'] || 0);
+
+        sumasMod['TOTAL_DE_TRAMITES'] = totalTramites;
+        sumasMod['TOTAL_DE_MOVIMIENTOS'] = totalTramites - (sumasMod['CANCELADOS'] || 0);
+
+        let tr = document.createElement('tr');
+        COLUMNAS_KEYS.forEach(col => {
+            let td = document.createElement('td');
+            let val = "";
+            if(col === 'ENT') val = "05";
+            else if(col === 'DTTO') val = "03";
+            else if(col === 'MODULO') val = modTarget;
+            else if(col === 'INICIAL') val = iniStr;
+            else if(col === 'FINAL') val = finStr;
+            else if(col === 'TOTAL_DE_FOLIOS') val = totalFolios > 0 ? totalFolios : "";
+            else val = sumasMod[col] !== undefined ? sumasMod[col] : "";
+
+            if (!['ENT', 'DTTO', 'MODULO', 'INICIAL', 'FINAL', 'CONFIGURACION'].includes(col)) {
+                acumuladorGranTotal[col] += (parseFloat(val) || 0);
+            }
+
+            td.innerText = val !== 0 ? val : "";
+            tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+        acumuladorGranTotal['TOTAL_DE_FOLIOS'] += totalFolios;
+    });
+
+    let trT = document.createElement('tr');
+    trT.className = 'fila-totales fw-bold';
+    COLUMNAS_KEYS.forEach(col => {
+        let td = document.createElement('td');
+        if (col === 'MODULO') td.innerText = "GRAN TOTAL";
+        else if (['ENT', 'DTTO', 'INICIAL', 'FINAL', 'CONFIGURACION'].includes(col)) td.innerText = "";
+        else td.innerText = acumuladorGranTotal[col] || 0;
+        trT.appendChild(td);
+    });
+    tbody.appendChild(trT);
+}
+
+// 3. RENDERIZAR ACUMULADO (Espejo exacto de Reporte Acumulado: 21 renglones)
+function renderizarAcumulado(dataF) {
     const tbody = document.querySelector('#tablaAcumuladoReporte tbody');
     if (!tbody) return;
     tbody.innerHTML = "";
@@ -259,25 +352,13 @@ function renderizarTablaAcumulado(dataF) {
             let tdDet = document.createElement('td');
             let valDet = "";
 
-            if(col === 'ENT') {
-                valDet = "05";
-                tdDet.className = isNegro ? "fw-bold" : "text-danger fw-bold";
-            } else if(col === 'DTTO') {
-                valDet = "03";
-                tdDet.className = isNegro ? "fw-bold" : "text-danger fw-bold";
-            } else if(col === 'MODULO') {
-                valDet = item.modulo;
-                tdDet.className = isNegro ? "fw-bold" : "text-danger fw-bold";
-            } else if(col === 'INICIAL') {
-                valDet = rIniStr;
-                tdDet.className = isNegro ? "fw-bold" : "text-danger fw-bold";
-            } else if(col === 'FINAL') {
-                valDet = rFinStr;
-                tdDet.className = isNegro ? "fw-bold" : "text-danger fw-bold";
-            } else if(col === 'TOTAL_DE_FOLIOS') {
-                valDet = foliosDet > 0 ? foliosDet : "";
-                tdDet.className = isNegro ? "text-dark fw-bold" : "text-danger fw-bold";
-            } else if(col === 'CONFIGURACION') {
+            if(col === 'ENT') valDet = "05";
+            else if(col === 'DTTO') valDet = "03";
+            else if(col === 'MODULO') valDet = item.modulo;
+            else if(col === 'INICIAL') valDet = rIniStr;
+            else if(col === 'FINAL') valDet = rFinStr;
+            else if(col === 'TOTAL_DE_FOLIOS') valDet = foliosDet > 0 ? foliosDet : "";
+            else if(col === 'CONFIGURACION') {
                 if(isNegro && item.sumas) valDet = item.sumas['CONFIGURACION'] !== undefined ? item.sumas['CONFIGURACION'] : "";
             } else if(col === 'INICIALES_A') {
                 if(isNegro && item.sumas) valDet = item.sumas['INICIALES_A'] !== undefined ? item.sumas['INICIALES_A'] : "";
@@ -299,24 +380,20 @@ function renderizarTablaAcumulado(dataF) {
     trT.className = 'fila-totales fw-bold';
     COLUMNAS_KEYS.forEach(col => {
         let td = document.createElement('td');
-        if(col === 'MODULO') {
-            td.innerText = "TOTAL";
-        } else if (['ENT', 'DTTO', 'INICIAL', 'FINAL', 'INICIALES_A', 'INICIALES_C', 'CONFIGURACION', 'DISPONIBLES_TOTAL'].includes(col)) {
-            td.innerText = "";
-        } else { 
-            td.innerText = acumuladorGranTotal[col] || 0; 
-        }
+        if(col === 'MODULO') td.innerText = "TOTAL";
+        else if (['ENT', 'DTTO', 'INICIAL', 'FINAL', 'INICIALES_A', 'INICIALES_C', 'CONFIGURACION', 'DISPONIBLES_TOTAL'].includes(col)) td.innerText = "";
+        else td.innerText = acumuladorGranTotal[col] || 0; 
         trT.appendChild(td);
     });
     tbody.appendChild(trT);
 }
 
-// Inicializar cabeceras
-construirHeader('#tablaSemanalReporte');
-construirHeader('#tablaCampanaReporte');
-construirHeader('#tablaAcumuladoReporte');
+// Inicializar cabeceras con sus respectivas columnas
+construirHeader('#tablaSemanalReporte', COLUMNAS_SEMANAL_KEYS);
+construirHeader('#tablaCampanaReporte', COLUMNAS_KEYS);
+construirHeader('#tablaAcumuladoReporte', COLUMNAS_KEYS);
 
-// Cargar bases de datos desde Firebase y separar comportamientos
+// Cargar bases de datos desde Firebase
 Promise.all([
     get(ref(db, 'bdtotales')),
     get(ref(db, 'bd_madre'))
@@ -329,15 +406,15 @@ Promise.all([
     let dataT = normalizar(datosTotales);
     let dataM = normalizar(datosMadre);
 
-    // 1. SEMANAL: Extraer únicamente los registros de la última remesa subida
+    // 1. SEMANAL: Última remesa subida
     let remesasMadre = [...new Set(dataM.map(x => parseInt(obtenerValorFlexible(x, 'REMESA'), 10)))].filter(x => !isNaN(x)).sort((a, b) => a - b);
     let ultimaRemesaNum = remesasMadre.length > 0 ? remesasMadre[remesasMadre.length - 1] : 0;
     let registrosSemanal = dataM.filter(r => parseInt(obtenerValorFlexible(r, 'REMESA'), 10) === ultimaRemesaNum);
-    renderizarTablaSimple('#tablaSemanalReporte tbody', registrosSemanal);
+    renderizarSemanal(registrosSemanal);
 
-    // 2. CAMPAÑA: Carga todos los registros globales de la BD Madre (igual a Reporte Campaña)
-    renderizarTablaSimple('#tablaCampanaReporte tbody', dataM);
+    // 2. CAMPAÑA: Totales acumulados de campaña por módulo
+    renderizarCampana(dataM);
 
-    // 3. ACUMULADO: Renderiza los 21 renglones oficiales usando la BD Totales
-    renderizarTablaAcumulado(dataT);
+    // 3. ACUMULADO: Estructura exacta de 21 renglones institucionales
+    renderizarAcumulado(dataT);
 });
