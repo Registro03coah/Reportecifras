@@ -69,14 +69,9 @@ function construirHeaderTabla() {
     COLUMNAS_SEMANAL_KEYS.forEach(col => {
         let th = document.createElement('th'); 
         th.innerText = col.replace(/_/g, ' '); 
-        
-        if(['INICIAL', 'FINAL'].includes(col)) {
-            th.style.minWidth = "170px";
-        } else if(['MODULO','ENT','DTTO','REMESA'].includes(col)) {
-            th.style.minWidth = "70px";
-        } else {
-            th.style.minWidth = "95px";
-        }
+        if(['INICIAL', 'FINAL'].includes(col)) th.style.minWidth = "170px";
+        else if(['MODULO','ENT','DTTO','REMESA'].includes(col)) th.style.minWidth = "70px";
+        else th.style.minWidth = "95px";
 
         if(['INICIAL','FINAL','TOTAL_DE_FOLIOS'].includes(col)) th.classList.add('bg-folios');
         trT.appendChild(th);
@@ -120,53 +115,56 @@ function renderTablaSemanal() {
             return l;
         });
 
-        // Obtener la última remesa subida
+        // Filtrar estrictamente los registros de la última remesa subida y agrupados por módulo (50351, 50353, 50354)
         let remesas = [...new Set(dataM.map(x => parseInt(obtenerValorFlexible(x, 'REMESA'), 10)))].filter(x => !isNaN(x)).sort((a, b) => a - b);
         let ultimaRemesa = remesas.length > 0 ? remesas[remesas.length - 1] : 0;
+        let regsUltima = dataM.filter(r => parseInt(obtenerValorFlexible(r, 'REMESA'), 10) === ultimaRemesa);
 
-        let registrosUltimaRemesa = dataM.filter(r => parseInt(obtenerValorFlexible(r, 'REMESA'), 10) === ultimaRemesa);
-
+        let modulosObjetivo = ['050351', '050353', '050354'];
         let acumuladorTotales = {};
         COLUMNAS_SEMANAL_KEYS.forEach(col => { acumuladorTotales[col] = 0; });
-        let hayValidos = false;
 
-        registrosUltimaRemesa.forEach(reg => {
+        modulosObjetivo.forEach(modTarget => {
+            let regMod = regsUltima.find(r => String(obtenerValorFlexible(r, 'MODULO')).includes(modTarget));
             let tr = document.createElement('tr');
+
             COLUMNAS_SEMANAL_KEYS.forEach(col => {
                 let td = document.createElement('td');
-                let val = obtenerValorFlexible(reg, col);
+                let val = regMod ? obtenerValorFlexible(regMod, col) : "";
+
+                if (col === 'ENT') val = "05";
+                if (col === 'DTTO') val = "03";
+                if (col === 'MODULO') val = modTarget;
+                if (col === 'REMESA') val = ultimaRemesa;
 
                 if (!['ENT', 'DTTO', 'MODULO', 'REMESA', 'INICIAL', 'FINAL', 'CONFIGURACION', 'INICIALES_A'].includes(col)) {
                     let numVal = parseFloat(val) || 0;
-                    if (!isNaN(numVal) && val !== "") {
-                        acumuladorTotales[col] += numVal;
-                        hayValidos = true;
-                    }
+                    if (!isNaN(numVal)) acumuladorTotales[col] += numVal;
                 }
+
                 td.innerText = (val !== undefined && val !== "" && val !== 0) ? val : "";
                 tr.appendChild(td);
             });
             tbody.appendChild(tr);
         });
 
+        // Fila de Totales (Exactamente 4 renglones en total: 3 módulos + 1 totales)
         let trT = document.createElement('tr');
         trT.className = 'fila-totales fw-bold';
         COLUMNAS_SEMANAL_KEYS.forEach(col => {
             let td = document.createElement('td');
             if (col === 'MODULO') {
-                td.innerText = "TOTALES";
+                td.innerText = "TOTAL";
             } else if (['ENT', 'DTTO', 'REMESA', 'INICIAL', 'FINAL', 'INICIALES_A', 'CONFIGURACION'].includes(col)) {
                 td.innerText = "";
             } else {
-                td.innerText = hayValidos ? (acumuladorTotales[col] || 0) : "";
+                td.innerText = acumuladorTotales[col] || 0;
             }
             trT.appendChild(td);
         });
         tbody.appendChild(trT);
 
-        // ==========================================
-        // SINCRONIZACIÓN AUTOMÁTICA CON EL ESPEJO EN FIREBASE
-        // ==========================================
+        // Sincronizar espejo en Firebase
         let tablaEl = document.getElementById('tablaSemanal');
         if (tablaEl) {
             let theadEl = tablaEl.querySelector('thead');
