@@ -20,9 +20,9 @@
                 overflow-x: auto !important;
                 -webkit-overflow-scrolling: touch !important;
             }
-            .container, .container-fluid {
-                padding-left: 8px !important;
-                padding-right: 8px !important;
+            .container-fluid {
+                padding-left: 5px !important;
+                padding-right: 5px !important;
             }
             h5, .fw-bold {
                 font-size: 0.95rem !important;
@@ -34,6 +34,15 @@
         }
         body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .header-banner { background: linear-gradient(135deg, #2c3e50, #1a252f); color: white; border-bottom: 4px solid #1b396b; }
+        
+        /* Contenedor general expandido al 100% fluido */
+        .container-fluid.main-fluid {
+            width: 100% !important;
+            max-width: 100% !important;
+            padding-left: 15px !important;
+            padding-right: 15px !important;
+        }
+
         .excel-container { 
             width: 100%; 
             max-height: none !important; 
@@ -43,7 +52,7 @@
             background: white; 
             margin-bottom: 15px; 
         }
-        .excel-table { margin-bottom: 0; width: max-content; border-collapse: separate; border-spacing: 0; }
+        .excel-table { margin-bottom: 0; width: 100%; border-collapse: separate; border-spacing: 0; }
         .excel-table thead tr:first-child th { position: sticky; top: 0; z-index: 3; font-size: 10px; text-transform: uppercase; background-color: #e9ecef; height: 50px; text-align: center; vertical-align: middle; padding: 6px 8px; border: 1px solid #ccc; }
         .excel-table thead tr.num-row th { position: sticky; top: 50px; z-index: 2; background-color: #d6d8db !important; color: #212529 !important; font-size: 10px; text-align: center; padding: 4px; border-bottom: 2px solid #2d3436; border: 1px solid #ccc; }
         .excel-table td { padding: 6px 8px; border: 1px solid #ccc; text-align: center; vertical-align: middle; font-size: 11px; white-space: nowrap; }
@@ -99,7 +108,7 @@
         <div><h1 class="fw-bold mb-0"><i class="bi bi-archive-fill text-warning"></i> Reporte Acumulado de Módulos</h1></div>
     </div>
 
-    <div class="container-fluid px-4 flex-grow-1">
+    <div class="container-fluid main-fluid flex-grow-1">
         <!-- PANEL DE CONTROLES Y RANGOS -->
         <div class="card shadow-sm mb-3">
             <div class="card-body d-flex gap-3 align-items-center bg-light p-2 flex-wrap">
@@ -137,7 +146,7 @@
             </div>
         </div>
 
-        <!-- TABLA DE ACUMULADO -->
+        <!-- TABLA DE ACUMULADO EXPANDIDA -->
         <div class="excel-container shadow-sm rounded border-info">
             <table class="excel-table table table-hover" id="tablaAcumulado">
                 <thead></thead>
@@ -148,14 +157,14 @@
     
     <!-- MODAL PARA VER REMESAS -->
     <div class="modal fade" id="modalRemesasAcumulado" tabindex="-1" aria-labelledby="modalRemesasLabel" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-dialog modal-dialog-centered modal-xl">
         <div class="modal-content">
           <div class="modal-header bg-dark text-white py-2">
-            <h5 class="modal-title fs-6" id="modalRemesasLabel"><i class="bi bi-list-columns"></i> Listado de Remesas Registradas</h5>
+            <h5 class="modal-title fs-6" id="modalRemesasLabel"><i class="bi bi-list-columns"></i> Listado Completo de Remesas Registradas</h5>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body bg-light">
-            <div id="contenidoRemesasModal" class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+            <div id="contenidoRemesasModal" class="table-responsive" style="max-height: 500px; overflow-y: auto;">
                 <p class="text-muted text-center py-3">Cargando lista de remesas...</p>
             </div>
           </div>
