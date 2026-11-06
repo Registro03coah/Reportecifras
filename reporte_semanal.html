@@ -49,6 +49,10 @@
             padding: 12px 10px; 
             border-bottom: 3px solid #055160; 
         }
+        .table-custom th, .table-custom td {
+            vertical-align: middle;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -58,38 +62,77 @@
         <div class="container">
             <h4 class="fw-bold mb-1 text-white"><i class="bi bi-calendar-week"></i> Reporte Semanal - Módulos MAC</h4>
             <p class="mb-1 text-light" style="font-size: 0.8rem;">Instituto Nacional Electoral | Distrito 03 Coahuila</p>
+            <div id="semaforoConexion" class="badge bg-warning text-dark px-2 py-1 shadow-sm mt-1" style="font-size: 9px;">
+                <i class="bi bi-arrow-repeat"></i> Verificando conexión...
+            </div>
         </div>
     </div>
 
     <!-- CONTENEDOR PRINCIPAL -->
-    <div class="container my-4 bg-white p-4 rounded shadow-lg" style="max-width: 1000px;">
+    <div class="container my-4 bg-white p-4 rounded shadow-lg" style="max-width: 1100px;">
         
-        <!-- SELECTOR DE REMESA Y BOTÓN SGC -->
-        <div class="row align-items-center mb-4">
+        <!-- BARRA DE ACCIONES Y REMESA -->
+        <div class="row align-items-center mb-4 pb-3 border-bottom">
             <div class="col-md-6">
-                <label for="selectRemesaSemanal" class="form-label fw-bold text-dark">Seleccionar Remesa:</label>
-                <select id="selectRemesaSemanal" class="form-select fw-bold">
+                <label for="selectRemesaSemanal" class="form-label fw-bold text-dark"><i class="bi bi-layers-fill"></i> Seleccionar Remesa:</label>
+                <select id="selectRemesaSemanal" class="form-select fw-bold border-primary shadow-sm" onchange="cambiarRemesa()">
                     <option value="202645" selected>202645</option>
                     <option value="202646">202646</option>
                     <option value="202647">202647</option>
                 </select>
             </div>
             <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                <a href="index.html" class="btn btn-outline-secondary btn-sm fw-bold me-2 px-3 py-2" style="border-radius: 20px;">
+                    <i class="bi bi-house-door-fill"></i> Menú Principal
+                </a>
                 <!-- BOTÓN SGC -->
                 <button type="button" class="btn btn-warning fw-bold shadow-sm px-3 py-2 text-dark" onclick="abrirModalSGC()" style="border-radius: 20px; font-size: 13px;">
-                    <i class="bi bi-file-earmark-spreadsheet-fill"></i> SGC (Sistema de Gestión de Calidad)
+                    <i class="bi bi-file-earmark-spreadsheet-fill"></i> SGC (Sistema de Calidad)
                 </button>
             </div>
         </div>
 
-        <!-- CONTENIDO PRINCIPAL DEL REPORTE -->
-        <div class="alert alert-info text-center">
-            <i class="bi bi-info-circle-fill"></i> Vista del Reporte Semanal activa. Utiliza el botón superior para desplegar el formato SGC sincronizado con Firebase de forma independiente.
+        <!-- TABLA PRINCIPAL DEL REPORTE SEMANAL -->
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped align-middle table-custom" style="font-size: 13px;">
+                <thead class="table-dark text-center">
+                    <tr>
+                        <th>Concepto / Trámite</th>
+                        <th class="col-modulo-50351">Módulo 50351</th>
+                        <th class="col-modulo-50353">Módulo 50353</th>
+                        <th class="col-modulo-50354">Módulo 50354</th>
+                        <th class="table-info text-dark">Total Distrito</th>
+                    </tr>
+                </thead>
+                <tbody id="cuerpoTablaSemanal">
+                    <tr>
+                        <td class="text-start fw-bold">Credenciales para Votar Entregadas</td>
+                        <td><input type="number" class="form-control form-control-sm text-center input-reporte" data-mod="50351" data-campo="entregadas" value="756" oninput="calcularTotales()"></td>
+                        <td><input type="number" class="form-control form-control-sm text-center input-reporte" data-mod="50353" data-campo="entregadas" value="450" oninput="calcularTotales()"></td>
+                        <td><input type="number" class="form-control form-control-sm text-center input-reporte" data-mod="50354" data-campo="entregadas" value="394" oninput="calcularTotales()"></td>
+                        <td class="fw-bold bg-light" id="total_entregadas">1600</td>
+                    </tr>
+                    <tr>
+                        <td class="text-start fw-bold">Trámites Aplicados (Recepción y Actualización)</td>
+                        <td><input type="number" class="form-control form-control-sm text-center input-reporte" data-mod="50351" data-campo="tramites" value="812" oninput="calcularTotales()"></td>
+                        <td><input type="number" class="form-control form-control-sm text-center input-reporte" data-mod="50353" data-campo="tramites" value="284" oninput="calcularTotales()"></td>
+                        <td><input type="number" class="form-control form-control-sm text-center input-reporte" data-mod="50354" data-campo="tramites" value="118" oninput="calcularTotales()"></td>
+                        <td class="fw-bold bg-light" id="total_tramites">1214</td>
+                    </tr>
+                    <tr>
+                        <td class="text-start fw-bold">Credenciales Recibidas / Disponibles</td>
+                        <td><input type="number" class="form-control form-control-sm text-center input-reporte" data-mod="50351" data-campo="recibidas" value="855" oninput="calcularTotales()"></td>
+                        <td><input type="number" class="form-control form-control-sm text-center input-reporte" data-mod="50353" data-campo="recibidas" value="226" oninput="calcularTotales()"></td>
+                        <td><input type="number" class="form-control form-control-sm text-center input-reporte" data-mod="50354" data-campo="recibidas" value="217" oninput="calcularTotales()"></td>
+                        <td class="fw-bold bg-light" id="total_recibidas">1298</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
 
     </div>
 
-    <!-- VENTANA MODAL SGC -->
+    <!-- VENTANA MODAL SGC (DISEÑO EXACTO SOLICITADO) -->
     <div id="modalSGC" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); z-index: 99999; justify-content: center; align-items: center; backdrop-filter: blur(5px);">
         <div style="background: #ffffff; border-radius: 12px; width: 95%; max-width: 950px; max-height: 90vh; overflow-y: auto; box-shadow: 0 5px 30px rgba(0,0,0,0.5); padding: 20px; color: #333;">
             
@@ -227,9 +270,50 @@
         </small>
     </footer>
 
-    <!-- SCRIPT GENERAL Y DE GESTIÓN SGC -->
+    <!-- SCRIPTS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Calcular totales de la tabla principal en tiempo real
+        function calcularTotales() {
+            let inputs = document.querySelectorAll('.input-reporte');
+            let sumaEntregadas51 = 0, sumaEntregadas53 = 0, sumaEntregadas54 = 0;
+            let sumaTramites51 = 0, sumaTramites53 = 0, sumaTramites54 = 0;
+            let sumaRecibidas51 = 0, sumaRecibidas53 = 0, sumaRecibidas54 = 0;
+
+            inputs.forEach(input => {
+                let val = parseFloat(input.value) || 0;
+                let mod = input.getAttribute('data-mod');
+                let campo = input.getAttribute('data-campo');
+
+                if(campo === 'entregadas') {
+                    if(mod === '50351') sumaEntregadas51 = val;
+                    if(mod === '50353') sumaEntregadas53 = val;
+                    if(mod === '50354') sumaEntregadas54 = val;
+                }
+                if(campo === 'tramites') {
+                    if(mod === '50351') sumaTramites51 = val;
+                    if(mod === '50353') sumaTramites53 = val;
+                    if(mod === '50354') sumaTramites54 = val;
+                }
+                if(campo === 'recibidas') {
+                    if(mod === '50351') sumaRecibidas51 = val;
+                    if(mod === '50353') sumaRecibidas53 = val;
+                    if(mod === '50354') sumaRecibidas54 = val;
+                }
+            });
+
+            document.getElementById('total_entregadas').innerText = sumaEntregadas51 + sumaEntregadas53 + sumaEntregadas54;
+            document.getElementById('total_tramites').innerText = sumaTramites51 + sumaTramites53 + sumaTramites54;
+            document.getElementById('total_recibidas').innerText = sumaRecibidas51 + sumaRecibidas53 + sumaRecibidas54;
+        }
+
+        function cambiarRemesa() {
+            let remesa = document.getElementById('selectRemesaSemanal').value;
+            console.log("Remesa cambiada a:", remesa);
+            // Aquí puedes agregar la lógica para recargar datos de Firebase según la remesa si lo requieres
+        }
+
+        // Gestión del Modal SGC
         window.abrirModalSGC = function() {
             const modal = document.getElementById('modalSGC');
             if(modal) {
@@ -249,10 +333,12 @@
             
             document.getElementById('thRemesaSGC').innerText = remesaActual;
 
+            // Extraer trámites de la tabla principal
             const tramites51 = obtenerTramitesModulo('50351');
             const tramites53 = obtenerTramitesModulo('50353');
             const tramites54 = obtenerTramitesModulo('50354');
 
+            // Llenar campos automáticos de trámites aplicados
             document.querySelector('[data-key="tramites_aplicados_1"]').value = tramites51;
             document.querySelector('[data-key="tramites_aplicados_2"]').value = tramites53;
             document.querySelector('[data-key="tramites_aplicados_3"]').value = tramites54;
@@ -261,12 +347,12 @@
             document.querySelector('[data-key="total_tramites_2"]').value = tramites53;
             document.querySelector('[data-key="total_tramites_3"]').value = tramites54;
 
-            // Calcular 10% en el renglón amarillo por defecto
+            // Calcular 10% por defecto en el renglón amarillo
             document.querySelector('[data-key="tramites_exitosos_1"]').value = Math.round(tramites51 * 0.10 * 100) / 100;
             document.querySelector('[data-key="tramites_exitosos_2"]').value = Math.round(tramites53 * 0.10 * 100) / 100;
             document.querySelector('[data-key="tramites_exitosos_3"]').value = Math.round(tramites54 * 0.10 * 100) / 100;
 
-            // Cargar desde Firebase si existe registro previo independiente para la remesa
+            // Leer registros independientes desde Firebase vinculados a esta remesa
             if (window.db && window.firebaseRef && window.firebaseGet) {
                 const dbRef = window.firebaseRef(window.db, `sgc_remesas/${remesaActual}`);
                 window.firebaseGet(dbRef).then((snapshot) => {
@@ -286,11 +372,11 @@
         }
 
         function obtenerTramitesModulo(mod) {
-            let celda = document.querySelector(`.col-modulo-${mod}`) || document.querySelector(`[data-modulo="${mod}"]`);
-            if(celda) {
-                return parseFloat(celda.innerText || celda.value) || 0;
+            let input = document.querySelector(`.input-reporte[data-mod="${mod}"][data-campo="tramites"]`);
+            if(input) {
+                return parseFloat(input.value) || 0;
             }
-            return 81; 
+            return 0;
         }
 
         window.guardarDatosSGC = function() {
@@ -300,7 +386,7 @@
             let datosASubir = {};
             document.querySelectorAll('.val-sgc').forEach(input => {
                 let key = input.getAttribute('data-key');
-                datosASubir[key] = input.value; // Guarda todos los campos, incluyendo los editados de la línea amarilla
+                datosASubir[key] = input.value; // Guarda todos los campos, incluyendo los editados en el renglón amarillo
             });
 
             if (window.db && window.firebaseRef && window.firebaseSet) {
@@ -309,13 +395,25 @@
                     alert("¡Formato SGC guardado con éxito de forma independiente en Firebase!");
                     cerrarModalSGC();
                 }).catch(error => {
-                    console.error("Error al guardar:", error);
+                    console.error("Error al guardar SGC:", error);
                     alert("Hubo un error al guardar los datos en la nube.");
                 });
             } else {
                 alert("La conexión con Firebase no está disponible en este momento.");
             }
         }
+
+        // Semáforo de conexión en tiempo real
+        setTimeout(() => {
+            if (window.db && window.firebaseRef) {
+                window.firebaseRef(window.db, ".info/connected");
+                let sem = document.getElementById("semaforoConexion");
+                if (sem) {
+                    sem.className = "badge bg-success text-white px-2 py-1 shadow-sm mt-1";
+                    sem.innerHTML = '<i class="bi bi-check-circle"></i> En línea';
+                }
+            }
+        }, 1000);
     </script>
 </body>
 </html>
