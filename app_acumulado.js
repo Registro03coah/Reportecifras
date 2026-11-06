@@ -166,6 +166,7 @@ function renderTabla() {
             .sort((a,b)=>parseInt(obtenerValorFlexible(a, 'REMESA')) - parseInt(obtenerValorFlexible(b, 'REMESA')));
         
         let uReg = regsMod.length > 0 ? regsMod[regsMod.length - 1] : null;
+        let pReg = regsMod.length > 0 ? regsMod[0] : null; // Primer registro de la remesa inicial en el rango para este módulo
         let indexNegro = modTarget === '50351' ? 0 : (modTarget === '50353' ? 7 : 14);
         
         if(uReg && obtenerValorFlexible(uReg, 'FINAL')) {
@@ -176,7 +177,7 @@ function renderTabla() {
 
         let sumasMod = {};
         COLUMNAS_ACUMULADO_KEYS.forEach(col => {
-            if(!['ENT', 'DTTO', 'MODULO', 'INICIAL', 'FINAL', 'TOTAL_DE_FOLIOS', 'CONFIGURACION', 'REMESA'].includes(col)) {
+            if(!['ENT', 'DTTO', 'MODULO', 'INICIAL', 'FINAL', 'TOTAL_DE_FOLIOS', 'CONFIGURACION', 'INICIALES_A', 'REMESA'].includes(col)) {
                 sumasMod[col] = 0;
             }
         });
@@ -192,6 +193,13 @@ function renderTabla() {
             sumasMod['CONFIGURACION'] = obtenerValorFlexible(uReg, 'CONFIGURACION');
         } else {
             sumasMod['CONFIGURACION'] = "";
+        }
+
+        // Obtener el valor de INICIALES_A de la primer remesa configurada en el rango para este módulo
+        if(pReg) {
+            sumasMod['INICIALES_A'] = obtenerValorFlexible(pReg, 'INICIALES_A');
+        } else {
+            sumasMod['INICIALES_A'] = "";
         }
 
         let totalTramites = (sumasMod['INSCRIPCIONES'] || 0) + 
@@ -255,6 +263,12 @@ function renderTabla() {
                 } else {
                     valDet = "";
                 }
+            } else if(col === 'INICIALES_A') {
+                if(isNegro && item.sumas) {
+                    valDet = item.sumas['INICIALES_A'] !== undefined ? item.sumas['INICIALES_A'] : "";
+                } else {
+                    valDet = "";
+                }
             } else {
                 if(isNegro && item.sumas && item.sumas[col] !== undefined) {
                     valDet = item.sumas[col];
@@ -284,7 +298,6 @@ function renderTabla() {
     });
     tbody.appendChild(trT);
 
-    // Llenar el modal de remesas desglosado con todas las columnas por módulo
     llenarModalRemesas(dataF);
 }
 
@@ -310,14 +323,12 @@ function llenarModalRemesas(dataF) {
                     <tr>
     `;
 
-    // Cabeceras del modal con todas las columnas de acumulado
     COLUMNAS_ACUMULADO_KEYS.forEach(col => {
         html += `<th>${col.replace(/_/g, ' ')}</th>`;
     });
 
     html += `</tr></thead><tbody>`;
 
-    // Ordenar los registros por remesa y módulo
     let registrosOrdenados = [...dataF].sort((a, b) => {
         let rA = parseInt(obtenerValorFlexible(a, 'REMESA'), 10) || 0;
         let rB = parseInt(obtenerValorFlexible(b, 'REMESA'), 10) || 0;
