@@ -102,23 +102,24 @@ function renderTablaSemanal() {
     if(!tbody) return; 
     tbody.innerHTML = "";
 
-    get(ref(db, 'bd_madre')).then((snapshot) => {
+    // CORRECCIÓN: Ahora consultamos directamente bdtotales en lugar de bd_madre
+    get(ref(db, 'bdtotales')).then((snapshot) => {
         if (!snapshot.exists()) {
-            tbody.innerHTML = `<tr><td colspan="${COLUMNAS_SEMANAL_KEYS.length}" class="text-center text-muted py-3">No hay datos en bd_madre.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="${COLUMNAS_SEMANAL_KEYS.length}" class="text-center text-muted py-3">No hay datos en bdtotales.</td></tr>`;
             return;
         }
 
         let rawData = snapshot.val();
-        let dataM = (Array.isArray(rawData) ? rawData : Object.values(rawData)).map(i => {
+        let dataT = (Array.isArray(rawData) ? rawData : Object.values(rawData)).map(i => {
             let l = {};
             for(let k in i) l[k.toUpperCase().trim()] = i[k];
             return l;
         });
 
-        // Filtrar estrictamente los registros de la última remesa subida y agrupados por módulo (50351, 50353, 50354)
-        let remesas = [...new Set(dataM.map(x => parseInt(obtenerValorFlexible(x, 'REMESA'), 10)))].filter(x => !isNaN(x)).sort((a, b) => a - b);
+        // Obtener la última remesa subida desde bdtotales
+        let remesas = [...new Set(dataT.map(x => parseInt(obtenerValorFlexible(x, 'REMESA'), 10)))].filter(x => !isNaN(x)).sort((a, b) => a - b);
         let ultimaRemesa = remesas.length > 0 ? remesas[remesas.length - 1] : 0;
-        let regsUltima = dataM.filter(r => parseInt(obtenerValorFlexible(r, 'REMESA'), 10) === ultimaRemesa);
+        let regsUltima = dataT.filter(r => parseInt(obtenerValorFlexible(r, 'REMESA'), 10) === ultimaRemesa);
 
         let modulosObjetivo = ['050351', '050353', '050354'];
         let acumuladorTotales = {};
