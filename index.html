@@ -151,7 +151,7 @@
             </button>
         </div>
 
-        <!-- CONTENEDOR SECUNDARIO OCULTO -->
+        <!-- CONTENEDOR SECUNDARIO OCULTO CON EL NUEVO BOTÓN DE RESPALDO -->
         <div class="collapse" id="collapseReportes">
             <div class="row g-3 justify-content-center p-3 rounded-4 shadow-lg mb-2" style="background: rgba(7, 9, 19, 0.9); backdrop-filter: blur(15px); border: 1px solid rgba(0, 240, 255, 0.3);">
                 <div class="col-12 col-md-6">
@@ -184,12 +184,18 @@
                         <i class="bi bi-database-fill-gear pill-icon text-light"></i> BD Totales
                     </button>
                 </div>
+                <!-- NUEVO BOTÓN DE ACCESO RÁPIDO PARA RESPALDO MANUAL -->
+                <div class="col-12">
+                    <button onclick="verificarPassword('RESPALDO_MANUAL')" class="btn-neon-pill border-0 text-center w-100" style="background: rgba(0, 240, 255, 0.15);">
+                        <i class="bi bi-cloud-arrow-down-fill pill-icon text-info"></i> Respaldo Manual de Base de Datos (JSON)
+                    </button>
+                </div>
             </div>
         </div>
 
     </div>
 
-    <!-- MODAL PERSONALIZADO NATIVO (100% BLINDADO PARA ANDROID Y PC) -->
+    <!-- MODAL PERSONALIZADO NATIVO -->
     <div id="customModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.75); z-index: 99999; justify-content: center; align-items: center; backdrop-filter: blur(6px);">
         <div style="background: #0f2043; border: 2px solid #00f0ff; border-radius: 15px; padding: 25px; width: 90%; max-width: 320px; text-align: center; box-shadow: 0 0 30px rgba(0,240,255,0.5); color: #fff;">
             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -208,7 +214,7 @@
 
     <footer class="text-center py-2 text-white shadow-sm" style="background-color: rgba(7, 9, 19, 0.95); width: 100%;">
         <small style="font-size: 10px;">
-            &copy; 2026 Todos los derechos reservados. Desarrollado por <span class="text-info fw-bold">Carrivers Desing</span> para Módulos MAC. Versión 1.4
+            &copy; 2026 Todos los derechos reservados. Desarrollado por <span class="text-info fw-bold">Carrivers Desing</span> para Módulos MAC. Versión 1.5
         </small>
     </footer>
 
@@ -216,7 +222,7 @@
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, get, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const esMovil = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         if (!esMovil) {
@@ -239,6 +245,8 @@
         }
 
         const sem = document.getElementById("semaforoConexion");
+        let dbInstance = null;
+
         try {
             const firebaseConfig = {
                 apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo",
@@ -250,9 +258,9 @@
                 appId: "1:916644687837:web:03d346cc48a071af1ed034"
             };
             const app = initializeApp(firebaseConfig);
-            const db = getDatabase(app);
+            dbInstance = getDatabase(app);
 
-            onValue(ref(db, ".info/connected"), (s) => {
+            onValue(ref(dbInstance, ".info/connected"), (s) => {
                 if (sem) {
                     if (s.val() === true) {
                         sem.className = "badge bg-success text-white px-2 py-1 shadow-sm mt-1";
@@ -269,13 +277,45 @@
                 sem.innerHTML = '<i class="bi bi-phone"></i> Modo Local';
             }
         }
+
+        // Función global para ejecutar el respaldo manual al autenticarse
+        window.ejecutarRespaldoManual = function() {
+            if (!dbInstance) {
+                alert("No hay conexión activa con la base de datos.");
+                return;
+            }
+            alert("Generando respaldo de la base de datos... Por favor espera un momento.");
+            get(ref(dbInstance)).then((snapshot) => {
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    const jsonStr = JSON.stringify(data, null, 2);
+                    const blob = new Blob([jsonStr], { type: "application/json" });
+                    const url = URL.createObjectURL(blob);
+                    
+                    const fechaActual = new Date().toISOString().slice(0, 10);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `Respaldo_Sistema_MAC_Dto03_${fechaActual}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    alert("¡Respaldo descargado con éxito!");
+                } else {
+                    alert("La base de datos está vacía.");
+                }
+            }).catch((error) => {
+                console.error("Error al generar respaldo:", error);
+                alert("Hubo un error al intentar descargar el respaldo.");
+            });
+        };
     </script>
 
     <script>
-        let paginaDestino = "";
+        let destinoActual = "";
 
         function verificarPassword(url) {
-            paginaDestino = url;
+            destinoActual = url;
             const modal = document.getElementById('customModal');
             const input = document.getElementById('inputPassAcceso');
             const err = document.getElementById('errorPass');
@@ -297,7 +337,13 @@
             if (pass === "charro") {
                 sessionStorage.setItem('sesion_autorizada', 'true');
                 cerrarModalCustom();
-                window.location.href = paginaDestino;
+                if (destinoActual === 'RESPALDO_MANUAL') {
+                    if (typeof window.ejecutarRespaldoManual === 'function') {
+                        window.ejecutarRespaldoManual();
+                    }
+                } else {
+                    window.location.href = destinoActual;
+                }
             } else {
                 let err = document.getElementById('errorPass');
                 if(err) err.classList.remove('d-none');
