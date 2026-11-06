@@ -6,10 +6,6 @@
     <title>Menú Principal - Sistema MAC</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    
-    <!-- Firebase SDK v8 -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <!-- Librerías requeridas para el fondo animado Vanta.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
@@ -30,7 +26,7 @@
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
             z-index: 0;
-            pointer-events: auto; /* Permite la interacción del mouse con los nodos */
+            pointer-events: auto;
         }
 
         body { 
@@ -253,22 +249,30 @@
     <!-- SCRIPTS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- INICIALIZADOR DE VANTA.NET -->
-    <script>
-        VANTA.NET({
-            el: "#vanta-background",
-            mouseControls: true,
-            touchControls: true,
-            gyroControls: false,
-            minHeight: 200.00,
-            minWidth: 200.00,
-            scale: 1.00,
-            scaleMobile: 1.00,
-            color: 0x00f0ff,         // Cían neón para los nodos
-            backgroundColor: 0x070913, // Fondo azul oscuro/negro
-            points: 12.00,          // Espaciado limpio para no saturar
-            maxDistance: 22.00
-        });
+    <!-- SCRIPT PRINCIPAL CON FIREBASE MODULAR (v10) Y MANEJADOR ANTI-BLOQUEO -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // Inicializar Vanta.net de fondo
+        try {
+            VANTA.NET({
+                el: "#vanta-background",
+                mouseControls: true,
+                touchControls: true,
+                gyroControls: false,
+                minHeight: 200.00,
+                minWidth: 200.00,
+                scale: 1.00,
+                scaleMobile: 1.00,
+                color: 0x00f0ff,
+                backgroundColor: 0x070913,
+                points: 12.00,
+                maxDistance: 22.00
+            });
+        } catch(e) {
+            console.log("Fondo Vanta cargado por respaldo estático.");
+        }
 
         const firebaseConfig = {
             apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo",
@@ -279,17 +283,40 @@
             messagingSenderId: "916644687837",
             appId: "1:916644687837:web:03d346cc48a071af1ed034"
         };
-        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
 
-        database.ref(".info/connected").on("value", (s) => {
-            let sem = document.getElementById("semaforoConexion");
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Semáforo de conexión blindado para evitar bloqueos móviles
+        const sem = document.getElementById("semaforoConexion");
+        let conexionEstablecida = false;
+
+        onValue(ref(db, ".info/connected"), (s) => {
+            conexionEstablecida = true;
             if (sem) {
-                sem.className = s.val() ? "badge bg-success text-white px-2 py-1 shadow-sm mt-1" : "badge bg-danger text-white px-2 py-1 shadow-sm mt-1";
-                sem.innerHTML = s.val() ? '<i class="bi bi-check-circle"></i> En línea' : '<i class="bi bi-x-circle"></i> Desconectado';
+                if (s.val() === true) {
+                    sem.className = "badge bg-success text-white px-2 py-1 shadow-sm mt-1";
+                    sem.innerHTML = '<i class="bi bi-check-circle"></i> En línea';
+                } else {
+                    sem.className = "badge bg-danger text-white px-2 py-1 shadow-sm mt-1";
+                    sem.innerHTML = '<i class="bi bi-x-circle"></i> Desconectado';
+                }
             }
         });
 
+        // Timeout de seguridad: Si los datos móviles bloquean la red por más de 3 segundos, 
+        // la página muestra el semáforo offline pero NUNCA se queda en blanco.
+        setTimeout(() => {
+            if (!conexionEstablecida && sem) {
+                sem.className = "badge bg-secondary text-white px-2 py-1 shadow-sm mt-1";
+                sem.innerHTML = '<i class="bi bi-wifi-off"></i> Red Móvil Limitada';
+            }
+        }, 3000);
+
+    </script>
+
+    <script>
+        // Control de contraseña y modales independientes de la red
         let paginaDestino = "";
         const modalPass = new bootstrap.Modal(document.getElementById('modalPassword'));
 
