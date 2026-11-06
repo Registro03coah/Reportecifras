@@ -7,7 +7,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
-    <!-- Librerías requeridas para el fondo animado Vanta.js -->
+    <!-- Librerías para el fondo animado Vanta.net -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.net.min.js"></script>
 
@@ -21,14 +21,12 @@
                 -webkit-overflow-scrolling: touch !important;
             }
         }
-        /* CONTENEDOR DE FONDO CON ANIMACIÓN VANTA */
         #vanta-background {
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
             z-index: 0;
             pointer-events: auto;
         }
-
         body { 
             background-color: #070913;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
@@ -41,12 +39,10 @@
             overflow-x: hidden;
             margin: 0;
         }
-        
         .hero-banner, .container, footer, .modal {
             position: relative;
             z-index: 2;
         }
-
         .hero-banner { 
             background: rgba(10, 25, 47, 0.85); 
             color: white; 
@@ -55,8 +51,6 @@
             box-shadow: 0 4px 20px rgba(0,0,0,0.5);
             backdrop-filter: blur(10px);
         }
-
-        /* DISEÑO DE BOTONES TIPO PÍLDORA NEÓN */
         .btn-neon-pill {
             background: rgba(10, 25, 47, 0.82);
             border: 1px solid rgba(0, 240, 255, 0.4);
@@ -92,8 +86,6 @@
             transform: scale(1.2) rotate(10deg);
             color: #ffffff;
         }
-
-        /* BOTÓN DESPLEGABLE CENTRAL */
         .btn-desplegable-neon {
             background: rgba(10, 25, 47, 0.9);
             border: 2px solid rgba(0, 240, 255, 0.6);
@@ -114,10 +106,8 @@
 </head>
 <body>
 
-    <!-- CONTENEDOR DEL EFECTO VANTA.NET -->
     <div id="vanta-background"></div>
 
-    <!-- BANNER PRINCIPAL COMPACTO -->
     <div class="hero-banner text-center shadow-sm">
         <div class="container">
             <h5 class="fw-bold mb-1 text-white"><i class="bi bi-hdd-network"></i> Sistema de Reportes Diarios - Módulos MAC</h5>
@@ -128,34 +118,24 @@
         </div>
     </div>
 
-    <!-- CONTENEDOR PRINCIPAL FLOTANTE -->
     <div class="container px-3 my-auto py-3" style="max-width: 900px;">
         
-        <!-- RENGLÓN PRINCIPAL (Los 4 botones solicitados en orden) -->
         <div class="row g-3 justify-content-center mb-3">
-            
-            <!-- 1. Módulos MAC -->
             <div class="col-12 col-md-6">
                 <a href="modulosmac.html" class="btn-neon-pill">
                     <i class="bi bi-building-fill-gear pill-icon"></i> Módulos MAC
                 </a>
             </div>
-
-            <!-- 2. Vaciado de Datos -->
             <div class="col-12 col-md-6">
                 <button onclick="verificarPassword('captura.html')" class="btn-neon-pill border-0 text-start w-100">
                     <i class="bi bi-pencil-square pill-icon text-info"></i> Vaciado de Datos
                 </button>
             </div>
-
-            <!-- 3. Reportes para JL -->
             <div class="col-12 col-md-6">
                 <a href="Reportesdto03.html" class="btn-neon-pill">
                     <i class="bi bi-layers-fill pill-icon text-success"></i> Reportes para JL
                 </a>
             </div>
-
-            <!-- 4. Gráficos y Metas -->
             <div class="col-12 col-md-6">
                 <a href="graficos.html" class="btn-neon-pill">
                     <i class="bi bi-pie-chart-fill pill-icon" style="color: #ff66b2;"></i> Gráficos y Metas
@@ -163,65 +143,49 @@
             </div>
         </div>
 
-        <!-- BOTÓN DESPLEGABLE PARA MÁS REPORTES -->
         <div class="text-center mb-3">
             <button class="btn btn-desplegable-neon fw-bold px-4 py-2 shadow" type="button" data-bs-toggle="collapse" data-bs-target="#collapseReportes" aria-expanded="false" aria-controls="collapseReportes" style="font-size: 11px;">
                 <i class="bi bi-folder-symlink-fill"></i> 📂 Más Reportes y Bases de Datos <i class="bi bi-chevron-down ms-2"></i>
             </button>
         </div>
 
-        <!-- CONTENEDOR SECUNDARIO OCULTO (ESTILO PÍLDORAS) -->
         <div class="collapse" id="collapseReportes">
             <div class="row g-3 justify-content-center p-3 rounded-4 shadow-lg mb-2" style="background: rgba(7, 9, 19, 0.85); backdrop-filter: blur(15px); border: 1px solid rgba(0, 240, 255, 0.3);">
-                
-                <!-- Reporte Días -->
                 <div class="col-12 col-md-6">
                     <a href="reporte_dias.html" class="btn-neon-pill">
                         <i class="bi bi-calendar3 pill-icon text-success"></i> Reporte Días
                     </a>
                 </div>
-
-                <!-- Reporte Semanal -->
                 <div class="col-12 col-md-6">
                     <button onclick="verificarPassword('reporte_semanal.html')" class="btn-neon-pill border-0 text-start w-100">
                         <i class="bi bi-calendar-week pill-icon text-warning"></i> Reporte Semanal
                     </button>
                 </div>
-
-                <!-- Reporte Campaña -->
                 <div class="col-12 col-md-6">
                     <button onclick="verificarPassword('reporte_campana.html')" class="btn-neon-pill border-0 text-start w-100">
                         <i class="bi bi-bar-chart-fill pill-icon text-info"></i> Reporte Campaña
                     </button>
                 </div>
-
-                <!-- Reporte Acumulado -->
                 <div class="col-12 col-md-6">
                     <button onclick="verificarPassword('reporte_acumulado.html')" class="btn-neon-pill border-0 text-start w-100">
                         <i class="bi bi-archive-fill pill-icon text-secondary"></i> Reporte Acumulado
                     </button>
                 </div>
-
-                <!-- BD Principal -->
                 <div class="col-12 col-md-6">
                     <button onclick="verificarPassword('bd_madre.html')" class="btn-neon-pill border-0 text-start w-100">
                         <i class="bi bi-database-fill pill-icon text-danger"></i> BD Principal
                     </button>
                 </div>
-
-                <!-- BD Totales -->
                 <div class="col-12 col-md-6">
                     <button onclick="verificarPassword('bdtotales.html')" class="btn-neon-pill border-0 text-start w-100">
                         <i class="bi bi-database-fill-gear pill-icon text-light"></i> BD Totales
                     </button>
                 </div>
-
             </div>
         </div>
 
     </div>
 
-    <!-- VENTANA MODAL PARA CONTRASEÑA -->
     <div class="modal fade" id="modalPassword" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-sm">
             <div class="modal-content">
@@ -239,22 +203,20 @@
         </div>
     </div>
 
-    <!-- PIE DE PÁGINA VERSIÓN 1.1 -->
     <footer class="text-center py-2 text-white shadow-sm" style="background-color: rgba(7, 9, 19, 0.95); width: 100%;">
         <small style="font-size: 10px;">
             &copy; 2026 Todos los derechos reservados. Desarrollado por <span class="text-info fw-bold">Carrivers Desing</span> para Módulos MAC. Versión 1.1
         </small>
     </footer>
 
-    <!-- SCRIPTS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- SCRIPT PRINCIPAL CON FIREBASE MODULAR (v10) Y MANEJADOR ANTI-BLOQUEO -->
+    <!-- SCRIPT ASÍNCRONO ANTI-BLOQUEO MÓVIL -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // Inicializar Vanta.net de fondo
+        // Inicializar Vanta de forma segura
         try {
             VANTA.NET({
                 el: "#vanta-background",
@@ -270,53 +232,46 @@
                 points: 12.00,
                 maxDistance: 22.00
             });
-        } catch(e) {
-            console.log("Fondo Vanta cargado por respaldo estático.");
+        } catch(e) {}
+
+        // Marcar la interfaz lista de inmediato
+        const sem = document.getElementById("semaforoConexion");
+        if (sem) {
+            sem.className = "badge bg-success text-white px-2 py-1 shadow-sm mt-1";
+            sem.innerHTML = '<i class="bi bi-check-circle"></i> Sistema Listo';
         }
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo",
-            authDomain: "cifrasmac.firebaseapp.com",
-            databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com",
-            projectId: "cifrasmac",
-            storageBucket: "cifrasmac.firebasestorage.app",
-            messagingSenderId: "916644687837",
-            appId: "1:916644687837:web:03d346cc48a071af1ed034"
-        };
+        // Intentar conectar a Firebase en segundo plano sin bloquear jamás la vista
+        try {
+            const firebaseConfig = {
+                apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo",
+                authDomain: "cifrasmac.firebaseapp.com",
+                databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com",
+                projectId: "cifrasmac",
+                storageBucket: "cifrasmac.firebasestorage.app",
+                messagingSenderId: "916644687837",
+                appId: "1:916644687837:web:03d346cc48a071af1ed034"
+            };
+            const app = initializeApp(firebaseConfig);
+            const db = getDatabase(app);
 
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-
-        // Semáforo de conexión blindado para evitar bloqueos móviles
-        const sem = document.getElementById("semaforoConexion");
-        let conexionEstablecida = false;
-
-        onValue(ref(db, ".info/connected"), (s) => {
-            conexionEstablecida = true;
-            if (sem) {
-                if (s.val() === true) {
-                    sem.className = "badge bg-success text-white px-2 py-1 shadow-sm mt-1";
-                    sem.innerHTML = '<i class="bi bi-check-circle"></i> En línea';
-                } else {
-                    sem.className = "badge bg-danger text-white px-2 py-1 shadow-sm mt-1";
-                    sem.innerHTML = '<i class="bi bi-x-circle"></i> Desconectado';
+            onValue(ref(db, ".info/connected"), (s) => {
+                if (sem) {
+                    if (s.val() === true) {
+                        sem.className = "badge bg-success text-white px-2 py-1 shadow-sm mt-1";
+                        sem.innerHTML = '<i class="bi bi-check-circle"></i> En línea';
+                    } else {
+                        sem.className = "badge bg-secondary text-white px-2 py-1 shadow-sm mt-1";
+                        sem.innerHTML = '<i class="bi bi-wifi-off"></i> Offline';
+                    }
                 }
-            }
-        });
-
-        // Timeout de seguridad: Si los datos móviles bloquean la red por más de 3 segundos, 
-        // la página muestra el semáforo offline pero NUNCA se queda en blanco.
-        setTimeout(() => {
-            if (!conexionEstablecida && sem) {
-                sem.className = "badge bg-secondary text-white px-2 py-1 shadow-sm mt-1";
-                sem.innerHTML = '<i class="bi bi-wifi-off"></i> Red Móvil Limitada';
-            }
-        }, 3000);
-
+            });
+        } catch (err) {
+            console.log("Modo local activo por restricción de red.");
+        }
     </script>
 
     <script>
-        // Control de contraseña y modales independientes de la red
         let paginaDestino = "";
         const modalPass = new bootstrap.Modal(document.getElementById('modalPassword'));
 
