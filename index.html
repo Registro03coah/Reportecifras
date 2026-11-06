@@ -27,7 +27,6 @@
             z-index: 0;
             pointer-events: auto;
         }
-        /* FONDO RESPALDO ESTABLE PARA ANDROID */
         body { 
             background: radial-gradient(circle at 50% 20%, #112240 0%, #0a192f 60%, #020c1b 100%);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
@@ -187,14 +186,15 @@
 
     </div>
 
-    <div class="modal fade" id="modalPassword" tabindex="-1" aria-hidden="true">
+    <!-- VENTANA MODAL PARA CONTRASEÑA BLINDADA -->
+    <div class="modal fade" id="modalPassword" tabindex="-1" aria-hidden="true" data-bs-backdrop="true">
         <div class="modal-dialog modal-dialog-centered modal-sm">
-            <div class="modal-content">
+            <div class="modal-content text-dark">
                 <div class="modal-header bg-primary text-white py-2">
                     <h6 class="modal-title fw-bold"><i class="bi bi-lock-fill"></i> Acceso Restringido</h6>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar" onclick="cerrarModalSeguro()"></button>
                 </div>
-                <div class="modal-body bg-light text-center text-dark">
+                <div class="modal-body bg-light text-center">
                     <p class="text-muted small mb-2">Ingresa la contraseña para continuar:</p>
                     <input type="password" id="inputPassAcceso" class="form-control form-control-sm text-center fw-bold mb-2" placeholder="Contraseña">
                     <div id="errorPass" class="text-danger small fw-bold mb-2 d-none">Contraseña incorrecta</div>
@@ -206,20 +206,17 @@
 
     <footer class="text-center py-2 text-white shadow-sm" style="background-color: rgba(7, 9, 19, 0.95); width: 100%;">
         <small style="font-size: 10px;">
-            &copy; 2026 Todos los derechos reservados. Desarrollado por <span class="text-info fw-bold">Carrivers Desing</span> para Módulos MAC. Versión 1.2
+            &copy; 2026 Todos los derechos reservados. Desarrollado por <span class="text-info fw-bold">Carrivers Desing</span> para Módulos MAC. Versión 1.3
         </small>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- SCRIPT DE INICIALIZACIÓN SEGURO (SOLO ACTIVA VANTA EN ESCRITORIO) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // Detectar si es dispositivo móvil para evitar congelar Android
         const esMovil = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
         if (!esMovil) {
             try {
                 VANTA.NET({
@@ -240,8 +237,6 @@
         }
 
         const sem = document.getElementById("semaforoConexion");
-
-        // Firebase asíncrono sin bloqueo
         try {
             const firebaseConfig = {
                 apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo",
@@ -276,27 +271,54 @@
 
     <script>
         let paginaDestino = "";
-        const modalPass = new bootstrap.Modal(document.getElementById('modalPassword'));
+        let modalElement = document.getElementById('modalPassword');
+        let modalPass = new bootstrap.Modal(modalElement);
 
         function verificarPassword(url) {
             paginaDestino = url;
             document.getElementById('inputPassAcceso').value = "";
             document.getElementById('errorPass').classList.add('d-none');
             modalPass.show();
-            setTimeout(() => { document.getElementById('inputPassAcceso').focus(); }, 300);
+            // Enfocar de forma segura asegurando que el DOM procese el renderizado
+            setTimeout(() => { 
+                let input = document.getElementById('inputPassAcceso');
+                if(input) input.focus(); 
+            }, 400);
         }
+
+        function cerrarModalSeguro() {
+            modalPass.hide();
+            limpiarBasuraModal();
+        }
+
+        // Limpieza de capas flotantes residuales de Bootstrap al cerrar el modal
+        function limpiarBasuraModal() {
+            setTimeout(() => {
+                document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+                document.body.style.paddingRight = '';
+            }, 300);
+        }
+
+        // Detectar cuando se cierra el modal por cualquier vía (clic afuera, tecla Escape, etc.)
+        modalElement.addEventListener('hidden.bs.modal', function () {
+            limpiarBasuraModal();
+        });
 
         function procesarAcceso() {
             let pass = document.getElementById('inputPassAcceso').value.trim();
             if (pass === "charro") {
                 sessionStorage.setItem('sesion_autorizada', 'true');
                 modalPass.hide();
+                limpiarBasuraModal();
                 window.location.href = paginaDestino;
             } else {
                 let err = document.getElementById('errorPass');
                 err.classList.remove('d-none');
-                document.getElementById('inputPassAcceso').value = "";
-                document.getElementById('inputPassAcceso').focus();
+                let input = document.getElementById('inputPassAcceso');
+                input.value = "";
+                input.focus();
             }
         }
 
