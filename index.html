@@ -11,6 +11,10 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
+    <!-- Librerías requeridas para el fondo animado Vanta.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.net.min.js"></script>
+
     <style>
         @media (max-width: 768px) {
             html, body {
@@ -21,204 +25,207 @@
                 -webkit-overflow-scrolling: touch !important;
             }
         }
+        /* CONTENEDOR DE FONDO CON ANIMACIÓN VANTA */
+        #vanta-background {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 0;
+            pointer-events: auto; /* Permite la interacción del mouse con los nodos */
+        }
+
         body { 
-            background: linear-gradient(rgba(27, 57, 107, 0.85), rgba(13, 202, 240, 0.75)), url('escritorio-6318.avif');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
+            background-color: #070913;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            color: #fff;
+            position: relative;
+            overflow-x: hidden;
+            margin: 0;
         }
+        
+        .hero-banner, .container, footer, .modal {
+            position: relative;
+            z-index: 2;
+        }
+
         .hero-banner { 
-            background: rgba(27, 57, 107, 0.9); 
+            background: rgba(10, 25, 47, 0.85); 
             color: white; 
             padding: 12px 10px; 
-            border-bottom: 3px solid #055160; 
-            backdrop-filter: blur(5px);
+            border-bottom: 2px solid rgba(0, 240, 255, 0.4); 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
         }
-        .menu-card {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 8px;
-            border: none;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            height: 100%;
-            backdrop-filter: blur(5px);
+
+        /* DISEÑO DE BOTONES TIPO PÍLDORA NEÓN */
+        .btn-neon-pill {
+            background: rgba(10, 25, 47, 0.82);
+            border: 1px solid rgba(0, 240, 255, 0.4);
+            color: #ffffff;
+            border-radius: 50px;
+            padding: 12px 20px;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+            text-decoration: none;
+            width: 100%;
         }
-        .menu-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 22px rgba(0,0,0,0.3);
+        .btn-neon-pill:hover {
+            background: linear-gradient(135deg, #00f0ff, #1b396b);
+            color: #ffffff;
+            border-color: #00f0ff;
+            box-shadow: 0 0 25px rgba(0, 240, 255, 0.8);
+            transform: translateY(-3px) scale(1.02);
         }
-        /* Iconos dinámicos con animación suave */
-        .card-icon {
-            font-size: 1.8rem;
-            color: #1b396b;
-            display: inline-block;
-            animation: flotarIcono 2.5s ease-in-out infinite alternate;
+        .pill-icon {
+            font-size: 1.3rem;
+            color: #00f0ff;
             transition: transform 0.3s ease;
         }
-        .menu-card:hover .card-icon {
-            transform: scale(1.2) rotate(5deg);
+        .btn-neon-pill:hover .pill-icon {
+            transform: scale(1.2) rotate(10deg);
+            color: #ffffff;
         }
-        @keyframes flotarIcono {
-            0% { transform: translateY(0px); }
-            100% { transform: translateY(-4px); }
+
+        /* BOTÓN DESPLEGABLE CENTRAL */
+        .btn-desplegable-neon {
+            background: rgba(10, 25, 47, 0.9);
+            border: 2px solid rgba(0, 240, 255, 0.6);
+            color: #fff;
+            border-radius: 50px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.6);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+        .btn-desplegable-neon:hover {
+            background: #00f0ff;
+            color: #070913;
+            border-color: #fff;
+            box-shadow: 0 0 25px rgba(0, 240, 255, 0.9);
+            transform: scale(1.02);
         }
     </style>
 </head>
 <body>
 
+    <!-- CONTENEDOR DEL EFECTO VANTA.NET -->
+    <div id="vanta-background"></div>
+
     <!-- BANNER PRINCIPAL COMPACTO -->
     <div class="hero-banner text-center shadow-sm">
         <div class="container">
-            <h4 class="fw-bold mb-1 text-white"><i class="bi bi-hdd-network"></i> Sistema de Reportes Diarios - Módulos MAC</h4>
-            <p class="mb-1 text-light" style="font-size: 0.8rem;">Instituto Nacional Electoral | Distrito 03 Coahuila</p>
-            <div id="semaforoConexion" class="badge bg-warning text-dark px-2 py-1 shadow-sm" style="font-size: 10px;">
+            <h5 class="fw-bold mb-1 text-white"><i class="bi bi-hdd-network"></i> Sistema de Reportes Diarios - Módulos MAC</h5>
+            <p class="mb-0 text-light opacity-75" style="font-size: 0.8rem;">Distrito 03 Coahuila</p>
+            <div id="semaforoConexion" class="badge bg-warning text-dark px-2 py-1 shadow-sm mt-1" style="font-size: 9px;">
                 <i class="bi bi-arrow-repeat"></i> Verificando conexión...
             </div>
         </div>
     </div>
 
-    <!-- CONTENEDOR DE TARJETAS ORDENADAS EN RENGLONES -->
-    <div class="container px-3 my-auto py-2">
+    <!-- CONTENEDOR PRINCIPAL FLOTANTE -->
+    <div class="container px-3 my-auto py-3" style="max-width: 900px;">
         
-        <!-- RENGLÓN 1: Módulos MAC y Vaciado de Datos -->
-        <div class="row text-center g-2 justify-content-center mb-2">
-            <!-- Módulos MAC (Libre) -->
-            <div class="col-6 col-md-3">
-                <div class="card menu-card p-2" style="border-top: 3px solid #1b396b;">
-                    <div class="card-body d-flex flex-column align-items-center py-2">
-                        <div class="card-icon mb-1 text-primary"><i class="bi bi-building-fill-gear"></i></div>
-                        <h6 class="fw-bold text-dark mb-1" style="font-size: 12px;">Módulos MAC</h6>
-                        <p class="text-muted small mb-2" style="font-size: 9px; line-height: 1.1;">Gestión por módulo y soporte.</p>
-                        <a href="modulosmac.html" class="btn btn-outline-primary btn-sm fw-bold mt-auto w-100 py-0" style="font-size: 10px;">Acceder</a>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Vaciado de Datos (Protegido: charro) -->
-            <div class="col-6 col-md-3">
-                <div class="card menu-card p-2">
-                    <div class="card-body d-flex flex-column align-items-center py-2">
-                        <div class="card-icon mb-1"><i class="bi bi-pencil-square"></i></div>
-                        <h6 class="fw-bold text-dark mb-1" style="font-size: 12px;">Vaciado de Datos</h6>
-                        <p class="text-muted small mb-2" style="font-size: 9px; line-height: 1.1;">Captura diaria de operaciones.</p>
-                        <button onclick="verificarPassword('captura.html')" class="btn btn-outline-primary btn-sm fw-bold mt-auto w-100 py-0" style="font-size: 10px;">Acceder</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- RENGLÓN 2: Los 4 Reportes Juntos -->
-        <div class="row text-center g-2 justify-content-center mb-2">
-            <!-- Reporte Días (Libre) -->
-            <div class="col-6 col-md-3">
-                <div class="card menu-card p-2">
-                    <div class="card-body d-flex flex-column align-items-center py-2">
-                        <div class="card-icon mb-1 text-success"><i class="bi bi-calendar3"></i></div>
-                        <h6 class="fw-bold text-dark mb-1" style="font-size: 12px;">Reporte Días</h6>
-                        <p class="text-muted small mb-2" style="font-size: 9px; line-height: 1.1;">Producción por jornadas.</p>
-                        <a href="reporte_dias.html" class="btn btn-outline-success btn-sm fw-bold mt-auto w-100 py-0" style="font-size: 10px;">Acceder</a>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Reporte Semanal (Protegido) -->
-            <div class="col-6 col-md-3">
-                <div class="card menu-card p-2">
-                    <div class="card-body d-flex flex-column align-items-center py-2">
-                        <div class="card-icon mb-1 text-warning"><i class="bi bi-calendar-week"></i></div>
-                        <h6 class="fw-bold text-dark mb-1" style="font-size: 12px;">Reporte Semanal</h6>
-                        <p class="text-muted small mb-2" style="font-size: 9px; line-height: 1.1;">Resumen semanal.</p>
-                        <button onclick="verificarPassword('reporte_semanal.html')" class="btn btn-outline-warning btn-sm fw-bold mt-auto w-100 text-dark py-0" style="font-size: 10px;">Acceder</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Reporte Campaña (Protegido) -->
-            <div class="col-6 col-md-3">
-                <div class="card menu-card p-2">
-                    <div class="card-body d-flex flex-column align-items-center py-2">
-                        <div class="card-icon mb-1 text-info"><i class="bi bi-bar-chart-fill"></i></div>
-                        <h6 class="fw-bold text-dark mb-1" style="font-size: 12px;">Reporte Campaña</h6>
-                        <p class="text-muted small mb-2" style="font-size: 9px; line-height: 1.1;">Rendimiento de campaña.</p>
-                        <button onclick="verificarPassword('reporte_campana.html')" class="btn btn-outline-info btn-sm fw-bold mt-auto w-100 py-0" style="font-size: 10px;">Acceder</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Reporte Acumulado (Protegido) -->
-            <div class="col-6 col-md-3">
-                <div class="card menu-card p-2">
-                    <div class="card-body d-flex flex-column align-items-center py-2">
-                        <div class="card-icon mb-1 text-secondary"><i class="bi bi-archive-fill"></i></div>
-                        <h6 class="fw-bold text-dark mb-1" style="font-size: 12px;">Reporte Acumulado</h6>
-                        <p class="text-muted small mb-2" style="font-size: 9px; line-height: 1.1;">21 renglones institucionales.</p>
-                        <button onclick="verificarPassword('reporte_acumulado.html')" class="btn btn-outline-secondary btn-sm fw-bold mt-auto w-100 py-0" style="font-size: 10px;">Acceder</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- RENGLÓN 3: Reportes para JL, Gráficos y Bases de Datos -->
-        <div class="row text-center g-2 justify-content-center">
+        <!-- RENGLÓN PRINCIPAL (Los 4 botones solicitados en orden) -->
+        <div class="row g-3 justify-content-center mb-3">
             
-            <!-- Reportes para JL (Libre Acceso Institucional) -->
-            <div class="col-6 col-md-3">
-                <div class="card menu-card p-2" style="border-top: 3px solid #1b396b;">
-                    <div class="card-body d-flex flex-column align-items-center py-2">
-                        <div class="card-icon mb-1" style="color: #1b396b;"><i class="bi bi-layers-fill"></i></div>
-                        <h6 class="fw-bold text-dark mb-1" style="font-size: 12px;">Reportes para JL</h6>
-                        <p class="text-muted small mb-2" style="font-size: 9px; line-height: 1.1;">Consolidado general Dtto 03.</p>
-                        <a href="Reportesdto03.html" class="btn btn-outline-primary btn-sm fw-bold mt-auto w-100 py-0" style="font-size: 10px;">Acceder</a>
-                    </div>
-                </div>
+            <!-- 1. Módulos MAC -->
+            <div class="col-12 col-md-6">
+                <a href="modulosmac.html" class="btn-neon-pill">
+                    <i class="bi bi-building-fill-gear pill-icon"></i> Módulos MAC
+                </a>
             </div>
 
-            <!-- Gráficos y Metas (Libre) -->
-            <div class="col-6 col-md-3">
-                <div class="card menu-card p-2" style="border-top: 3px solid #ff66b2;">
-                    <div class="card-body d-flex flex-column align-items-center py-2">
-                        <div class="card-icon mb-1" style="color: #ff66b2;"><i class="bi bi-pie-chart-fill"></i></div>
-                        <h6 class="fw-bold text-dark mb-1" style="font-size: 12px;">Gráficos y Metas</h6>
-                        <p class="text-muted small mb-2" style="font-size: 9px; line-height: 1.1;">Sedes, días y Meta Distrital.</p>
-                        <a href="graficos.html" class="btn btn-sm fw-bold mt-auto w-100 text-white py-0" style="background-color: #ff66b2; font-size: 10px;">Acceder</a>
-                    </div>
-                </div>
+            <!-- 2. Vaciado de Datos -->
+            <div class="col-12 col-md-6">
+                <button onclick="verificarPassword('captura.html')" class="btn-neon-pill border-0 text-start w-100">
+                    <i class="bi bi-pencil-square pill-icon text-info"></i> Vaciado de Datos
+                </button>
             </div>
 
-            <!-- BD Principal (Protegido) -->
-            <div class="col-6 col-md-3">
-                <div class="card menu-card p-2">
-                    <div class="card-body d-flex flex-column align-items-center py-2">
-                        <div class="card-icon mb-1 text-danger"><i class="bi bi-database-fill"></i></div>
-                        <h6 class="fw-bold text-dark mb-1" style="font-size: 12px;">BD Principal</h6>
-                        <p class="text-muted small mb-2" style="font-size: 9px; line-height: 1.1;">Edición flotante y respaldo.</p>
-                        <button onclick="verificarPassword('bd_madre.html')" class="btn btn-outline-danger btn-sm fw-bold mt-auto w-100 py-0" style="font-size: 10px;">Acceder</button>
-                    </div>
-                </div>
+            <!-- 3. Reportes para JL -->
+            <div class="col-12 col-md-6">
+                <a href="Reportesdto03.html" class="btn-neon-pill">
+                    <i class="bi bi-layers-fill pill-icon text-success"></i> Reportes para JL
+                </a>
             </div>
 
-            <!-- BD Totales (Protegido) -->
-            <div class="col-6 col-md-3">
-                <div class="card menu-card p-2">
-                    <div class="card-body d-flex flex-column align-items-center py-2">
-                        <div class="card-icon mb-1 text-dark"><i class="bi bi-database-fill-gear"></i></div>
-                        <h6 class="fw-bold text-dark mb-1" style="font-size: 12px;">BD Totales</h6>
-                        <p class="text-muted small mb-2" style="font-size: 9px; line-height: 1.1;">Control de registros totales.</p>
-                        <button onclick="verificarPassword('bdtotales.html')" class="btn btn-outline-dark btn-sm fw-bold mt-auto w-100 py-0" style="font-size: 10px;">Acceder</button>
-                    </div>
+            <!-- 4. Gráficos y Metas -->
+            <div class="col-12 col-md-6">
+                <a href="graficos.html" class="btn-neon-pill">
+                    <i class="bi bi-pie-chart-fill pill-icon" style="color: #ff66b2;"></i> Gráficos y Metas
+                </a>
+            </div>
+        </div>
+
+        <!-- BOTÓN DESPLEGABLE PARA MÁS REPORTES -->
+        <div class="text-center mb-3">
+            <button class="btn btn-desplegable-neon fw-bold px-4 py-2 shadow" type="button" data-bs-toggle="collapse" data-bs-target="#collapseReportes" aria-expanded="false" aria-controls="collapseReportes" style="font-size: 11px;">
+                <i class="bi bi-folder-symlink-fill"></i> 📂 Más Reportes y Bases de Datos <i class="bi bi-chevron-down ms-2"></i>
+            </button>
+        </div>
+
+        <!-- CONTENEDOR SECUNDARIO OCULTO (ESTILO PÍLDORAS) -->
+        <div class="collapse" id="collapseReportes">
+            <div class="row g-3 justify-content-center p-3 rounded-4 shadow-lg mb-2" style="background: rgba(7, 9, 19, 0.85); backdrop-filter: blur(15px); border: 1px solid rgba(0, 240, 255, 0.3);">
+                
+                <!-- Reporte Días -->
+                <div class="col-12 col-md-6">
+                    <a href="reporte_dias.html" class="btn-neon-pill">
+                        <i class="bi bi-calendar3 pill-icon text-success"></i> Reporte Días
+                    </a>
                 </div>
+
+                <!-- Reporte Semanal -->
+                <div class="col-12 col-md-6">
+                    <button onclick="verificarPassword('reporte_semanal.html')" class="btn-neon-pill border-0 text-start w-100">
+                        <i class="bi bi-calendar-week pill-icon text-warning"></i> Reporte Semanal
+                    </button>
+                </div>
+
+                <!-- Reporte Campaña -->
+                <div class="col-12 col-md-6">
+                    <button onclick="verificarPassword('reporte_campana.html')" class="btn-neon-pill border-0 text-start w-100">
+                        <i class="bi bi-bar-chart-fill pill-icon text-info"></i> Reporte Campaña
+                    </button>
+                </div>
+
+                <!-- Reporte Acumulado -->
+                <div class="col-12 col-md-6">
+                    <button onclick="verificarPassword('reporte_acumulado.html')" class="btn-neon-pill border-0 text-start w-100">
+                        <i class="bi bi-archive-fill pill-icon text-secondary"></i> Reporte Acumulado
+                    </button>
+                </div>
+
+                <!-- BD Principal -->
+                <div class="col-12 col-md-6">
+                    <button onclick="verificarPassword('bd_madre.html')" class="btn-neon-pill border-0 text-start w-100">
+                        <i class="bi bi-database-fill pill-icon text-danger"></i> BD Principal
+                    </button>
+                </div>
+
+                <!-- BD Totales -->
+                <div class="col-12 col-md-6">
+                    <button onclick="verificarPassword('bdtotales.html')" class="btn-neon-pill border-0 text-start w-100">
+                        <i class="bi bi-database-fill-gear pill-icon text-light"></i> BD Totales
+                    </button>
+                </div>
+
             </div>
         </div>
 
     </div>
 
-    <!-- VENTANA MODAL PARA SOLICITAR CONTRASEÑA -->
+    <!-- VENTANA MODAL PARA CONTRASEÑA -->
     <div class="modal fade" id="modalPassword" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-sm">
             <div class="modal-content">
@@ -226,7 +233,7 @@
                     <h6 class="modal-title fw-bold"><i class="bi bi-lock-fill"></i> Acceso Restringido</h6>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
-                <div class="modal-body bg-light text-center">
+                <div class="modal-body bg-light text-center text-dark">
                     <p class="text-muted small mb-2">Ingresa la contraseña para continuar:</p>
                     <input type="password" id="inputPassAcceso" class="form-control form-control-sm text-center fw-bold mb-2" placeholder="Contraseña">
                     <div id="errorPass" class="text-danger small fw-bold mb-2 d-none">Contraseña incorrecta</div>
@@ -236,16 +243,33 @@
         </div>
     </div>
 
-    <!-- PIE DE PÁGINA COMPACTO -->
-    <footer class="text-center py-2 text-white shadow-sm" style="background-color: rgba(27, 57, 107, 0.95); width: 100%;">
+    <!-- PIE DE PÁGINA VERSIÓN 1.1 -->
+    <footer class="text-center py-2 text-white shadow-sm" style="background-color: rgba(7, 9, 19, 0.95); width: 100%;">
         <small style="font-size: 10px;">
-            &copy; 2026 Todos los derechos reservados. Desarrollado por <span class="text-info fw-bold">Carrivers Desing</span> para Módulos MAC. Versión 1.0.19
+            &copy; 2026 Todos los derechos reservados. Desarrollado por <span class="text-info fw-bold">Carrivers Desing</span> para Módulos MAC. Versión 1.1
         </small>
     </footer>
 
-    <!-- SCRIPT FIREBASE Y CONTROL DE CONTRASEÑA -->
+    <!-- SCRIPTS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- INICIALIZADOR DE VANTA.NET -->
     <script>
+        VANTA.NET({
+            el: "#vanta-background",
+            mouseControls: true,
+            touchControls: true,
+            gyroControls: false,
+            minHeight: 200.00,
+            minWidth: 200.00,
+            scale: 1.00,
+            scaleMobile: 1.00,
+            color: 0x00f0ff,         // Cían neón para los nodos
+            backgroundColor: 0x070913, // Fondo azul oscuro/negro
+            points: 12.00,          // Espaciado limpio para no saturar
+            maxDistance: 22.00
+        });
+
         const firebaseConfig = {
             apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo",
             authDomain: "cifrasmac.firebaseapp.com",
@@ -261,7 +285,7 @@
         database.ref(".info/connected").on("value", (s) => {
             let sem = document.getElementById("semaforoConexion");
             if (sem) {
-                sem.className = s.val() ? "badge bg-success text-white px-2 py-1 shadow-sm" : "badge bg-danger text-white px-2 py-1 shadow-sm";
+                sem.className = s.val() ? "badge bg-success text-white px-2 py-1 shadow-sm mt-1" : "badge bg-danger text-white px-2 py-1 shadow-sm mt-1";
                 sem.innerHTML = s.val() ? '<i class="bi bi-check-circle"></i> En línea' : '<i class="bi bi-x-circle"></i> Desconectado';
             }
         });
@@ -277,13 +301,10 @@
             setTimeout(() => { document.getElementById('inputPassAcceso').focus(); }, 300);
         }
 
-        // --- FUNCIÓN UNIFICADA Y CORREGIDA CON SESSIONSTORAGE ---
         function procesarAcceso() {
             let pass = document.getElementById('inputPassAcceso').value.trim();
             if (pass === "charro") {
-                // AQUÍ SE GUARDA EL PASE DE ACCESO CORRECTAMENTE
                 sessionStorage.setItem('sesion_autorizada', 'true');
-                
                 modalPass.hide();
                 window.location.href = paginaDestino;
             } else {
@@ -294,7 +315,6 @@
             }
         }
 
-        // Permitir presionar Enter para validar la contraseña
         document.getElementById('inputPassAcceso').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 procesarAcceso();
