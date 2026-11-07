@@ -2,7 +2,7 @@
 // 1. IMPORTACIONES Y CONFIGURACIÓN FIREBASE (REPORTE SEMANAL)
 // ==========================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, get, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getDatabase, ref, get, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo",
@@ -16,8 +16,8 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+window.db = db; // Exportado globalmente para el SGC
 
-// COLUMNAS EXACTAS SEGÚN TU CONFIGURACIÓN (SEMANAL)
 const COLUMNAS_SEMANAL_KEYS = [
     "ENT", "DTTO", "MODULO", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS", 
     "NO_UTILIZADOS", "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", 
@@ -39,10 +39,10 @@ onValue(connectedRef, (snap) => {
     const semaforo = document.getElementById("semaforoConexion");
     if(!semaforo) return;
     if (snap.val() === true) {
-        semaforo.className = "badge bg-success text-white fs-6 px-3 py-2 rounded-pill";
+        semaforo.className = "badge bg-success text-white fs-6 px-2 py-1 rounded-pill";
         semaforo.innerHTML = '<i class="bi bi-wifi"></i> ONLINE';
     } else {
-        semaforo.className = "badge bg-danger text-white fs-6 px-3 py-2 rounded-pill";
+        semaforo.className = "badge bg-danger text-white fs-6 px-2 py-1 rounded-pill";
         semaforo.innerHTML = '<i class="bi bi-wifi-off"></i> OFFLINE';
     }
 });
@@ -64,9 +64,9 @@ function construirHeaderTabla(selectorTabla) {
         
         thT.innerText = nombreVisual;
         
-        let anchoCelda = "90px"; 
-        if(['MODULO', 'ENT', 'DTTO'].includes(colKey)) anchoCelda = "70px"; 
-        else if(['INICIAL', 'FINAL'].includes(colKey)) anchoCelda = "110px";
+        let anchoCelda = "85px"; 
+        if(['MODULO', 'ENT', 'DTTO'].includes(colKey)) anchoCelda = "65px"; 
+        else if(['INICIAL', 'FINAL'].includes(colKey)) anchoCelda = "100px";
         
         thT.style.width = anchoCelda; 
         thT.style.minWidth = anchoCelda;
@@ -127,7 +127,7 @@ function obtenerRemesaSeleccionada() {
 
     if (remesasDisponibles.size > 0) {
         let listaRemesas = Array.from(remesasDisponibles).sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
-        return listaRemesas[0]; 
+        return listaRemesas[0]; // Devuelve la más reciente si está vacío
     }
     return "";
 }
@@ -245,7 +245,7 @@ function renderListaRemesasAdmin() {
         tr.innerHTML = `
             <td class="fw-bold">${rem}</td>
             <td>
-                <button class="btn btn-sm btn-primary fw-bold px-3" onclick="seleccionarRemesaAdmin('${rem}')">
+                <button class="btn btn-sm btn-primary fw-bold px-2 py-0" style="font-size:10px;" onclick="seleccionarRemesaAdmin('${rem}')">
                     <i class="bi bi-eye-fill"></i> Ver en Tabla
                 </button>
             </td>
@@ -277,6 +277,92 @@ window.copiarTablaExcel = function(idTabla) {
         alert("Error al copiar la tabla.");
     }
     window.getSelection().removeAllRanges();
+}
+
+// ==========================================
+// 2. LÓGICA DEL MÓDULO SGC (VENTANA FLOTANTE Y FIREBASE)
+// ==========================================
+window.abrirModalSGC = function() {
+    const modal = document.getElementById('modalSGC');
+    if(modal) {
+        modal.style.display = 'flex';
+        cargarYCalcularSGC();
+    }
+}
+
+window.cerrarModalSGC = function() {
+    const modal = document.getElementById('modalSGC');
+    if(modal) modal.style.display = 'none';
+}
+
+function cargarYCalcularSGC() {
+    let remesaActual = obtenerRemesaSeleccionada();
+    document.getElementById('thRemesaSGC').innerText = "Remesa: " + remesaActual;
+
+    // Extraer trámites de los módulos dinámicamente de la tabla actual o registros
+    let tramites51 = 0, tramites53 = 0, tramites54 = 0;
+    let registrosModulos = bdMadreGlobal.filter(item => String(item['REMESA'] || '').trim() === String(remesaActual));
+    
+    registrosModulos.forEach(reg => {
+        let m = String(reg['MODULO'] || '').trim();
+        let t = parseFloat(reg['TOTAL_DE_TRAMITES'] || 0);
+        if(m === '50351') tramites51 += t;
+        if(m === '50353') tramites53 += t;
+        if(m === '50354') tramites54 += t;
+    });
+
+    document.querySelector('[data-key="tramites_aplicados_1"]').value = tramites51;
+    document.querySelector('[data-key="tramites_aplicados_2"]').value = tramites53;
+    document.querySelector('[data-key="tramites_aplicados_3"]').value = tramites54;
+
+    document.querySelector('[data-key="total_tramites_1"]').value = tramites51;
+    document.querySelector('[data-key="total_tramites_2"]').value = tramites53;
+    document.querySelector('[data-key="total_tramites_3"]').value = tramites54;
+
+    // Cálculo automático del 10% en fila amarilla
+    document.querySelector('[data-key="tramites_exitosos_1"]').value = Math.round(tramites51 * 0.10 * 100) / 100;
+    document.querySelector('[data-key="tramites_exitosos_2"]').value = Math.round(tramites53 * 0.10 * 100) / 100;
+    document.querySelector('[data-key="tramites_exitosos_3"]').value = Math.round(tramites54 * 0.10 * 100) / 100;
+
+    // Cargar datos independientes de Firebase para SGC
+    if (window.db) {
+        const dbRef = ref(window.db, `sgc_remesas/${remesaActual}`);
+        get(dbRef).then((snapshot) => {
+            if (snapshot.exists()) {
+                const datosGuardados = snapshot.val();
+                document.querySelectorAll('.val-sgc').forEach(input => {
+                    let key = input.getAttribute('data-key');
+                    if (datosGuardados[key] !== undefined) {
+                        input.value = datosGuardados[key];
+                    }
+                });
+            }
+        }).catch(error => {
+            console.error("Error al leer SGC:", error);
+        });
+    }
+}
+
+window.guardarDatosSGC = function() {
+    let remesaActual = obtenerRemesaSeleccionada();
+    let datosASubir = {};
+    document.querySelectorAll('.val-sgc').forEach(input => {
+        let key = input.getAttribute('data-key');
+        datosASubir[key] = input.value;
+    });
+
+    if (window.db) {
+        const dbRef = ref(window.db, `sgc_remesas/${remesaActual}`);
+        set(dbRef, datosASubir).then(() => {
+            alert("¡Formato SGC guardado con éxito de forma independiente en Firebase!");
+            cerrarModalSGC();
+        }).catch(error => {
+            console.error("Error al guardar SGC:", error);
+            alert("Hubo un error al guardar los datos en la nube.");
+        });
+    } else {
+        alert("La conexión con Firebase no está disponible en este momento.");
+    }
 }
 
 cargarDatosSemanal();
