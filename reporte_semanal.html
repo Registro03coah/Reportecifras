@@ -4,147 +4,50 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reporte Semanal MAC</title>
-    <title>Reporte Semanal - Sistema MAC</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
         /* Reglas completas de adaptación y fluidez táctil exclusiva para celulares */
-@media (max-width: 768px) {
-    /* Desbloqueo de scroll y fluidez vertical en móviles */
-    html, body {
-        overflow-x: hidden !important;
-        overflow-y: auto !important;
-        width: 100% !important;
-        height: auto !important;
-        -webkit-overflow-scrolling: touch !important;
-    }
-
-    /* Asegurar que las tablas y contenedores no bloqueen el desplazamiento horizontal/vertical */
-    .table-responsive {
-        width: 100% !important;
-        overflow-x: auto !important;
-        -webkit-overflow-scrolling: touch !important;
-    }
-
-    /* Márgenes y espaciados limpios para aprovechar la pantalla del celular */
-    .container, .container-fluid {
-        padding-left: 8px !important;
-        padding-right: 8px !important;
-    }
-
-    /* Ajuste de tipografías generales en móvil */
-    h5, .fw-bold {
-        font-size: 0.95rem !important;
-    }
-
-    /* Ergonomía para botones en pantallas pequeñas */
-    .btn {
-        font-size: 0.85rem !important;
-        padding: 8px 12px !important;
-    }
-}
+        @media (max-width: 768px) {
+            html, body {
+                overflow-x: hidden !important;
+                overflow-y: auto !important;
+                width: 100% !important;
+                height: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+            }
+            .table-responsive {
+                width: 100% !important;
+                overflow-x: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+            }
+            .container, .container-fluid {
+                padding-left: 8px !important;
+                padding-right: 8px !important;
+            }
+            h5, .fw-bold {
+                font-size: 0.95rem !important;
+            }
+            .btn {
+                font-size: 0.85rem !important;
+                padding: 8px 12px !important;
+            }
+        }
         body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .header-banner { background: linear-gradient(135deg, #2196f3, #00bcd4); color: white; border-bottom: 4px solid #1b396b; padding: 10px 0 !important; margin-bottom: 15px !important; }
+        .header-banner { background: linear-gradient(135deg, #ff9800, #ff5722); color: white; border-bottom: 4px solid #1b396b; padding: 10px 0 !important; margin-bottom: 15px !important; }
         .header-banner h1 { font-size: 1.4rem !important; }
         .header-banner p { font-size: 0.85rem !important; }
 
-        .excel-container { width: 100%; max-height: 65vh; overflow: auto; border: 1px solid #ddd; background: white; margin-bottom: 15px; position: relative; }
-        .excel-table { margin-bottom: 0; table-layout: auto; border-collapse: separate; border-spacing: 0; }
-
-        /* Encabezados fijos con jerarquía de capas (z-index) correcta */
-        .excel-table thead tr:first-child th { 
-            position: sticky; 
-            top: 0; 
-            z-index: 10; 
-            font-size: 9px; 
-            text-transform: uppercase; 
-            background-color: #1b396b; 
-            color: white !important; 
-            white-space: normal !important; 
-            height: 50px; 
-            vertical-align: middle; 
-            padding: 4px; 
-            text-align: center; 
-        }
-
-        .excel-table thead tr:nth-child(2) th { 
-            position: sticky; 
-            top: 50px; 
-            z-index: 9; 
-            font-size: 10px; 
-            background-color: #e9ecef !important; 
-            color: #212529 !important; 
-            height: 25px !important; 
-            padding: 2px; 
-            text-align: center; 
-            vertical-align: middle; 
-            border-bottom: 2px solid #2d3436; 
-            user-select: none; 
-        }
-    <!-- Firebase SDK v10 -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, get, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
-        /* Esquina superior izquierda (Cruce de la columna 1 y los títulos) */
-        .excel-table thead tr:first-child th:nth-child(1) {
-            z-index: 11;
-            background-color: #1b396b;
-        }
-        const firebaseConfig = {
-            apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo",
-            authDomain: "cifrasmac.firebaseapp.com",
-            databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com",
-            projectId: "cifrasmac",
-            storageBucket: "cifrasmac.firebasestorage.app",
-            messagingSenderId: "916644687837",
-            appId: "1:916644687837:web:03d346cc48a071af1ed034"
-        };
-
-        /* Primera columna fija a la izquierda */
-        .excel-table th:nth-child(1) { 
-            position: sticky; 
-            left: 0; 
-            z-index: 8; 
-            background-color: #1b396b; 
-            border-right: 2px solid #ccc; 
-        }
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-        window.db = db;
-        window.firebaseRef = ref;
-        window.firebaseGet = get;
-        window.firebaseSet = set;
-    </script>
-
-        .excel-table td:nth-child(1) { 
-            position: sticky; 
-            left: 0; 
-            z-index: 5; 
-            background-color: #f8f9fa; 
-            font-weight: bold; 
-            border-right: 2px solid #ccc; 
-    <style>
-        body { 
-            background: linear-gradient(rgba(27, 57, 107, 0.85), rgba(13, 202, 240, 0.75)), url('escritorio-6318.avif');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-        .hero-banner { 
-            background: rgba(27, 57, 107, 0.9); 
-            color: white; 
-            padding: 12px 10px; 
-            border-bottom: 3px solid #055160; 
-        }
-
-        .excel-table td { padding: 4px; border-bottom: 1px solid #ccc; border-right: 1px solid #ccc; text-align: center; vertical-align: middle; font-size: 11px; white-space: nowrap; min-width: 65px; }
+        .excel-container { width: 100%; max-height: 65vh; overflow: auto; border: 1px solid #ddd; background: white; margin-bottom: 15px; }
+        
+        /* Uso de width max-content para evitar que cifras y textos se encimen, igual que en Campaña */
+        .excel-table { margin-bottom: 0; width: max-content; border-collapse: separate; border-spacing: 0; }
+        
+        .excel-table thead tr:first-child th { position: sticky; top: 0; z-index: 3; font-size: 10px; text-transform: uppercase; background-color: #e9ecef; height: 50px; text-align: center; vertical-align: middle; padding: 6px 8px; border: 1px solid #ccc; }
+        .excel-table thead tr.num-row th { position: sticky; top: 50px; z-index: 2; background-color: #d6d8db !important; color: #212529 !important; font-size: 10px; text-align: center; padding: 4px; border-bottom: 2px solid #2d3436; border: 1px solid #ccc; }
+        .excel-table td { padding: 6px 8px; border: 1px solid #ccc; text-align: center; vertical-align: middle; font-size: 11px; white-space: nowrap; }
+        .bg-folios { background-color: #f4b084 !important; }
+        .fila-totales td { background-color: #d1e7dd !important; font-weight: bold; }
 
         .navbar-nav .nav-link { font-size: 11px !important; }
         .navbar-brand { font-size: 14px !important; }
@@ -153,366 +56,127 @@
 </head>
 <body class="d-flex flex-column min-vh-100">
 
-<!-- BARRA DE NAVEGACIÓN INSTITUCIONAL COMPLETA -->
-<nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #1b396b; width: 100%;">
-  <div class="container-fluid px-3">
-    <a class="navbar-brand fw-bold" href="index.html" style="font-size: 14px;"><i class="bi bi-hdd-network"></i> SISTEMA MAC</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav ms-auto gap-1 align-items-lg-center">
-        <!-- Botón de Casita (Manda a index.html) -->
-        <li class="nav-item">
-          <a class="nav-link text-light px-2" href="index.html" style="font-size: 11px;" title="Inicio / Portada">
-            <i class="bi bi-house-door-fill fs-6"></i>
-          </a>
-        </li>
-        <li class="nav-item"><a class="nav-link text-light px-2" href="captura.html" style="font-size: 11px;"><i class="bi bi-pencil-square"></i> Captura</a></li>
-        <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_dias.html" style="font-size: 11px;"><i class="bi bi-calendar3"></i> Reporte Días</a></li>
-        <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_semanal.html" style="font-size: 11px;"><i class="bi bi-calendar-week"></i> Reporte Semanal</a></li>
-        <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_campana.html" style="font-size: 11px;"><i class="bi bi-bar-chart-fill"></i> Reporte Campaña</a></li>
-        <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_acumulado.html" style="font-size: 11px;"><i class="bi bi-archive-fill"></i> Reporte Acumulado</a></li>
-        <li class="nav-item"><a class="nav-link px-2" href="graficos.html" style="color: #ff66b2 !important; font-weight: bold; font-size: 11px;"><i class="bi bi-pie-chart-fill"></i> Gráficos</a></li>
-        <li class="nav-item"><a class="nav-link text-light px-2" href="bd_madre.html" style="font-size: 11px;"><i class="bi bi-database-fill"></i> BD Principal</a></li>
-        <li class="nav-item"><a class="nav-link text-light px-2" href="bdtotales.html" style="font-size: 11px;"><i class="bi bi-database-fill-gear"></i> BD Totales</a></li>
-        <li class="nav-item"><a class="nav-link text-light px-2" href="modulosmac.html" style="font-size: 11px;"><i class="bi bi-building-fill-gear"></i> Módulos MAC</a></li>
-        
-        <!-- Botón de Salir (Manda al enlace externo que pediste) -->
-        <li class="nav-item ms-lg-2">
-          <a class="btn btn-outline-light btn-sm fw-bold px-2 py-1" href="https://registro03coah.github.io/mimenu/" style="font-size: 11px;">
-            <i class="bi bi-box-arrow-right"></i> Salir
-          </a>
-        </li>
-      </ul>
-    </div>
-  </div>
-</nav>
-
-<div class="header-banner text-center d-flex justify-content-center align-items-center">
-    <div><h1 class="fw-bold mb-0"><i class="bi bi-calendar-week"></i> Reporte Semanal</h1><p class="lead mb-0">Consolidado General de Base Totales</p></div>
-</div>
-
-<div class="container-fluid px-4 flex-grow-1">
-    <div class="alert alert-success d-flex justify-content-between align-items-center shadow-sm p-2 flex-wrap gap-2">
-        <div style="font-size: 12px;">
-            <strong>Base Totales (Semanal):</strong> Visualización de registros consolidados.<br>
-            <small class="text-muted">Usa el buscador o haz clic en las columnas para ordenar.</small>
-<body>
-
-    <!-- BANNER PRINCIPAL -->
-    <div class="hero-banner text-center shadow-sm">
-        <div class="container">
-            <h4 class="fw-bold mb-1 text-white"><i class="bi bi-calendar-week"></i> Reporte Semanal - Módulos MAC</h4>
-            <p class="mb-1 text-light" style="font-size: 0.8rem;">Instituto Nacional Electoral | Distrito 03 Coahuila</p>
-        </div>
-    </div>
-
-        <div class="d-flex align-items-center gap-2 flex-wrap">
-            <!-- CUADRO NARANJA PARA INGRESAR LA REMESA ÚNICA -->
-            <div class="px-2 py-1 rounded shadow-sm text-center" style="background-color: #fd7e14;">
-                <label for="remesaFiltroInput" class="text-white fw-bold me-1" style="font-size: 11px;">Remesa:</label>
-                <input type="text" id="remesaFiltroInput" class="form-control form-control-sm d-inline-block text-center fw-bold text-dark bg-white" style="width: 70px; height: 26px; font-size: 12px;" placeholder="Ej. 1">
-    <!-- CONTENEDOR PRINCIPAL -->
-    <div class="container my-4 bg-white p-4 rounded shadow-lg" style="max-width: 1000px;">
-        
-        <!-- SELECTOR DE REMESA Y BOTÓN SGC -->
-        <div class="row align-items-center mb-4">
-            <div class="col-md-6">
-                <label for="selectRemesaSemanal" class="form-label fw-bold text-dark">Seleccionar Remesa:</label>
-                <select id="selectRemesaSemanal" class="form-select fw-bold">
-                    <option value="202645" selected>202645</option>
-                    <option value="202646">202646</option>
-                    <option value="202647">202647</option>
-                </select>
-            </div>
-            <div class="col-md-6 text-md-end mt-3 mt-md-0">
-                <!-- BOTÓN SGC -->
-                <button type="button" class="btn btn-warning fw-bold shadow-sm px-3 py-2 text-dark" onclick="abrirModalSGC()" style="border-radius: 20px; font-size: 13px;">
-                    <i class="bi bi-file-earmark-spreadsheet-fill"></i> SGC (Sistema de Gestión de Calidad)
-                </button>
-            </div>
-        </div>
-
-            <!-- Semáforo de conexión -->
-            <div id="semaforoConexion" class="badge bg-secondary text-white fs-6 px-3 py-2 rounded-pill"><i class="bi bi-arrow-repeat spinner-border spinner-border-sm"></i> Conectando...</div>
-        <!-- CONTENIDO PRINCIPAL DEL REPORTE -->
-        <div class="alert alert-info text-center">
-            <i class="bi bi-info-circle-fill"></i> Vista del Reporte Semanal activa. Utiliza el botón superior para desplegar el formato SGC sincronizado con Firebase de forma independiente.
-        </div>
-
-    </div>
-
-    <!-- VENTANA MODAL SGC -->
-    <div id="modalSGC" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); z-index: 99999; justify-content: center; align-items: center; backdrop-filter: blur(5px);">
-        <div style="background: #ffffff; border-radius: 12px; width: 95%; max-width: 950px; max-height: 90vh; overflow-y: auto; box-shadow: 0 5px 30px rgba(0,0,0,0.5); padding: 20px; color: #333;">
+    <!-- BARRA DE NAVEGACIÓN INSTITUCIONAL COMPLETA (Igual a Campaña) -->
+    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #1b396b; width: 100%;">
+      <div class="container-fluid px-3">
+        <a class="navbar-brand fw-bold" href="index.html" style="font-size: 14px;"><i class="bi bi-hdd-network"></i> SISTEMA MAC</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto gap-1 align-items-lg-center">
+            <li class="nav-item">
+              <a class="nav-link text-light px-2" href="index.html" style="font-size: 11px;" title="Inicio / Portada">
+                <i class="bi bi-house-door-fill fs-6"></i>
+              </a>
+            </li>
+            <li class="nav-item"><a class="nav-link text-light px-2" href="captura.html" style="font-size: 11px;"><i class="bi bi-pencil-square"></i> Captura</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_dias.html" style="font-size: 11px;"><i class="bi bi-calendar3"></i> Reporte Días</a></li>
+            <li class="nav-item"><a class="nav-link active bg-primary rounded px-2 text-white fw-bold" href="reporte_semanal.html" style="font-size: 11px;"><i class="bi bi-calendar-week"></i> Reporte Semanal</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_campana.html" style="font-size: 11px;"><i class="bi bi-bar-chart-fill"></i> Reporte Campaña</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_acumulado.html" style="font-size: 11px;"><i class="bi bi-archive-fill"></i> Reporte Acumulado</a></li>
+            <li class="nav-item"><a class="nav-link px-2" href="graficos.html" style="color: #ff66b2 !important; font-weight: bold; font-size: 11px;"><i class="bi bi-pie-chart-fill"></i> Gráficos</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-2" href="bd_madre.html" style="font-size: 11px;"><i class="bi bi-database-fill"></i> BD Principal</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-2" href="bdtotales.html" style="font-size: 11px;"><i class="bi bi-database-fill-gear"></i> BD Totales</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-2" href="modulosmac.html" style="font-size: 11px;"><i class="bi bi-building-fill-gear"></i> Módulos MAC</a></li>
             
-            <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
-                <h5 class="fw-bold m-0 text-primary"><i class="bi bi-table"></i> Formato SGC - Remesa Seleccionada</h5>
-                <button type="button" class="btn-close" onclick="cerrarModalSGC()"></button>
-            </div>
+            <li class="nav-item ms-lg-2">
+              <a class="btn btn-outline-light btn-sm fw-bold px-2 py-1" href="https://registro03coah.github.io/mimenu/" style="font-size: 11px;">
+                <i class="bi bi-box-arrow-right"></i> Salir
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
 
-            <!-- Contador de Registros y Remesas -->
-            <div class="badge bg-dark text-white fs-6 px-3 py-2 rounded-pill" id="contadorInfo">
-                <i class="bi bi-collection-fill text-info"></i> Líneas: <span id="lblTotalLineas">0</span> | <i class="bi bi-tags-fill text-warning"></i> Remesas: <span id="lblTotalRemesas">0</span>
-            <div class="table-responsive">
-                <table class="table table-bordered align-middle text-center" id="tablaSGC" style="font-size: 12px;">
-                    <thead style="background-color: #800040; color: white;">
-                        <tr>
-                            <!-- Encabezados a la izquierda ocultos a la vista pero funcionales -->
-                            <th class="d-none">Encabezado</th>
-                            <th style="width: 55%; text-align: left; padding-left: 10px;">Nominativo</th>
-                            <th colspan="3" id="thRemesaSGC" style="font-size: 14px;">202645</th>
-                        </tr>
-                        <tr>
-                            <th class="d-none">Encabezado</th>
-                            <th style="text-align: left; padding-left: 10px;">Concepto</th>
-                            <th>50351</th>
-                            <th>50353</th>
-                            <th>50354</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Fila 1 -->
-                        <tr>
-                            <td class="d-none">10% del total de tramites</td>
-                            <td style="text-align: left; padding-left: 10px;">Número de trámites aplicados</td>
-                            <td><input type="number" class="form-control form-control-sm text-center fw-bold val-sgc" data-key="tramites_aplicados_1" readonly></td>
-                            <td><input type="number" class="form-control form-control-sm text-center fw-bold val-sgc" data-key="tramites_aplicados_2" readonly></td>
-                            <td><input type="number" class="form-control form-control-sm text-center fw-bold val-sgc" data-key="tramites_aplicados_3" readonly></td>
-                        </tr>
-                        <!-- Fila 2 -->
-                        <tr>
-                            <td class="d-none">10% del total de tramites</td>
-                            <td style="text-align: left; padding-left: 10px;">Número de fichas requisitadas - Notificaciones de improcedencia de trámite</td>
-                            <td style="background-color: #800040; color: white;"><input type="number" class="form-control form-control-sm text-center fw-bold text-white bg-transparent border-0 val-sgc" data-key="fichas_req_1"></td>
-                            <td style="background-color: #800040; color: white;"><input type="number" class="form-control form-control-sm text-center fw-bold text-white bg-transparent border-0 val-sgc" data-key="fichas_req_2"></td>
-                            <td style="background-color: #800040; color: white;"><input type="number" class="form-control form-control-sm text-center fw-bold text-white bg-transparent border-0 val-sgc" data-key="fichas_req_3"></td>
-                        </tr>
-                        <!-- Fila Amarilla (Editable - 10%) -->
-                        <tr style="background-color: #ffff00;">
-                            <td class="d-none"></td>
-                            <td style="text-align: left; padding-left: 10px; font-weight: bold; color: #000;">Número de trámites exitosos</td>
-                            <td><input type="number" class="form-control form-control-sm text-center fw-bold bg-warning border-0 val-sgc text-dark" data-key="tramites_exitosos_1"></td>
-                            <td><input type="number" class="form-control form-control-sm text-center fw-bold bg-warning border-0 val-sgc text-dark" data-key="tramites_exitosos_2"></td>
-                            <td><input type="number" class="form-control form-control-sm text-center fw-bold bg-warning border-0 val-sgc text-dark" data-key="tramites_exitosos_3"></td>
-                        </tr>
-                        <!-- TOTAL DE TRAMITES -->
-                        <tr>
-                            <td class="d-none">TOTAL DE TRAMITES</td>
-                            <td style="text-align: left; padding-left: 10px; font-weight: bold;">Número de trámites aplicados</td>
-                            <td style="background-color: #800040; color: white;"><input type="number" class="form-control form-control-sm text-center fw-bold text-white bg-transparent border-0 val-sgc" data-key="total_tramites_1" readonly></td>
-                            <td style="background-color: #800040; color: white;"><input type="number" class="form-control form-control-sm text-center fw-bold text-white bg-transparent border-0 val-sgc" data-key="total_tramites_2" readonly></td>
-                            <td style="background-color: #800040; color: white;"><input type="number" class="form-control form-control-sm text-center fw-bold text-white bg-transparent border-0 val-sgc" data-key="total_tramites_3" readonly></td>
-                        </tr>
-                        <!-- Script ejecutados -->
-                        <tr>
-                            <td class="d-none">Script ejecutados</td>
-                            <td style="text-align: left; padding-left: 10px;">Número de Archivos de Transacción aceptados</td>
-                            <td><input type="number" class="form-control form-control-sm text-center fw-bold val-sgc" data-key="transac_aceptados_1"></td>
-                            <td><input type="number" class="form-control form-control-sm text-center fw-bold val-sgc" data-key="transac_aceptados_2"></td>
-                            <td><input type="number" class="form-control form-control-sm text-center fw-bold val-sgc" data-key="transac_aceptados_3"></td>
-                        </tr>
-                        <tr>
-                            <td class="d-none">Script ejecutados</td>
-                            <td style="text-align: left; padding-left: 10px;">Total de Archivos de Transacción procesados</td>
-                            <td style="background-color: #800040; color: white;"><input type="number" class="form-control form-control-sm text-center fw-bold text-white bg-transparent border-0 val-sgc" data-key="transac_procesados_1"></td>
-                            <td style="background-color: #800040; color: white;"><input type="number" class="form-control form-control-sm text-center fw-bold text-white bg-transparent border-0 val-sgc" data-key="transac_procesados_2"></td>
-                            <td style="background-color: #800040; color: white;"><input type="number" class="form-control form-control-sm text-center fw-bold text-white bg-transparent border-0 val-sgc" data-key="transac_procesados_3"></td>
-                        </tr>
-                        <!-- ACTUALIZACION -->
-                        <tr>
-                            <td class="d-none">ACTUALIZACION</td>
-                            <td style="text-align: left; padding-left: 10px;">Credenciales Recibidas - Credenciales inconsistentes</td>
-                            <td><input type="number" class="form-control form-control-sm text-center fw-bold val-sgc" data-key="cred_inconsistentes_1"></td>
-                            <td><input type="number" class="form-control form-control-sm text-center fw-bold val-sgc" data-key="cred_inconsistentes_2"></td>
-                            <td><input type="number" class="form-control form-control-sm text-center fw-bold val-sgc" data-key="cred_inconsistentes_3"></td>
-                        </tr>
-                        <tr>
-                            <td class="d-none">ACTUALIZACION</td>
-                            <td style="text-align: left; padding-left: 10px;">Credenciales recibidas</td>
-                            <td style="background-color: #800040; color: white;"><input type="number" class="form-control form-control-sm text-center fw-bold text-white bg-transparent border-0 val-sgc" data-key="cred_recibidas_1"></td>
-                            <td style="background-color: #800040; color: white;"><input type="number" class="form-control form-control-sm text-center fw-bold text-white bg-transparent border-0 val-sgc" data-key="cred_recibidas_2"></td>
-                            <td style="background-color: #800040; color: white;"><input type="number" class="form-control form-control-sm text-center fw-bold text-white bg-transparent border-0 val-sgc" data-key="cred_recibidas_3"></td>
-                        </tr>
-                        <!-- DISPONIBLES TOTAL -->
-                        <tr>
-                            <td class="d-none">DISPONIBLES TOTAL</td>
-                            <td style="text-align: left; padding-left: 10px;">Credenciales en resguardo</td>
-                            <td><input type="number" class="form-control form-control-sm text-center fw-bold val-sgc" data-key="cred_resguardo_1"></td>
-                            <td><input type="number" class="form-control form-control-sm text-center fw-bold val-sgc" data-key="cred_resguardo_2"></td>
-                            <td><input type="number" class="form-control form-control-sm text-center fw-bold val-sgc" data-key="cred_resguardo_3"></td>
-                        </tr>
-                        <tr>
-                            <td class="d-none">DISPONIBLES TOTAL</td>
-                            <td style="text-align: left; padding-left: 10px;">Credenciales totales en SIIRFE disponibles para entrega</td>
-                            <td style="background-color: #800040; color: white;"><input type="number" class="form-control form-control-sm text-center fw-bold text-white bg-transparent border-0 val-sgc" data-key="siirfe_1"></td>
-                            <td style="background-color: #800040; color: white;"><input type="number" class="form-control form-control-sm text-center fw-bold text-white bg-transparent border-0 val-sgc" data-key="siirfe_2"></td>
-                            <td style="background-color: #800040; color: white;"><input type="number" class="form-control form-control-sm text-center fw-bold text-white bg-transparent border-0 val-sgc" data-key="siirfe_3"></td>
-                        </tr>
-                        <!-- ENTREGADAS -->
-                        <tr>
-                            <td class="d-none">ENTREGADAS</td>
-                            <td style="text-align: left; padding-left: 10px;">Total de credenciales entregadas</td>
-                            <td><input type="number" class="form-control form-control-sm text-center fw-bold val-sgc" data-key="cred_entregadas_1"></td>
-                            <td><input type="number" class="form-control form-control-sm text-center fw-bold val-sgc" data-key="cred_entregadas_2"></td>
-                            <td><input type="number" class="form-control form-control-sm text-center fw-bold val-sgc" data-key="cred_entregadas_3"></td>
-                        </tr>
-                        <tr>
-                            <td class="d-none">ENTREGADAS</td>
-                            <td style="text-align: left; padding-left: 10px;">Total de credenciales solicitadas</td>
-                            <td style="background-color: #800040; color: white;"><input type="number" class="form-control form-control-sm text-center fw-bold text-white bg-transparent border-0 val-sgc" data-key="cred_solicitadas_1"></td>
-                            <td style="background-color: #800040; color: white;"><input type="number" class="form-control form-control-sm text-center fw-bold text-white bg-transparent border-0 val-sgc" data-key="cred_solicitadas_2"></td>
-                            <td style="background-color: #800040; color: white;"><input type="number" class="form-control form-control-sm text-center fw-bold text-white bg-transparent border-0 val-sgc" data-key="cred_solicitadas_3"></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Buscador en tiempo real -->
-            <div class="input-group input-group-sm" style="width: 200px;">
-                <span class="input-group-text bg-white text-secondary"><i class="bi bi-search"></i></span>
-                <input type="text" id="inputBuscadorSemanal" class="form-control" placeholder="Buscar valor...">
-            <div class="text-end mt-3">
-                <button type="button" class="btn btn-secondary px-4 fw-bold me-2" onclick="cerrarModalSGC()">Cerrar</button>
-                <button type="button" class="btn btn-success px-4 fw-bold" onclick="guardarDatosSGC()"><i class="bi bi-cloud-upload-fill"></i> Guardar en Firebase</button>
-            </div>
-
-            <!-- Botón Copiar a Excel -->
-            <button class="btn btn-sm btn-info fw-bold" onclick="copiarTablaExcel('tablaSemanal')" title="Copia la tabla para pegarla directo en Excel"><i class="bi bi-file-earmark-spreadsheet-fill"></i> Copiar a Excel</button>
+    <div class="header-banner text-center d-flex justify-content-center align-items-center">
+        <div>
+            <h1 class="fw-bold mb-0"><i class="bi bi-calendar-week"></i> Reporte Semanal</h1>
+            <p class="lead mb-0">Totales Generales Remesa a Remesa</p>
         </div>
     </div>
 
-    <div class="excel-container shadow-sm rounded border-success">
-        <table class="excel-table table table-hover" id="tablaSemanal">
-            <thead id="cabeceraTablaSemanal"></thead>
-            <tbody id="cuerpoTablaSemanal"></tbody>
-        </table>
+    <div class="container-fluid px-4 flex-grow-1">
+        
+        <!-- SECCIÓN DE FILTRO DE REMESA Y SEMÁFORO -->
+        <div class="row align-items-center mb-3 p-3 bg-white shadow-sm rounded">
+            <div class="col-md-4">
+                <label for="inputRemesaFiltro" class="form-label fw-bold mb-1" style="font-size: 12px;">Buscar o Filtrar Remesa:</label>
+                <input type="text" id="inputRemesaFiltro" class="form-control form-control-sm" placeholder="Ej. 202643 (Déjalo vacío para ver la última)">
+            </div>
+            <div class="col-md-4 text-center">
+                <span id="lblRemesaActiva" class="badge bg-secondary fs-6 px-3 py-2">Cargando remesa...</span>
+            </div>
+            <div class="col-md-4 text-end d-flex justify-content-end align-items-center gap-2">
+                <button class="btn btn-sm btn-info fw-bold" onclick="copiarTablaExcel('tablaSemanal')"><i class="bi bi-file-excel"></i> Copiar a Excel</button>
+                <div id="semaforoConexion" class="badge bg-secondary">Conectando...</div>
+            </div>
+        </div>
+
+        <div class="excel-container shadow-sm rounded border-warning">
+            <table class="excel-table table table-hover" id="tablaSemanal">
+                <thead></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- SECCIÓN ADMINISTRADOR DE REMESAS -->
+        <div class="accordion mt-4 shadow-sm mb-4" id="accordionRemesas">
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed bg-light text-dark fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRemesas">
+                        <i class="bi bi-gear-fill me-2 text-warning"></i> Administrador de Remesas Semanales (Ver, Editar, Borrar)
+                    </button>
+                </h2>
+                <div id="collapseRemesas" class="accordion-collapse collapse" data-bs-parent="#accordionRemesas">
+                    <div class="accordion-body">
+                        <table class="table table-bordered table-hover text-center align-middle" id="tablaListaRemesas">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th># Remesa</th>
+                                    <th>Acciones Disponibles</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- JS fills -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
-</div>
 
-<footer class="text-center py-2 mt-auto text-white shadow-sm" style="background-color: #1b396b; width: 100%;">
-    <small>&copy; 2026 Todos los derechos reservados. Desarrollado por <span class="text-info fw-bold">Carrivers Desing</span> para Módulos MAC. Versión <span id="footerVersion">11.1</span></small>
-</footer>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script type="module" src="app_semanal.js"></script>
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        let paginaActual = window.location.pathname.split("/").pop();
-
-        // Páginas libres (el candado las deja pasar sin pedir la contraseña "charro")
-        let paginasLibres = [
-            "index.html", 
-            "modulosmac.html", 
-            "cifrasmodulo.html", // <--- ¡Agregamos esta para que no estorbe con las claves de los módulos!
-            "reporte_dias.html", 
-            "graficos.html",
-            ""
-        ];
-
-        if (!paginasLibres.includes(paginaActual)) {
-            if (sessionStorage.getItem('sesion_autorizada') !== 'true') {
-                alert("⚠️ Acceso restringido. Debe ingresar la contraseña desde el menú principal.");
-                window.location.href = 'index.html';
-    <!-- PIE DE PÁGINA -->
-    <footer class="text-center py-2 text-white shadow-sm" style="background-color: rgba(27, 57, 107, 0.95); width: 100%;">
-        <small style="font-size: 10px;">
-            &copy; 2026 Todos los derechos reservados. Desarrollado por <span class="text-info fw-bold">Carrivers Desing</span> para Módulos MAC. Versión 1.1
+    <footer class="text-center py-2 mt-auto text-white shadow-sm" style="background-color: #1b396b; width: 100%;">
+        <small>
+            &copy; 2026 Todos los derechos reservados. Desarrollado por <span class="text-info fw-bold">Carrivers Desing</span> para Módulos MAC.
         </small>
     </footer>
 
-    <!-- SCRIPT GENERAL Y DE GESTIÓN SGC -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="app_semanal.js?v=3.2.0"></script>
     <script>
-        window.abrirModalSGC = function() {
-            const modal = document.getElementById('modalSGC');
-            if(modal) {
-                modal.style.display = 'flex';
-                cargarYCalcularSGC();
+        document.addEventListener("DOMContentLoaded", function() {
+            let paginaActual = window.location.pathname.split("/").pop();
+
+            let paginasLibres = [
+                "index.html", 
+                "modulosmac.html", 
+                "cifrasmodulo.html", 
+                "reporte_dias.html", 
+                "graficos.html",
+                ""
+            ];
+
+            if (!paginasLibres.includes(paginaActual)) {
+                if (sessionStorage.getItem('sesion_autorizada') !== 'true') {
+                    alert("⚠️ Acceso restringido. Debe ingresar la contraseña desde el menú principal.");
+                    window.location.href = 'index.html';
+                }
             }
-        }
-
-        window.cerrarModalSGC = function() {
-            const modal = document.getElementById('modalSGC');
-            if(modal) modal.style.display = 'none';
-        }
-
-        function cargarYCalcularSGC() {
-            const selectRemesa = document.getElementById('selectRemesaSemanal');
-            const remesaActual = selectRemesa ? selectRemesa.value : "202645";
-            
-            document.getElementById('thRemesaSGC').innerText = remesaActual;
-
-            const tramites51 = obtenerTramitesModulo('50351');
-            const tramites53 = obtenerTramitesModulo('50353');
-            const tramites54 = obtenerTramitesModulo('50354');
-
-            document.querySelector('[data-key="tramites_aplicados_1"]').value = tramites51;
-            document.querySelector('[data-key="tramites_aplicados_2"]').value = tramites53;
-            document.querySelector('[data-key="tramites_aplicados_3"]').value = tramites54;
-
-            document.querySelector('[data-key="total_tramites_1"]').value = tramites51;
-            document.querySelector('[data-key="total_tramites_2"]').value = tramites53;
-            document.querySelector('[data-key="total_tramites_3"]').value = tramites54;
-
-            // Calcular 10% en el renglón amarillo por defecto
-            document.querySelector('[data-key="tramites_exitosos_1"]').value = Math.round(tramites51 * 0.10 * 100) / 100;
-            document.querySelector('[data-key="tramites_exitosos_2"]').value = Math.round(tramites53 * 0.10 * 100) / 100;
-            document.querySelector('[data-key="tramites_exitosos_3"]').value = Math.round(tramites54 * 0.10 * 100) / 100;
-
-            // Cargar desde Firebase si existe registro previo independiente para la remesa
-            if (window.db && window.firebaseRef && window.firebaseGet) {
-                const dbRef = window.firebaseRef(window.db, `sgc_remesas/${remesaActual}`);
-                window.firebaseGet(dbRef).then((snapshot) => {
-                    if (snapshot.exists()) {
-                        const datosGuardados = snapshot.val();
-                        document.querySelectorAll('.val-sgc').forEach(input => {
-                            let key = input.getAttribute('data-key');
-                            if (datosGuardados[key] !== undefined) {
-                                input.value = datosGuardados[key];
-                            }
-                        });
-                    }
-                }).catch(error => {
-                    console.error("Error al leer SGC:", error);
-                });
-            }
-        }
-
-        function obtenerTramitesModulo(mod) {
-            let celda = document.querySelector(`.col-modulo-${mod}`) || document.querySelector(`[data-modulo="${mod}"]`);
-            if(celda) {
-                return parseFloat(celda.innerText || celda.value) || 0;
-            }
-            return 81; 
-        }
-
-        window.guardarDatosSGC = function() {
-            const selectRemesa = document.getElementById('selectRemesaSemanal');
-            const remesaActual = selectRemesa ? selectRemesa.value : "202645";
-
-            let datosASubir = {};
-            document.querySelectorAll('.val-sgc').forEach(input => {
-                let key = input.getAttribute('data-key');
-                datosASubir[key] = input.value; // Guarda todos los campos, incluyendo los editados de la línea amarilla
-            });
-
-            if (window.db && window.firebaseRef && window.firebaseSet) {
-                const dbRef = window.firebaseRef(window.db, `sgc_remesas/${remesaActual}`);
-                window.firebaseSet(dbRef, datosASubir).then(() => {
-                    alert("¡Formato SGC guardado con éxito de forma independiente en Firebase!");
-                    cerrarModalSGC();
-                }).catch(error => {
-                    console.error("Error al guardar:", error);
-                    alert("Hubo un error al guardar los datos en la nube.");
-                });
-            } else {
-                alert("La conexión con Firebase no está disponible en este momento.");
-            }
-        }
-    });
-</script>
+        });
     </script>
 </body>
 </html>
