@@ -16,7 +16,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-window.db = db; // Exportado globalmente para el SGC
+window.db = db;
 
 const COLUMNAS_SEMANAL_KEYS = [
     "ENT", "DTTO", "MODULO", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS", 
@@ -127,7 +127,7 @@ function obtenerRemesaSeleccionada() {
 
     if (remesasDisponibles.size > 0) {
         let listaRemesas = Array.from(remesasDisponibles).sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
-        return listaRemesas[0]; // Devuelve la más reciente si está vacío
+        return listaRemesas[0]; 
     }
     return "";
 }
@@ -280,7 +280,7 @@ window.copiarTablaExcel = function(idTabla) {
 }
 
 // ==========================================
-// 2. LÓGICA DEL MÓDULO SGC (VENTANA FLOTANTE Y FIREBASE)
+// 2. LÓGICA DEL MÓDULO SGC (ENLACE DE DATOS Y FIREBASE)
 // ==========================================
 window.abrirModalSGC = function() {
     const modal = document.getElementById('modalSGC');
@@ -299,32 +299,98 @@ function cargarYCalcularSGC() {
     let remesaActual = obtenerRemesaSeleccionada();
     document.getElementById('thRemesaSGC').innerText = "Remesa: " + remesaActual;
 
-    // Extraer trámites de los módulos dinámicamente de la tabla actual o registros
-    let tramites51 = 0, tramites53 = 0, tramites54 = 0;
-    let registrosModulos = bdMadreGlobal.filter(item => String(item['REMESA'] || '').trim() === String(remesaActual));
-    
-    registrosModulos.forEach(reg => {
-        let m = String(reg['MODULO'] || '').trim();
-        let t = parseFloat(reg['TOTAL_DE_TRAMITES'] || 0);
-        if(m === '50351') tramites51 += t;
-        if(m === '50353') tramites53 += t;
-        if(m === '50354') tramites54 += t;
-    });
+    // Filtrar los registros de la remesa activa en bd_madre
+    let registrosRemesa = bdMadreGlobal.filter(item => String(item['REMESA'] || '').trim() === String(remesaActual));
 
-    document.querySelector('[data-key="tramites_aplicados_1"]').value = tramites51;
-    document.querySelector('[data-key="tramites_aplicados_2"]').value = tramites53;
-    document.querySelector('[data-key="tramites_aplicados_3"]').value = tramites54;
+    // Función auxiliar para sumar una columna específica según el módulo ('50351', '50353', '50354')
+    function obtenerValorModulo(moduloId, columnaKey) {
+        let regMod = registrosRemesa.find(r => String(r['MODULO'] || '').trim() === String(moduloId));
+        if (regMod && regMod[columnaKey] !== undefined) {
+            return parseFloat(regMod[columnaKey]) || 0;
+        }
+        return 0;
+    }
 
-    document.querySelector('[data-key="total_tramites_1"]').value = tramites51;
-    document.querySelector('[data-key="total_tramites_2"]').value = tramites53;
-    document.querySelector('[data-key="total_tramites_3"]').value = tramites54;
+    // 1. Trámites aplicados (Columna: TOTAL_DE_TRAMITES)
+    let t51 = obtenerValorModulo('50351', 'TOTAL_DE_TRAMITES');
+    let t53 = obtenerValorModulo('50353', 'TOTAL_DE_TRAMITES');
+    let t54 = obtenerValorModulo('50354', 'TOTAL_DE_TRAMITES');
 
-    // Cálculo automático del 10% en fila amarilla
-    document.querySelector('[data-key="tramites_exitosos_1"]').value = Math.round(tramites51 * 0.10 * 100) / 100;
-    document.querySelector('[data-key="tramites_exitosos_2"]').value = Math.round(tramites53 * 0.10 * 100) / 100;
-    document.querySelector('[data-key="tramites_exitosos_3"]').value = Math.round(tramites54 * 0.10 * 100) / 100;
+    document.querySelector('[data-key="tramites_aplicados_1"]').value = t51;
+    document.querySelector('[data-key="tramites_aplicados_2"]').value = t53;
+    document.querySelector('[data-key="tramites_aplicados_3"]').value = t54;
 
-    // Cargar datos independientes de Firebase para SGC
+    document.querySelector('[data-key="total_tramites_1"]').value = t51;
+    document.querySelector('[data-key="total_tramites_2"]').value = t53;
+    document.querySelector('[data-key="total_tramites_3"]').value = t54;
+
+    // 2. Fichas requisitadas (Columna: TOTAL_DE_TRAMITES o equivalente)
+    document.querySelector('[data-key="fichas_req_1"]').value = t51;
+    document.querySelector('[data-key="fichas_req_2"]').value = t53;
+    document.querySelector('[data-key="fichas_req_3"]').value = t54;
+
+    // 3. Fila Amarilla: 10% de trámites aplicados por defecto
+    document.querySelector('[data-key="tramites_exitosos_1"]').value = Math.round(t51 * 0.10 * 100) / 100;
+    document.querySelector('[data-key="tramites_exitosos_2"]').value = Math.round(t53 * 0.10 * 100) / 100;
+    document.querySelector('[data-key="tramites_exitosos_3"]').value = Math.round(t54 * 0.10 * 100) / 100;
+
+    // 4. Archivos de Transacción aceptados y procesados
+    let ta51 = obtenerValorModulo('50351', 'TOTAL_DE_MOVIMIENTOS');
+    let ta53 = obtenerValorModulo('50353', 'TOTAL_DE_MOVIMIENTOS');
+    let ta54 = obtenerValorModulo('50354', 'TOTAL_DE_MOVIMIENTOS');
+
+    document.querySelector('[data-key="transac_aceptados_1"]').value = ta51;
+    document.querySelector('[data-key="transac_aceptados_2"]').value = ta53;
+    document.querySelector('[data-key="transac_aceptados_3"]').value = ta54;
+
+    document.querySelector('[data-key="transac_procesados_1"]').value = ta51;
+    document.querySelector('[data-key="transac_procesados_2"]').value = ta53;
+    document.querySelector('[data-key="transac_procesados_3"]').value = ta54;
+
+    // 5. Credenciales inconsistentes y recibidas
+    let cr51 = obtenerValorModulo('50351', 'ENTREGADAS');
+    let cr53 = obtenerValorModulo('50353', 'ENTREGADAS');
+    let cr54 = obtenerValorModulo('50354', 'ENTREGADAS');
+
+    document.querySelector('[data-key="cred_inconsistentes_1"]').value = cr51;
+    document.querySelector('[data-key="cred_inconsistentes_2"]').value = cr53;
+    document.querySelector('[data-key="cred_inconsistentes_3"]').value = cr54;
+
+    document.querySelector('[data-key="cred_recibidas_1"]').value = cr51;
+    document.querySelector('[data-key="cred_recibidas_2"]').value = cr53;
+    document.querySelector('[data-key="cred_recibidas_3"]').value = cr54;
+
+    // 6. Credenciales en resguardo y SIIRFE disponibles
+    let res51 = obtenerValorModulo('50351', 'RESGUARDO');
+    let res53 = obtenerValorModulo('50353', 'RESGUARDO');
+    let res54 = obtenerValorModulo('50354', 'RESGUARDO');
+
+    document.querySelector('[data-key="cred_resguardo_1"]').value = res51;
+    document.querySelector('[data-key="cred_resguardo_2"]').value = res53;
+    document.querySelector('[data-key="cred_resguardo_3"]').value = res54;
+
+    let disp51 = obtenerValorModulo('50351', 'DISPONIBLES');
+    let disp53 = obtenerValorModulo('50353', 'DISPONIBLES');
+    let disp54 = obtenerValorModulo('50354', 'DISPONIBLES');
+
+    document.querySelector('[data-key="siirfe_1"]').value = disp51;
+    document.querySelector('[data-key="siirfe_2"]').value = disp53;
+    document.querySelector('[data-key="siirfe_3"]').value = disp54;
+
+    // 7. Entregadas y solicitadas
+    let ent51 = obtenerValorModulo('50351', 'ENTREGADAS');
+    let ent53 = obtenerValorModulo('50353', 'ENTREGADAS');
+    let ent54 = obtenerValorModulo('50354', 'ENTREGADAS');
+
+    document.querySelector('[data-key="cred_entregadas_1"]').value = ent51;
+    document.querySelector('[data-key="cred_entregadas_2"]').value = ent53;
+    document.querySelector('[data-key="cred_entregadas_3"]').value = ent54;
+
+    document.querySelector('[data-key="cred_solicitadas_1"]').value = ent51;
+    document.querySelector('[data-key="cred_solicitadas_2"]').value = ent53;
+    document.querySelector('[data-key="cred_solicitadas_3"]').value = ent54;
+
+    // 8. Cargar registros independientes de Firebase si el usuario ya los había guardado antes
     if (window.db) {
         const dbRef = ref(window.db, `sgc_remesas/${remesaActual}`);
         get(dbRef).then((snapshot) => {
