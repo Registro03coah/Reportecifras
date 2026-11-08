@@ -139,13 +139,12 @@ async function cargarDatosDto03() {
         let dataRaw = snap.val();
         let registros = (Array.isArray(dataRaw) ? dataRaw : Object.values(dataRaw)).map(normalizarObjeto);
 
-        // Filtrar vacíos
         registros = registros.filter(item => {
             let mod = String(item['MODULO'] || '').trim();
             return mod !== "" && mod !== "0" && mod !== "undefined" && mod !== "GENERAL";
         });
 
-        // 1. SEMANAL: Tomar solo la remesa más reciente y un renglón por módulo
+        // 1. SEMANAL: Remesa más reciente agrupada por módulo
         let remesasSet = new Set();
         registros.forEach(f => {
             let r = String(f['REMESA'] || '').trim();
@@ -183,7 +182,7 @@ async function cargarDatosDto03() {
         construirTablaDinamica('#tablaSemanalReporte', listaSemanal, true);
 
 
-        // 2. CAMPAÑA: Consolidado histórico agrupado por módulo
+        // 2. CAMPAÑA: Consolidado histórico por módulo
         let modCampanaMap = {};
         registros.forEach(f => {
             let mod = String(f['MODULO'] || '').trim();
@@ -212,7 +211,7 @@ async function cargarDatosDto03() {
         construirTablaDinamica('#tablaCampanaReporte', listaCampana, true);
 
 
-        // 3. ACUMULADO: Mostrar todos los registros detallados
+        // 3. ACUMULADO: Todos los registros detallados
         construirTablaDinamica('#tablaAcumuladoReporte', registros, true);
 
     } catch (err) {
