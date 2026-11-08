@@ -437,7 +437,7 @@ function construirTabla() {
         } else if (c === 44) {
             filaTotales.innerHTML += `<td class="${claseOculta}"><span id="tot_col_conf_44" class="fw-bold text-primary"></span></td>`;
         } else if (c === 45) {
-            filaTotales.innerHTML += `<td class="${claseOculta}"><span id="tot_col_ent_45" class="fw-bold text-primary">05</span></td>`;
+            filaTotales.innerHTML += `<td class="${claseOculta}"><span id="tot_col_ent_45" class="fw-bold text-primary">COAHUILA 05</span></td>`;
         } else if (c === 46) {
             filaTotales.innerHTML += `<td class="${claseOculta}"><span id="tot_col_dtto_46" class="fw-bold text-primary">03</span></td>`;
         } else if (c === 47) {
@@ -463,6 +463,7 @@ function construirTabla() {
 
     construirTablasInferiores();
     cargarValoresSubTablas(savedData);
+    cargarTotalesGuardados(savedData); // Carga los totales guardados previamente
     document.querySelectorAll('.col-horas').forEach(inp => validarHoras(inp));
     inicializarNavegacionIndependientePorTablas();
     recalcularTodo();
@@ -1006,7 +1007,20 @@ function guardarDatosLocales() {
         observaciones: document.getElementById('txtObservaciones').value
     };
 
-    let objetoCompleto = { datosDiarios, rechazos, credRecibidas, cancelados, instancias, impExp, retCausa, lotes, configGlobal };
+    // Capturar también la línea de totales para que se guarde en la nube
+    let totalesGenerales = {};
+    for (let c = 5; c <= 75; c++) {
+        let span = document.getElementById(`tot_col_${c}`);
+        if (span) {
+            totalesGenerales[c] = span.innerText.trim();
+        }
+    }
+    totalesGenerales['min_5'] = document.getElementById('tot_col_min_5') ? document.getElementById('tot_col_min_5').innerText.trim() : '';
+    totalesGenerales['max_6'] = document.getElementById('tot_col_max_6') ? document.getElementById('tot_col_max_6').innerText.trim() : '';
+    totalesGenerales['col_16'] = document.getElementById('tot_col_16') ? document.getElementById('tot_col_16').innerText.trim() : '';
+    totalesGenerales['disp_30'] = document.getElementById('tot_col_disp_fin_30') ? document.getElementById('tot_col_disp_fin_30').innerText.trim() : '';
+
+    let objetoCompleto = { datosDiarios, rechazos, credRecibidas, cancelados, instancias, impExp, retCausa, lotes, configGlobal, totalesGenerales };
     
     localStorage.setItem('mac_datos_' + moduloActual, JSON.stringify(objetoCompleto));
     db.ref('modulos/' + moduloActual).set(objetoCompleto).catch(err => console.error("Error al sincronizar con nube:", err));
@@ -1083,7 +1097,7 @@ function guardarDatosManual() {
 function cargarDatosLocalesUI() {
     let data = datosCargadosNube;
     if(data.configGlobal) {
-        document.getElementById('txtEntidadGlobal').value = data.configGlobal.entidad || '05';
+        document.getElementById('txtEntidadGlobal').value = data.configGlobal.entidad || 'COAHUILA 05';
         document.getElementById('txtDistritoGlobal').value = data.configGlobal.distrito || '03';
         document.getElementById('txtRemesaGlobal').value = data.configGlobal.remesa || '';
         document.getElementById('txtConfGlobal').value = data.configGlobal.conf || (configModulos[moduloActual] ? configModulos[moduloActual].conf : '');
@@ -1168,6 +1182,21 @@ function cargarValoresSubTablas(data) {
         });
     }
     recalcularTablasInferioresSinCiclo();
+}
+
+function cargarTotalesGuardados(data) {
+    if (!data || !data.totalesGenerales) return;
+    let tg = data.totalesGenerales;
+
+    if(tg['min_5'] && document.getElementById('tot_col_min_5')) document.getElementById('tot_col_min_5').innerText = tg['min_5'];
+    if(tg['max_6'] && document.getElementById('tot_col_max_6')) document.getElementById('tot_col_max_6').innerText = tg['max_6'];
+    if(tg['col_16'] && document.getElementById('tot_col_16')) document.getElementById('tot_col_16').innerText = tg['col_16'];
+    if(tg['disp_30'] && document.getElementById('tot_col_disp_fin_30')) document.getElementById('tot_col_disp_fin_30').innerText = tg['disp_30'];
+
+    Object.keys(tg).forEach(c => {
+        let span = document.getElementById(`tot_col_${c}`);
+        if(span && tg[c]) span.innerText = tg[c];
+    });
 }
 
 function copiarTablaAlPortapapeles() {
