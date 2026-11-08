@@ -1029,6 +1029,7 @@ function recopilarColumnas1a75() {
     let filas1a75 = [];
     let rows = document.querySelectorAll('#cuerpoTablaCompleta tr');
     
+    // Recopilar los días de la semana
     rows.forEach((r) => {
         let filaVals = [];
         let celdasTd = r.querySelectorAll('td');
@@ -1055,6 +1056,75 @@ function recopilarColumnas1a75() {
         }
         filas1a75.push(filaVals);
     });
+
+    // Recopilar la Línea de Totales como la última fila para el historial
+    let remesaVal = document.getElementById('txtRemesaGlobal').value;
+    let confVal = document.getElementById('txtConfGlobal').value;
+    let entVal = document.getElementById('txtEntidadGlobal').value;
+    let dttoVal = document.getElementById('txtDistritoGlobal').value;
+    let modVal = moduloActual;
+    let canjeVal = document.getElementById('inputCanjeGlobal').value;
+    let scriptVal = document.getElementById('inputScriptGlobal').value;
+    let folionecVal = document.getElementById('inputFolioNecGlobal').value;
+
+    let totalesValores = ["LÍNEA TOTALES"];
+    for(let c=2; c<=75; c++) {
+        let valTot = "";
+        if (c === 5) {
+            valTot = document.getElementById('tot_col_min_5').innerText;
+        } else if (c === 6) {
+            valTot = document.getElementById('tot_col_max_6').innerText;
+        } else if (c === 16) {
+            valTot = document.getElementById('tot_col_16').innerText;
+        } else if (c === 17) {
+            valTot = document.getElementById('tot_col_canc_17').innerText;
+        } else if (c === 18) {
+            valTot = document.getElementById('tot_col_rech_18').innerText;
+        } else if (c === 20) {
+            valTot = document.getElementById('tot_col_primer_disp_20').innerText;
+        } else if (c === 22) {
+            valTot = document.getElementById('tot_col_recotr_22').innerText;
+        } else if (c === 29) {
+            valTot = document.getElementById('tot_col_ret_29').innerText;
+        } else if (c === 30) {
+            valTot = document.getElementById('tot_col_disp_fin_30').innerText;
+        } else if (c === 31) {
+            valTot = canjeVal;
+        } else if (c === 34) {
+            valTot = document.getElementById('tot_col_dias_trab_34').innerText;
+        } else if (c === 39) {
+            valTot = remesaVal;
+        } else if (c === 44) {
+            valTot = confVal;
+        } else if (c === 45) {
+            valTot = entVal;
+        } else if (c === 46) {
+            valTot = dttoVal;
+        } else if (c === 47) {
+            valTot = modVal;
+        } else if (c === 48) {
+            valTot = document.getElementById('tot_col_resguardo_48').innerText;
+        } else if (c === 51) {
+            valTot = scriptVal;
+        } else if (c === 52) {
+            valTot = folionecVal;
+        } else if (c === 63 || c === 64) {
+            let subIdx = c - 63;
+            valTot = document.getElementById(`tot_col_impexp_${subIdx}`).innerText;
+        } else if (c >= 66 && c <= 75) {
+            let subIdx = c - 66;
+            valTot = document.getElementById(`tot_col_ret_${subIdx}`).innerText;
+        } else if (columnasSinSuma.includes(c)) {
+            valTot = "";
+        } else {
+            let span = document.getElementById(`tot_col_${c}`);
+            valTot = span ? span.innerText : "";
+        }
+
+        totalesValores.push(valTot !== "" ? valTot : "0");
+    }
+    filas1a75.push(totalesValores);
+
     return filas1a75;
 }
 
