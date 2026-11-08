@@ -27,13 +27,13 @@ const sedesPorModulo = {
 };
 
 const datosBaseDefault = [
-    {dia: 'Lunes', fecha: '', horas: '', sede: '', fi: '', ff: '', ins: 0, corr: 0, cam: 0, rep: 0, cdir: 0, reinc: 0, reempl: 0, reimp: 0, cpvDev: 0, dispAnt: 0, rec: 0, recOtr: 0, ent: 0, canje: 0, fichEnt: 0, fichAtend: 0, exp: 0, ord: 0, rect: 0, juicio: 0, remesa: '202640'},
-    {dia: 'Martes', fecha: '', horas: '', sede: '', fi: '', ff: '', ins: 0, corr: 0, cam: 0, rep: 0, cdir: 0, reinc: 0, reempl: 0, reimp: 0, cpvDev: 0, dispAnt: 0, rec: 0, recOtr: 0, ent: 0, canje: 0, fichEnt: 0, fichAtend: 0, exp: 0, ord: 0, rect: 0, juicio: 0, remesa: '202640'},
-    {dia: 'Miércoles', fecha: '', horas: '', sede: '', fi: '', ff: '', ins: 0, corr: 0, cam: 0, rep: 0, cdir: 0, reinc: 0, reempl: 0, reimp: 0, cpvDev: 0, dispAnt: 0, rec: 0, recOtr: 0, ent: 0, canje: 0, fichEnt: 0, fichAtend: 0, exp: 0, ord: 0, rect: 0, juicio: 0, remesa: '202640'},
-    {dia: 'Jueves', fecha: '', horas: '', sede: '', fi: '', ff: '', ins: 0, corr: 0, cam: 0, rep: 0, cdir: 0, reinc: 0, reempl: 0, reimp: 0, cpvDev: 0, dispAnt: 0, rec: 0, recOtr: 0, ent: 0, canje: 0, fichEnt: 0, fichAtend: 0, exp: 0, ord: 0, rect: 0, juicio: 0, remesa: '202640'},
-    {dia: 'Viernes', fecha: '', horas: '', sede: '', fi: '', ff: '', ins: 0, corr: 0, cam: 0, rep: 0, cdir: 0, reinc: 0, reempl: 0, reimp: 0, cpvDev: 0, dispAnt: 0, rec: 0, recOtr: 0, ent: 0, canje: 0, fichEnt: 0, fichAtend: 0, exp: 0, ord: 0, rect: 0, juicio: 0, remesa: '202640'},
-    {dia: 'Sábado', fecha: '', horas: '', sede: '', fi: '', ff: '', ins: 0, corr: 0, cam: 0, rep: 0, cdir: 0, reinc: 0, reempl: 0, reimp: 0, cpvDev: 0, dispAnt: 0, rec: 0, recOtr: 0, ent: 0, canje: 0, fichEnt: 0, fichAtend: 0, exp: 0, ord: 0, rect: 0, juicio: 0, remesa: '202640'},
-    {dia: 'Domingo', fecha: '', horas: '', sede: '', fi: '', ff: '', ins: 0, corr: 0, cam: 0, rep: 0, cdir: 0, reinc: 0, reempl: 0, reimp: 0, cpvDev: 0, dispAnt: 0, rec: 0, recOtr: 0, ent: 0, canje: 0, fichEnt: 0, fichAtend: 0, exp: 0, ord: 0, rect: 0, juicio: 0, remesa: '202640'}
+    {dia: 'Lunes', fecha: '', horas: '', sede: '', fi: '', ff: '', ins: 0, corr: 0, cam: 0, rep: 0, cdir: 0, reinc: 0, reempl: 0, reimp: 0, cpvDev: 0, dispAnt: 0, rec: 0, recOtr: 0, ent: 0, canje: 0, fichEnt: 0, fichAtend: 0, exp: 0, ord: 0, rect: 0, juicio: 0, remesa: ''},
+    {dia: 'Martes', fecha: '', horas: '', sede: '', fi: '', ff: '', ins: 0, corr: 0, cam: 0, rep: 0, cdir: 0, reinc: 0, reempl: 0, reimp: 0, cpvDev: 0, dispAnt: 0, rec: 0, recOtr: 0, ent: 0, canje: 0, fichEnt: 0, fichAtend: 0, exp: 0, ord: 0, rect: 0, juicio: 0, remesa: ''},
+    {dia: 'Miércoles', fecha: '', horas: '', sede: '', fi: '', ff: '', ins: 0, corr: 0, cam: 0, rep: 0, cdir: 0, reinc: 0, reempl: 0, reimp: 0, cpvDev: 0, dispAnt: 0, rec: 0, recOtr: 0, ent: 0, canje: 0, fichEnt: 0, fichAtend: 0, exp: 0, ord: 0, rect: 0, juicio: 0, remesa: ''},
+    {dia: 'Jueves', fecha: '', horas: '', sede: '', fi: '', ff: '', ins: 0, corr: 0, cam: 0, rep: 0, cdir: 0, reinc: 0, reempl: 0, reimp: 0, cpvDev: 0, dispAnt: 0, rec: 0, recOtr: 0, ent: 0, canje: 0, fichEnt: 0, fichAtend: 0, exp: 0, ord: 0, rect: 0, juicio: 0, remesa: ''},
+    {dia: 'Viernes', fecha: '', horas: '', sede: '', fi: '', ff: '', ins: 0, corr: 0, cam: 0, rep: 0, cdir: 0, reinc: 0, reempl: 0, reimp: 0, cpvDev: 0, dispAnt: 0, rec: 0, recOtr: 0, ent: 0, canje: 0, fichEnt: 0, fichAtend: 0, exp: 0, ord: 0, rect: 0, juicio: 0, remesa: ''},
+    {dia: 'Sábado', fecha: '', horas: '', sede: '', fi: '', ff: '', ins: 0, corr: 0, cam: 0, rep: 0, cdir: 0, reinc: 0, reempl: 0, reimp: 0, cpvDev: 0, dispAnt: 0, rec: 0, recOtr: 0, ent: 0, canje: 0, fichEnt: 0, fichAtend: 0, exp: 0, ord: 0, rect: 0, juicio: 0, remesa: ''},
+    {dia: 'Domingo', fecha: '', horas: '', sede: '', fi: '', ff: '', ins: 0, corr: 0, cam: 0, rep: 0, cdir: 0, reinc: 0, reempl: 0, reimp: 0, cpvDev: 0, dispAnt: 0, rec: 0, recOtr: 0, ent: 0, canje: 0, fichEnt: 0, fichAtend: 0, exp: 0, ord: 0, rect: 0, juicio: 0, remesa: ''}
 ];
 
 const lotesDataDefault = [
@@ -321,7 +321,7 @@ function construirTabla() {
     let savedData = datosCargadosNube;
     let datosDiarios = savedData.datosDiarios || datosBaseDefault;
     let sedesDisponibles = sedesPorModulo[moduloActual] || [''];
-    let remesaActualTxt = document.getElementById('txtRemesaGlobal') ? document.getElementById('txtRemesaGlobal').value : '202640';
+    let remesaActualTxt = document.getElementById('txtRemesaGlobal') ? document.getElementById('txtRemesaGlobal').value : '';
 
     datosDiarios.forEach((d, idx) => {
         let tr = document.createElement('tr');
@@ -437,7 +437,7 @@ function construirTabla() {
         } else if (c === 44) {
             filaTotales.innerHTML += `<td class="${claseOculta}"><span id="tot_col_conf_44" class="fw-bold text-primary"></span></td>`;
         } else if (c === 45) {
-            filaTotales.innerHTML += `<td class="${claseOculta}"><span id="tot_col_ent_45" class="fw-bold text-primary">COAHUILA 05</span></td>`;
+            filaTotales.innerHTML += `<td class="${claseOculta}"><span id="tot_col_ent_45" class="fw-bold text-primary">05</span></td>`;
         } else if (c === 46) {
             filaTotales.innerHTML += `<td class="${claseOculta}"><span id="tot_col_dtto_46" class="fw-bold text-primary">03</span></td>`;
         } else if (c === 47) {
@@ -1083,9 +1083,9 @@ function guardarDatosManual() {
 function cargarDatosLocalesUI() {
     let data = datosCargadosNube;
     if(data.configGlobal) {
-        document.getElementById('txtEntidadGlobal').value = data.configGlobal.entidad || 'COAHUILA 05';
+        document.getElementById('txtEntidadGlobal').value = data.configGlobal.entidad || '05';
         document.getElementById('txtDistritoGlobal').value = data.configGlobal.distrito || '03';
-        document.getElementById('txtRemesaGlobal').value = data.configGlobal.remesa || '202640';
+        document.getElementById('txtRemesaGlobal').value = data.configGlobal.remesa || '';
         document.getElementById('txtConfGlobal').value = data.configGlobal.conf || (configModulos[moduloActual] ? configModulos[moduloActual].conf : '');
         document.getElementById('txtResponsable').value = data.configGlobal.responsable || (configModulos[moduloActual] ? configModulos[moduloActual].responsable : '');
         document.getElementById('inputScriptGlobal').value = data.configGlobal.script || '';
