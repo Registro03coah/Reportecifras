@@ -463,7 +463,7 @@ function construirTabla() {
 
     construirTablasInferiores();
     cargarValoresSubTablas(savedData);
-    cargarTotalesGuardados(savedData); // Carga los totales guardados previamente
+    cargarTotalesGuardados(savedData);
     document.querySelectorAll('.col-horas').forEach(inp => validarHoras(inp));
     inicializarNavegacionIndependientePorTablas();
     recalcularTodo();
@@ -1007,7 +1007,6 @@ function guardarDatosLocales() {
         observaciones: document.getElementById('txtObservaciones').value
     };
 
-    // Capturar también la línea de totales para que se guarde en la nube
     let totalesGenerales = {};
     for (let c = 5; c <= 75; c++) {
         let span = document.getElementById(`tot_col_${c}`);
@@ -1493,10 +1492,6 @@ function recalcularTodo() {
             if(span) span.innerText = sumas[c] > 0 ? sumas[c] : "";
         }
     }
-
-    let spanTotCol30 = document.getElementById('tot_col_disp_fin_30');
-    if(spanTotCol30) spanTotCol30.innerText = ultimoDispVal > 0 ? ultimoDispVal : "";
-}
 
     let spanTotCol30 = document.getElementById('tot_col_disp_fin_30');
     if(spanTotCol30) spanTotCol30.innerText = ultimoDispVal > 0 ? ultimoDispVal : "";
