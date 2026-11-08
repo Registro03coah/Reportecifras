@@ -126,7 +126,7 @@
             </div>
         </div>
 
-        <!-- 1. SECCIÓN SEMANAL -->
+        <!-- 1. SECCIÓN SEMANAL (CORREGIDA CON AGRUPACIÓN ESTRICTA POR MÓDULO) -->
         <div class="section-header">
             <span>Semanal</span>
             <button class="btn btn-sm btn-success fw-bold" onclick="copiarTablaExcel('tablaSemanalReporte')"><i class="bi bi-file-excel"></i> Copiar Semanal</button>
@@ -138,7 +138,7 @@
             </table>
         </div>
 
-        <!-- 2. SECCIÓN CAMPAÑA -->
+        <!-- 2. SECCIÓN CAMPAÑA (INALTERADA) -->
         <div class="section-header">
             <span>Campaña</span>
             <button class="btn btn-sm btn-success fw-bold" onclick="copiarTablaExcel('tablaCampanaReporte')"><i class="bi bi-file-excel"></i> Copiar Campaña</button>
@@ -150,7 +150,7 @@
             </table>
         </div>
 
-        <!-- 3. SECCIÓN ACUMULADO -->
+        <!-- 3. SECCIÓN ACUMULADO (INALTERADA) -->
         <div class="section-header">
             <span>Acumulado</span>
             <button class="btn btn-sm btn-success fw-bold" onclick="copiarTablaExcel('tablaAcumuladoReporte')"><i class="bi bi-file-excel"></i> Copiar Acumulado</button>
@@ -174,7 +174,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module" src="app_reportesdto03.js"></script>
     
-    <!-- SCRIPT DE CORRECCIÓN LOCAL PARA LA TABLA SEMANAL -->
+    <!-- SCRIPT ESPECÍFICO PARA CORREGIR LA VISTA SEMANAL EN DTTO 03 -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
@@ -198,7 +198,7 @@
             "REPOSISION", "CORR__DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES", 
             "RECHAZOS_DE_MAC_34", "RECHAZOS_DE_MAC_35", "CANCELADOS", "TOTAL_DE_MOVIMIENTOS", 
             "CIF-05", "SOLICITUD_EXPEDICION", "SOLICITUD_RECTIFICACION", "DEMANDA_DE_JUICIO", 
-            "INICIALES_S", "ACTUALIZACIÓN", "RECIBIDAS_DE_OTROS_TIPOS", "IMPORTADAS", "EXPORTADAS", 
+            "INICIALES_S", "ACTUALIZACIÓN", "RECIBIDAS_DE_OTROS_TYPES", "IMPORTADAS", "EXPORTADAS", 
             "ENTREGADAS", "ANEXAS_A_FUAR", "RESGUARDO", "SOLICITU_DE_REIMPRESION", "RECIBO_Y_O_EXTRAVIO", 
             "RETIRADAS_POR_OTRA_CAUSA", "SOBRANTES", "DUPLICADO", "DISPONIBLES", "DISPONIBLES_DE_SOL_DE_EXP", 
             "REIMPRE_FUERA_DEL_SISTEMA", "CREDEN_DEVUELTAS_POR_TERCEROS", "CRED_PRODUCTO_DE_REGISTRO_DUPLICADO", 
@@ -211,12 +211,12 @@
             return limpio;
         }
 
-        async function corregirTablaSemanalDto03() {
+        async function corregirSemanalDto03() {
             const thead = document.querySelector('#tablaSemanalReporte thead');
             const tbody = document.querySelector('#tablaSemanalReporte tbody');
             if (!thead || !tbody) return;
 
-            // Construir encabezados limpios
+            // Generar encabezados de la tabla semanal
             thead.innerHTML = "";
             let trTitulos = document.createElement('tr');
             COLUMNAS_SEMANAL_KEYS.forEach(colKey => {
@@ -248,7 +248,7 @@
                 // Filtrar registros estrictamente de la remesa más reciente
                 let filasRemesa = bdMadre.filter(item => String(item['REMESA'] || '').trim() === remesaMasReciente);
 
-                // Agrupar por MÓDULO de forma exacta
+                // Agrupar por MÓDULO para mostrar únicamente los renglones correspondientes
                 let modulosMap = {};
                 filasRemesa.forEach(f => {
                     let mod = String(f['MODULO'] || 'General').trim();
@@ -310,12 +310,12 @@
                 tbody.appendChild(trGranTotal);
 
             } catch (error) {
-                console.error("Error al procesar la tabla semanal en Dtto 03:", error);
+                console.error("Error al procesar la sección semanal de Dtto 03:", error);
             }
         }
 
         document.addEventListener("DOMContentLoaded", () => {
-            setTimeout(corregirTablaSemanalDto03, 1000);
+            setTimeout(corregirSemanalDto03, 1200);
         });
     </script>
 </body>
