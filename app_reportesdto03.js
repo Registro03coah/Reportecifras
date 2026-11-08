@@ -14,7 +14,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig); 
 const db = getDatabase(app);
 
-// Función para copiar tablas a Excel
+// Función para copiar tablas directamente a Excel
 window.copiarTablaExcel = function(tablaId) {
     const tabla = document.getElementById(tablaId);
     if (!tabla) return;
@@ -61,15 +61,15 @@ function renderizarDesdeEspejo(selectorTabla, data) {
     }
 }
 
-// Escuchar y replicar directamente los tres apartados sin modificar nada
-onValue(ref(db, 'configuracion/reportes_dto03/semanal'), (snap) => {
+// Escuchar los nodos directos en la base de datos de Firebase
+onValue(ref(db, 'semanal'), (snap) => {
     renderizarDesdeEspejo('#tablaSemanalReporte', snap.val());
 });
 
-onValue(ref(db, 'configuracion/reportes_dto03/campana'), (snap) => {
+onValue(ref(db, 'campana'), (snap) => {
     renderizarDesdeEspejo('#tablaCampanaReporte', snap.val());
 });
 
-onValue(ref(db, 'configuracion/reportes_dto03/acumulado'), (snap) => {
+onValue(ref(db, 'acumulado'), (snap) => {
     renderizarDesdeEspejo('#tablaAcumuladoReporte', snap.val());
 });
