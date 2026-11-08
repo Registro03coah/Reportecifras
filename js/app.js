@@ -1497,3 +1497,7 @@ function recalcularTodo() {
     let spanTotCol30 = document.getElementById('tot_col_disp_fin_30');
     if(spanTotCol30) spanTotCol30.innerText = ultimoDispVal > 0 ? ultimoDispVal : "";
 }
+
+    let spanTotCol30 = document.getElementById('tot_col_disp_fin_30');
+    if(spanTotCol30) spanTotCol30.innerText = ultimoDispVal > 0 ? ultimoDispVal : "";
+}
