@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reportes Dtto 03 - Sistema MAC</title>
+    <title>Reportes Dto. 03 - Sistema MAC</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
@@ -20,157 +20,320 @@
                 overflow-x: auto !important;
                 -webkit-overflow-scrolling: touch !important;
             }
-            .container-fluid.main-fluid {
-                padding-left: 5px !important;
-                padding-right: 5px !important;
-            }
-            h5, .fw-bold {
-                font-size: 0.95rem !important;
-            }
-            .btn {
-                font-size: 0.85rem !important;
-                padding: 6px 10px !important;
+            .container, .container-fluid {
+                padding-left: 6px !important;
+                padding-right: 6px !important;
             }
         }
-        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .header-banner { background: linear-gradient(135deg, #2c3e50, #1a252f); color: white; border-bottom: 4px solid #1b396b; }
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 11px; }
         
-        .container-fluid.main-fluid {
-            width: 100% !important;
-            max-width: 100% !important;
-            padding-left: 15px !important;
-            padding-right: 15px !important;
-        }
+        .header-banner { background: linear-gradient(135deg, #1b396b, #0d6efd); color: white; border-bottom: 3px solid #ff9800; padding: 10px 0 !important; margin-bottom: 15px !important; }
+        .header-banner h1 { font-size: 1.25rem !important; }
+        .header-banner p { font-size: 0.8rem !important; }
 
-        .section-header {
-            background-color: #ffeb3b;
-            color: #000;
-            font-weight: bold;
-            padding: 8px 12px;
-            font-size: 1rem;
-            border-left: 5px solid #1b396b;
-            margin-top: 20px;
-            margin-bottom: 5px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .excel-container { 
-            width: 100%; 
-            max-height: none !important; 
-            overflow-y: visible !important; 
-            overflow-x: auto !important; 
-            border: 1px solid #ddd; 
-            background: white; 
-            margin-bottom: 15px; 
-        }
-        .excel-table { margin-bottom: 0; width: 100%; border-collapse: separate; border-spacing: 0; }
-        .excel-table thead tr:first-child th { position: sticky; top: 0; z-index: 3; font-size: 10px; text-transform: uppercase; background-color: #e9ecef; height: 50px; text-align: center; vertical-align: middle; padding: 6px 8px; border: 1px solid #ccc; }
-        .excel-table thead tr.num-row th { position: sticky; top: 50px; z-index: 2; background-color: #d6d8db !important; color: #212529 !important; font-size: 10px; text-align: center; padding: 4px; border-bottom: 2px solid #2d3436; border: 1px solid #ccc; }
-        .excel-table td { padding: 6px 8px; border: 1px solid #ccc; text-align: center; vertical-align: middle; font-size: 11px; white-space: nowrap; }
+        .excel-container { width: 100%; max-height: 65vh; overflow: auto; border: 1px solid #ddd; background: white; margin-bottom: 15px; }
+        .excel-table { margin-bottom: 0; width: max-content; border-collapse: separate; border-spacing: 0; }
+        
+        .excel-table thead tr:first-child th { position: sticky; top: 0; z-index: 3; font-size: 10px; text-transform: uppercase; background-color: #e9ecef; height: 45px; text-align: center; vertical-align: middle; padding: 4px 6px; border: 1px solid #ccc; }
+        .excel-table td { padding: 4px 6px; border: 1px solid #ccc; text-align: center; vertical-align: middle; font-size: 11px; white-space: nowrap; }
         .bg-folios { background-color: #f4b084 !important; }
-        .fila-totales td { background-color: #cff4fc !important; font-weight: bold; }
+        .fila-totales td { background-color: #d1e7dd !important; font-weight: bold; }
+
+        .navbar-nav .nav-link { font-size: 11px !important; }
+        .navbar-brand { font-size: 14px !important; }
+        nav.navbar { padding: 2px 15px !important; }
     </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
-    <style>
-        .navbar-nav .nav-link { font-size: 11px !important; }
-        .navbar-brand { font-size: 14px !important; }
-        nav.navbar, .fixed-top-nav .navbar { padding: 2px 15px !important; }
-        .header-banner { padding: 10px 0 !important; margin-bottom: 15px !important; }
-        .header-banner h1 { font-size: 1.4rem !important; }
-    </style>
-    
-<!-- BARRA DE NAVEGACIÓN INSTITUCIONAL -->
-<nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #1b396b; width: 100%;">
-  <div class="container-fluid px-3">
-    <a class="navbar-brand fw-bold" href="index.html" style="font-size: 14px;"><i class="bi bi-hdd-network"></i> SISTEMA MAC</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav ms-auto gap-1 align-items-lg-center">
-        <li class="nav-item"><a class="nav-link text-light px-2" href="index.html" style="font-size: 11px;"><i class="bi bi-house-door-fill fs-6"></i></a></li>
-        <li class="nav-item"><a class="nav-link text-light px-2" href="captura.html" style="font-size: 11px;"><i class="bi bi-pencil-square"></i> Captura</a></li>
-        <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_dias.html" style="font-size: 11px;"><i class="bi bi-calendar3"></i> Reporte Días</a></li>
-        <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_semanal.html" style="font-size: 11px;"><i class="bi bi-calendar-week"></i> Reporte Semanal</a></li>
-        <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_campana.html" style="font-size: 11px;"><i class="bi bi-bar-chart-fill"></i> Reporte Campaña</a></li>
-        <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_acumulado.html" style="font-size: 11px;"><i class="bi bi-archive-fill"></i> Reporte Acumulado</a></li>
-        <li class="nav-item"><a class="nav-link text-light px-2 fw-bold active" href="Reportesdto03.html" style="font-size: 11px;"><i class="bi bi-layers-fill"></i> Reportes Dtto 03</a></li>
-        <li class="nav-item"><a class="nav-link px-2" href="graficos.html" style="color: #ff66b2 !important; font-weight: bold; font-size: 11px;"><i class="bi bi-pie-chart-fill"></i> Gráficos</a></li>
-        <li class="nav-item"><a class="nav-link text-light px-2" href="bd_madre.html" style="font-size: 11px;"><i class="bi bi-database-fill"></i> BD Principal</a></li>
-        <li class="nav-item"><a class="nav-link text-light px-2" href="bdtotales.html" style="font-size: 11px;"><i class="bi bi-database-fill-gear"></i> BD Totales</a></li>
-        <li class="nav-item"><a class="nav-link text-light px-2" href="modulosmac.html" style="font-size: 11px;"><i class="bi bi-building-fill-gear"></i> Módulos MAC</a></li>
-        <li class="nav-item ms-lg-2">
-          <a class="btn btn-outline-light btn-sm fw-bold px-2 py-1" href="https://registro03coah.github.io/mimenu/" style="font-size: 11px;">
-            <i class="bi bi-box-arrow-right"></i> Salir
-          </a>
-        </li>
-      </ul>
-    </div>
-  </div>
-</nav>
 
-    <!-- BANNER -->
+    <!-- BARRA DE NAVEGACIÓN INSTITUCIONAL -->
+    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #1b396b; width: 100%;">
+      <div class="container-fluid px-3">
+        <a class="navbar-brand fw-bold" href="index.html"><i class="bi bi-hdd-network"></i> SISTEMA MAC</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto gap-1 align-items-lg-center">
+            <li class="nav-item">
+              <a class="nav-link text-light px-2" href="index.html" title="Inicio">
+                <i class="bi bi-house-door-fill fs-6"></i>
+              </a>
+            </li>
+            <li class="nav-item"><a class="nav-link text-light px-2" href="captura.html"><i class="bi bi-pencil-square"></i> Captura</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_dias.html"><i class="bi bi-calendar3"></i> Reporte Días</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_semanal.html"><i class="bi bi-calendar-week"></i> Reporte Semanal</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_campana.html"><i class="bi bi-bar-chart-fill"></i> Reporte Campaña</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_acumulado.html"><i class="bi bi-archive-fill"></i> Reporte Acumulado</a></li>
+            <li class="nav-item"><a class="nav-link px-2" href="graficos.html" style="color: #ff66b2 !important; font-weight: bold;"><i class="bi bi-pie-chart-fill"></i> Gráficos</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-2" href="bd_madre.html"><i class="bi bi-database-fill"></i> BD Principal</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-2" href="bdtotales.html"><i class="bi bi-database-fill-gear"></i> BD Totales</a></li>
+            <li class="nav-item"><a class="nav-link text-light px-2" href="modulosmac.html"><i class="bi bi-building-fill-gear"></i> Módulos</a></li>
+            
+            <li class="nav-item ms-lg-2">
+              <a class="btn btn-outline-light btn-sm fw-bold px-2 py-1" href="https://registro03coah.github.io/mimenu/" style="font-size: 11px;">
+                <i class="bi bi-box-arrow-right"></i> Salir
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
     <div class="header-banner text-center d-flex justify-content-center align-items-center">
-        <div><h1 class="fw-bold mb-0"><i class="bi bi-layers-fill text-warning"></i> Consolidado de Reportes Dtto 03</h1></div>
+        <div>
+            <h1 class="fw-bold mb-0"><i class="bi bi-layers-fill"></i> Reportes para Junta Distrital 03</h1>
+            <p class="lead mb-0">Consolidado y Visualización Semanal por Módulo</p>
+        </div>
     </div>
 
-    <div class="container-fluid main-fluid flex-grow-1">
-        <!-- BARRA DE ESTADO -->
-        <div class="card shadow-sm mb-3">
-            <div class="card-body d-flex gap-3 align-items-center bg-light p-2 flex-wrap">
-                <span class="fw-bold text-primary" style="font-size:12px;"><i class="bi bi-info-circle-fill"></i> Visualización de Tablas Originales (Libre Acceso):</span>
-                <div id="semaforoConexion" class="badge bg-warning text-dark ms-2"><i class="bi bi-arrow-repeat spin"></i> Conectando...</div>
+    <div class="container-fluid px-3 flex-grow-1">
+        
+        <!-- SECCIÓN DE FILTRO DE REMESA -->
+        <div class="row align-items-center mb-3 p-2 bg-white shadow-sm rounded">
+            <div class="col-md-4 d-flex align-items-center gap-2">
+                <label for="inputRemesaFiltro" class="form-label fw-bold mb-0 text-nowrap" style="font-size: 12px;">Remesa:</label>
+                <input type="text" id="inputRemesaFiltro" class="form-control form-control-sm" placeholder="Ej. 202645 (Vacío = Más reciente)">
+            </div>
+            <div class="col-md-4 text-center">
+                <span id="lblRemesaActiva" class="badge bg-secondary fs-6 px-3 py-1" style="font-size: 12px;">Cargando remesa...</span>
+            </div>
+            <div class="col-md-4 text-end d-flex justify-content-end align-items-center gap-2">
+                <button class="btn btn-sm btn-info fw-bold" onclick="copiarTablaExcel('tablaSemanal')"><i class="bi bi-file-excel"></i> Copiar a Excel</button>
+                <div id="semaforoConexion" class="badge bg-secondary" style="font-size: 10px;">Conectando...</div>
             </div>
         </div>
 
-        <!-- 1. SECCIÓN SEMANAL -->
-        <div class="section-header">
-            <span>Semanal</span>
-            <button class="btn btn-sm btn-success fw-bold" onclick="copiarTablaExcel('tablaSemanalReporte')"><i class="bi bi-file-excel"></i> Copiar Semanal</button>
-        </div>
-        <div class="excel-container shadow-sm rounded border-info">
-            <table class="excel-table table table-hover" id="tablaSemanalReporte">
+        <div class="excel-container shadow-sm rounded border-primary">
+            <table class="excel-table table table-hover" id="tablaSemanal">
                 <thead></thead>
                 <tbody></tbody>
             </table>
         </div>
 
-        <!-- 2. SECCIÓN CAMPAÑA -->
-        <div class="section-header">
-            <span>Campaña</span>
-            <button class="btn btn-sm btn-success fw-bold" onclick="copiarTablaExcel('tablaCampanaReporte')"><i class="bi bi-file-excel"></i> Copiar Campaña</button>
-        </div>
-        <div class="excel-container shadow-sm rounded border-info">
-            <table class="excel-table table table-hover" id="tablaCampanaReporte">
-                <thead></thead>
-                <tbody></tbody>
-            </table>
-        </div>
-
-        <!-- 3. SECCIÓN ACUMULADO -->
-        <div class="section-header">
-            <span>Acumulado</span>
-            <button class="btn btn-sm btn-success fw-bold" onclick="copiarTablaExcel('tablaAcumuladoReporte')"><i class="bi bi-file-excel"></i> Copiar Acumulado</button>
-        </div>
-        <div class="excel-container shadow-sm rounded border-info">
-            <table class="excel-table table table-hover" id="tablaAcumuladoReporte">
-                <thead></thead>
-                <tbody></tbody>
-            </table>
-        </div>
     </div>
-    
-    <!-- PIE DE PÁGINA -->
-    <footer class="text-center py-2 mt-auto text-white shadow-sm" style="background-color: #1b396b; width: 100%; position: relative; bottom: 0;">
-        <small>
-            &copy; 2026 Todos los derechos reservados. Desarrollado por <span class="text-info fw-bold">Carrivers Desing</span> para Módulos MAC. Versión 1.0
+
+    <footer class="text-center py-2 mt-auto text-white shadow-sm" style="background-color: #1b396b; width: 100%;">
+        <small style="font-size: 10px;">
+            &copy; 2026 Todos los derechos reservados. Desarrollado por <span class="text-info fw-bold">Carrivers Desing</span> para Módulos MAC.
         </small>
     </footer>
 
+    <!-- SCRIPTS DE FIREBASE Y LÓGICA -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script type="module" src="app_reportesdto03.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, get, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo",
+            authDomain: "cifrasmac.firebaseapp.com",
+            databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com",
+            projectId: "cifrasmac",
+            storageBucket: "cifrasmac.firebasestorage.app",
+            messagingSenderId: "916644687837",
+            appId: "1:916644687837:web:03d346cc48a071af1ed034"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const COLUMNAS_SEMANAL_KEYS = [
+            "ENT", "DTTO", "MODULO", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS", 
+            "NO_UTILIZADOS", "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", 
+            "REPOSISION", "CORR__DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES", 
+            "RECHAZOS_DE_MAC_34", "RECHAZOS_DE_MAC_35", "CANCELADOS", "TOTAL_DE_MOVIMIENTOS", 
+            "CIF-05", "SOLICITUD_EXPEDICION", "SOLICITUD_RECTIFICACION", "DEMANDA_DE_JUICIO", 
+            "INICIALES_S", "ACTUALIZACIÓN", "RECIBIDAS_DE_OTROS_TIPOS", "IMPORTADAS", "EXPORTADAS", 
+            "ENTREGADAS", "ANEXAS_A_FUAR", "RESGUARDO", "SOLICITU_DE_REIMPRESION", "RECIBO_Y_O_EXTRAVIO", 
+            "RETIRADAS_POR_OTRA_CAUSA", "SOBRANTES", "DUPLICADO", "DISPONIBLES", "DISPONIBLES_DE_SOL_DE_EXP", 
+            "REIMPRE_FUERA_DEL_SISTEMA", "CREDEN_DEVUELTAS_POR_TERCEROS", "CRED_PRODUCTO_DE_REGISTRO_DUPLICADO", 
+            "CRED_PROD_CANJE_POR_NUEVA", "DIAS_TRABAJADOS", "CONFIGURACION"
+        ];
+
+        let bdMadreGlobal = [];
+        let bdtotalesGlobal = [];
+
+        onValue(ref(db, ".info/connected"), (snap) => {
+            const semaforo = document.getElementById("semaforoConexion");
+            if(!semaforo) return;
+            if (snap.val() === true) {
+                semaforo.className = "badge bg-success text-white px-2 py-1 rounded-pill";
+                semaforo.innerHTML = '<i class="bi bi-wifi"></i> ONLINE';
+            } else {
+                semaforo.className = "badge bg-danger text-white px-2 py-1 rounded-pill";
+                semaforo.innerHTML = '<i class="bi bi-wifi-off"></i> OFFLINE';
+            }
+        });
+
+        function construirHeaderTabla() {
+            const thead = document.querySelector('#tablaSemanal thead');
+            if(!thead) return;
+            thead.innerHTML = "";
+            let trTitulos = document.createElement('tr');
+            
+            COLUMNAS_SEMANAL_KEYS.forEach((colKey) => {
+                let thT = document.createElement('th');
+                let nombreVisual = colKey.replace(/_/g, ' ')
+                                            .replace('SOLICITU DE', 'SOLICITUD DE')
+                                            .replace('DUPLICADO', 'DUPLICADOS')
+                                            .replace('CORR__', 'CORR ')
+                                            .replace('CREDEN DEVUELTAS POR TERCEROS', 'DEVUELTAS POR TERCEROS');
+                thT.innerText = nombreVisual;
+                if(['INICIAL', 'FINAL', 'TOTAL_DE_FOLIOS'].includes(colKey)) thT.classList.add('bg-folios');
+                trTitulos.appendChild(thT);
+            });
+            thead.appendChild(trTitulos);
+        }
+
+        function normalizarObjeto(item) {
+            let limpio = {};
+            for (let key in item) limpio[key.toUpperCase().trim()] = item[key];
+            return limpio;
+        }
+
+        function cargarDatos() {
+            construirHeaderTabla();
+            Promise.all([
+                get(ref(db, 'bd_madre')),
+                get(ref(db, 'bdtotales'))
+            ]).then(([snapMadre, snapTotales]) => {
+                bdMadreGlobal = snapMadre.exists() ? (Array.isArray(snapMadre.val()) ? snapMadre.val() : Object.values(snapMadre.val())).map(normalizarObjeto) : [];
+                bdtotalesGlobal = snapTotales.exists() ? (Array.isArray(snapTotales.val()) ? snapTotales.val() : Object.values(snapTotales.val())).map(normalizarObjeto) : [];
+                
+                const inputRemesa = document.getElementById('inputRemesaFiltro');
+                if (inputRemesa) {
+                    inputRemesa.removeEventListener('input', renderTablaSemanal);
+                    inputRemesa.addEventListener('input', renderTablaSemanal);
+                }
+                renderTablaSemanal();
+            }).catch(err => console.error("Error al cargar datos:", err));
+        }
+
+        function obtenerRemesaSeleccionada() {
+            const inputRemesa = document.getElementById('inputRemesaFiltro');
+            let remesaEscrita = inputRemesa ? inputRemesa.value.trim() : "";
+            if (remesaEscrita !== "") return remesaEscrita;
+
+            let remesasDisponibles = new Set();
+            [...bdMadreGlobal, ...bdtotalesGlobal].forEach(f => {
+                let r = String(f['REMESA'] || '').trim();
+                if(r) remesasDisponibles.add(r);
+            });
+
+            if (remesasDisponibles.size > 0) {
+                let listaRemesas = Array.from(remesasDisponibles).sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
+                return listaRemesas[0]; 
+            }
+            return "";
+        }
+
+        function renderTablaSemanal() {
+            const tbody = document.querySelector('#tablaSemanal tbody');
+            if(!tbody) return;
+            tbody.innerHTML = "";
+
+            let remesaActiva = obtenerRemesaSeleccionada();
+            const lblRemesaActual = document.getElementById('lblRemesaActiva');
+            if(lblRemesaActual) lblRemesaActual.innerText = remesaActiva ? `Remesa en vista: ${remesaActiva}` : "Sin remesa detectada";
+
+            if (!remesaActiva) {
+                tbody.innerHTML = `<tr><td colspan="${COLUMNAS_SEMANAL_KEYS.length}" class="text-center py-4 text-muted">No se encontró ninguna remesa.</td></tr>`;
+                return;
+            }
+
+            let fuenteDatos = bdMadreGlobal.length > 0 ? bdMadreGlobal : bdtotalesGlobal;
+            let filasRemesa = fuenteDatos.filter(item => String(item['REMESA'] || '').trim() === String(remesaActiva));
+
+            if (filasRemesa.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="${COLUMNAS_SEMANAL_KEYS.length}" class="text-center py-4 text-muted">No hay registros para la remesa: ${remesaActiva}</td></tr>`;
+                return;
+            }
+
+            // Agrupar estrictamente por MÓDULO para mostrar los renglones correspondientes
+            let modulosMap = {};
+            filasRemesa.forEach(f => {
+                let mod = String(f['MODULO'] || 'General').trim();
+                if (!modulosMap[mod]) modulosMap[mod] = [];
+                modulosMap[mod].push(f);
+            });
+
+            let listaRegistrosParaTotales = [];
+
+            Object.keys(modulosMap).sort().forEach(modNombre => {
+                let tr = document.createElement('tr');
+                let registrosMod = modulosMap[modNombre];
+                let objetoModuloConsolidado = { MODULO: modNombre };
+
+                COLUMNAS_SEMANAL_KEYS.forEach(colKey => {
+                    let td = document.createElement('td');
+                    if (colKey === "MODULO") {
+                        td.innerText = modNombre;
+                        objetoModuloConsolidado[colKey] = modNombre;
+                    }
+                    else if (["INICIAL", "FINAL", "INICIALES_S", "CONFIGURACION", "ENT", "DTTO"].includes(colKey)) {
+                        let valMeta = registrosMod[0][colKey] || "0";
+                        td.innerText = valMeta;
+                        objetoModuloConsolidado[colKey] = valMeta;
+                    }
+                    else {
+                        let sumaCol = 0;
+                        registrosMod.forEach(reg => {
+                            let val = parseFloat(reg[colKey] || 0);
+                            if (!isNaN(val)) sumaCol += val;
+                        });
+                        td.innerText = sumaCol;
+                        objetoModuloConsolidado[colKey] = sumaCol;
+                    }
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+                listaRegistrosParaTotales.push(objetoModuloConsolidado);
+            });
+
+            renderGranTotalDesdeRegistros(tbody, listaRegistrosParaTotales);
+        }
+
+        function renderGranTotalDesdeRegistros(tbody, listaRegistros) {
+            let trGranTotal = document.createElement('tr');
+            trGranTotal.classList.add('fila-totales');
+            
+            COLUMNAS_SEMANAL_KEYS.forEach(colKey => {
+                let td = document.createElement('td');
+                if (colKey === "MODULO") td.innerText = "GRAN TOTAL";
+                else if (["INICIAL", "FINAL", "INICIALES_S", "CONFIGURACION", "ENT", "DTTO"].includes(colKey)) {
+                    td.innerText = ""; 
+                }
+                else {
+                    let sumaTotalRemesa = 0;
+                    listaRegistros.forEach(reg => {
+                        let val = parseFloat(reg[colKey] || 0);
+                        if (!isNaN(val)) sumaTotalRemesa += val;
+                    });
+                    td.innerText = sumaTotalRemesa;
+                }
+                trGranTotal.appendChild(td);
+            });
+            tbody.appendChild(trGranTotal);
+        }
+
+        window.copiarTablaExcel = function(idTabla) {
+            let tabla = document.getElementById(idTabla);
+            if (!tabla) return;
+            let rango = document.createRange();
+            rango.selectNode(tabla);
+            window.getSelection().removeAllRanges();
+            window.getSelection().addRange(rango);
+            try {
+                document.execCommand('copy');
+                alert("¡Tabla copiada al portapapeles! Ya puedes pegarla en Excel.");
+            } catch (err) {
+                alert("Error al copiar la tabla.");
+            }
+            window.getSelection().removeAllRanges();
+        }
+
+        cargarDatos();
+    </script>
 </body>
 </html>
