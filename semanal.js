@@ -1,138 +1,126 @@
-
 /**
- * Lógica para mostrar todos los días de los 3 módulos secuencialmente y calcular totales
+ * Lógica para procesar los datos, agruparlos por módulo, 
+ * calcular los totales semanales y guardarlos en el nodo "semanal" de Firebase.
  */
 
-// Simulación de datos (Reemplaza esto con tu llamada a Firebase/LocalStorage)
-const datosSemana = [
-    // Módulo 050351
-    { ent: 5, dtto: 3, modulo: '050351', inicial: 260503510000, final: 260503510100, totalFolios: 100, noUtiliza: 0, inscrip: 20, correcDatos: 1, cambioDom: 15, reposi: 50, corrDir: 0, reinco: 2, reempl: 0, reimpr: 0, totalTramit: 88, rechaz34: 0, rechaz35: 0, cancel: 0, totalMovim: 0, cif05: 0, solExp: 0, solRect: 0, demanJui: 0, iniciales: 300, actual: 0, recibidOtros: 0, import: 0, export: 0, entreg: 80, anexFuar: 0 },
-    { ent: 5, dtto: 3, modulo: '050351', inicial: 260503510101, final: 260503510250, totalFolios: 150, noUtiliza: 0, inscrip: 15, correcDatos: 0, cambioDom: 20, reposi: 45, corrDir: 0, reinco: 5, reempl: 0, reimpr: 0, totalTramit: 85, rechaz34: 0, rechaz35: 0, cancel: 0, totalMovim: 0, cif05: 0, solExp: 0, solRect: 0, demanJui: 0, iniciales: 250, actual: 0, recibidOtros: 0, import: 0, export: 0, entreg: 60, anexFuar: 0 },
-    
-    // Módulo 050353
-    { ent: 5, dtto: 3, modulo: '050353', inicial: 260503530000, final: 260503530150, totalFolios: 150, noUtiliza: 0, inscrip: 30, correcDatos: 2, cambioDom: 20, reposi: 60, corrDir: 0, reinco: 8, reempl: 0, reimpr: 0, totalTramit: 120, rechaz34: 0, rechaz35: 0, cancel: 0, totalMovim: 0, cif05: 0, solExp: 0, solRect: 0, demanJui: 0, iniciales: 400, actual: 0, recibidOtros: 0, import: 0, export: 0, entreg: 110, anexFuar: 0 },
-    
-    // Módulo 050354 (Datos exactos de tu foto)
-    { ent: 5, dtto: 3, modulo: '050354', inicial: '260503540285', final: '260503540560', totalFolios: 275, noUtiliza: 0, inscrip: 55, correcDatos: 2, cambioDom: 49, reposi: 160, corrDir: 0, reinco: 9, reempl: 0, reimpr: 0, totalTramit: 275, rechaz34: 0, rechaz35: 0, cancel: 0, totalMovim: 0, cif05: 0, solExp: 0, solRect: 0, demanJui: 0, iniciales: 1128, actual: 0, recibidOtros: 0, import: 0, export: 0, entreg: 204, anexFuar: 0 }
-];
+// Importar Firebase (asegúrate de que tu inicialización sea correcta)
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-// 1. Definir el orden estricto de los módulos a renderizar
-const modulosEnOrden = ["050351", "050353", "050354"];
-const cuerpoTabla = document.getElementById('cuerpoTablaSemanal');
-
-let tablaHTML = "";
-
-// 2. Inicializar los contadores para el GRAN TOTAL
-let totales = {
-    totalFolios: 0, noUtiliza: 0, inscrip: 0, correcDatos: 0, cambioDom: 0, reposi: 0, corrDir: 0, reinco: 0, reempl: 0, reimpr: 0, totalTramit: 0, rechaz34: 0, rechaz35: 0, cancel: 0, totalMovim: 0, cif05: 0, solExp: 0, solRect: 0, demanJui: 0, iniciales: 0, actual: 0, recibidOtros: 0, import: 0, export: 0, entreg: 0, anexFuar: 0
+const firebaseConfig = { 
+    apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo", 
+    authDomain: "cifrasmac.firebaseapp.com", 
+    databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com", 
+    projectId: "cifrasmac", 
+    storageBucket: "cifrasmac.firebasestorage.app", 
+    messagingSenderId: "916644687837", 
+    appId: "1:916644687837:web:03d346cc48a071af1ed034" 
 };
 
-// 3. Procesar en orden y concatenar filas (+=)
-modulosEnOrden.forEach(modulo => {
-    // Filtrar los registros que pertenecen a este módulo
-    let datosDelModulo = datosSemana.filter(d => d.modulo === modulo);
-    
-    // Iterar cada día/registro del módulo y agregarlo a la tabla
-    datosDelModulo.forEach(dia => {
-        tablaHTML += `
-            <tr>
-                <td>${dia.ent}</td>
-                <td>${dia.dtto}</td>
-                <td>${dia.modulo}</td>
-                <td class="col-orange">${dia.inicial}</td>
-                <td class="col-orange">${dia.final}</td>
-                <td class="col-orange">${dia.totalFolios}</td>
-                <td>${dia.noUtiliza}</td>
-                <td>${dia.inscrip}</td>
-                <td>${dia.correcDatos}</td>
-                <td>${dia.cambioDom}</td>
-                <td>${dia.reposi}</td>
-                <td>${dia.corrDir}</td>
-                <td>${dia.reinco}</td>
-                <td>${dia.reempl}</td>
-                <td>${dia.reimpr}</td>
-                <td>${dia.totalTramit}</td>
-                <td>${dia.rechaz34}</td>
-                <td>${dia.rechaz35}</td>
-                <td>${dia.cancel}</td>
-                <td>${dia.totalMovim}</td>
-                <td>${dia.cif05}</td>
-                <td>${dia.solExp}</td>
-                <td>${dia.solRect}</td>
-                <td>${dia.demanJui}</td>
-                <td>${dia.iniciales}</td>
-                <td>${dia.actual}</td>
-                <td>${dia.recibidOtros}</td>
-                <td>${dia.import}</td>
-                <td>${dia.export}</td>
-                <td>${dia.entreg}</td>
-                <td>${dia.anexFuar}</td>
-            </tr>
-        `;
+const app = initializeApp(firebaseConfig); 
+const db = getDatabase(app);
 
-        // 4. Sumar los valores al Gran Total
-        totales.totalFolios += parseInt(dia.totalFolios) || 0;
-        totales.noUtiliza += parseInt(dia.noUtiliza) || 0;
-        totales.inscrip += parseInt(dia.inscrip) || 0;
-        totales.correcDatos += parseInt(dia.correcDatos) || 0;
-        totales.cambioDom += parseInt(dia.cambioDom) || 0;
-        totales.reposi += parseInt(dia.reposi) || 0;
-        totales.corrDir += parseInt(dia.corrDir) || 0;
-        totales.reinco += parseInt(dia.reinco) || 0;
-        totales.reempl += parseInt(dia.reempl) || 0;
-        totales.reimpr += parseInt(dia.reimpr) || 0;
-        totales.totalTramit += parseInt(dia.totalTramit) || 0;
-        totales.rechaz34 += parseInt(dia.rechaz34) || 0;
-        totales.rechaz35 += parseInt(dia.rechaz35) || 0;
-        totales.cancel += parseInt(dia.cancel) || 0;
-        totales.totalMovim += parseInt(dia.totalMovim) || 0;
-        totales.cif05 += parseInt(dia.cif05) || 0;
-        totales.solExp += parseInt(dia.solExp) || 0;
-        totales.solRect += parseInt(dia.solRect) || 0;
-        totales.demanJui += parseInt(dia.demanJui) || 0;
-        // iniciales no se suma según formato estándar, o si se suma se quita, ajusta según necesidad
-        totales.actual += parseInt(dia.actual) || 0;
-        totales.recibidOtros += parseInt(dia.recibidOtros) || 0;
-        totales.import += parseInt(dia.import) || 0;
-        totales.export += parseInt(dia.export) || 0;
-        totales.entreg += parseInt(dia.entreg) || 0;
-        totales.anexFuar += parseInt(dia.anexFuar) || 0;
+// Lista de llaves de columnas estándar para la tabla semanal
+const COLUMNAS_KEYS = [
+    "ENT", "DTTO", "MODULO", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS", 
+    "NO_UTILIZADOS", "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", 
+    "REPOSISION", "CORR__DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES", 
+    "RECHAZOS_DE_MAC_34", "RECHAZOS_DE_MAC_35", "CANCELADOS", "TOTAL_DE_MOVIMIENTOS", 
+    "CIF-05", "SOLICITUD_EXPEDICION", "SOLICITUD_RECTIFICACION", "DEMANDA_DE_JUICIO", 
+    "INICIALES_S", "ACTUALIZACIÓN", "RECIBIDAS_DE_OTROS_TYPES", "IMPORTADAS", "EXPORTADAS", 
+    "ENTREGADAS", "ANEXAS_A_FUAR", "RESGUARDO", "SOLICITU_DE_REIMPRESION", "RECIBO_Y_O_EXTRAVIO", 
+    "RETIRADAS_POR_OTRA_CAUSA", "SOBRANTES", "DUPLICADO", "DISPONIBLES", "DISPONIBLES_DE_SOL_DE_EXP", 
+    "REIMPRE_FUERA_DEL_SISTEMA", "CREDEN_DEVUELTAS_POR_TERCEROS", "CRED_PRODUCTO_DE_REGISTRO_DUPLICADO", 
+    "CRED_PROD_CANJE_POR_NUEVA", "DIAS_TRABAJADOS", "CONFIGURACION"
+];
+
+function generarYGuardarReporteSemanal(datosSemana) {
+    const modulosEnOrden = ["050351", "050353", "050354"];
+    let modulosSemanalMap = {};
+
+    // Agrupar los registros por módulo
+    datosSemana.forEach(d => {
+        let mod = String(d.modulo || '').trim();
+        if (!modulosSemanalMap[mod]) modulosSemanalMap[mod] = [];
+        modulosSemanalMap[mod].push(d);
     });
-});
 
-// 5. Construir e insertar la fila del GRAN TOTAL al final de todo
-tablaHTML += `
-    <tr class="gran-total">
-        <td colspan="3">GRAN TOTAL</td>
-        <td colspan="2"></td> <!-- Inicial y final en blanco para totales -->
-        <td class="col-orange">${totales.totalFolios}</td>
-        <td>${totales.noUtiliza}</td>
-        <td>${totales.inscrip}</td>
-        <td>${totales.correcDatos}</td>
-        <td>${totales.cambioDom}</td>
-        <td>${totales.reposi}</td>
-        <td>${totales.corrDir}</td>
-        <td>${totales.reinco}</td>
-        <td>${totales.reempl}</td>
-        <td>${totales.reimpr}</td>
-        <td>${totales.totalTramit}</td>
-        <td>${totales.rechaz34}</td>
-        <td>${totales.rechaz35}</td>
-        <td>${totales.cancel}</td>
-        <td>${totales.totalMovim}</td>
-        <td>${totales.cif05}</td>
-        <td>${totales.solExp}</td>
-        <td>${totales.solRect}</td>
-        <td>${totales.demanJui}</td>
-        <td></td> <!-- Celda de Iniciales vacía en el total según tu imagen -->
-        <td>${totales.actual}</td>
-        <td>${totales.recibidOtros}</td>
-        <td>${totales.import}</td>
-        <td>${totales.export}</td>
-        <td>${totales.entreg}</td>
-        <td>${totales.anexFuar}</td>
-    </tr>
-`;
+    let filasHtmlTbody = "";
+    let granTotalCols = {};
 
-// 6. Inyectar todo en el DOM
-cuerpoTabla.innerHTML = tablaHTML;
+    // Procesar cada módulo para dejar exactamente UNA sola línea de totales
+    modulosEnOrden.forEach(modulo => {
+        let registrosMod = modulosSemanalMap[modulo];
+        if (!registrosMod || registrosMod.length === 0) return;
+
+        let baseReg = registrosMod[registrosMod.length - 1];
+
+        // Obtener el folio inicial menor y el folio final mayor
+        let minIniciales = registrosMod.map(r => r.inicial || r.fi).filter(v => v);
+        let maxFinales = registrosMod.map(r => r.final || r.ff).filter(v => v);
+        
+        let folioMin = minIniciales.length > 0 ? minIniciales[0] : (baseReg.inicial || "0");
+        let folioMax = maxFinales.length > 0 ? maxFinales[maxFinales.length - 1] : (baseReg.final || "0");
+
+        let filaConsolidadaCols = {};
+
+        // Mapear y sumar columnas numéricas correspondientes
+        COLUMNAS_KEYS.forEach(colKey => {
+            if (colKey === "ENT") filaConsolidadaCols[colKey] = baseReg.ent || 5;
+            else if (colKey === "DTTO") filaConsolidadaCols[colKey] = baseReg.dtto || 3;
+            else if (colKey === "MODULO") filaConsolidadaCols[colKey] = modulo;
+            else if (colKey === "INICIAL") filaConsolidadaCols[colKey] = folioMin;
+            else if (colKey === "FINAL") filaConsolidadaCols[colKey] = folioMax;
+            else {
+                let sumaCol = 0;
+                registrosMod.forEach(reg => {
+                    // Buscar la propiedad equivalente en minúsculas/camelCase o sumar directamente
+                    let valorReg = parseFloat(reg[colKey.toLowerCase()] || reg[colKey] || 0);
+                    if (!isNaN(valorReg)) sumaCol += valorReg;
+                });
+                filaConsolidadaCols[colKey] = sumaCol;
+                granTotalCols[colKey] = (granTotalCols[colKey] || 0) + sumaCol;
+            }
+        });
+
+        // Generar la fila HTML para este módulo
+        filasHtmlTbody += `<tr>`;
+        COLUMNAS_KEYS.forEach(colKey => {
+            let val = filaConsolidadaCols[colKey];
+            let claseExtra = ['INICIAL', 'FINAL', 'TOTAL_DE_FOLIOS'].includes(colKey) ? ' class="col-orange"' : '';
+            filasHtmlTbody += `<td${claseExtra}>${val !== undefined && val !== "" ? val : "0"}</td>`;
+        });
+        filasHtmlTbody += `</tr>`;
+    });
+
+    // Agregar la fila de GRAN TOTAL al final
+    filasHtmlTbody += `<tr class="fila-totales">`;
+    COLUMNAS_KEYS.forEach(colKey => {
+        if (colKey === "MODULO") {
+            filasHtmlTbody += `<td>GRAN TOTAL</td>`;
+        } else if (["INICIAL", "FINAL", "INICIALES_S", "CONFIGURACION", "ENT", "DTTO"].includes(colKey)) {
+            filasHtmlTbody += `<td></td>`;
+        } else {
+            filasHtmlTbody += `<td>${granTotalCols[colKey] || 0}</td>`;
+        }
+    });
+    filasHtmlTbody += `</tr>`;
+
+    // Construir el thead limpio
+    let htmlThead = `<tr>`;
+    COLUMNAS_KEYS.forEach(colKey => {
+        let claseFolios = ['INICIAL', 'FINAL', 'TOTAL_DE_FOLIOS'].includes(colKey) ? ' class="bg-folios"' : '';
+        htmlThead += `<th${claseFolios}>${colKey.replace(/_/g, ' ')}</th>`;
+    });
+    htmlThead += `</tr>`;
+
+    // Guardar directamente en la ruta "semanal" en Firebase para que Reportes Dtto 03 lo replique impecable
+    set(ref(db, 'semanal'), {
+        htmlThead: htmlThead,
+        htmlTbody: filasHtmlTbody
+    }).then(() => {
+        console.log("¡Reporte semanal consolidado guardado con éxito en Firebase!");
+    }).catch((err) => {
+        console.error("Error al guardar en Firebase:", err);
+    });
+}
