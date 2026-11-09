@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, onValue, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getDatabase, ref, get, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const firebaseConfig = { 
     apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo", 
@@ -69,7 +69,7 @@ onValue(ref(db, ".info/connected"), (s) => {
     }
 });
 
-function pintarTablaDirecta(selectorTabla, listaRegistros) {
+function construirTablaEstructurada(selectorTabla, listaRegistros, mostrarTotalesAlPie = true) {
     const tabla = document.querySelector(selectorTabla);
     if (!tabla) return;
     
@@ -79,6 +79,7 @@ function pintarTablaDirecta(selectorTabla, listaRegistros) {
     thead.innerHTML = "";
     tbody.innerHTML = "";
 
+    // 1. Cabecera idéntica a la imagen
     let trTitulos = document.createElement('tr');
     COLUMNAS_KEYS.forEach(colKey => {
         let th = document.createElement('th');
@@ -89,10 +90,11 @@ function pintarTablaDirecta(selectorTabla, listaRegistros) {
     thead.appendChild(trTitulos);
 
     if (!listaRegistros || listaRegistros.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="${COLUMNAS_KEYS.length}" class="text-center text-muted py-3">Sin registros para mostrar.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${COLUMNAS_KEYS.length}" class="text-center text-muted py-3">Sin datos registrados.</td></tr>`;
         return;
     }
 
+    // 2. Filas de datos por módulo
     listaRegistros.forEach(reg => {
         let tr = document.createElement('tr');
         COLUMNAS_KEYS.forEach(colKey => {
@@ -103,34 +105,95 @@ function pintarTablaDirecta(selectorTabla, listaRegistros) {
         });
         tbody.appendChild(tr);
     });
+
+    // 3. Fila de Totales al pie (como se ve en tu imagen con fondo azul claro)
+    if (mostrarTotalesAlPie && listaRegistros.length > 0) {
+        let trGranTotal = document.createElement('tr');
+        trGranTotal.classList.add('fila-totales');
+        
+        COLUMNAS_KEYS.forEach(colKey => {
+            let td = document.createElement('td');
+            if (colKey === "MODULO") {
+                td.innerText = "TOTAL";
+            } else if (["INICIAL", "FINAL", "INICIALES_S", "CONFIGURACION", "ENT", "DTTO", "REMESA"].includes(colKey)) {
+                td.innerText = "";
+            } else {
+                let sumaTotal = 0;
+                listaRegistros.forEach(reg => {
+                    let val = parseFloat(reg[colKey] || 0);
+                    if (!isNaN(val)) sumaTotal += val;
+                });
+                td.innerText = sumaTotal;
+            }
+            trGranTotal.appendChild(td);
+        });
+        tbody.appendChild(trGranTotal);
+    }
 }
 
-async function cargarReportesDirectos() {
+async function cargarReportesDto03() {
     try {
-        console.log("Consultando Firebase en nodo corregido: bdtotales...");
         const snap = await get(ref(db, 'bdtotales'));
-        
-        if (!snap.exists()) {
-            console.warn("¡El nodo bdtotales no existe o está vacío en Firebase!");
-            return;
-        }
+        if (!snap.exists()) return;
 
         let dataRaw = snap.val();
-        console.log("Datos crudos recibidos de bdtotales:", dataRaw);
-
         let registros = (Array.isArray(dataRaw) ? dataRaw : Object.values(dataRaw)).map(normalizarObjeto);
-        console.log("Registros normalizados:", registros);
 
-        pintarTablaDirecta('#tablaSemanalReporte', registros);
-        pintarTablaDirecta('#tablaCampanaReporte', registros);
-        pintarTablaDirecta('#tablaAcumuladoReporte', registros);
-        console.log("¡Tablas pintadas con éxito desde bdtotales!");
+        registros = registros.filter(item => {
+            let mod = String(item['MODULO'] || '').trim();
+            return mod !== "" && mod !== "0" && mod !== "undefined" && mod !== "GENERAL";
+        });
+
+        // Tabla 1: SEMANAL (Remesa más reciente)
+        let remesasSet = new Set();
+        registros.forEach(f => {
+            let r = String(f['REMESA'] || '').trim();
+            if (r) remesasSet.add(r);
+        });
+        let listaRemesas = Array.from(remesasSet).sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
+        let remesaReciente = listaRemesas[0] || "";
+        let listaSemanal = registros.filter(item => String(item['REMESA'] || '').trim() === remesaReciente);
+        if (listaSemanal.length === 0) listaSemanal = registros.slice(0, 3); // Respaldo visual si no hay remesa etiquetada
+        construirTablaEstructurada('#tablaSemanalReporte', listaSemanal, true);
+
+
+        // Tabla 2: CAMPAÑA (Consolidado agrupado por módulo)
+        let modCampanaMap = {};
+        registros.forEach(f => {
+            let mod = String(f['MODULO'] || '').trim();
+            if (!modCampanaMap[mod]) modCampanaMap[mod] = [];
+            modCampanaMap[mod].push(f);
+        });
+
+        let listaCampana = [];
+        Object.keys(modCampanaMap).sort().forEach(modNombre => {
+            let regs = modCampanaMap[modNombre];
+            let base = regs[regs.length - 1];
+            let consolidado = { ...base, MODULO: modNombre };
+
+            COLUMNAS_KEYS.forEach(colKey => {
+                if (!["MODULO", "INICIAL", "FINAL", "INICIALES_S", "CONFIGURACION", "ENT", "DTTO", "REMESA"].includes(colKey)) {
+                    let suma = 0;
+                    regs.forEach(r => {
+                        let v = parseFloat(r[colKey] || 0);
+                        if (!isNaN(v)) suma += v;
+                    });
+                    consolidado[colKey] = suma;
+                }
+            });
+            listaCampana.push(consolidado);
+        });
+        construirTablaEstructurada('#tablaCampanaReporte', listaCampana, true);
+
+
+        // Tabla 3: ACUMULADO (Todos los registros detallados con su total al pie)
+        construirTablaEstructurada('#tablaAcumuladoReporte', registros, true);
 
     } catch (err) {
-        console.error("Error al cargar los datos directos:", err);
+        console.error("Error al cargar reportes Dtto 03:", err);
     }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    setTimeout(cargarReportesDirectos, 1000);
+    setTimeout(cargarReportesDto03, 1000);
 });
