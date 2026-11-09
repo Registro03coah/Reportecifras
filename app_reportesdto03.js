@@ -79,7 +79,6 @@ function pintarTablaDirecta(selectorTabla, listaRegistros) {
     thead.innerHTML = "";
     tbody.innerHTML = "";
 
-    // Armar encabezados estándar
     let trTitulos = document.createElement('tr');
     COLUMNAS_KEYS.forEach(colKey => {
         let th = document.createElement('th');
@@ -94,7 +93,6 @@ function pintarTablaDirecta(selectorTabla, listaRegistros) {
         return;
     }
 
-    // Pintar cada renglón tal cual viene en la base de datos
     listaRegistros.forEach(reg => {
         let tr = document.createElement('tr');
         COLUMNAS_KEYS.forEach(colKey => {
@@ -109,23 +107,24 @@ function pintarTablaDirecta(selectorTabla, listaRegistros) {
 
 async function cargarReportesDirectos() {
     try {
+        console.log("Consultando Firebase en nodo: bd_totales...");
         const snap = await get(ref(db, 'bd_totales'));
-        if (!snap.exists()) return;
+        
+        if (!snap.exists()) {
+            console.warn("¡El nodo bd_totales no existe o está vacío en Firebase!");
+            return;
+        }
 
         let dataRaw = snap.val();
+        console.log("Datos crudos recibidos de Firebase:", dataRaw);
+
         let registros = (Array.isArray(dataRaw) ? dataRaw : Object.values(dataRaw)).map(normalizarObjeto);
+        console.log("Registros normalizados:", registros);
 
-        // Filtrar registros vacíos o generales si es necesario
-        registros = registros.filter(item => {
-            let mod = String(item['MODULO'] || '').trim();
-            return mod !== "" && mod !== "0" && mod !== "undefined";
-        });
-
-        // Para Semanal y Campaña, puedes filtrar o mostrar los bloques correspondientes. 
-        // Aquí cargamos los registros directamente en las tres secciones para que veas tus tablas al instante:
         pintarTablaDirecta('#tablaSemanalReporte', registros);
         pintarTablaDirecta('#tablaCampanaReporte', registros);
         pintarTablaDirecta('#tablaAcumuladoReporte', registros);
+        console.log("¡Tablas pintadas con éxito!");
 
     } catch (err) {
         console.error("Error al cargar los datos directos:", err);
