@@ -107,16 +107,16 @@ function pintarTablaDirecta(selectorTabla, listaRegistros) {
 
 async function cargarReportesDirectos() {
     try {
-        console.log("Consultando Firebase en nodo: bd_totales...");
-        const snap = await get(ref(db, 'bd_totales'));
+        console.log("Consultando Firebase en nodo corregido: bdtotales...");
+        const snap = await get(ref(db, 'bdtotales'));
         
         if (!snap.exists()) {
-            console.warn("¡El nodo bd_totales no existe o está vacío en Firebase!");
+            console.warn("¡El nodo bdtotales no existe o está vacío en Firebase!");
             return;
         }
 
         let dataRaw = snap.val();
-        console.log("Datos crudos recibidos de Firebase:", dataRaw);
+        console.log("Datos crudos recibidos de bdtotales:", dataRaw);
 
         let registros = (Array.isArray(dataRaw) ? dataRaw : Object.values(dataRaw)).map(normalizarObjeto);
         console.log("Registros normalizados:", registros);
@@ -124,7 +124,7 @@ async function cargarReportesDirectos() {
         pintarTablaDirecta('#tablaSemanalReporte', registros);
         pintarTablaDirecta('#tablaCampanaReporte', registros);
         pintarTablaDirecta('#tablaAcumuladoReporte', registros);
-        console.log("¡Tablas pintadas con éxito!");
+        console.log("¡Tablas pintadas con éxito desde bdtotales!");
 
     } catch (err) {
         console.error("Error al cargar los datos directos:", err);
