@@ -1,35 +1,43 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, get, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getDatabase, ref, onValue, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-const firebaseConfig = { apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo", authDomain: "cifrasmac.firebaseapp.com", databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com", projectId: "cifrasmac", storageBucket: "cifrasmac.firebasestorage.app", messagingSenderId: "916644687837", appId: "1:916644687837:web:03d346cc48a071af1ed034" };
+const firebaseConfig = { 
+    apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo", 
+    authDomain: "cifrasmac.firebaseapp.com", 
+    databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com", 
+    projectId: "cifrasmac", 
+    storageBucket: "cifrasmac.firebasestorage.app", 
+    messagingSenderId: "916644687837", 
+    appId: "1:916644687837:web:03d346cc48a071af1ed034" 
+};
+
 const app = initializeApp(firebaseConfig); 
 const db = getDatabase(app);
 
-const COLUMNAS_ACUMULADO_KEYS = [
-    "ENT", "DTTO", "MODULO", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS", "NO_UTILIZADOS", 
-    "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", 
-    "REPOSICION_REIMPRESIONES", "CORR_DE_DATOS_DIRECCION", "REINCORPORACION", 
-    "REEMPLAZO", "TOTAL_DE_TRAMITES", "RECHAZOS_DE_MAC_34", "RECHAZOS_DE_MAC_35", 
-    "CANCELADOS", "TOTAL_DE_MOVIMIENTOS", "CIF_05", "SOLICITUD_EXPEDICION_ORDINARIA", 
-    "SOLICITUD_DE_RECTIFICACION", "DEMANDA_DE_JUICIO", "INICIALES_A", "ACTUALIZACION", 
-    "RECIBIDAS_DE_OTROS_TIPOS", "IMPORTADAS", "EXPORTADAS", "ENTREGADAS", 
-    "ANEXAS_A_FUAR", "RESGUARDO", "SOLICITUD_DE_REIMPRESION", "ROBO_Y_O_EXTRAVIO", 
-    "RETIRADAS_POR_CAUSA", "SOBRANTES", "DUPLICADOS", "DISPONIBLES_TOTAL", 
-    "DISPONIBLES_DE_SOL_DE_EXP", "REIMPRE_FUERA_DEL_SISTEMA", "CREDEN_DEVUELTAS_POR_TERCEROS", 
-    "CRED_PRODUCTO_DE_REGISTRO_DUPLICADO", "CRED_PROD_CANJE_POR_NUEVA", 
-    "DIAS_TRABAJADOS", "CONFIGURACION", "REMESA"
+const COLUMNAS_KEYS = [
+    "ENT", "DTTO", "MODULO", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS", 
+    "NO_UTILIZADOS", "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", 
+    "REPOSISION", "CORR__DE_DATOS_DIRECCION", "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES", 
+    "RECHAZOS_DE_MAC_34", "RECHAZOS_DE_MAC_35", "CANCELADOS", "TOTAL_DE_MOVIMIENTOS", 
+    "CIF-05", "SOLICITUD_EXPEDICION", "SOLICITUD_RECTIFICACION", "DEMANDA_DE_JUICIO", 
+    "INICIALES_S", "ACTUALIZACIÓN", "RECIBIDAS_DE_OTROS_TYPES", "IMPORTADAS", "EXPORTADAS", 
+    "ENTREGADAS", "ANEXAS_A_FUAR", "RESGUARDO", "SOLICITU_DE_REIMPRESION", "RECIBO_Y_O_EXTRAVIO", 
+    "RETIRADAS_POR_OTRA_CAUSA", "SOBRANTES", "DUPLICADO", "DISPONIBLES", "DISPONIBLES_DE_SOL_DE_EXP", 
+    "REIMPRE_FUERA_DEL_SISTEMA", "CREDEN_DEVUELTAS_POR_TERCEROS", "CRED_PRODUCTO_DE_REGISTRO_DUPLICADO", 
+    "CRED_PROD_CANJE_POR_NUEVA", "DIAS_TRABAJADOS", "CONFIGURACION"
 ];
 
-const MAPA_NUMEROS = {};
-COLUMNAS_ACUMULADO_KEYS.forEach((col, index) => {
-    MAPA_NUMEROS[col] = index + 1;
-});
-MAPA_NUMEROS["REMESA"] = 45; 
-MAPA_NUMEROS["ENT"] = 46; 
-MAPA_NUMEROS["DTTO"] = 47; 
-MAPA_NUMEROS["MODULO"] = 48;
-
-function obtenerNumeroColumna(key) { return MAPA_NUMEROS[key] || '-'; }
+function normalizarObjeto(item) {
+    let limpio = {};
+    for (let key in item) {
+        let kUpper = key.toUpperCase().trim();
+        let val = item[key];
+        limpio[kUpper] = val;
+        if (kUpper === 'MIN_5' || kUpper === 'FI') limpio['INICIAL'] = val;
+        if (kUpper === 'MAX_6' || kUpper === 'FF') limpio['FINAL'] = val;
+    }
+    return limpio;
+}
 
 window.copiarTablaExcel = function(tablaId) {
     const tabla = document.getElementById(tablaId);
@@ -45,16 +53,13 @@ window.copiarTablaExcel = function(tablaId) {
     selection.addRange(range);
     try {
         document.execCommand('copy');
-        alert("¡Tabla copiada con todo y la fila de totales! Lista para pegar en Excel.");
+        alert("¡Tabla copiada con éxito! Lista para pegar en Excel.");
     } catch (err) {
         alert("Error al intentar copiar.");
     }
     document.body.removeChild(div);
     selection.removeAllRanges();
 };
-
-let bdtotalesGlobal = []; 
-let bdMadreGlobal = [];
 
 onValue(ref(db, ".info/connected"), (s) => { 
     let sem = document.getElementById("semaforoConexion"); 
@@ -64,303 +69,67 @@ onValue(ref(db, ".info/connected"), (s) => {
     }
 });
 
-function construirHeaderTabla() {
-    const thead = document.querySelector('#tablaAcumulado thead'); 
-    if(!thead) return;
-    thead.innerHTML = ""; 
-    let trT = document.createElement('tr'); 
-    let trN = document.createElement('tr'); 
-    trN.className = 'num-row';
+function pintarTablaDirecta(selectorTabla, listaRegistros) {
+    const tabla = document.querySelector(selectorTabla);
+    if (!tabla) return;
     
-    COLUMNAS_ACUMULADO_KEYS.filter(c => c !== 'REMESA').forEach(col => {
-        let th = document.createElement('th'); 
-        th.innerText = col.replace(/_/g, ' '); 
-        th.style.minWidth = ['MODULO','ENT','DTTO'].includes(col) ? "70px" : "90px";
-        if(['INICIAL','FINAL','TOTAL_DE_FOLIOS'].includes(col)) th.classList.add('bg-folios');
-        trT.appendChild(th);
-        
-        let thN = document.createElement('th'); 
-        thN.innerText = obtenerNumeroColumna(col); 
-        trN.appendChild(thN);
-    });
-    thead.appendChild(trT); 
-    thead.appendChild(trN);
-}
-
-function limpiarStr(str) {
-    return String(str || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
-}
-
-function obtenerValorFlexible(objetoRegistro, claveBuscada) {
-    if (!objetoRegistro) return "";
-    if (objetoRegistro[claveBuscada] !== undefined) return objetoRegistro[claveBuscada];
-    let claveLimpiada = limpiarStr(claveBuscada);
-    let llaveEncontrada = Object.keys(objetoRegistro).find(k => limpiarStr(k) === claveLimpiada);
-    if (llaveEncontrada !== undefined) return objetoRegistro[llaveEncontrada];
-    return "";
-}
-
-function renderTabla() {
-    const tbody = document.querySelector('#tablaAcumulado tbody'); 
-    if(!tbody) return; 
+    let thead = tabla.querySelector('thead');
+    let tbody = tabla.querySelector('tbody');
+    
+    thead.innerHTML = "";
     tbody.innerHTML = "";
-    
-    let dataF = bdtotalesGlobal.length > 0 ? bdtotalesGlobal : bdMadreGlobal;
-    if(dataF.length === 0) return;
 
-    let remesasDisponibles = [...new Set(dataF.map(x => parseInt(obtenerValorFlexible(x, 'REMESA'), 10)))].filter(x => !isNaN(x)).sort((a, b) => a - b);
-    if(remesasDisponibles.length === 0) return;
-    
-    let remesaMinimaBD = remesasDisponibles[0];
-    let remesaMaximaBD = remesasDisponibles[remesasDisponibles.length - 1];
+    // Cabecera institucional
+    let trTitulos = document.createElement('tr');
+    COLUMNAS_KEYS.forEach(colKey => {
+        let th = document.createElement('th');
+        th.innerText = colKey.replace(/_/g, ' ');
+        if(['INICIAL', 'FINAL', 'TOTAL_DE_FOLIOS'].includes(colKey)) th.classList.add('bg-folios');
+        trTitulos.appendChild(th);
+    });
+    thead.appendChild(trTitulos);
 
-    let inputInicioEl = document.getElementById('inputAcumuladoInicio');
-    let inputFinEl = document.getElementById('inputAcumuladoFin');
-
-    let rIniVal = inputInicioEl ? inputInicioEl.value.trim() : '';
-    let rFinVal = inputFinEl ? inputFinEl.value.trim() : '';
-
-    let rIni = rIniVal !== "" ? parseInt(rIniVal, 10) : remesaMinimaBD;
-    let rFin = rFinVal !== "" ? parseInt(rFinVal, 10) : remesaMaximaBD;
-
-    if(inputInicioEl && !inputInicioEl.value) {
-        inputInicioEl.value = remesaMinimaBD;
-    }
-    if(inputFinEl) {
-        inputFinEl.placeholder = `Máx: ${remesaMaximaBD}`;
+    if (!listaRegistros || listaRegistros.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="${COLUMNAS_KEYS.length}" class="text-center text-muted py-3">Sin registros para mostrar.</td></tr>`;
+        return;
     }
 
-    let registrosRango = dataF.filter(f => { 
-        let rNum = parseInt(obtenerValorFlexible(f, 'REMESA'), 10); 
-        return !isNaN(rNum) && rNum >= rIni && rNum <= rFin; 
-    });
-
-    const ESTRUCTURA_21 = [
-        { tipo: "NEGRO", modulo: "50351", inicial: "2605035108669", finalDefault: "2605035130714" },
-        { tipo: "ROJO",  modulo: "50351", inicial: "2605035100001", final: "2605035108668" },
-        { tipo: "ROJO",  modulo: "50351", inicial: "2505035125557", final: "2505035139930" },
-        { tipo: "ROJO",  modulo: "50351", inicial: "25050351109053", final: "25050351125556" },
-        { tipo: "ROJO",  modulo: "50351", inicial: "2505035100001", final: "2505035109052" },
-        { tipo: "ROJO",  modulo: "50351", inicial: "24050351119618", final: "24050351132139" },
-        { tipo: "ROJO",  modulo: "50351", inicial: "24050351109082", final: "24050351119617" },
-
-        { tipo: "NEGRO", modulo: "50353", inicial: "2605035303086", finalDefault: "2605035312364" },
-        { tipo: "ROJO",  modulo: "50353", inicial: "2605035300001", final: "2605035303085" },
-        { tipo: "ROJO",  modulo: "50353", inicial: "2505035309689", final: "2505035316305" },
-        { tipo: "ROJO",  modulo: "50353", inicial: "2505035303324", final: "2505035309688" },
-        { tipo: "ROJO",  modulo: "50353", inicial: "2505035300001", final: "2505035303323" },
-        { tipo: "ROJO",  modulo: "50353", inicial: "2405035307991", final: "2405035313485" },
-        { tipo: "ROJO",  modulo: "50353", inicial: "2405035303096", final: "2405035307990" },
-
-        { tipo: "NEGRO", modulo: "50354", inicial: "2605035401973", finalDefault: "2605035406077" },
-        { tipo: "ROJO",  modulo: "50354", inicial: "2605035400001", final: "2605035401972" },
-        { tipo: "ROJO",  modulo: "50354", inicial: "2505035404268", final: "2505035408381" },
-        { tipo: "ROJO",  modulo: "50354", inicial: "2505035401417", final: "2505035404267" },
-        { tipo: "ROJO",  modulo: "50354", inicial: "2505035400001", final: "2505035401416" },
-        { tipo: "ROJO",  modulo: "50354", inicial: "2405035402884", final: "2405035405329" },
-        { tipo: "ROJO",  modulo: "50354", inicial: "2405035400971", final: "2405035402883" }
-    ];
-
-    let acumuladorGranTotal = {};
-    COLUMNAS_ACUMULADO_KEYS.forEach(col => { acumuladorGranTotal[col] = 0; });
-
-    ['50351', '50353', '50354'].forEach(modTarget => {
-        let regsMod = registrosRango.filter(r => String(obtenerValorFlexible(r, 'MODULO') || '').trim().includes(modTarget))
-            .sort((a,b)=>parseInt(obtenerValorFlexible(a, 'REMESA')) - parseInt(obtenerValorFlexible(b, 'REMESA')));
-        
-        let uReg = regsMod.length > 0 ? regsMod[regsMod.length - 1] : null;
-        let pReg = regsMod.length > 0 ? regsMod[0] : null; 
-        let indexNegro = modTarget === '50351' ? 0 : (modTarget === '50353' ? 7 : 14);
-        
-        if(uReg && obtenerValorFlexible(uReg, 'FINAL')) {
-            ESTRUCTURA_21[indexNegro].finalReal = obtenerValorFlexible(uReg, 'FINAL');
-        } else {
-            ESTRUCTURA_21[indexNegro].finalReal = ESTRUCTURA_21[indexNegro].finalDefault;
-        }
-
-        let sumasMod = {};
-        COLUMNAS_ACUMULADO_KEYS.forEach(col => {
-            if(!['ENT', 'DTTO', 'MODULO', 'INICIAL', 'FINAL', 'TOTAL_DE_FOLIOS', 'CONFIGURACION', 'INICIALES_A', 'DISPONIBLES_TOTAL', 'REMESA'].includes(col)) {
-                sumasMod[col] = 0;
-            }
+    // Filas de datos
+    listaRegistros.forEach(reg => {
+        let tr = document.createElement('tr');
+        COLUMNAS_KEYS.forEach(colKey => {
+            let td = document.createElement('td');
+            let val = reg[colKey];
+            td.innerText = (val !== undefined && val !== null && val !== "") ? val : "0";
+            tr.appendChild(td);
         });
-
-        regsMod.forEach(r => {
-            Object.keys(sumasMod).forEach(c => {
-                let v = parseFloat(obtenerValorFlexible(r, c) || 0);
-                if(!isNaN(v)) sumasMod[c] += v;
-            });
-        });
-
-        if(uReg) {
-            sumasMod['CONFIGURACION'] = obtenerValorFlexible(uReg, 'CONFIGURACION');
-            sumasMod['DISPONIBLES_TOTAL'] = obtenerValorFlexible(uReg, 'DISPONIBLES_TOTAL');
-        } else {
-            sumasMod['CONFIGURACION'] = "";
-            sumasMod['DISPONIBLES_TOTAL'] = "";
-        }
-
-        if(pReg) {
-            sumasMod['INICIALES_A'] = obtenerValorFlexible(pReg, 'INICIALES_A');
-        } else {
-            sumasMod['INICIALES_A'] = "";
-        }
-
-        let totalTramites = (sumasMod['INSCRIPCIONES'] || 0) + 
-                            (sumasMod['CORRECCION_DE_DATOS_PERSONALES'] || 0) + 
-                            (sumasMod['CAMBIO_DE_DOMICILIO'] || 0) + 
-                            (sumasMod['REPOSICION_REIMPRESIONES'] || 0) + 
-                            (sumasMod['CORR_DE_DATOS_DIRECCION'] || 0) + 
-                            (sumasMod['REINCORPORACION'] || 0) + 
-                            (sumasMod['REEMPLAZO'] || 0);
-
-        sumasMod['TOTAL_DE_TRAMITES'] = totalTramites;
-        sumasMod['TOTAL_DE_MOVIMIENTOS'] = totalTramites - (sumasMod['CANCELADOS'] || 0);
-
-        ESTRUCTURA_21[indexNegro].sumas = sumasMod;
-    });
-
-    ESTRUCTURA_21.forEach((item) => {
-        let trDetalle = document.createElement('tr');
-        let isNegro = (item.tipo === "NEGRO");
-
-        let rIniStr = item.inicial;
-        let rFinStr = isNegro ? item.finalReal : item.final;
-
-        let rIniNum = parseFloat(rIniStr) || 0;
-        let rFinNum = parseFloat(rFinStr) || 0;
-        let foliosDet = (rFinNum >= rIniNum && rIniNum > 0) ? (rFinNum - rIniNum + 1) : 0;
-
-        if (foliosDet > 0) {
-            acumuladorGranTotal['TOTAL_DE_FOLIOS'] += foliosDet;
-        }
-
-        COLUMNAS_ACUMULADO_KEYS.filter(c => c !== 'REMESA').forEach(col => {
-            let tdDet = document.createElement('td');
-            let valDet = "";
-
-            if(col === 'ENT') {
-                valDet = "05";
-                tdDet.className = isNegro ? "fw-bold" : "text-danger fw-bold";
-            } else if(col === 'DTTO') {
-                valDet = "03";
-                tdDet.className = isNegro ? "fw-bold" : "text-danger fw-bold";
-            } else if(col === 'MODULO') {
-                valDet = item.modulo;
-                tdDet.className = isNegro ? "fw-bold" : "text-danger fw-bold";
-            } else if(col === 'INICIAL') {
-                valDet = rIniStr;
-                tdDet.className = isNegro ? "fw-bold" : "text-danger fw-bold";
-            } else if(col === 'FINAL') {
-                valDet = rFinStr;
-                tdDet.className = isNegro ? "fw-bold" : "text-danger fw-bold";
-            } else if(col === 'TOTAL_DE_FOLIOS') {
-                valDet = foliosDet > 0 ? foliosDet : "";
-                tdDet.className = isNegro ? "text-dark fw-bold" : "text-danger fw-bold";
-            } else if(col === 'CONFIGURACION') {
-                if(isNegro && item.sumas) valDet = item.sumas['CONFIGURACION'] !== undefined ? item.sumas['CONFIGURACION'] : "";
-            } else if(col === 'INICIALES_A') {
-                if(isNegro && item.sumas) valDet = item.sumas['INICIALES_A'] !== undefined ? item.sumas['INICIALES_A'] : "";
-            } else if(col === 'DISPONIBLES_TOTAL') {
-                if(isNegro && item.sumas) valDet = item.sumas['DISPONIBLES_TOTAL'] !== undefined ? item.sumas['DISPONIBLES_TOTAL'] : "";
-            } else {
-                if(isNegro && item.sumas && item.sumas[col] !== undefined) {
-                    valDet = item.sumas[col];
-                    acumuladorGranTotal[col] += (parseFloat(valDet) || 0);
-                }
-            }
-            tdDet.innerText = valDet !== 0 ? valDet : "";
-            trDetalle.appendChild(tdDet);
-        });
-        tbody.appendChild(trDetalle);
-    });
-    
-    let trT = document.createElement('tr'); 
-    trT.className = 'fila-totales fw-bold';
-    COLUMNAS_ACUMULADO_KEYS.filter(c => c !== 'REMESA').forEach(col => {
-        let td = document.createElement('td');
-        if(col === 'MODULO') {
-            td.innerText = "TOTAL";
-        } else if (['ENT', 'DTTO', 'INICIAL', 'FINAL', 'INICIALES_A', 'INICIALES_C', 'CONFIGURACION', 'DISPONIBLES_TOTAL'].includes(col)) {
-            td.innerText = "";
-        } else { 
-            td.innerText = acumuladorGranTotal[col] || 0; 
-        }
-        trT.appendChild(td);
-    });
-    tbody.appendChild(trT);
-
-    // SINCRONIZACIÓN AUTOMÁTICA DEL ESPEJO EN FIREBASE
-    let tablaEl = document.getElementById('tablaAcumulado');
-    if (tablaEl) {
-        let theadEl = tablaEl.querySelector('thead');
-        let tbodyEl = tablaEl.querySelector('tbody');
-        if (theadEl && tbodyEl) {
-            set(ref(db, 'configuracion/reportes_dto03/acumulado'), {
-                htmlThead: theadEl.innerHTML,
-                htmlTbody: tbodyEl.innerHTML
-            });
-        }
-    }
-}
-
-function normalizarObj(i) { 
-    let l={}; 
-    for(let k in i) l[k.toUpperCase().trim()] = i[k]; 
-    return l; 
-}
-
-construirHeaderTabla();
-
-const dbRefConfigAcumulado = ref(db, 'configuracion/acumulado');
-onValue(dbRefConfigAcumulado, (snapshot) => {
-    if (snapshot.exists()) {
-        const config = snapshot.val();
-        if (config.inicio !== undefined && document.getElementById('inputAcumuladoInicio')) document.getElementById('inputAcumuladoInicio').value = config.inicio;
-        if (config.fin !== undefined && document.getElementById('inputAcumuladoFin')) document.getElementById('inputAcumuladoFin').value = config.fin;
-    }
-});
-
-const btnGuardarAcumulado = document.getElementById('btnGuardarAcumulado');
-if(btnGuardarAcumulado) {
-    btnGuardarAcumulado.addEventListener('click', () => {
-        let iniVal = document.getElementById('inputAcumuladoInicio')?.value.trim() || '';
-        let finVal = document.getElementById('inputAcumuladoFin')?.value.trim() || '';
-
-        set(dbRefConfigAcumulado, {
-            inicio: iniVal,
-            fin: finVal
-        }).then(() => {
-            alert("¡Rango de acumulado guardado en la nube y sincronizado!");
-            renderTabla();
-        }).catch((error) => {
-            console.error("Error al guardar configuración en Firebase:", error);
-            alert("Hubo un error al guardar el rango en la nube.");
-        });
+        tbody.appendChild(tr);
     });
 }
 
-Promise.all([get(ref(db, 'bd_madre')), get(ref(db, 'bdtotales'))]).then(([sM, sT]) => {
-    let aM = sM.exists() ? (Array.isArray(sM.val())?sM.val():Object.values(sM.val())).map(normalizarObj) : [];
-    let aT = sT.exists() ? (Array.isArray(sT.val())?sT.val():Object.values(sT.val())).map(normalizarObj) : [];
-    bdtotalesGlobal = aT;
-    bdMadreGlobal = aM;
+async function cargarReportesDirectos() {
+    try {
+        const snap = await get(ref(db, 'bd_totales'));
+        if (!snap.exists()) return;
 
-    let todasRemesas = [...new Set([...aT, ...aM].map(x => parseInt(obtenerValorFlexible(x, 'REMESA'), 10)))].filter(x => !isNaN(x)).sort((a, b) => a - b);
-    
-    if(todasRemesas.length > 0) {
-        let remesaMin = todasRemesas[0];
-        let remesaMax = todasRemesas[todasRemesas.length - 1];
-        let inputInicio = document.getElementById('inputAcumuladoInicio');
-        let inputFin = document.getElementById('inputAcumuladoFin');
-        
-        if(inputInicio && !inputInicio.value) {
-            inputInicio.value = remesaMin;
-        }
-        if(inputFin) {
-            inputFin.placeholder = `Máx: ${remesaMax}`;
-        }
+        let dataRaw = snap.val();
+        let registros = (Array.isArray(dataRaw) ? dataRaw : Object.values(dataRaw)).map(normalizarObjeto);
+
+        registros = registros.filter(item => {
+            let mod = String(item['MODULO'] || '').trim();
+            return mod !== "" && mod !== "0" && mod !== "undefined";
+        });
+
+        // Pintar las tablas correspondientes
+        pintarTablaDirecta('#tablaSemanalReporte', registros);
+        pintarTablaDirecta('#tablaCampanaReporte', registros);
+        pintarTablaDirecta('#tablaAcumuladoReporte', registros);
+
+    } catch (err) {
+        console.error("Error al cargar los datos directos:", err);
     }
+}
 
-    renderTabla();
+document.addEventListener("DOMContentLoaded", () => {
+    setTimeout(cargarReportesDirectos, 1000);
 });
