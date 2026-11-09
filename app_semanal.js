@@ -197,6 +197,21 @@ function renderTablaSemanal() {
         });
         renderGranTotalDesdeRegistros(tbody, filasRemesa);
     }
+
+    // ==========================================
+    // SINCRONIZACIÓN AUTOMÁTICA CON EL ESPEJO EN FIREBASE (SEMANAL)
+    // ==========================================
+    let tablaEl = document.getElementById('tablaSemanal');
+    if (tablaEl) {
+        let theadEl = tablaEl.querySelector('thead');
+        let tbodyEl = tablaEl.querySelector('tbody');
+        if (theadEl && tbodyEl) {
+            set(ref(db, 'configuracion/reportes_dto03/semanal'), {
+                htmlThead: theadEl.innerHTML,
+                htmlTbody: tbodyEl.innerHTML
+            });
+        }
+    }
 }
 
 function renderGranTotalDesdeRegistros(tbody, listaRegistros) {
@@ -299,10 +314,8 @@ function cargarYCalcularSGC() {
     let remesaActual = obtenerRemesaSeleccionada();
     document.getElementById('thRemesaSGC').innerText = "Remesa: " + remesaActual;
 
-    // Filtrar los registros de la remesa activa en bd_madre
     let registrosRemesa = bdMadreGlobal.filter(item => String(item['REMESA'] || '').trim() === String(remesaActual));
 
-    // Función auxiliar para sumar una columna específica según el módulo ('50351', '50353', '50354')
     function obtenerValorModulo(moduloId, columnaKey) {
         let regMod = registrosRemesa.find(r => String(r['MODULO'] || '').trim() === String(moduloId));
         if (regMod && regMod[columnaKey] !== undefined) {
@@ -311,7 +324,6 @@ function cargarYCalcularSGC() {
         return 0;
     }
 
-    // 1. Trámites aplicados (Columna: TOTAL_DE_TRAMITES)
     let t51 = obtenerValorModulo('50351', 'TOTAL_DE_TRAMITES');
     let t53 = obtenerValorModulo('50353', 'TOTAL_DE_TRAMITES');
     let t54 = obtenerValorModulo('50354', 'TOTAL_DE_TRAMITES');
@@ -324,17 +336,14 @@ function cargarYCalcularSGC() {
     document.querySelector('[data-key="total_tramites_2"]').value = t53;
     document.querySelector('[data-key="total_tramites_3"]').value = t54;
 
-    // 2. Fichas requisitadas (Columna: TOTAL_DE_TRAMITES o equivalente)
     document.querySelector('[data-key="fichas_req_1"]').value = t51;
     document.querySelector('[data-key="fichas_req_2"]').value = t53;
     document.querySelector('[data-key="fichas_req_3"]').value = t54;
 
-    // 3. Fila Amarilla: 10% de trámites aplicados por defecto
     document.querySelector('[data-key="tramites_exitosos_1"]').value = Math.round(t51 * 0.10 * 100) / 100;
     document.querySelector('[data-key="tramites_exitosos_2"]').value = Math.round(t53 * 0.10 * 100) / 100;
     document.querySelector('[data-key="tramites_exitosos_3"]').value = Math.round(t54 * 0.10 * 100) / 100;
 
-    // 4. Archivos de Transacción aceptados y procesados
     let ta51 = obtenerValorModulo('50351', 'TOTAL_DE_MOVIMIENTOS');
     let ta53 = obtenerValorModulo('50353', 'TOTAL_DE_MOVIMIENTOS');
     let ta54 = obtenerValorModulo('50354', 'TOTAL_DE_MOVIMIENTOS');
@@ -347,7 +356,6 @@ function cargarYCalcularSGC() {
     document.querySelector('[data-key="transac_procesados_2"]').value = ta53;
     document.querySelector('[data-key="transac_procesados_3"]').value = ta54;
 
-    // 5. Credenciales inconsistentes y recibidas
     let cr51 = obtenerValorModulo('50351', 'ENTREGADAS');
     let cr53 = obtenerValorModulo('50353', 'ENTREGADAS');
     let cr54 = obtenerValorModulo('50354', 'ENTREGADAS');
@@ -360,7 +368,6 @@ function cargarYCalcularSGC() {
     document.querySelector('[data-key="cred_recibidas_2"]').value = cr53;
     document.querySelector('[data-key="cred_recibidas_3"]').value = cr54;
 
-    // 6. Credenciales en resguardo y SIIRFE disponibles
     let res51 = obtenerValorModulo('50351', 'RESGUARDO');
     let res53 = obtenerValorModulo('50353', 'RESGUARDO');
     let res54 = obtenerValorModulo('50354', 'RESGUARDO');
@@ -377,7 +384,6 @@ function cargarYCalcularSGC() {
     document.querySelector('[data-key="siirfe_2"]').value = disp53;
     document.querySelector('[data-key="siirfe_3"]').value = disp54;
 
-    // 7. Entregadas y solicitadas
     let ent51 = obtenerValorModulo('50351', 'ENTREGADAS');
     let ent53 = obtenerValorModulo('50353', 'ENTREGADAS');
     let ent54 = obtenerValorModulo('50354', 'ENTREGADAS');
@@ -390,7 +396,6 @@ function cargarYCalcularSGC() {
     document.querySelector('[data-key="cred_solicitadas_2"]').value = ent53;
     document.querySelector('[data-key="cred_solicitadas_3"]').value = ent54;
 
-    // 8. Cargar registros independientes de Firebase si el usuario ya los había guardado antes
     if (window.db) {
         const dbRef = ref(window.db, `sgc_remesas/${remesaActual}`);
         get(dbRef).then((snapshot) => {
