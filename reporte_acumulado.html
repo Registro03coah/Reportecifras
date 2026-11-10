@@ -6,7 +6,7 @@
     <title>Reporte Acumulado - Sistema MAC</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <style>
+        <style>
         @media (max-width: 768px) {
             html, body {
                 overflow-x: hidden !important;
@@ -35,7 +35,6 @@
         body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .header-banner { background: linear-gradient(135deg, #2c3e50, #1a252f); color: white; border-bottom: 4px solid #1b396b; }
         
-        /* Contenedor general expandido al 100% fluido */
         .container-fluid.main-fluid {
             width: 100% !important;
             max-width: 100% !important;
@@ -88,7 +87,7 @@
         <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_dias.html" style="font-size: 11px;"><i class="bi bi-calendar3"></i> Reporte Días</a></li>
         <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_semanal.html" style="font-size: 11px;"><i class="bi bi-calendar-week"></i> Reporte Semanal</a></li>
         <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_campana.html" style="font-size: 11px;"><i class="bi bi-bar-chart-fill"></i> Reporte Campaña</a></li>
-        <li class="nav-item"><a class="nav-link text-light px-2" href="reporte_acumulado.html" style="font-size: 11px;"><i class="bi bi-archive-fill"></i> Reporte Acumulado</a></li>
+        <li class="nav-item"><a class="nav-link text-light px-2 fw-bold active" href="reporte_acumulado.html" style="font-size: 11px;"><i class="bi bi-archive-fill"></i> Reporte Acumulado</a></li>
         <li class="nav-item"><a class="nav-link px-2" href="graficos.html" style="color: #ff66b2 !important; font-weight: bold; font-size: 11px;"><i class="bi bi-pie-chart-fill"></i> Gráficos</a></li>
         <li class="nav-item"><a class="nav-link text-light px-2" href="bd_madre.html" style="font-size: 11px;"><i class="bi bi-database-fill"></i> BD Principal</a></li>
         <li class="nav-item"><a class="nav-link text-light px-2" href="bdtotales.html" style="font-size: 11px;"><i class="bi bi-database-fill-gear"></i> BD Totales</a></li>
@@ -118,31 +117,8 @@
                 <input type="text" id="inputAcumuladoFin" class="form-control form-control-sm w-auto" placeholder="Remesa Final (Vacío=Última)">
                 <button id="btnGuardarAcumulado" class="btn btn-primary btn-sm fw-bold"><i class="bi bi-floppy"></i> Guardar</button>
                 <div id="semaforoConexion" class="badge bg-warning text-dark ms-2"><i class="bi bi-arrow-repeat spin"></i> Conectando...</div>
-                <button class="btn btn-sm btn-info fw-bold ms-auto" onclick="copiarTablaExcel('tablaAcumulado')"><i class="bi bi-file-excel"></i> Copiar a Excel</button>
-            </div>
-        </div>
-
-        <!-- CAJITA DE HERRAMIENTAS DE AJUSTE RÁPIDO -->
-        <div class="card shadow-sm mb-3 border-warning">
-            <div class="card-body bg-warning bg-opacity-10 p-2 d-flex align-items-center gap-2 flex-wrap">
-                <span class="fw-bold text-dark" style="font-size: 12px;"><i class="bi bi-tools"></i> Ajuste Manual Rápido (BD Totales):</span>
-                
-                <select id="selectAjusteModulo" class="form-select form-select-sm w-auto">
-                    <option value="050351">Módulo 050351</option>
-                    <option value="050353">Módulo 050353</option>
-                    <option value="050354">Módulo 050354</option>
-                </select>
-
-                <input type="text" id="inputAjusteColumna" class="form-control form-control-sm w-auto" placeholder="Nombre de Columna (Ej. INSCRIPCIONES)" style="min-width: 200px;">
-
-                <select id="selectAjusteOperacion" class="form-select form-select-sm w-auto">
-                    <option value="sumar">Sumar (+)</option>
-                    <option value="restar">Restar (-)</option>
-                </select>
-
-                <input type="number" id="inputAjusteCantidad" class="form-control form-control-sm w-auto" placeholder="Cantidad" style="width: 90px;" value="0">
-
-                <button class="btn btn-warning btn-sm fw-bold text-dark border" onclick="aplicarAjusteManual()"><i class="bi bi-check2-circle"></i> Aplicar Ajuste Permanente</button>
+                <button class="btn btn-sm btn-info fw-bold ms-auto" onclick="copiarTablaExcel('tablaAcumulado')">
+    📊 Copiar a Excel</button>
             </div>
         </div>
 
@@ -155,26 +131,6 @@
         </div>
     </div>
     
-    <!-- MODAL PARA VER REMESAS -->
-    <div class="modal fade" id="modalRemesasAcumulado" tabindex="-1" aria-labelledby="modalRemesasLabel" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered modal-xl">
-        <div class="modal-content">
-          <div class="modal-header bg-dark text-white py-2">
-            <h5 class="modal-title fs-6" id="modalRemesasLabel"><i class="bi bi-list-columns"></i> Listado Completo de Remesas Registradas</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body bg-light">
-            <div id="contenidoRemesasModal" class="table-responsive" style="max-height: 500px; overflow-y: auto;">
-                <p class="text-muted text-center py-3">Cargando lista de remesas...</p>
-            </div>
-          </div>
-          <div class="modal-footer py-1">
-            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- PIE DE PÁGINA -->
     <footer class="text-center py-2 mt-auto text-white shadow-sm" style="background-color: #1b396b; width: 100%; position: relative; bottom: 0;">
         <small>
