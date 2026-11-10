@@ -39,7 +39,7 @@
             color: #1b396b !important;
         }
 
-        /* Contenedores de tablas: Altura libre para Acumulado y general (sin scroll interno forzado) */
+        /* Contenedores de tablas: Altura libre sin scroll interno forzado */
         .excel-container { 
             width: 100%; 
             max-height: none !important; 
@@ -57,7 +57,9 @@
         .bg-folios { background-color: #f4b084 !important; }
         .fila-totales td { background-color: #cff4fc !important; font-weight: bold; }
 
-        /* Ocultar únicamente la línea de números pequeños/índices debajo de los encabezados en Acumulado */
+        /* Ocultar únicamente la línea de números pequeños/índices debajo de los encabezados en Campaña y Acumulado */
+        #tablaCampanaReporte thead tr.num-row,
+        #tablaCampanaReporte thead tr:nth-child(2),
         #tablaAcumuladoReporte thead tr.num-row,
         #tablaAcumuladoReporte thead tr:nth-child(2) {
             display: none !important;
