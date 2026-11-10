@@ -10,7 +10,35 @@
         body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .header-banner { background: linear-gradient(135deg, #2c3e50, #1a252f); color: white; border-bottom: 4px solid #1b396b; }
         .container-fluid.main-fluid { width: 100% !important; max-width: 100% !important; padding-left: 15px !important; padding-right: 15px !important; }
-        .section-header { background-color: #ffeb3b; color: #000; font-weight: bold; padding: 8px 12px; font-size: 1rem; border-left: 5px solid #1b396b; margin-top: 20px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        
+        /* Encabezados de sección con degradado de Azul Rey a Negro a la derecha */
+        .section-header { 
+            background: linear-gradient(to right, #1b396b, #000000); 
+            color: #ffffff; 
+            font-weight: bold; 
+            padding: 8px 12px; 
+            font-size: 1rem; 
+            border-left: 5px solid #ffc107; 
+            margin-top: 20px; 
+            margin-bottom: 10px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
+
+        /* Botón de copiar a Excel en color Naranja */
+        .btn-naranja-excel {
+            background-color: #fd7e14;
+            border-color: #e8590c;
+            color: #ffffff;
+            font-weight: bold;
+        }
+        .btn-naranja-excel:hover {
+            background-color: #e8590c;
+            border-color: #d9480f;
+            color: #ffffff;
+        }
+
         .excel-container { width: 100%; max-height: 400px; overflow-y: auto; overflow-x: auto; border: 1px solid #ddd; background: white; margin-bottom: 20px; box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,.075); }
         .excel-table { margin-bottom: 0; width: 100%; border-collapse: separate; border-spacing: 0; }
         .excel-table thead tr:first-child th { position: sticky; top: 0; z-index: 3; font-size: 10px; text-transform: uppercase; background-color: #e9ecef; height: 45px; text-align: center; vertical-align: middle; padding: 6px 8px; border: 1px solid #ccc; }
@@ -18,9 +46,15 @@
         .bg-folios { background-color: #f4b084 !important; }
         .fila-totales td { background-color: #cff4fc !important; font-weight: bold; }
 
-        /* 1. Ocultar las filas secundarias de Campaña dejando solo el encabezado principal limpio */
-        #tablaCampanaReporte thead tr:not(:first-child) {
+        /* 1. FORZAR LA OCULTACIÓN TOTAL de cualquier fila que no sea la primera en el thead de Campaña */
+        #tablaCampanaReporte thead tr,
+        #tablaCampanaReporte tr:nth-child(2),
+        #tablaCampanaReporte tr.num-row {
             display: none !important;
+        }
+        /* Pero permitimos visible estrictamente la primera fila de títulos de Campaña */
+        #tablaCampanaReporte thead tr:first-child {
+            display: table-row !important;
         }
 
         /* 2. Ocultar únicamente la línea de números pequeños (índices) en Acumulado sin tocar los datos */
@@ -64,7 +98,7 @@
     <!-- 1. SECCIÓN SEMANAL -->
     <div class="section-header">
         <span>Semanal</span>
-        <button class="btn btn-sm btn-success fw-bold" onclick="copiarTablaExcel('tablaSemanalReporte')">📊 Copiar Semanal</button>
+        <button class="btn btn-sm btn-naranja-excel" onclick="copiarTablaExcel('tablaSemanalReporte')">📊 Copiar Semanal</button>
     </div>
     <div class="excel-container rounded">
         <table class="excel-table table table-hover" id="tablaSemanalReporte">
@@ -76,7 +110,7 @@
     <!-- 2. SECCIÓN CAMPAÑA -->
     <div class="section-header">
         <span>Campaña</span>
-        <button class="btn btn-sm btn-success fw-bold" onclick="copiarTablaExcel('tablaCampanaReporte')">📊 Copiar Campaña</button>
+        <button class="btn btn-sm btn-naranja-excel" onclick="copiarTablaExcel('tablaCampanaReporte')">📊 Copiar Campaña</button>
     </div>
     <div class="excel-container rounded">
         <table class="excel-table table table-hover" id="tablaCampanaReporte">
@@ -88,7 +122,7 @@
     <!-- 3. SECCIÓN ACUMULADO -->
     <div class="section-header">
         <span>Acumulado</span>
-        <button class="btn btn-sm btn-success fw-bold" onclick="copiarTablaExcel('tablaAcumuladoReporte')">📊 Copiar Acumulado</button>
+        <button class="btn btn-sm btn-naranja-excel" onclick="copiarTablaExcel('tablaAcumuladoReporte')">📊 Copiar Acumulado</button>
     </div>
     <div class="excel-container rounded">
         <table class="excel-table table table-hover" id="tablaAcumuladoReporte">
