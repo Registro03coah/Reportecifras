@@ -198,9 +198,6 @@ function renderTablaSemanal() {
         renderGranTotalDesdeRegistros(tbody, filasRemesa);
     }
 
-    // ==========================================
-    // SINCRONIZACIÓN AUTOMÁTICA CON EL ESPEJO EN FIREBASE (SEMANAL)
-    // ==========================================
     let tablaEl = document.getElementById('tablaSemanal');
     if (tablaEl) {
         let theadEl = tablaEl.querySelector('thead');
@@ -295,7 +292,7 @@ window.copiarTablaExcel = function(idTabla) {
 }
 
 // ==========================================
-// 2. LÓGICA DEL MÓDULO SGC (ENLACE DE DATOS Y FIREBASE)
+// 2. LÓGICA DEL MÓDULO SGC (ACTUALIZADA PARA BD TOTALES)
 // ==========================================
 window.abrirModalSGC = function() {
     const modal = document.getElementById('modalSGC');
@@ -312,90 +309,153 @@ window.cerrarModalSGC = function() {
 
 function cargarYCalcularSGC() {
     let remesaActual = obtenerRemesaSeleccionada();
-    document.getElementById('thRemesaSGC').innerText = "Remesa: " + remesaActual;
+    const thRemesa = document.getElementById('thRemesaSGC');
+    if(thRemesa) thRemesa.innerText = "Remesa: " + remesaActual;
 
-    let registrosRemesa = bdMadreGlobal.filter(item => String(item['REMESA'] || '').trim() === String(remesaActual));
-
+    // Función auxiliar que busca primero en bdtotalesGlobal, y si no encuentra, hace respaldo en bdMadreGlobal
     function obtenerValorModulo(moduloId, columnaKey) {
-        let regMod = registrosRemesa.find(r => String(r['MODULO'] || '').trim() === String(moduloId));
-        if (regMod && regMod[columnaKey] !== undefined) {
-            return parseFloat(regMod[columnaKey]) || 0;
+        // Buscar en bdtotales por remesa y módulo exacto (ej. 50351, 50353, 50354)
+        let regMod = bdtotalesGlobal.find(r => 
+            String(r['REMESA'] || '').trim() === String(remesaActual) && 
+            String(r['MODULO'] || '').trim() === String(moduloId)
+        );
+
+        if (!regMod) {
+            // Respaldar buscando en bdMadreGlobal si no estuviera consolidado en bdtotales
+            let regs = bdMadreGlobal.filter(r => 
+                String(r['REMESA'] || '').trim() === String(remesaActual) && 
+                String(r['MODULO'] || '').trim() === String(moduloId)
+            );
+            if (regs.length > 0) {
+                let sumaCol = 0;
+                regs.forEach(reg => {
+                    let val = parseFloat(reg[columnaKey] || 0);
+                    if (!isNaN(val)) sumaCol += val;
+                });
+                return sumaCol;
+            }
+            return 0;
         }
-        return 0;
+        return parseFloat(regMod[columnaKey]) || 0;
     }
 
+    // Obtener Total de Trámites por módulo desde bdtotales
     let t51 = obtenerValorModulo('50351', 'TOTAL_DE_TRAMITES');
     let t53 = obtenerValorModulo('50353', 'TOTAL_DE_TRAMITES');
     let t54 = obtenerValorModulo('50354', 'TOTAL_DE_TRAMITES');
 
-    document.querySelector('[data-key="tramites_aplicados_1"]').value = t51;
-    document.querySelector('[data-key="tramites_aplicados_2"]').value = t53;
-    document.querySelector('[data-key="tramites_aplicados_3"]').value = t54;
+    // Rellenar campos de Trámites Aplicados, Total Trámites y Fichas Requisitadas
+    let el1 = document.querySelector('[data-key="tramites_aplicados_1"]');
+    let el2 = document.querySelector('[data-key="tramites_aplicados_2"]');
+    let el3 = document.querySelector('[data-key="tramites_aplicados_3"]');
+    if(el1) el1.value = t51;
+    if(el2) el2.value = t53;
+    if(el3) el3.value = t54;
 
-    document.querySelector('[data-key="total_tramites_1"]').value = t51;
-    document.querySelector('[data-key="total_tramites_2"]').value = t53;
-    document.querySelector('[data-key="total_tramites_3"]').value = t54;
+    let tt1 = document.querySelector('[data-key="total_tramites_1"]');
+    let tt2 = document.querySelector('[data-key="total_tramites_2"]');
+    let tt3 = document.querySelector('[data-key="total_tramites_3"]');
+    if(tt1) tt1.value = t51;
+    if(tt2) tt2.value = t53;
+    if(tt3) tt3.value = t54;
 
-    document.querySelector('[data-key="fichas_req_1"]').value = t51;
-    document.querySelector('[data-key="fichas_req_2"]').value = t53;
-    document.querySelector('[data-key="fichas_req_3"]').value = t54;
+    let fr1 = document.querySelector('[data-key="fichas_req_1"]');
+    let fr2 = document.querySelector('[data-key="fichas_req_2"]');
+    let fr3 = document.querySelector('[data-key="fichas_req_3"]');
+    if(fr1) fr1.value = t51;
+    if(fr2) fr2.value = t53;
+    if(fr3) fr3.value = t54;
 
-    document.querySelector('[data-key="tramites_exitosos_1"]').value = Math.round(t51 * 0.10 * 100) / 100;
-    document.querySelector('[data-key="tramites_exitosos_2"]').value = Math.round(t53 * 0.10 * 100) / 100;
-    document.querySelector('[data-key="tramites_exitosos_3"]').value = Math.round(t54 * 0.10 * 100) / 100;
+    // Cálculo exacto del 10% del total de trámites de cada módulo individual para Trámites Exitosos
+    let te1 = document.querySelector('[data-key="tramites_exitosos_1"]');
+    let te2 = document.querySelector('[data-key="tramites_exitosos_2"]');
+    let te3 = document.querySelector('[data-key="tramites_exitosos_3"]');
+    if(te1) te1.value = Math.round(t51 * 0.10 * 100) / 100;
+    if(te2) te2.value = Math.round(t53 * 0.10 * 100) / 100;
+    if(te3) te3.value = Math.round(t54 * 0.10 * 100) / 100;
 
+    // Transacciones aceptadas y procesadas
     let ta51 = obtenerValorModulo('50351', 'TOTAL_DE_MOVIMIENTOS');
     let ta53 = obtenerValorModulo('50353', 'TOTAL_DE_MOVIMIENTOS');
     let ta54 = obtenerValorModulo('50354', 'TOTAL_DE_MOVIMIENTOS');
 
-    document.querySelector('[data-key="transac_aceptados_1"]').value = ta51;
-    document.querySelector('[data-key="transac_aceptados_2"]').value = ta53;
-    document.querySelector('[data-key="transac_aceptados_3"]').value = ta54;
+    let ta_ac1 = document.querySelector('[data-key="transac_aceptados_1"]');
+    let ta_ac2 = document.querySelector('[data-key="transac_aceptados_2"]');
+    let ta_ac3 = document.querySelector('[data-key="transac_aceptados_3"]');
+    if(ta_ac1) ta_ac1.value = ta51;
+    if(ta_ac2) ta_ac2.value = ta53;
+    if(ta_ac3) ta_ac3.value = ta54;
 
-    document.querySelector('[data-key="transac_procesados_1"]').value = ta51;
-    document.querySelector('[data-key="transac_procesados_2"]').value = ta53;
-    document.querySelector('[data-key="transac_procesados_3"]').value = ta54;
+    let ta_pr1 = document.querySelector('[data-key="transac_procesados_1"]');
+    let ta_pr2 = document.querySelector('[data-key="transac_procesados_2"]');
+    let ta_pr3 = document.querySelector('[data-key="transac_procesados_3"]');
+    if(ta_pr1) ta_pr1.value = ta51;
+    if(ta_pr2) ta_pr2.value = ta53;
+    if(ta_pr3) ta_pr3.value = ta54;
 
+    // Credenciales entregadas / recibidas / inconsistentes
     let cr51 = obtenerValorModulo('50351', 'ENTREGADAS');
     let cr53 = obtenerValorModulo('50353', 'ENTREGADAS');
     let cr54 = obtenerValorModulo('50354', 'ENTREGADAS');
 
-    document.querySelector('[data-key="cred_inconsistentes_1"]').value = cr51;
-    document.querySelector('[data-key="cred_inconsistentes_2"]').value = cr53;
-    document.querySelector('[data-key="cred_inconsistentes_3"]').value = cr54;
+    let ci1 = document.querySelector('[data-key="cred_inconsistentes_1"]');
+    let ci2 = document.querySelector('[data-key="cred_inconsistentes_2"]');
+    let ci3 = document.querySelector('[data-key="cred_inconsistentes_3"]');
+    if(ci1) ci1.value = cr51;
+    if(ci2) ci2.value = cr53;
+    if(ci3) ci3.value = cr54;
 
-    document.querySelector('[data-key="cred_recibidas_1"]').value = cr51;
-    document.querySelector('[data-key="cred_recibidas_2"]').value = cr53;
-    document.querySelector('[data-key="cred_recibidas_3"]').value = cr54;
+    let cr_rec1 = document.querySelector('[data-key="cred_recibidas_1"]');
+    let cr_rec2 = document.querySelector('[data-key="cred_recibidas_2"]');
+    let cr_rec3 = document.querySelector('[data-key="cred_recibidas_3"]');
+    if(cr_rec1) cr_rec1.value = cr51;
+    if(cr_rec2) cr_rec2.value = cr53;
+    if(cr_rec3) cr_rec3.value = cr54;
 
+    // Resguardo
     let res51 = obtenerValorModulo('50351', 'RESGUARDO');
     let res53 = obtenerValorModulo('50353', 'RESGUARDO');
     let res54 = obtenerValorModulo('50354', 'RESGUARDO');
 
-    document.querySelector('[data-key="cred_resguardo_1"]').value = res51;
-    document.querySelector('[data-key="cred_resguardo_2"]').value = res53;
-    document.querySelector('[data-key="cred_resguardo_3"]').value = res54;
+    let cr_res1 = document.querySelector('[data-key="cred_resguardo_1"]');
+    let cr_res2 = document.querySelector('[data-key="cred_resguardo_2"]');
+    let cr_res3 = document.querySelector('[data-key="cred_resguardo_3"]');
+    if(cr_res1) cr_res1.value = res51;
+    if(cr_res2) cr_res2.value = res53;
+    if(cr_res3) cr_res3.value = res54;
 
-    let disp51 = obtenerValorModulo('50351', 'DISPONIBLES');
-    let disp53 = obtenerValorModulo('50353', 'DISPONIBLES');
-    let disp54 = obtenerValorModulo('50354', 'DISPONIBLES');
+    // Disponibles SIIRFE
+    let disp51 = obtenerValorModulo('50351', 'DISPONIBLES_TOTALES');
+    let disp53 = obtenerValorModulo('50353', 'DISPONIBLES_TOTALES');
+    let disp54 = obtenerValorModulo('50354', 'DISPONIBLES_TOTALES');
 
-    document.querySelector('[data-key="siirfe_1"]').value = disp51;
-    document.querySelector('[data-key="siirfe_2"]').value = disp53;
-    document.querySelector('[data-key="siirfe_3"]').value = disp54;
+    let si1 = document.querySelector('[data-key="siirfe_1"]');
+    let si2 = document.querySelector('[data-key="siirfe_2"]');
+    let si3 = document.querySelector('[data-key="siirfe_3"]');
+    if(si1) si1.value = disp51;
+    if(si2) si2.value = disp53;
+    if(si3) si3.value = disp54;
 
+    // Entregadas / Solicitadas
     let ent51 = obtenerValorModulo('50351', 'ENTREGADAS');
     let ent53 = obtenerValorModulo('50353', 'ENTREGADAS');
     let ent54 = obtenerValorModulo('50354', 'ENTREGADAS');
 
-    document.querySelector('[data-key="cred_entregadas_1"]').value = ent51;
-    document.querySelector('[data-key="cred_entregadas_2"]').value = ent53;
-    document.querySelector('[data-key="cred_entregadas_3"]').value = ent54;
+    let ce1 = document.querySelector('[data-key="cred_entregadas_1"]');
+    let ce2 = document.querySelector('[data-key="cred_entregadas_2"]');
+    let ce3 = document.querySelector('[data-key="cred_entregadas_3"]');
+    if(ce1) ce1.value = ent51;
+    if(ce2) ce2.value = ent53;
+    if(ce3) ce3.value = ent54;
 
-    document.querySelector('[data-key="cred_solicitadas_1"]').value = ent51;
-    document.querySelector('[data-key="cred_solicitadas_2"]').value = ent53;
-    document.querySelector('[data-key="cred_solicitadas_3"]').value = ent54;
+    let cs1 = document.querySelector('[data-key="cred_solicitadas_1"]');
+    let cs2 = document.querySelector('[data-key="cred_solicitadas_2"]');
+    let cs3 = document.querySelector('[data-key="cred_solicitadas_3"]');
+    if(cs1) cs1.value = ent51;
+    if(cs2) cs2.value = ent53;
+    if(cs3) cs3.value = ent54;
 
+    // Cargar si existen valores previos guardados independientemente en Firebase para esta remesa SGC
     if (window.db) {
         const dbRef = ref(window.db, `sgc_remesas/${remesaActual}`);
         get(dbRef).then((snapshot) => {
