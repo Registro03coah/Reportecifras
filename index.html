@@ -51,6 +51,27 @@
             box-shadow: 0 4px 20px rgba(0,0,0,0.5);
             backdrop-filter: blur(10px);
         }
+        
+        /* Estilo para la miniatura del menú principal en la parte alta */
+        .avatar-menu-top {
+            position: absolute;
+            top: 10px;
+            left: 15px;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            border: 2px solid #00f0ff;
+            object-fit: cover;
+            box-shadow: 0 0 12px rgba(0, 240, 255, 0.6);
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+        .avatar-menu-top:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(0, 240, 255, 1);
+            border-color: #fff;
+        }
+
         .btn-neon-pill {
             background: rgba(10, 25, 47, 0.85);
             border: 1px solid rgba(0, 240, 255, 0.4);
@@ -108,7 +129,12 @@
 
     <div id="vanta-background"></div>
 
-    <div class="hero-banner text-center shadow-sm">
+    <div class="hero-banner text-center shadow-sm position-relative">
+        <!-- Enlace con miniatura circular en la esquina superior izquierda -->
+        <a href="https://registro03coah.github.io/mimenu/" title="Ir al Menú Principal">
+            <img src="avatar.png" alt="Menú Principal" class="avatar-menu-top">
+        </a>
+        
         <div class="container">
             <h5 class="fw-bold mb-1 text-white"><i class="bi bi-hdd-network"></i> Sistema de Reportes Diarios - Módulos MAC</h5>
             <p class="mb-0 text-light opacity-75" style="font-size: 0.8rem;">Distrito 03 Coahuila</p>
@@ -278,7 +304,6 @@
             }
         }
 
-        // Función global para ejecutar el respaldo manual al autenticarse
         window.ejecutarRespaldoManual = function() {
             if (!dbInstance) {
                 alert("No hay conexión activa con la base de datos.");
@@ -356,8 +381,9 @@
         }
 
         document.getElementById('inputPassAcceso')?.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                procesarAccesoCustom();
+            opcion = e.key;
+            if (opcion === 'Enter') {
+                processAccesoCustom = procesarAccesoCustom();
             }
         });
     </script>
