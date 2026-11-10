@@ -26,17 +26,17 @@
             align-items: center; 
         }
 
-        /* Botón de copiar a Excel en color Naranja */
+        /* Botón naranja con texto en Azul Rey */
         .btn-naranja-excel {
             background-color: #fd7e14;
             border-color: #e8590c;
-            color: #ffffff;
+            color: #1b396b !important;
             font-weight: bold;
         }
         .btn-naranja-excel:hover {
             background-color: #e8590c;
             border-color: #d9480f;
-            color: #ffffff;
+            color: #1b396b !important;
         }
 
         .excel-container { width: 100%; max-height: 400px; overflow-y: auto; overflow-x: auto; border: 1px solid #ddd; background: white; margin-bottom: 20px; box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,.075); }
@@ -45,23 +45,6 @@
         .excel-table td { padding: 6px 8px; border: 1px solid #ccc; text-align: center; vertical-align: middle; font-size: 11px; white-space: nowrap; }
         .bg-folios { background-color: #f4b084 !important; }
         .fila-totales td { background-color: #cff4fc !important; font-weight: bold; }
-
-        /* 1. FORZAR LA OCULTACIÓN TOTAL de cualquier fila que no sea la primera en el thead de Campaña */
-        #tablaCampanaReporte thead tr,
-        #tablaCampanaReporte tr:nth-child(2),
-        #tablaCampanaReporte tr.num-row {
-            display: none !important;
-        }
-        /* Pero permitimos visible estrictamente la primera fila de títulos de Campaña */
-        #tablaCampanaReporte thead tr:first-child {
-            display: table-row !important;
-        }
-
-        /* 2. Ocultar únicamente la línea de números pequeños (índices) en Acumulado sin tocar los datos */
-        #tablaAcumuladoReporte thead tr.num-row,
-        #tablaAcumuladoReporte thead tr:nth-child(2) {
-            display: none !important;
-        }
     </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
