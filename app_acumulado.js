@@ -1,9 +1,13 @@
+// ==========================================
+// 1. IMPORTACIONES Y CONFIGURACIÓN FIREBASE (REPORTE ACUMULADO)
+// ==========================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, get, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const firebaseConfig = { apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo", authDomain: "cifrasmac.firebaseapp.com", databaseURL: "https://cifrasmac-default-rtdb.firebaseio.com", projectId: "cifrasmac", storageBucket: "cifrasmac.firebasestorage.app", messagingSenderId: "916644687837", appId: "1:916644687837:web:03d346cc48a071af1ed034" };
 const app = initializeApp(firebaseConfig); 
 const db = getDatabase(app);
+window.db = db;
 
 const COLUMNAS_ACUMULADO_KEYS = [
     "ENT", "DTTO", "MODULO", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS", "NO_UTILIZADOS", 
@@ -54,7 +58,6 @@ window.copiarTablaExcel = function(tablaId) {
 };
 
 let bdtotalesGlobal = []; 
-let bdMadreGlobal = [];
 
 onValue(ref(db, ".info/connected"), (s) => { 
     let sem = document.getElementById("semaforoConexion"); 
@@ -108,8 +111,8 @@ function renderTabla() {
         contenedorTabla.style.overflowY = "visible";
     }
 
-    let dataF = bdtotalesGlobal.length > 0 ? bdtotalesGlobal : bdMadreGlobal;
-    let remesasDisponibles = [...new Set(dataF.map(x => obtenerValorFlexible(x, 'REMESA')))].filter(x => x !== "").sort((a, b) => {
+    // TRABAJAR ESTRICTAMENTE CON BDTOTALES
+    let remesasDisponibles = [...new Set(bdtotalesGlobal.map(x => obtenerValorFlexible(x, 'REMESA')))].filter(x => x !== "").sort((a, b) => {
         let numA = parseInt(a, 10) || 0;
         let numB = parseInt(b, 10) || 0;
         return numA - numB;
@@ -127,7 +130,7 @@ function renderTabla() {
         inputFinEl.placeholder = `Máx: ${remesaMaximaBD}`;
     }
 
-    let registrosRango = dataF.filter(f => { 
+    let registrosRango = bdtotalesGlobal.filter(f => { 
         let rNum = parseInt(obtenerValorFlexible(f, 'REMESA'), 10); 
         return !isNaN(rNum) && rNum >= rIni && rNum <= rFin; 
     });
@@ -303,5 +306,33 @@ function renderTabla() {
     }
 }
 
-// (Resto de funciones de modales, guardado de rangos y ajustes manuales se mantienen igual...)
+// Cargar exclusivamente los datos de bdtotales al iniciar
+function iniciarCargaDatos() {
+    construirHeaderTabla();
+    get(ref(db, 'bdtotales')).then((snapshot) => {
+        if (snapshot.exists()) {
+            let dataRaw = snapshot.val();
+            bdtotalesGlobal = Array.isArray(dataRaw) ? dataRaw : Object.values(dataRaw);
+        } else {
+            bdtotalesGlobal = [];
+        }
+        renderTabla();
+    }).catch(error => {
+        console.error("Error al cargar bdtotales:", error);
+    });
+}
 
+// Configurar eventos de entrada para los campos de rango de remesas
+document.addEventListener("DOMContentLoaded", () => {
+    iniciarCargaDatos();
+
+    const inputInicio = document.getElementById('inputAcumuladoInicio');
+    const inputFin = document.getElementById('inputAcumuladoFin');
+
+    if (inputInicio) {
+        inputInicio.addEventListener('input', renderTabla);
+    }
+    if (inputFin) {
+        inputFin.addEventListener('input', renderTabla);
+    }
+});
