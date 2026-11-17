@@ -33,8 +33,8 @@ const FILAS_SGC_CONFIG = [
     { bdKey: "ACTUALIZACION", nominativo: "Credenciales recibidas", tipo: "directo_2" },
     { bdKey: "DISPONIBLES_TOTAL", nominativo: "Credenciales en resguardo", tipo: "directo_1" },
     { bdKey: "DISPONIBLES_TOTAL", nominativo: "Credenciales totales en", tipo: "directo_2" },
-    { bdKey: "EXPORTADAS", nominativo: "Total de credenciales entregadas", tipo: "directo_1" },
-    { bdKey: "EXPORTADAS", nominativo: "Total de credenciales solicitadas", tipo: "directo_2" }
+    { bdKey: "ENTREGADAS", nominativo: "Total de credenciales entregadas", tipo: "directo_1" },
+    { bdKey: "ENTREGADAS", nominativo: "Total de credenciales solicitadas", tipo: "directo_2" }
 ];
 
 onValue(ref(db, ".info/connected"), (s) => {
