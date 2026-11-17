@@ -34,7 +34,7 @@
 </head>
 <body class="d-flex flex-column min-vh-100">
 
-    <!-- BARRA DE NAVEGACIÓN INSTITUCIONAL (Solo páginas libres y enlaces externos) -->
+    <!-- BARRA DE NAVEGACIÓN INSTITUCIONAL -->
     <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: #1b396b; width: 100%;">
       <div class="container-fluid px-2">
         <a class="navbar-brand fw-bold" href="index.html"><i class="bi bi-hdd-network"></i> SISTEMA MAC</a>
@@ -50,7 +50,6 @@
             <li class="nav-item"><a class="nav-link text-light px-2" href="reportes_josa.html"><i class="bi bi-file-earmark-text-fill"></i> Reportes JOSA</a></li>
             <li class="nav-item"><a class="nav-link active bg-primary rounded px-2 text-white fw-bold" href="Panel_sgc.html"><i class="bi bi-file-earmark-spreadsheet-fill"></i> Panel SGC</a></li>
             
-            <!-- NUEVOS BOTONES EXTERNOS -->
             <li class="nav-item">
                 <a class="btn btn-outline-warning btn-sm fw-bold px-2 py-0 text-warning" href="https://inemexico-my.sharepoint.com/:x:/g/personal/felicitas_mata_ine_mx/IQC9BiXPTx6WT4cqLI_5GcQiAUdue5JNUpkxrZNicVkykO8?rtime=sn_kGUUQ30g" target="_blank" style="font-size: 10px;">
                     <i class="bi bi-table"></i> Tablero2027
@@ -72,22 +71,26 @@
 
     <!-- BANNER -->
     <div class="header-banner text-center">
-        <h1 class="fw-bold mb-0" style="font-size: 1.3rem;"><i class="bi bi-file-earmark-spreadsheet"></i> Panel SGC Consolidado (Remesas desde 202637)</h1>
+        <h1 class="fw-bold mb-0" style="font-size: 1.3rem;"><i class="bi bi-file-earmark-spreadsheet"></i> Panel SGC Consolidado</h1>
         <p class="mb-0 text-light opacity-75" style="font-size: 0.8rem;">Lectura automática desde BD Totales y Sincronización con Base de Datos SGC</p>
     </div>
 
     <div class="container-fluid px-3 flex-grow-1">
         
-        <!-- BARRA DE ACCIÓN -->
+        <!-- BARRA DE ACCIÓN Y CONFIGURACIÓN DE REMESA INICIAL -->
         <div class="card shadow-sm mb-3">
-            <div class="card-body py-2 bg-light d-flex justify-content-between align-items-center">
+            <div class="card-body py-2 bg-light d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <div class="d-flex align-items-center gap-2">
                     <span id="semaforoConexion" class="badge bg-secondary" style="font-size: 9px;"><i class="bi bi-arrow-repeat"></i> Conectando...</span>
-                    <span class="text-muted" style="font-size: 10px;">Remesas cargadas dinámicamente desde la 202637 en adelante.</span>
+                    <label for="selectRemesaInicio" class="fw-bold mb-0 ms-2" style="font-size: 11px;">Remesa Inicial:</label>
+                    <select id="selectRemesaInicio" class="form-select form-select-sm" style="width: 110px; font-size: 11px;" onchange="cambiarRemesaInicial(this.value)">
+                        <!-- Se llena dinámicamente -->
+                    </select>
                 </div>
                 <div class="d-flex gap-2">
                     <button class="btn btn-sm btn-success fw-bold py-1 px-3" onclick="guardarTodoSGC()"><i class="bi bi-cloud-upload-fill"></i> Guardar Cambios SGC</button>
-                    <button class="btn btn-sm btn-info fw-bold text-dark py-1 px-3" onclick="copiarTablaExcel('tablaPanelSGC')"><i class="bi bi-file-excel"></i> Copiar a Excel</button>
+                    <!-- Icono corregido (eliminada la X y usando el icono de Excel correcto) -->
+                    <button class="btn btn-sm btn-info fw-bold text-dark py-1 px-3" onclick="copiarTablaExcel('tablaPanelSGC')"><i class="bi bi-file-earmark-excel-fill"></i> Copiar a Excel</button>
                 </div>
             </div>
         </div>
@@ -100,11 +103,11 @@
                         <th class="col-nominativo" rowspan="2">Nominativo (Concepto SGC)</th>
                     </tr>
                     <tr id="trModulosHeader">
-                        <!-- Se llena dinámicamente con JS -->
+                        <!-- Se llena dinámicamente -->
                     </tr>
                 </thead>
                 <tbody id="tbodyPanelSGC">
-                    <!-- Se llena dinámicamente con JS -->
+                    <!-- Se llena dinámicamente -->
                 </tbody>
             </table>
         </div>
