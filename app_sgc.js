@@ -21,13 +21,14 @@ window.db = db;
 let bdtotalesGlobal = [];
 let sgcRemesasData = {}; 
 
+// Configuración de filas usando estrictamente las llaves correctas de tu base de datos
 const FILAS_SGC_CONFIG = [
     { bdKey: "TOTAL_DE_FOLIOS", nominativo: "Número de trámites aplicados", tipo: "calculo_10_folios" },
     { bdKey: "TOTAL_DE_TRAMITES", nominativo: "Número de fichas requisitadas", tipo: "calculo_10_tramites" },
     { bdKey: "EDITABLE_EXITOSOS", nominativo: "Número de trámites exitosos", tipo: "editable" },
     { bdKey: "TOTAL_DE_FOLIOS", nominativo: "Número de trámites aplicados", tipo: "directo_1" },
-    { bdKey: "SRIPT_EJECUTADO", nominativo: "Script solicitados", tipo: "directo_1" },
-    { bdKey: "SRIPT_EJECUTADO", nominativo: "Script ejecutados", tipo: "directo_2" },
+    { bdKey: "SCRIPT_EJECUTADO", nominativo: "Script solicitados", tipo: "directo_1" },
+    { bdKey: "SCRIPT_EJECUTADO", nominativo: "Script ejecutados", tipo: "directo_2" },
     { bdKey: "ACTUALIZACION", nominativo: "Credenciales Recibidas", tipo: "directo_1" },
     { bdKey: "ACTUALIZACION", nominativo: "Credenciales recibidas", tipo: "directo_2" },
     { bdKey: "DISPONIBLES_TOTAL", nominativo: "Credenciales en resguardo", tipo: "directo_1" },
@@ -47,7 +48,7 @@ onValue(ref(db, ".info/connected"), (s) => {
 function normalizarObjeto(item) {
     let limpio = {};
     for (let key in item) {
-        limpo[key.toUpperCase().trim()] = item[key]; // <--- ¡Ojo aquí con el typo limpio! Lo corregimos abajo
+        limpio[key.toUpperCase().trim()] = item[key];
     }
     return limpio;
 }
@@ -60,18 +61,7 @@ function cargarDatosPanelSGC() {
         if (snapTotales.exists()) {
             let dataRaw = snapTotales.val();
             let listaOriginal = Array.isArray(dataRaw) ? dataRaw : Object.values(dataRaw);
-            
-            bdtotalesGlobal = listaOriginal.map(item => {
-                let limpio = {};
-                for (let key in item) {
-                    limpio[key.toUpperCase().trim()] = item[key];
-                }
-                return limpio;
-            });
-
-            // IMPRIME LAS COLUMNAS EXACTAS EN LA CONSOLA AUTOMÁTICAMENTE
-            console.log("COLUMNAS DISPONIBLES EN BDTOTALES:", Object.keys(bdtotalesGlobal[0]));
-
+            bdtotalesGlobal = listaOriginal.map(normalizarObjeto);
         } else {
             bdtotalesGlobal = [];
         }
