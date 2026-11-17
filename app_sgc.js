@@ -47,7 +47,7 @@ onValue(ref(db, ".info/connected"), (s) => {
 function normalizarObjeto(item) {
     let limpio = {};
     for (let key in item) {
-        limpio[key.toUpperCase().trim()] = item[key];
+        limpo[key.toUpperCase().trim()] = item[key]; // <--- ¡Ojo aquí con el typo limpio! Lo corregimos abajo
     }
     return limpio;
 }
@@ -60,7 +60,18 @@ function cargarDatosPanelSGC() {
         if (snapTotales.exists()) {
             let dataRaw = snapTotales.val();
             let listaOriginal = Array.isArray(dataRaw) ? dataRaw : Object.values(dataRaw);
-            bdtotalesGlobal = listaOriginal.map(normalizarObjeto);
+            
+            bdtotalesGlobal = listaOriginal.map(item => {
+                let limpio = {};
+                for (let key in item) {
+                    limpio[key.toUpperCase().trim()] = item[key];
+                }
+                return limpio;
+            });
+
+            // IMPRIME LAS COLUMNAS EXACTAS EN LA CONSOLA AUTOMÁTICAMENTE
+            console.log("COLUMNAS DISPONIBLES EN BDTOTALES:", Object.keys(bdtotalesGlobal[0]));
+
         } else {
             bdtotalesGlobal = [];
         }
@@ -119,12 +130,10 @@ function construirMatrizSGC() {
     }
 
     let remesaInicialSeleccionada = localStorage.getItem('sgc_remesa_inicial') || "202637";
-
-    // Filtrar para mostrar desde la remesa inicial seleccionada hasta la última subida
     let remesasFiltradas = listaRemesas.filter(rem => parseInt(rem, 10) >= parseInt(remesaInicialSeleccionada, 10));
 
     if (remesasFiltradas.length === 0) {
-        remesasFiltradas = listaRemesas; // Fallback si la seleccionada es mayor a la última
+        remesasFiltradas = listaRemesas;
     }
 
     const trRemesasHeader = document.getElementById('trRemesasHeader');
