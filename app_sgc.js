@@ -19,7 +19,7 @@ const db = getDatabase(app);
 window.db = db;
 
 let bdtotalesGlobal = [];
-let sgcRemesasData = {}; // Almacenará los datos guardados en bdSGC
+let sgcRemesasData = {}; 
 
 const FILAS_SGC_CONFIG = [
     { bdKey: "TOTAL_DE_FOLIOS", nominativo: "Número de trámites aplicados", tipo: "calculo_10_folios" },
@@ -146,12 +146,14 @@ function construirMatrizSGC() {
                 let valorFinal = 0;
 
                 if (filaConfig.tipo === 'calculo_10_folios') {
-                    valorFinal = Math.round((valorBase * 0.10) * 100) / 100;
+                    // 10% truncado hacia abajo (número entero hacia atrás)
+                    valorFinal = Math.floor(valorBase * 0.10);
                     td.innerText = valorFinal;
                 } 
                 else if (filaConfig.tipo === 'calculo_10_tramites') {
                     let valTramites = registroEncontrado ? (parseFloat(registroEncontrado['TOTAL_DE_TRAMITES']) || 0) : 0;
-                    valorFinal = Math.round((valTramites * 0.10) * 100) / 100;
+                    // 10% truncado hacia abajo (número entero hacia atrás)
+                    valorFinal = Math.floor(valTramites * 0.10);
                     td.innerText = valorFinal;
                 } 
                 else if (filaConfig.tipo === 'editable') {
