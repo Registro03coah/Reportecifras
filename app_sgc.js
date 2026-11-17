@@ -21,10 +21,6 @@ window.db = db;
 let bdtotalesGlobal = [];
 let sgcRemesasData = {}; // Almacenará los datos guardados en bdSGC
 
-// Definición de las filas del formato SGC:
-// - bdKey: Clave oculta para buscar estrictamente en bdtotales
-// - nominativo: Texto visible en la columna gris
-// - tipo: 'calculo_10_folios', 'calculo_10_tramites', 'editable', 'directo_1', 'directo_2'
 const FILAS_SGC_CONFIG = [
     { bdKey: "TOTAL_DE_FOLIOS", nominativo: "Número de trámites aplicados", tipo: "calculo_10_folios" },
     { bdKey: "TOTAL_DE_TRAMITES", nominativo: "Número de fichas requisitadas", tipo: "calculo_10_tramites" },
@@ -51,7 +47,7 @@ onValue(ref(db, ".info/connected"), (s) => {
 function normalizarObjeto(item) {
     let limpio = {};
     for (let key in item) {
-        limpo[key.toUpperCase().trim()] = item[key];
+        limpio[key.toUpperCase().trim()] = item[key];
     }
     return limpio;
 }
@@ -80,7 +76,6 @@ function cargarDatosPanelSGC() {
 }
 
 function construirMatrizSGC() {
-    // 1. Extraer remesas únicas desde la 202637 en adelante, ordenadas de menor a mayor
     let remesasSet = new Set();
     bdtotalesGlobal.forEach(r => {
         let rem = String(r['REMESA'] || '').trim();
@@ -106,7 +101,6 @@ function construirMatrizSGC() {
 
     const modulosSub = ["50351", "50353", "50354"];
 
-    // 2. Construir los encabezados de la tabla horizontalmente por cada remesa
     listaRemesas.forEach(remesa => {
         let thRem = document.createElement('th');
         thRem.setAttribute('colspan', '3');
@@ -116,7 +110,6 @@ function construirMatrizSGC() {
         modulosSub.forEach((mod, idx) => {
             let thMod = document.createElement('th');
             thMod.innerText = mod;
-            // Estilos de color sutiles para los submódulos
             if(idx === 0) thMod.style.backgroundColor = "#d6d8db";
             else if(idx === 1) thMod.style.backgroundColor = "#cce5ff";
             else thMod.style.backgroundColor = "#ffeeba";
@@ -125,7 +118,6 @@ function construirMatrizSGC() {
         });
     });
 
-    // 3. Construir las filas del SGC basándonos en la configuración
     FILAS_SGC_CONFIG.forEach((filaConfig, filaIndex) => {
         let tr = document.createElement('tr');
         
@@ -135,19 +127,16 @@ function construirMatrizSGC() {
             tr.className = "bg-osCURO";
         }
 
-        // Columna Nominativo (Visual)
         let tdNom = document.createElement('td');
         tdNom.className = "td-nominativo";
         tdNom.innerText = filaConfig.nominativo;
         if(filaConfig.tipo === 'editable') tdNom.style.backgroundColor = "#ffff00";
         tr.appendChild(tdNom);
 
-        // Rellenar valores por cada remesa y por cada submódulo
         listaRemesas.forEach(remesa => {
             modulosSub.forEach(modId => {
                 let td = document.createElement('td');
                 
-                // Buscar el registro exacto en bdtotales para esta remesa y este módulo
                 let registroEncontrado = bdtotalesGlobal.find(r => 
                     String(r['REMESA'] || '').trim() === String(remesa) && 
                     String(r['MODULO'] || '').trim().includes(modId)
@@ -157,18 +146,15 @@ function construirMatrizSGC() {
                 let valorFinal = 0;
 
                 if (filaConfig.tipo === 'calculo_10_folios') {
-                    // 10% del total de folios
                     valorFinal = Math.round((valorBase * 0.10) * 100) / 100;
                     td.innerText = valorFinal;
                 } 
                 else if (filaConfig.tipo === 'calculo_10_tramites') {
-                    // 10% del total de trámites
                     let valTramites = registroEncontrado ? (parseFloat(registroEncontrado['TOTAL_DE_TRAMITES']) || 0) : 0;
                     valorFinal = Math.round((valTramites * 0.10) * 100) / 100;
                     td.innerText = valorFinal;
                 } 
                 else if (filaConfig.tipo === 'editable') {
-                    // Campo editable guardado en bdSGC
                     let valGuardado = "";
                     if (sgcRemesasData[remesa] && sgcRemesasData[remesa][modId] !== undefined) {
                         valGuardado = sgcRemesasData[remesa][modId];
@@ -183,7 +169,6 @@ function construirMatrizSGC() {
                     td.appendChild(input);
                 } 
                 else {
-                    // Valores directos de bdtotales
                     valorFinal = valorBase;
                     td.innerText = valorFinal;
                 }
@@ -196,7 +181,6 @@ function construirMatrizSGC() {
     });
 }
 
-// Función global para guardar todos los campos editables en la nueva bdSGC en Firebase
 window.guardarTodoSGC = function() {
     let inputs = document.querySelectorAll('.input-editable');
     let dataParaGuardar = {};
@@ -234,5 +218,4 @@ window.copiarTablaExcel = function(idTabla) {
     window.getSelection().removeAllRanges();
 };
 
-// Cargar al iniciar
 cargarDatosPanelSGC();
