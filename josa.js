@@ -1,5 +1,5 @@
 // ==========================================
-// LÓGICA REPORTE JOSA (BD MADRE & FECHAS) - DEPURADO
+// LÓGICA REPORTE J.O.S.A. (BD MADRE & FECHAS Y REMESAS INDEPENDIENTES)
 // ==========================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, get, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
@@ -19,7 +19,6 @@ const db = getDatabase(app);
 
 let bdMadreGlobal = [];
 
-// Conexión Firebase Semáforo
 onValue(ref(db, ".info/connected"), (s) => {
     let sem = document.getElementById("semaforoConexion");
     if (sem) {
@@ -31,8 +30,7 @@ onValue(ref(db, ".info/connected"), (s) => {
 function normalizarObjeto(item) {
     let limpio = {};
     for (let key in item) {
-        let nuevaKey = key.toUpperCase().trim();
-        limpio[nuevaKey] = item[key];
+        limpio[key.toUpperCase().trim()] = item[key];
     }
     return limpio;
 }
@@ -41,19 +39,14 @@ function cargarDatosJosa() {
     get(ref(db, 'bd_madre')).then((snapshot) => {
         if (snapshot.exists()) {
             let dataRaw = snapshot.val();
-            // Soporte robusto tanto si es Array como si es Objeto con IDs de Firebase
             let listaOriginal = Array.isArray(dataRaw) ? dataRaw : Object.values(dataRaw);
             bdMadreGlobal = listaOriginal.map(normalizarObjeto);
-            console.log("✅ BD Madre cargada con éxito para JOSA. Total registros:", bdMadreGlobal.length);
-            if (bdMadreGlobal.length > 0) {
-                console.log("Ejemplo de registro normalizado:", bdMadreGlobal[0]);
-            }
+            console.log("✅ BD Madre cargada. Total registros:", bdMadreGlobal.length);
         } else {
-            console.warn("⚠️ La ruta 'bd_madre' en Firebase está vacía.");
             bdMadreGlobal = [];
         }
         inicializarEventosFechas();
-    }).catch(err => console.error("❌ Error al cargar bd_madre para JOSA:", err));
+    }).catch(err => console.error("❌ Error al cargar bd_madre:", err));
 }
 
 function inicializarEventosFechas() {
@@ -66,47 +59,53 @@ function inicializarEventosFechas() {
     }
 }
 
+function buscarRemesaPorFecha(fechaBuscada) {
+    if (!fechaBuscada) return "--";
+    let fBusq = fechaBuscada.substring(0, 10);
+    let regEncontrado = bdMadreGlobal.find(reg => {
+        let fReg = String(reg['FECHA'] || reg['FECHA_REGISTRO'] || reg['DATE'] || '').trim().substring(0, 10);
+        return fReg === fBusq;
+    });
+    return regEncontrado && regEncontrado['REMESA'] ? String(regEncontrado['REMESA']).trim() : "No asignada";
+}
+
 function procesarFiltroJosa() {
     const fechaInicio = document.getElementById('inputFechaInicio').value;
     const fechaFin = document.getElementById('inputFechaFin').value;
-    const badgeRemesa = document.getElementById('badgeRemesa');
+    const badgeRemesaInicio = document.getElementById('badgeRemesaInicio');
+    const badgeRemesaFin = document.getElementById('badgeRemesaFin');
+
+    // Mostrar remesa correspondiente a la fecha inicial
+    if (fechaInicio) {
+        let remIni = buscarRemesaPorFecha(fechaInicio);
+        badgeRemesaInicio.innerText = `Remesa: ${remIni}`;
+    } else {
+        badgeRemesaInicio.innerText = "Remesa: --";
+    }
+
+    // Mostrar remesa correspondiente a la fecha final
+    if (fechaFin) {
+        let remFin = buscarRemesaPorFecha(fechaFin);
+        badgeRemesaFin.innerText = `Remesa: ${remFin}`;
+    } else {
+        badgeRemesaFin.innerText = "Remesa: --";
+    }
 
     if (!fechaInicio || !fechaFin) {
-        badgeRemesa.innerText = "Seleccione fechas";
         return;
     }
 
-    console.log(`Filtrando desde ${fechaInicio} hasta ${fechaFin}...`);
-
-    // Filtrar registros de bd_madre asegurando buscar la clave de fecha flexiblemente
     let registrosRango = bdMadreGlobal.filter(reg => {
-        let fReg = String(reg['FECHA'] || reg['FECHA_REGISTRO'] || reg['DATE'] || '').trim();
+        let fReg = String(reg['FECHA'] || reg['FECHA_REGISTRO'] || reg['DATE'] || '').trim().substring(0, 10);
         if (!fReg) return false;
-        // Limpiar formato de fecha si viniera con hora o diagonales
-        fReg = fReg.substring(0, 10); 
         return fReg >= fechaInicio && fReg <= fechaFin;
     });
-
-    console.log("Registros encontrados en el rango:", registrosRango.length);
-
-    // Detectar automáticamente la remesa
-    let remesasSet = new Set();
-    registrosRango.forEach(reg => {
-        let rem = String(reg['REMESA'] || '').trim();
-        if (rem) remesasSet.add(rem);
-    });
-
-    if (remesasSet.size > 0) {
-        badgeRemesa.innerText = Array.from(remesasSet).join(', ');
-    } else {
-        badgeRemesa.innerText = "Sin remesa en fechas";
-    }
 
     renderTablaGeneral(registrosRango);
     renderTablaModulos(registrosRango);
 }
 
-// TABLA 1: Sumatoria total de los 3 módulos juntos en un solo renglón
+// TABLA 1: Consolidado Distrital
 function renderTablaGeneral(registros) {
     const tbody = document.getElementById('tbodyJosaGeneral');
     if (!tbody) return;
@@ -145,7 +144,7 @@ function renderTablaGeneral(registros) {
     tbody.appendChild(tr);
 }
 
-// TABLA 2: Desglose por los 3 módulos y fila final de total
+// TABLA 2: Consolidado por Módulo
 function renderTablaModulos(registros) {
     const tbody = document.getElementById('tbodyJosaModulos');
     if (!tbody) return;
@@ -197,7 +196,6 @@ function renderTablaModulos(registros) {
         tbody.appendChild(trMod);
     });
 
-    // Renglón de Totales Finales
     let trTotal = document.createElement('tr');
     trTotal.className = "fila-totales";
     let tdLabel = document.createElement('td');
@@ -216,12 +214,8 @@ function renderTablaModulos(registros) {
 function regTieneColumna(sampleObj, colKey) {
     if (!sampleObj) return colKey;
     if (sampleObj[colKey] !== undefined) return colKey;
-    
-    // Variantes comunes para guiones bajos o puntos en nombres de columnas
     let alt1 = colKey.replace('CORR__', 'CORR_');
     if (sampleObj[alt1] !== undefined) return alt1;
-
-    let alt2 = colKey.replace(/_/g, ' ');
     let llaveEncontrada = Object.keys(sampleObj).find(k => k.toUpperCase().includes(colKey.replace(/_/g, '')));
     return llaveEncontrada !== undefined ? llaveEncontrada : colKey;
 }
@@ -242,5 +236,4 @@ window.copiarTablaExcel = function(idTabla) {
     window.getSelection().removeAllRanges();
 }
 
-// Inicializar carga al abrir
 cargarDatosJosa();
