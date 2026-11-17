@@ -1,5 +1,5 @@
 // ==========================================
-// LÓGICA REPORTE JOSA (BD MADRE & FECHAS)
+// LÓGICA REPORTE JOSA (BD MADRE & FECHAS) - DEPURADO
 // ==========================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, get, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
@@ -30,7 +30,10 @@ onValue(ref(db, ".info/connected"), (s) => {
 
 function normalizarObjeto(item) {
     let limpio = {};
-    for (let key in item) limpio[key.toUpperCase().trim()] = item[key];
+    for (let key in item) {
+        let nuevaKey = key.toUpperCase().trim();
+        limpio[nuevaKey] = item[key];
+    }
     return limpio;
 }
 
@@ -38,12 +41,19 @@ function cargarDatosJosa() {
     get(ref(db, 'bd_madre')).then((snapshot) => {
         if (snapshot.exists()) {
             let dataRaw = snapshot.val();
-            bdMadreGlobal = (Array.isArray(dataRaw) ? dataRaw : Object.values(dataRaw)).map(normalizarObjeto);
+            // Soporte robusto tanto si es Array como si es Objeto con IDs de Firebase
+            let listaOriginal = Array.isArray(dataRaw) ? dataRaw : Object.values(dataRaw);
+            bdMadreGlobal = listaOriginal.map(normalizarObjeto);
+            console.log("✅ BD Madre cargada con éxito para JOSA. Total registros:", bdMadreGlobal.length);
+            if (bdMadreGlobal.length > 0) {
+                console.log("Ejemplo de registro normalizado:", bdMadreGlobal[0]);
+            }
         } else {
+            console.warn("⚠️ La ruta 'bd_madre' en Firebase está vacía.");
             bdMadreGlobal = [];
         }
         inicializarEventosFechas();
-    }).catch(err => console.error("Error al cargar bd_madre para JOSA:", err));
+    }).catch(err => console.error("❌ Error al cargar bd_madre para JOSA:", err));
 }
 
 function inicializarEventosFechas() {
@@ -66,13 +76,20 @@ function procesarFiltroJosa() {
         return;
     }
 
-    // Filtrar registros de bd_madre que estén dentro del rango de fechas (Fecha formato YYYY-MM-DD o similar)
+    console.log(`Filtrando desde ${fechaInicio} hasta ${fechaFin}...`);
+
+    // Filtrar registros de bd_madre asegurando buscar la clave de fecha flexiblemente
     let registrosRango = bdMadreGlobal.filter(reg => {
-        let fReg = String(reg['FECHA'] || '').trim();
+        let fReg = String(reg['FECHA'] || reg['FECHA_REGISTRO'] || reg['DATE'] || '').trim();
+        if (!fReg) return false;
+        // Limpiar formato de fecha si viniera con hora o diagonales
+        fReg = fReg.substring(0, 10); 
         return fReg >= fechaInicio && fReg <= fechaFin;
     });
 
-    // Detectar automáticamente la remesa de los registros encontrados
+    console.log("Registros encontrados en el rango:", registrosRango.length);
+
+    // Detectar automáticamente la remesa
     let remesasSet = new Set();
     registrosRango.forEach(reg => {
         let rem = String(reg['REMESA'] || '').trim();
@@ -106,33 +123,22 @@ function renderTablaGeneral(registros) {
         "REEMPLAZO", "TOTAL_DE_TRAMITES", "ENTREGADAS", "CRED_PROD_CANJE_POR_NUEVA"
     ];
 
-    let sumas = {};
-    columnasSuma.forEach(col => sumas[col] = 0);
-
-    registros.forEach(reg => {
-        columnasSuma.forEach(col => {
-            let val = parseFloat(reg[col] || reg[col.replace('CORR__', 'CORR_')] || 0);
-            if (!isNaN(val)) sumas[col] += val;
-        });
-    });
-
     let tr = document.createElement('tr');
     tr.className = "fila-totales";
     
-    // DTTO fijo 03
     let tdDtto = document.createElement('td');
     tdDtto.innerText = "03";
     tr.appendChild(tdDtto);
 
     columnasSuma.forEach(col => {
         let td = document.createElement('td');
-        let claveReal = regTieneColumna(registros[0], col);
-        let valorTotal = 0;
+        let sumaCol = 0;
         registros.forEach(r => {
+            let claveReal = regTieneColumna(r, col);
             let v = parseFloat(r[claveReal] || 0);
-            if (!isNaN(v)) valorTotal += v;
+            if (!isNaN(v)) sumaCol += v;
         });
-        td.innerText = valorTotal;
+        td.innerText = sumaCol;
         tr.appendChild(td);
     });
 
@@ -162,7 +168,10 @@ function renderTablaModulos(registros) {
     columnasMod.forEach(c => granTotalMod[c] = 0);
 
     modulosList.forEach(modNombre => {
-        let regsMod = registros.filter(r => String(r['MODULO'] || '').trim().includes(modNombre));
+        let regsMod = registros.filter(r => {
+            let mVal = String(r['MODULO'] || '').trim();
+            return mVal.includes(modNombre);
+        });
         
         let trMod = document.createElement('tr');
         let tdMod = document.createElement('td');
@@ -171,9 +180,9 @@ function renderTablaModulos(registros) {
         trMod.appendChild(tdMod);
 
         columnasMod.forEach(col => {
-            let claveReal = regTieneColumna(registros[0], col);
             let sumaModCol = 0;
             regsMod.forEach(r => {
+                let claveReal = regTieneColumna(r, col);
                 let v = parseFloat(r[claveReal] || 0);
                 if (!isNaN(v)) sumaModCol += v;
             });
@@ -207,9 +216,12 @@ function renderTablaModulos(registros) {
 function regTieneColumna(sampleObj, colKey) {
     if (!sampleObj) return colKey;
     if (sampleObj[colKey] !== undefined) return colKey;
-    // Opciones flexibles para nombres de columnas con variantes de puntos o guiones bajos
-    let altKey = colKey.replace('CORR__', 'CORR_');
-    if (sampleObj[altKey] !== undefined) return altKey;
+    
+    // Variantes comunes para guiones bajos o puntos en nombres de columnas
+    let alt1 = colKey.replace('CORR__', 'CORR_');
+    if (sampleObj[alt1] !== undefined) return alt1;
+
+    let alt2 = colKey.replace(/_/g, ' ');
     let llaveEncontrada = Object.keys(sampleObj).find(k => k.toUpperCase().includes(colKey.replace(/_/g, '')));
     return llaveEncontrada !== undefined ? llaveEncontrada : colKey;
 }
