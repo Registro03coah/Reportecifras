@@ -1,5 +1,5 @@
 // ==========================================
-// LÓGICA REPORTE J.O.S.A. (BD MADRE & FECHAS Y REMESAS INDEPENDIENTES)
+// LÓGICA REPORTE J.O.S.A. (NORMALIZACIÓN DE FECHAS Y REMESAS)
 // ==========================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, get, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
@@ -30,7 +30,34 @@ onValue(ref(db, ".info/connected"), (s) => {
 function normalizarObjeto(item) {
     let limpio = {};
     for (let key in item) {
-        limpio[key.toUpperCase().trim()] = item[key];
+        let nuevaKey = key.toUpperCase().trim();
+        let val = item[key];
+        
+        // Si la clave es una fecha, estandarizarla de DD/MM/YYYY o YYYY/MM/DD a YYYY-MM-DD para comparar de forma uniforme
+        if (nuevaKey.includes('FECHA') || nuevaKey === 'DATE') {
+            val = estandarizarFecha(val);
+        }
+        
+        limpio[nuevaKey] = val;
+    }
+    return limpio;
+}
+
+// Función robusta para unificar cualquier formato de fecha a YYYY-MM-DD
+function estandarizarFecha(fechaStr) {
+    if (!fechaStr) return "";
+    let limpio = String(fechaStr).trim().substring(0, 10);
+    
+    // Si viene con diagonales (ej. 01/01/2026 o 2026/01/01), cambiarlas a guiones
+    limpio = limpio.replace(/\//g, '-');
+    
+    // Si el formato detectado es DD-MM-YYYY (ej. 31-10-2026), pasarlo a YYYY-MM-DD para que el ordenamiento y filtros funcionen perfecto
+    let partes = limpio.split('-');
+    if (partes.length === 3) {
+        if (partes[0].length === 2 && partes[2].length === 4) {
+            // Es DD-MM-YYYY -> convertir a YYYY-MM-DD
+            return `${partes[2]}-${partes[1]}-${partes[0]}`;
+        }
     }
     return limpio;
 }
@@ -41,7 +68,7 @@ function cargarDatosJosa() {
             let dataRaw = snapshot.val();
             let listaOriginal = Array.isArray(dataRaw) ? dataRaw : Object.values(dataRaw);
             bdMadreGlobal = listaOriginal.map(normalizarObjeto);
-            console.log("✅ BD Madre cargada. Total registros:", bdMadreGlobal.length);
+            console.log("✅ BD Madre cargada y fechas normalizadas. Total registros:", bdMadreGlobal.length);
         } else {
             bdMadreGlobal = [];
         }
@@ -61,21 +88,23 @@ function inicializarEventosFechas() {
 
 function buscarRemesaPorFecha(fechaBuscada) {
     if (!fechaBuscada) return "--";
-    let fBusq = fechaBuscada.substring(0, 10);
+    let fBusq = estandarizarFecha(fechaBuscada);
     let regEncontrado = bdMadreGlobal.find(reg => {
-        let fReg = String(reg['FECHA'] || reg['FECHA_REGISTRO'] || reg['DATE'] || '').trim().substring(0, 10);
+        let fReg = estandarizarFecha(reg['FECHA'] || reg['FECHA_REGISTRO'] || reg['DATE']);
         return fReg === fBusq;
     });
     return regEncontrado && regEncontrado['REMESA'] ? String(regEncontrado['REMESA']).trim() : "No asignada";
 }
 
 function procesarFiltroJosa() {
-    const fechaInicio = document.getElementById('inputFechaInicio').value;
-    const fechaFin = document.getElementById('inputFechaFin').value;
+    const fechaInicioVal = document.getElementById('inputFechaInicio').value;
+    const fechaFinVal = document.getElementById('inputFechaFin').value;
     const badgeRemesaInicio = document.getElementById('badgeRemesaInicio');
     const badgeRemesaFin = document.getElementById('badgeRemesaFin');
 
-    // Mostrar remesa correspondiente a la fecha inicial
+    let fechaInicio = estandarizarFecha(fechaInicioVal);
+    let fechaFin = estandarizarFecha(fechaFinVal);
+
     if (fechaInicio) {
         let remIni = buscarRemesaPorFecha(fechaInicio);
         badgeRemesaInicio.innerText = `Remesa: ${remIni}`;
@@ -83,7 +112,6 @@ function procesarFiltroJosa() {
         badgeRemesaInicio.innerText = "Remesa: --";
     }
 
-    // Mostrar remesa correspondiente a la fecha final
     if (fechaFin) {
         let remFin = buscarRemesaPorFecha(fechaFin);
         badgeRemesaFin.innerText = `Remesa: ${remFin}`;
@@ -96,10 +124,12 @@ function procesarFiltroJosa() {
     }
 
     let registrosRango = bdMadreGlobal.filter(reg => {
-        let fReg = String(reg['FECHA'] || reg['FECHA_REGISTRO'] || reg['DATE'] || '').trim().substring(0, 10);
+        let fReg = estandarizarFecha(reg['FECHA'] || reg['FECHA_REGISTRO'] || reg['DATE']);
         if (!fReg) return false;
         return fReg >= fechaInicio && fReg <= fechaFin;
     });
+
+    console.log(`Registros encontrados entre ${fechaInicio} y ${fechaFin}:`, registrosRango.length);
 
     renderTablaGeneral(registrosRango);
     renderTablaModulos(registrosRango);
