@@ -26,15 +26,14 @@ const FILAS_SGC_CONFIG = [
     { bdKey: "TOTAL_DE_TRAMITES", nominativo: "Número de fichas requisitadas", tipo: "calculo_10_tramites" },
     { bdKey: "EDITABLE_EXITOSOS", nominativo: "Número de trámites exitosos", tipo: "editable" },
     { bdKey: "TOTAL_DE_FOLIOS", nominativo: "Número de trámites aplicados", tipo: "directo_1" },
-    { bdKey: "TOTAL_DE_MOVIMIENTOS", nominativo: "Script solicitados", tipo: "directo_1" },
-    { bdKey: "TOTAL_DE_MOVIMIENTOS", nominativo: "Script ejecutados", tipo: "directo_2" },
+    { bdKey: "SRIPT_EJECUTADO", nominativo: "Script solicitados", tipo: "directo_1" },
+    { bdKey: "SRIPT_EJECUTADO", nominativo: "Script ejecutados", tipo: "directo_2" },
     { bdKey: "ACTUALIZACION", nominativo: "Credenciales Recibidas", tipo: "directo_1" },
     { bdKey: "ACTUALIZACION", nominativo: "Credenciales recibidas", tipo: "directo_2" },
-    // Apuntando de forma exacta y estricta a DISPONIBLES_TOTAL
     { bdKey: "DISPONIBLES_TOTAL", nominativo: "Credenciales en resguardo", tipo: "directo_1" },
     { bdKey: "DISPONIBLES_TOTAL", nominativo: "Credenciales totales en", tipo: "directo_2" },
-    { bdKey: "ENTREGADAS", nominativo: "Total de credenciales entregadas", tipo: "directo_1" },
-    { bdKey: "ENTREGADAS", nominativo: "Total de credenciales solicitadas", tipo: "directo_2" }
+    { bdKey: "EXPORTADAS", nominativo: "Total de credenciales entregadas", tipo: "directo_1" },
+    { bdKey: "EXPORTADAS", nominativo: "Total de credenciales solicitadas", tipo: "directo_2" }
 ];
 
 onValue(ref(db, ".info/connected"), (s) => {
@@ -72,11 +71,12 @@ function cargarDatosPanelSGC() {
             sgcRemesasData = {};
         }
 
+        poblarSelectorRemesas();
         construirMatrizSGC();
     }).catch(err => console.error("Error al cargar datos para Panel SGC:", err));
 }
 
-function construirMatrizSGC() {
+function obtenerRemesasDisponibles() {
     let remesasSet = new Set();
     bdtotalesGlobal.forEach(r => {
         let rem = String(r['REMESA'] || '').trim();
@@ -84,12 +84,47 @@ function construirMatrizSGC() {
             remesasSet.add(rem);
         }
     });
+    return Array.from(remesasSet).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+}
 
-    let listaRemesas = Array.from(remesasSet).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+function poblarSelectorRemesas() {
+    let listaRemesas = obtenerRemesasDisponibles();
+    const select = document.getElementById('selectRemesaInicio');
+    if (!select) return;
 
+    select.innerHTML = "";
+    let remesaGuardada = localStorage.getItem('sgc_remesa_inicial') || "202637";
+
+    listaRemesas.forEach(rem => {
+        let opt = document.createElement('option');
+        opt.value = rem;
+        opt.innerText = rem;
+        if (rem === remesaGuardada) {
+            opt.selected = true;
+        }
+        select.appendChild(opt);
+    });
+}
+
+window.cambiarRemesaInicial = function(nuevaRemesa) {
+    localStorage.setItem('sgc_remesa_inicial', nuevaRemesa);
+    construirMatrizSGC();
+};
+
+function construirMatrizSGC() {
+    let listaRemesas = obtenerRemesasDisponibles();
     if (listaRemesas.length === 0) {
         console.warn("No se encontraron remesas >= 202637 en bdtotales.");
         return;
+    }
+
+    let remesaInicialSeleccionada = localStorage.getItem('sgc_remesa_inicial') || "202637";
+
+    // Filtrar para mostrar desde la remesa inicial seleccionada hasta la última subida
+    let remesasFiltradas = listaRemesas.filter(rem => parseInt(rem, 10) >= parseInt(remesaInicialSeleccionada, 10));
+
+    if (remesasFiltradas.length === 0) {
+        remesasFiltradas = listaRemesas; // Fallback si la seleccionada es mayor a la última
     }
 
     const trRemesasHeader = document.getElementById('trRemesasHeader');
@@ -102,7 +137,7 @@ function construirMatrizSGC() {
 
     const modulosSub = ["50351", "50353", "50354"];
 
-    listaRemesas.forEach(remesa => {
+    remesasFiltradas.forEach(remesa => {
         let thRem = document.createElement('th');
         thRem.setAttribute('colspan', '3');
         thRem.innerText = remesa;
@@ -134,7 +169,7 @@ function construirMatrizSGC() {
         if(filaConfig.tipo === 'editable') tdNom.style.backgroundColor = "#ffff00";
         tr.appendChild(tdNom);
 
-        listaRemesas.forEach(remesa => {
+        remesasFiltradas.forEach(remesa => {
             modulosSub.forEach(modId => {
                 let td = document.createElement('td');
                 
