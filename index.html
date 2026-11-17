@@ -7,10 +7,6 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
-    <!-- Librerías para PC -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.net.min.js"></script>
-
     <style>
         @media (max-width: 768px) {
             html, body {
@@ -21,14 +17,15 @@
                 -webkit-overflow-scrolling: touch !important;
             }
         }
-        #vanta-background {
+        /* Lienzo de fondo para las partículas y ondas */
+        #fondo-animado {
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
             z-index: 0;
-            pointer-events: auto;
+            pointer-events: none;
+            background: radial-gradient(circle at 50% 20%, #112240 0%, #0a192f 60%, #020c1b 100%);
         }
         body { 
-            background: radial-gradient(circle at 50% 20%, #112240 0%, #0a192f 60%, #020c1b 100%);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             min-height: 100vh;
             display: flex;
@@ -38,6 +35,7 @@
             position: relative;
             overflow-x: hidden;
             margin: 0;
+            background-color: #020c1b;
         }
         .hero-banner, .container, footer, #customModal {
             position: relative;
@@ -52,7 +50,6 @@
             backdrop-filter: blur(10px);
         }
         
-        /* Estilo para la miniatura del menú principal en la parte alta */
         .avatar-menu-top {
             position: absolute;
             top: 10px;
@@ -127,10 +124,10 @@
 </head>
 <body>
 
-    <div id="vanta-background"></div>
+    <!-- Canvas para el fondo de ondas y partículas -->
+    <canvas id="fondo-animado"></canvas>
 
     <div class="hero-banner text-center shadow-sm position-relative">
-        <!-- Enlace con miniatura circular en la esquina superior izquierda -->
         <a href="https://registro03coah.github.io/mimenu/" title="Ir al Menú Principal">
             <img src="avatar.png" alt="Menú Principal" class="avatar-menu-top">
         </a>
@@ -218,11 +215,10 @@
                     </button>
                 </div>
                 <div class="col-12 col-md-6">
-                    <button onclick="verificarPassword('bdtotales.html')" class="btn-neon-pill border-0 text-start w-100">
+                    <button onclick="verifiablePassword('bdtotales.html')" class="btn-neon-pill border-0 text-start w-100" onclick="verificarPassword('bdtotales.html')">
                         <i class="bi bi-database-fill-gear pill-icon text-light"></i> BD Totales
                     </button>
                 </div>
-                <!-- BOTÓN DE RESPALDO MANUAL -->
                 <div class="col-12">
                     <button onclick="verificarPassword('RESPALDO_MANUAL')" class="btn-neon-pill border-0 text-center w-100" style="background: rgba(0, 240, 255, 0.15);">
                         <i class="bi bi-cloud-arrow-down-fill pill-icon text-info"></i> Respaldo Manual de Base de Datos (JSON)
@@ -233,7 +229,7 @@
 
     </div>
 
-    <!-- MODAL PERSONALIZADO NATIVO -->
+    <!-- MODAL DE ACCESO -->
     <div id="customModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.75); z-index: 99999; justify-content: center; align-items: center; backdrop-filter: blur(6px);">
         <div style="background: #0f2043; border: 2px solid #00f0ff; border-radius: 15px; padding: 25px; width: 90%; max-width: 320px; text-align: center; box-shadow: 0 0 30px rgba(0,240,255,0.5); color: #fff;">
             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -257,30 +253,99 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
+
+    <!-- SCRIPT DE ANIMACIÓN: PARTÍCULAS Y ONDAS FLUIDAS -->
+    <script>
+        const canvas = document.getElementById("fondo-animado");
+        const ctx = canvas.getContext("2d");
+
+        function ajustarCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        ajustarCanvas();
+        window.addEventListener("resize", ajustarCanvas);
+
+        // Configuración de partículas flotantes
+        let particulas = [];
+        const numParticulas = window.innerWidth < 768 ? 30 : 65;
+
+        for (let i = 0; i < numParticulas; i++) {
+            particulas.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                radius: Math.random() * 2 + 1,
+                vx: (Math.random() - 0.5) * 0.6,
+                vy: (Math.random() - 0.5) * 0.6,
+                alpha: Math.random() * 0.5 + 0.2
+            });
+        }
+
+        // Variables para las ondas fluidas
+        let anguloOnda = 0;
+
+        function animarFondo() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 1. Dibujar ondas fluidas suaves en el fondo
+            ctx.save();
+            ctx.lineWidth = 1.5;
+            for (let i = 0; i < 3; i++) {
+                ctx.beginPath();
+                ctx.strokeStyle = i === 0 ? "rgba(0, 240, 255, 0.08)" : (i === 1 ? "rgba(27, 57, 107, 0.15)" : "rgba(255, 102, 178, 0.05)");
+                
+                let pasoY = canvas.height / 2 + (i * 40);
+                for (let x = 0; x < canvas.width; x += 10) {
+                    let y = pasoY + Math.sin(x * 0.003 + anguloOnda + i) * 60 + Math.cos(x * 0.002 - anguloOnda) * 30;
+                    if (x === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            }
+            ctx.restore();
+            anguloOnda += 0.015;
+
+            // 2. Dibujar y mover partículas conectadas
+            for (let i = 0; i < particulas.length; i++) {
+                let p = particulas[i];
+                p.x += p.vx;
+                p.y += p.vy;
+
+                if (p.x < 0) p.x = canvas.width;
+                if (p.x > canvas.width) p.x = 0;
+                if (p.y < 0) p.y = canvas.height;
+                if (p.y > canvas.height) p.y = 0;
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(0, 240, 255, ${p.alpha})`;
+                ctx.fill();
+
+                // Conectar partículas cercanas con líneas sutiles
+                for (let j = i + 1; j < particulas.length; j++) {
+                    let p2 = particulas[j];
+                    let distancia = Math.hypot(p.x - p2.x, p.y - p2.y);
+                    if (distancia < 100) {
+                        ctx.beginPath();
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.strokeStyle = `rgba(0, 240, 255, ${0.12 * (1 - distancia / 100)})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            requestAnimationFrame(animarFondo);
+        }
+
+        animarFondo();
+    </script>
+
+    <!-- Scripts de Firebase y control de contraseñas -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, get, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
-        const esMovil = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        if (!esMovil) {
-            try {
-                VANTA.NET({
-                    el: "#vanta-background",
-                    mouseControls: true,
-                    touchControls: true,
-                    gyroControls: false,
-                    minHeight: 200.00,
-                    minWidth: 200.00,
-                    scale: 1.00,
-                    scaleMobile: 1.00,
-                    color: 0x00f0ff,
-                    backgroundColor: 0x070913,
-                    points: 12.00,
-                    maxDistance: 22.00
-                });
-            } catch(e) {}
-        }
 
         const sem = document.getElementById("semaforoConexion");
         let dbInstance = null;
