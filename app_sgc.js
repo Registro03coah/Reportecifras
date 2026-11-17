@@ -30,6 +30,7 @@ const FILAS_SGC_CONFIG = [
     { bdKey: "TOTAL_DE_MOVIMIENTOS", nominativo: "Script ejecutados", tipo: "directo_2" },
     { bdKey: "ACTUALIZACION", nominativo: "Credenciales Recibidas", tipo: "directo_1" },
     { bdKey: "ACTUALIZACION", nominativo: "Credenciales recibidas", tipo: "directo_2" },
+    // Apuntando de forma exacta y estricta a DISPONIBLES_TOTAL
     { bdKey: "DISPONIBLES_TOTAL", nominativo: "Credenciales en resguardo", tipo: "directo_1" },
     { bdKey: "DISPONIBLES_TOTAL", nominativo: "Credenciales totales en", tipo: "directo_2" },
     { bdKey: "ENTREGADAS", nominativo: "Total de credenciales entregadas", tipo: "directo_1" },
@@ -118,7 +119,7 @@ function construirMatrizSGC() {
         });
     });
 
-    FILAS_SGC_CONFIG.forEach((filaConfig, filaIndex) => {
+    FILAS_SGC_CONFIG.forEach((filaConfig) => {
         let tr = document.createElement('tr');
         
         if (filaConfig.tipo === 'editable') {
@@ -146,13 +147,11 @@ function construirMatrizSGC() {
                 let valorFinal = 0;
 
                 if (filaConfig.tipo === 'calculo_10_folios') {
-                    // 10% truncado hacia abajo (número entero hacia atrás)
                     valorFinal = Math.floor(valorBase * 0.10);
                     td.innerText = valorFinal;
                 } 
                 else if (filaConfig.tipo === 'calculo_10_tramites') {
                     let valTramites = registroEncontrado ? (parseFloat(registroEncontrado['TOTAL_DE_TRAMITES']) || 0) : 0;
-                    // 10% truncado hacia abajo (número entero hacia atrás)
                     valorFinal = Math.floor(valTramites * 0.10);
                     td.innerText = valorFinal;
                 } 
