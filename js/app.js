@@ -1,3 +1,7 @@
+// ==========================================
+// SISTEMA DE REPORTES DIARIOS - MÓDULOS MAC (app.js)
+// ==========================================
+
 const diasNombresCortos = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
 let moduloActual = null;
 let totalDiasTrabajados = 0;
@@ -239,8 +243,9 @@ function cargarModuloDirecto(idModulo) {
     
     db.ref('modulos/' + idModulo).once('value').then((snapshot) => {
         datosCargadosNube = snapshot.val() || JSON.parse(localStorage.getItem('mac_datos_' + idModulo) || '{}');
-        construirTabla();
+        
         cargarDatosLocalesUI();
+        construirTabla();
         
         if(!snapshot.exists() && !localStorage.getItem('mac_datos_' + idModulo) && configModulos[idModulo]) {
             document.getElementById('txtResponsable').value = configModulos[idModulo].responsable;
@@ -249,8 +254,8 @@ function cargarModuloDirecto(idModulo) {
     }).catch((err) => {
         console.error("Error al conectar con la nube:", err);
         datosCargadosNube = JSON.parse(localStorage.getItem('mac_datos_' + idModulo) || '{}');
-        construirTabla();
         cargarDatosLocalesUI();
+        construirTabla();
     });
 
     reiniciarTemporizadorInactividad();
@@ -271,8 +276,9 @@ function cargarModuloAdminDirecto(idModulo) {
     
     db.ref('modulos/' + idModulo).once('value').then((snapshot) => {
         datosCargadosNube = snapshot.val() || JSON.parse(localStorage.getItem('mac_datos_' + idModulo) || '{}');
-        construirTabla();
+        
         cargarDatosLocalesUI();
+        construirTabla();
         
         if(!snapshot.exists() && !localStorage.getItem('mac_datos_' + idModulo) && configModulos[idModulo]) {
             document.getElementById('txtResponsable').value = configModulos[idModulo].responsable;
@@ -281,8 +287,8 @@ function cargarModuloAdminDirecto(idModulo) {
     }).catch((err) => {
         console.error("Error al conectar con la nube:", err);
         datosCargadosNube = JSON.parse(localStorage.getItem('mac_datos_' + idModulo) || '{}');
-        construirTabla();
         cargarDatosLocalesUI();
+        construirTabla();
     });
 
     reiniciarTemporizadorInactividad();
@@ -1029,7 +1035,6 @@ function recopilarColumnas1a75() {
     let filas1a75 = [];
     let rows = document.querySelectorAll('#cuerpoTablaCompleta tr');
     
-    // Recopilar los días de la semana
     rows.forEach((r) => {
         let filaVals = [];
         let celdasTd = r.querySelectorAll('td');
@@ -1057,7 +1062,6 @@ function recopilarColumnas1a75() {
         filas1a75.push(filaVals);
     });
 
-    // Recopilar la Línea de Totales como la última fila para el historial
     let remesaVal = document.getElementById('txtRemesaGlobal').value;
     let confVal = document.getElementById('txtConfGlobal').value;
     let entVal = document.getElementById('txtEntidadGlobal').value;
@@ -1165,23 +1169,20 @@ function guardarDatosManual() {
 
 function cargarDatosLocalesUI() {
     let data = datosCargadosNube;
-    if(data.configGlobal) {
-        document.getElementById('txtEntidadGlobal').value = data.configGlobal.entidad || 'COAHUILA 05';
-        document.getElementById('txtDistritoGlobal').value = data.configGlobal.distrito || '03';
-        document.getElementById('txtRemesaGlobal').value = data.configGlobal.remesa || '';
-        document.getElementById('txtConfGlobal').value = data.configGlobal.conf || (configModulos[moduloActual] ? configModulos[moduloActual].conf : '');
-        document.getElementById('txtResponsable').value = data.configGlobal.responsable || (configModulos[moduloActual] ? configModulos[moduloActual].responsable : '');
-        document.getElementById('inputScriptGlobal').value = data.configGlobal.script || '';
-        document.getElementById('inputFolioNecGlobal').value = data.configGlobal.folioNec || '';
-        document.getElementById('inputInstPadron').value = data.configGlobal.instPadron || '';
-        document.getElementById('inputInstCarto').value = data.configGlobal.instCarto || '';
-        document.getElementById('inputNumReg').value = data.configGlobal.numReg || '';
-        document.getElementById('inputRemInst').value = data.configGlobal.remInst || '';
-        document.getElementById('txtObservaciones').value = data.configGlobal.observaciones || '';
-    } else {
-        document.getElementById('inputInstPadron').value = '';
-        document.getElementById('inputInstCarto').value = '';
-    }
+    let cfg = data.configGlobal || data; 
+    
+    document.getElementById('txtEntidadGlobal').value = cfg.entidad || 'COAHUILA 05';
+    document.getElementById('txtDistritoGlobal').value = cfg.distrito || '03';
+    document.getElementById('txtRemesaGlobal').value = cfg.remesa || data.remesa || '';
+    document.getElementById('txtConfGlobal').value = cfg.conf || (configModulos[moduloActual] ? configModulos[moduloActual].conf : '');
+    document.getElementById('txtResponsable').value = cfg.responsable || (configModulos[moduloActual] ? configModulos[moduloActual].responsable : '');
+    document.getElementById('inputScriptGlobal').value = cfg.script || '';
+    document.getElementById('inputFolioNecGlobal').value = cfg.folioNec || '';
+    document.getElementById('inputInstPadron').value = cfg.instPadron || '';
+    document.getElementById('inputInstCarto').value = cfg.instCarto || '';
+    document.getElementById('inputNumReg').value = cfg.numReg || '';
+    document.getElementById('inputRemInst').value = cfg.remInst || '';
+    document.getElementById('txtObservaciones').value = cfg.observaciones || '';
 }
 
 function cargarValoresSubTablas(data) {
