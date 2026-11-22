@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getDatabase, ref, onValue, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const firebaseConfig = { 
     apiKey: "AIzaSyAE81KpvWVRKAc3l1mop6EEgCCeExq5wlo", 
@@ -66,6 +66,74 @@ function replicarTablaEspejo(selectorTabla, snapshotVal) {
     }
 }
 
+// Consultar última remesa disponible en bd_madre
+async function consultarUltimaRemesaBdMadre() {
+    const badgeRemesa = document.getElementById("badgeUltimaRemesa");
+    try {
+        const snapMadre = await get(ref(db, 'bd_madre'));
+        if (!snapMadre.exists()) {
+            if (badgeRemesa) badgeRemesa.textContent = "Sin datos en BD Madre";
+            return "";
+        }
+        const raw = snapMadre.val();
+        const registros = Array.isArray(raw) ? raw.filter(Boolean) : Object.values(raw || {});
+
+        const remesas = [...new Set(
+            registros
+                .map(r => String((r && (r.REMESA ?? r.remesa)) || "").trim())
+                .filter(Boolean)
+        )].sort((a, b) => Number(a) - Number(b));
+
+        const ultima = remesas.length ? remesas[remesas.length - 1] : "";
+        if (badgeRemesa) {
+            badgeRemesa.innerHTML = ultima
+                ? `<i class="bi bi-bookmark-check-fill"></i> Última remesa BD Madre: <strong>${ultima}</strong>`
+                : "Sin remesa detectada";
+        }
+        return ultima;
+    } catch (err) {
+        console.error("Error consultando bd_madre:", err);
+        if (badgeRemesa) badgeRemesa.textContent = "Error al leer BD Madre";
+        return "";
+    }
+}
+
+// Botón manual para refrescar espejos y consultar última remesa de bd_madre
+window.actualizarReportesDto03 = async function() {
+    const btn = document.getElementById("btnActualizarReportes");
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Actualizando...';
+    }
+
+    try {
+        const [snapSem, snapCamp, snapAcum, ultimaRemesa] = await Promise.all([
+            get(ref(db, 'configuracion/reportes_dto03/semanal')),
+            get(ref(db, 'configuracion/reportes_dto03/campana')),
+            get(ref(db, 'configuracion/reportes_dto03/acumulado')),
+            consultarUltimaRemesaBdMadre()
+        ]);
+
+        replicarTablaEspejo('#tablaSemanalReporte', snapSem.exists() ? snapSem.val() : null);
+        replicarTablaEspejo('#tablaCampanaReporte', snapCamp.exists() ? snapCamp.val() : null);
+        replicarTablaEspejo('#tablaAcumuladoReporte', snapAcum.exists() ? snapAcum.val() : null);
+
+        alert(
+            ultimaRemesa
+                ? `Reportes actualizados. Última remesa en BD Madre: ${ultimaRemesa}`
+                : "Reportes actualizados desde los nodos sincronizados."
+        );
+    } catch (err) {
+        console.error("Error al actualizar reportes:", err);
+        alert("Hubo un problema al actualizar los reportes.");
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Actualizar Remesas';
+        }
+    }
+};
+
 // 1. Escuchar el espejo de Semanal
 onValue(ref(db, 'configuracion/reportes_dto03/semanal'), (snap) => {
     replicarTablaEspejo('#tablaSemanalReporte', snap.val());
@@ -80,3 +148,6 @@ onValue(ref(db, 'configuracion/reportes_dto03/campana'), (snap) => {
 onValue(ref(db, 'configuracion/reportes_dto03/acumulado'), (snap) => {
     replicarTablaEspejo('#tablaAcumuladoReporte', snap.val());
 });
+
+// Consultar última remesa al cargar
+consultarUltimaRemesaBdMadre();
