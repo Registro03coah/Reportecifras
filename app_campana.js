@@ -24,6 +24,12 @@ const MAPA_NUMEROS = { "DIA": 1, "FECHA": 2, "HORAS_TRABAJADAS": 3, "SEDES": 4, 
 
 function obtenerNumeroColumna(key) { return MAPA_NUMEROS[key] || '-'; }
 
+function aNum(val) {
+    if (val === undefined || val === null || val === "") return 0;
+    const n = parseFloat(String(val).replace(/,/g, "").trim());
+    return isNaN(n) ? 0 : n;
+}
+
 window.copiarTablaExcel = function(tablaId) {
     const tabla = document.getElementById(tablaId);
     if (!tabla) return;
@@ -165,15 +171,13 @@ function renderTabla() {
         let sumaTramitesModulo = 0;
         regs.forEach(r => {
             camposTrámites.forEach(cKey => {
-                let v = parseFloat(obtenerValorFlexible(r, cKey) || 0);
-                if (!isNaN(v)) sumaTramitesModulo += v;
+                sumaTramitesModulo += aNum(obtenerValorFlexible(r, cKey));
             });
         });
 
         let sumaCanceladosModulo = 0;
         regs.forEach(r => {
-            let v = parseFloat(obtenerValorFlexible(r, 'CANCELADOS') || 0);
-            if (!isNaN(v)) sumaCanceladosModulo += v;
+            sumaCanceladosModulo += aNum(obtenerValorFlexible(r, 'CANCELADOS'));
         });
 
         COLUMNAS_CAMPANA_KEYS.forEach(col => {
@@ -189,8 +193,7 @@ function renderTabla() {
             } else if(col === 'DISPONIBLES_TOTAL') {
                 let dispUltima = uR ? (obtenerValorFlexible(uR, 'DISPONIBLES_TOTAL') || "0") : "0";
                 valorCelda = dispUltima;
-                let numDisp = parseFloat(String(dispUltima).replace(/,/g, ""));
-                if (!isNaN(numDisp)) acumuladorGranTotal[col] += numDisp;
+                acumuladorGranTotal[col] += aNum(dispUltima);
             } else if(col === 'TOTAL_DE_FOLIOS') {
                 let valIni = pR ? parseFloat(obtenerValorFlexible(pR, 'INICIAL')) : NaN;
                 let valFin = uR ? parseFloat(obtenerValorFlexible(uR, 'FINAL')) : NaN;
@@ -215,9 +218,7 @@ function renderTabla() {
             } else { 
                 let s = 0; 
                 regs.forEach(r => {
-                    let valRaw = obtenerValorFlexible(r, col);
-                    let v = parseFloat(valRaw || 0); 
-                    if(!isNaN(v)) s += v;
+                    s += aNum(obtenerValorFlexible(r, col));
                 }); 
                 valorCelda = s;
                 acumuladorGranTotal[col] += s;
