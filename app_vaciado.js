@@ -17,7 +17,7 @@ const db = getDatabase(app);
 const MODULOS = ["050351", "050353", "050354"];
 const TOTAL_COLUMNAS = 75;
 
-// Lista exacta de las 75 columnas
+// Lista exacta de las 75 columnas (índice 0 = DÍA)
 const NOMBRES_ESTANDAR_BD = [
     "DIA", "FECHA", "HORAS_TRABAJADAS", "SEDES", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
     "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSICION", "CORR_DE_DATOS_DIRECCION", 
@@ -41,6 +41,106 @@ const NOMBRES_ESTANDAR_BD = [
 const INDEX_COLUMNA_REMESA = 38; 
 const INDEX_COLUMNA_FECHA = 1;   
 const INDEX_COLUMNA_MODULO = 45; 
+
+// Índices en NOMBRES_ESTANDAR_BD (la fila tiene inputs en idx - 1)
+const IDX_REPOSICION = NOMBRES_ESTANDAR_BD.indexOf("REPOSICION");                         // 10 -> inputs[9]
+const IDX_REIMPRESION = NOMBRES_ESTANDAR_BD.indexOf("REIMPRESION");                       // 14 -> inputs[13]
+const IDX_TOTAL_DE_TRAMITES = NOMBRES_ESTANDAR_BD.indexOf("TOTAL_DE_TRAMITES");           // 15 -> inputs[14]
+const IDX_DISP_DIA_ANTERIOR = NOMBRES_ESTANDAR_BD.indexOf("DISPONIBLES_AL_DIA_ANTERIOR"); // 19 -> inputs[18]
+const IDX_TOTAL_DE_MOVIMIENTOS = NOMBRES_ESTANDAR_BD.indexOf("TOTAL_DE_MOVIMIENTOS");      // 39 -> inputs[38]
+const IDX_REPO_REIMP = NOMBRES_ESTANDAR_BD.indexOf("REPOSISION_REIMPRESIONES");            // 64 -> inputs[63]
+
+function aNumero(val) {
+    if (val === undefined || val === null) return 0;
+    const limpio = String(val).replace(/,/g, "").trim();
+    const num = parseFloat(limpio);
+    return isNaN(num) ? 0 : num;
+}
+
+// Obtiene el valor de DISPONIBLES_AL_DIA_ANTERIOR vaciado en las filas diarias (Lunes a Domingo)
+function obtenerInicialesSDesdeCaptura(mod) {
+    const tbody = document.querySelector(`#tablaCaptura_${mod} tbody`);
+    if (!tbody) return "0";
+
+    const filas = tbody.querySelectorAll('tr');
+    let primerValor = "0";
+    let encontradoPrimerValor = false;
+
+    for (let r = 0; r < Math.min(7, filas.length); r++) {
+        const inputs = filas[r].querySelectorAll('input');
+        const inpDispAnt = inputs[IDX_DISP_DIA_ANTERIOR - 1];
+        if (!inpDispAnt) continue;
+
+        const txtVal = inpDispAnt.value.trim();
+        if (!encontradoPrimerValor && txtVal !== "") {
+            primerValor = txtVal;
+            encontradoPrimerValor = true;
+        }
+        if (aNumero(txtVal) > 0) {
+            return txtVal;
+        }
+    }
+
+    return primerValor || "0";
+}
+
+function calcularCamposDerivadosFila(tr) {
+    if (!tr) return;
+    const inputs = tr.querySelectorAll('input');
+    if (inputs.length < TOTAL_COLUMNAS - 1) return;
+
+    const inpRepo = inputs[IDX_REPOSICION - 1];
+    const inpReimp = inputs[IDX_REIMPRESION - 1];
+    const inpRepoReimp = inputs[IDX_REPO_REIMP - 1];
+
+    const inpTotTram = inputs[IDX_TOTAL_DE_TRAMITES - 1];
+    const inpTotMov = inputs[IDX_TOTAL_DE_MOVIMIENTOS - 1];
+
+    if (inpRepo && inpReimp && inpRepoReimp) {
+        const sumaRepoReimp = aNumero(inpRepo.value) + aNumero(inpReimp.value);
+        inpRepoReimp.value = String(sumaRepoReimp);
+    }
+
+    if (inpTotTram && inpTotMov) {
+        const valTramites = aNumero(inpTotTram.value);
+        inpTotMov.value = String(valTramites);
+    }
+}
+
+function recalcularCamposDerivadosModulo(mod) {
+    const tbody = document.querySelector(`#tablaCaptura_${mod} tbody`);
+    if (!tbody) return;
+
+    const filas = tbody.querySelectorAll('tr');
+    for (let r = 0; r < Math.min(7, filas.length); r++) {
+        calcularCamposDerivadosFila(filas[r]);
+    }
+
+    if (filas[7]) {
+        const inputsTot = filas[7].querySelectorAll('input');
+        let sumaRepoDias = 0;
+        let sumaReimpDias = 0;
+        let sumaTramDias = 0;
+
+        for (let r = 0; r < Math.min(7, filas.length); r++) {
+            const insDia = filas[r].querySelectorAll('input');
+            sumaRepoDias += aNumero(insDia[IDX_REPOSICION - 1]?.value);
+            sumaReimpDias += aNumero(insDia[IDX_REIMPRESION - 1]?.value);
+            sumaTramDias += aNumero(insDia[IDX_TOTAL_DE_TRAMITES - 1]?.value);
+        }
+
+        if (inputsTot[IDX_REPO_REIMP - 1]) {
+            inputsTot[IDX_REPO_REIMP - 1].value = String(sumaRepoDias + sumaReimpDias);
+        }
+        if (inputsTot[IDX_TOTAL_DE_MOVIMIENTOS - 1]) {
+            inputsTot[IDX_TOTAL_DE_MOVIMIENTOS - 1].value = String(sumaTramDias);
+        }
+    }
+}
+
+function recalcularTodosLosModulos() {
+    MODULOS.forEach(mod => recalcularCamposDerivadosModulo(mod));
+}
 
 document.addEventListener("DOMContentLoaded", () => {
     inicializarEncabezadosYTablas();
@@ -135,7 +235,6 @@ function inicializarEncabezadosYTablas() {
         if (!tbody) return;
         tbody.innerHTML = "";
         
-        // 7 días de la semana (Lunes a Domingo) totalmente editables
         const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
         dias.forEach(dia => {
             let tr = document.createElement('tr');
@@ -151,6 +250,7 @@ function inicializarEncabezadosYTablas() {
                     input.value = (i === INDEX_COLUMNA_REMESA ? "202643" : (i === INDEX_COLUMNA_MODULO ? mod : "0"));
                     
                     input.addEventListener('input', () => {
+                        recalcularCamposDerivadosModulo(mod);
                         actualizarRemesaVisualizador();
                     });
 
@@ -161,7 +261,6 @@ function inicializarEncabezadosYTablas() {
             tbody.appendChild(tr);
         });
 
-        // Fila 8: LÍNEA TOTALES (Ahora totalmente editable y lista para pegado directo)
         let trTot = document.createElement('tr');
         trTot.className = "fila-totales fw-bold";
         for (let i = 0; i < TOTAL_COLUMNAS; i++) {
@@ -174,12 +273,16 @@ function inicializarEncabezadosYTablas() {
                 input.type = "text";
                 input.className = "form-control form-control-sm text-center p-0 border-0 bg-transparent fw-bold";
                 input.value = "0";
-                // Ya no hay campos readOnly, todo se puede editar y pegar libremente
+                input.addEventListener('input', () => {
+                    actualizarRemesaVisualizador();
+                });
                 td.appendChild(input);
             }
             trTot.appendChild(td);
         }
         tbody.appendChild(trTot);
+
+        recalcularCamposDerivadosModulo(mod);
     });
 
     const tablaTotalesEl = document.querySelector('#tablaCaptura_totales');
@@ -307,7 +410,6 @@ function configurarPegadoPortapapeles() {
             let trs = tbody.querySelectorAll('tr');
             let rowOffset = 0;
 
-            // Permite pegar hasta 8 filas (Lunes a Domingo + Línea de Totales)
             filasPegadas.forEach((rowStr, rIdx) => {
                 if (rIdx + rowOffset >= 8) return; 
                 let targetRow = trs[rIdx + rowOffset];
@@ -333,6 +435,7 @@ function configurarPegadoPortapapeles() {
                 });
             });
 
+            recalcularCamposDerivadosModulo(mod);
             sincronizarTotales();
             actualizarRemesaVisualizador();
         };
@@ -344,12 +447,14 @@ function configurarPegadoPortapapeles() {
 }
 
 function calcularTotalesGenerales() {
+    recalcularTodosLosModulos();
+
     MODULOS.forEach((mod, modIdx) => {
         const tbodyMod = document.querySelector(`#tablaCaptura_${mod} tbody`);
         const tbodyTot = document.querySelector('#tablaCaptura_totales tbody');
         if (!tbodyMod || !tbodyTot) return;
 
-        let filaTotalesModulo = tbodyMod.querySelectorAll('tr')[7]; // La fila 8 es la de totales del módulo
+        let filaTotalesModulo = tbodyMod.querySelectorAll('tr')[7];
         let filaDestinoTotales = tbodyTot.querySelectorAll('tr')[modIdx];
 
         if (!filaTotalesModulo || !filaDestinoTotales) return;
@@ -399,6 +504,7 @@ function cargarDatosDesdeFirebase() {
                         });
                     }
                 }
+                recalcularCamposDerivadosModulo(mod);
             });
             actualizarRemesaVisualizador();
         }
@@ -406,6 +512,8 @@ function cargarDatosDesdeFirebase() {
 }
 
 function guardarBasesEnFirebase() {
+    recalcularTodosLosModulos();
+
     const remesaActual = obtenerRemesaDesdeTablas() || "S/N";
     
     if (remesaActual === "S/N") {
@@ -470,7 +578,6 @@ function guardarBasesEnFirebase() {
             objFilaDia["IDMAC"] = idMacGenerado;
             datosTabla.push(filaArray);
 
-            // Guardar en bd_madre solo los registros diarios (Lunes a Domingo), excluyendo la fila 8 de totales
             if (!esFilaTotales) {
                 objFilaDia["MODULO"] = mod;
                 objFilaDia["REMESA"] = remesaActual;
@@ -504,7 +611,7 @@ function guardarBasesEnFirebase() {
 
             let objFilaTotal = {};
             const idMacTotalesGenerado = generarIdMacTotales(mod, remesaActual);
-            let valorDisponiblesTotal = "0";
+            const inicialesSDesdeCaptura = obtenerInicialesSDesdeCaptura(mod);
 
             filaModulo.querySelectorAll('td').forEach((td, colIdx) => {
                 let valCelda = "";
@@ -520,10 +627,6 @@ function guardarBasesEnFirebase() {
                 }
 
                 let nombreOriginal = NOMBRES_ESTANDAR_BD[colIdx];
-
-                if (nombreOriginal === "DISPONIBLES_TOTAL") {
-                    valorDisponiblesTotal = valCelda;
-                }
 
                 if (nombreOriginal === "REMESA") {
                     objFilaTotal["REMESA"] = remesaActual;
@@ -541,7 +644,7 @@ function guardarBasesEnFirebase() {
                 }
             });
 
-            objFilaTotal["INICIALES_S"] = valorDisponiblesTotal;
+            objFilaTotal["INICIALES_S"] = inicialesSDesdeCaptura;
             objFilaTotal["IDMAC"] = idMacTotalesGenerado;
             objFilaTotal["MODULO"] = mod;
             objFilaTotal["REMESA"] = remesaActual;
