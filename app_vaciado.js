@@ -17,38 +17,37 @@ const db = getDatabase(app);
 const MODULOS = ["050351", "050353", "050354"];
 const TOTAL_COLUMNAS = 75;
 
-// Lista exacta de las 75 columnas (índice 0 = DÍA)
+// Lista exacta de las 75 columnas (índice 0 = DÍA, índices 1..74 = campos)
 const NOMBRES_ESTANDAR_BD = [
     "DIA", "FECHA", "HORAS_TRABAJADAS", "SEDES", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
     "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSICION", "CORR_DE_DATOS_DIRECCION", 
     "REINCORPORACION", "REEMPLAZO", "REIMPRESION", "TOTAL_DE_TRAMITES", "CANCELADOS", "TOTAL_DE_ANEXOS_POR_RECHAZO", "CRED_PROD_CANJE_POR_NUEVA", "DISPONIBLES_AL_DIA_ANTERIOR", "ACTUALIZACION",
     "RECIBIDAS_DE_OTROS_TIPOS", "ENTREGADAS", "ROBO_Y_O_EXTRAVIO", "ANEXAS_A_FUAR", "DATOS_ERRONEOS",
-    "FOTO_MAL_IMPRESA", "RETIRADA_POR_REIMPRESION", "RETIRADAS_POR_CAUSA", "DISPONIBLES_TOTAL","CPV_DEVUELTA_ENTREGA",
+    "FOTO_MAL_IMPRESA", "RETIRADA_POR_REIMPRESION", "RETIRADAS_POR_CAUSA", "DISPONIBLES_TOTAL", "CPV_DEVUELTA_ENTREGA",
     "FICHAS_ENTREGADAS", "FICHAS_ATENDIDAS", "DIAS_TRABAJADOS", "SOLICITUD_EXPEDICION_ORDINARIA",
     "SOLICITUD_EXPEDICION_REPATRIADOS", "SOLICITUD_DE_RECTIFICACION",
     "DEMANDA_DE_JUICIO", "REMESA", "TOTAL_DE_MOVIMIENTOS", "CREDEN_DEVUELTAS_POR_TERCEROS",
     "34_Imagen_Inconsistente", "35_Movimiento_Posterior", "CONFIGURACION", "ENT", "DTTO", "MODULO",
-    "RESGUARDO", "SOLICITUD_DE_REIMPRESION","CREDENCIAL_POR_CANJE", "SCRIPT_EJECUTADO",
+    "RESGUARDO", "SOLICITUD_DE_REIMPRESION", "CREDENCIAL_POR_CANJE", "SCRIPT_EJECUTADO",
     "FOLIO_NEC", "NUMERO_DE_TRAMITES_APLICADOS", "NUMERO_DE_FICHAS_REQUISITADAS",
     "NUMERO_DE_ARCHIVOS_DE_TRANSACCION_ACEPTADOS", "TOTAL_DE_ARCHIVOS_DE_TRANSACCION_PROCESADOS",
     "RECIBIDAS", "CREDENCIALES_INCONSISTENTES",
     "CREDENCIALES_TOTALES_EN_SIIRFE_DISPONIBLES_PARA_ENTREGA", "TOTAL_DE_CREDENCIALES_ENTREGADAS",
-    "TOTAL_DE_CREDENCIALES_SOLICITADAS", "IMPORTADAS", "EXPORTADAS", "MAL_IMPRESA", "REPOSISION_REIMPRESIONES",
-     "ERROR_EN_CARTOGRAFIA", "DEFUNCION", "SUSPENSION", "DUPLICADO",
+    "TOTAL_DE_CREDENCIALES_SOLICITADAS", "IMPORTADAS", "EXPORTADAS", "MAL_IMPRESA", "REPOSICION_REIMPRESIONES",
+    "ERROR_EN_CARTOGRAFIA", "DEFUNCION", "SUSPENSION", "DUPLICADO",
     "ERROR_EN_NUM_DE_EMISION", "PERDIDA_DE_VIGENCIA", "MOV_POST", "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS"
 ];
 
 const INDEX_COLUMNA_REMESA = 38; 
 const INDEX_COLUMNA_FECHA = 1;   
-const INDEX_COLUMNA_MODULO = 45; 
+const INDEX_COLUMNA_MODULO = 46; 
 
-// Índices en NOMBRES_ESTANDAR_BD (la fila tiene inputs en idx - 1)
 const IDX_REPOSICION = NOMBRES_ESTANDAR_BD.indexOf("REPOSICION");                         // 10 -> inputs[9]
 const IDX_REIMPRESION = NOMBRES_ESTANDAR_BD.indexOf("REIMPRESION");                       // 14 -> inputs[13]
 const IDX_TOTAL_DE_TRAMITES = NOMBRES_ESTANDAR_BD.indexOf("TOTAL_DE_TRAMITES");           // 15 -> inputs[14]
 const IDX_DISP_DIA_ANTERIOR = NOMBRES_ESTANDAR_BD.indexOf("DISPONIBLES_AL_DIA_ANTERIOR"); // 19 -> inputs[18]
 const IDX_TOTAL_DE_MOVIMIENTOS = NOMBRES_ESTANDAR_BD.indexOf("TOTAL_DE_MOVIMIENTOS");      // 39 -> inputs[38]
-const IDX_REPO_REIMP = NOMBRES_ESTANDAR_BD.indexOf("REPOSISION_REIMPRESIONES");            // 64 -> inputs[63]
+const IDX_REPO_REIMP = NOMBRES_ESTANDAR_BD.indexOf("REPOSICION_REIMPRESIONES");           // 64 -> inputs[63]
 
 function aNumero(val) {
     if (val === undefined || val === null) return 0;
@@ -57,7 +56,6 @@ function aNumero(val) {
     return isNaN(num) ? 0 : num;
 }
 
-// Obtiene el valor de DISPONIBLES_AL_DIA_ANTERIOR vaciado en las filas diarias (Lunes a Domingo)
 function obtenerInicialesSDesdeCaptura(mod) {
     const tbody = document.querySelector(`#tablaCaptura_${mod} tbody`);
     if (!tbody) return "0";
@@ -212,7 +210,7 @@ function construirHeaderTabla(tableEl, isTotales = false) {
 
     NOMBRES_ESTANDAR_BD.forEach((nombreCol, idx) => {
         let th = document.createElement('th');
-        let tituloStr = isTotales && idx === 0 ? "MODULO" : nombreCol.replace(/_/g, ' ');
+        let tituloStr = isTotales && idx === 0 ? "MODULO" : String(nombreCol || "").replace(/_/g, ' ');
         th.innerText = tituloStr;
         th.style.minWidth = "90px";
         trT.appendChild(th);
@@ -459,9 +457,12 @@ function calcularTotalesGenerales() {
 
         if (!filaTotalesModulo || !filaDestinoTotales) return;
 
-        for (let c = 1; c < TOTAL_COLUMNAS; c++) {
-            let valOrigen = filaTotalesModulo.querySelectorAll('td')[c].querySelector('input').value;
-            let inputDestino = filaDestinoTotales.querySelectorAll('td')[c].querySelector('input');
+        const celdasOrigen = filaTotalesModulo.querySelectorAll('td');
+        const celdasDestino = filaDestinoTotales.querySelectorAll('td');
+
+        for (let c = 1; c < Math.min(TOTAL_COLUMNAS, celdasOrigen.length, celdasDestino.length); c++) {
+            let valOrigen = celdasOrigen[c]?.querySelector('input')?.value;
+            let inputDestino = celdasDestino[c]?.querySelector('input');
             if (inputDestino) {
                 inputDestino.value = (valOrigen !== "" && valOrigen !== undefined ? valOrigen : "0");
             }
@@ -559,6 +560,8 @@ function guardarBasesEnFirebase() {
                 filaArray.push(valCelda);
 
                 let nombreOriginal = NOMBRES_ESTANDAR_BD[colIdx];
+                if (!nombreOriginal) return;
+
                 if (nombreOriginal === "REMESA") {
                     objFilaDia["REMESA"] = remesaActual;
                 } else if (nombreOriginal === "MODULO") {
@@ -575,6 +578,11 @@ function guardarBasesEnFirebase() {
                 }
             });
 
+            // Garantizar suma de REPOSICION + REIMPRESION en cada renglón
+            const sumaRepoReimpRenglon = String(aNumero(objFilaDia["REPOSICION"]) + aNumero(objFilaDia["REIMPRESION"]));
+            objFilaDia["REPOSICION_REIMPRESIONES"] = sumaRepoReimpRenglon;
+            objFilaDia["REPOSICION_IMPRESIONES"] = sumaRepoReimpRenglon;
+            objFilaDia["TOTAL_DE_MOVIMIENTOS"] = String(aNumero(objFilaDia["TOTAL_DE_TRAMITES"]));
             objFilaDia["IDMAC"] = idMacGenerado;
             datosTabla.push(filaArray);
 
@@ -627,6 +635,7 @@ function guardarBasesEnFirebase() {
                 }
 
                 let nombreOriginal = NOMBRES_ESTANDAR_BD[colIdx];
+                if (!nombreOriginal) return;
 
                 if (nombreOriginal === "REMESA") {
                     objFilaTotal["REMESA"] = remesaActual;
@@ -644,6 +653,10 @@ function guardarBasesEnFirebase() {
                 }
             });
 
+            const sumaRepoReimpTotal = String(aNumero(objFilaTotal["REPOSICION"]) + aNumero(objFilaTotal["REIMPRESION"]));
+            objFilaTotal["REPOSICION_REIMPRESIONES"] = sumaRepoReimpTotal;
+            objFilaTotal["REPOSICION_IMPRESIONES"] = sumaRepoReimpTotal;
+            objFilaTotal["TOTAL_DE_MOVIMIENTOS"] = String(aNumero(objFilaTotal["TOTAL_DE_TRAMITES"]));
             objFilaTotal["INICIALES_S"] = inicialesSDesdeCaptura;
             objFilaTotal["IDMAC"] = idMacTotalesGenerado;
             objFilaTotal["MODULO"] = mod;
@@ -675,7 +688,7 @@ function guardarBasesEnFirebase() {
                 let actualTotales = snapshot.val() || [];
                 actualTotales = Array.isArray(actualTotales) ? actualTotales : Object.values(actualTotales);
 
-                let totalesFiltrados = actualTotales.filter(item =>String(item.REMESA) !== String(remesaActual));
+                let totalesFiltrados = actualTotales.filter(item => String(item.REMESA) !== String(remesaActual));
                 const fusionFinalTotales = [...totalesFiltrados, ...registrosTotalesParaBD];
                 return set(dbRefTotales, fusionFinalTotales);
             })
