@@ -186,6 +186,11 @@ function renderTabla() {
                 valorCelda = pR ? (obtenerValorFlexible(pR, 'INICIAL') || "0") : "0";
             } else if(col === 'FINAL') {
                 valorCelda = uR ? (obtenerValorFlexible(uR, 'FINAL') || "0") : "0";
+            } else if(col === 'DISPONIBLES_TOTAL') {
+                let dispUltima = uR ? (obtenerValorFlexible(uR, 'DISPONIBLES_TOTAL') || "0") : "0";
+                valorCelda = dispUltima;
+                let numDisp = parseFloat(String(dispUltima).replace(/,/g, ""));
+                if (!isNaN(numDisp)) acumuladorGranTotal[col] += numDisp;
             } else if(col === 'TOTAL_DE_FOLIOS') {
                 let valIni = pR ? parseFloat(obtenerValorFlexible(pR, 'INICIAL')) : NaN;
                 let valFin = uR ? parseFloat(obtenerValorFlexible(uR, 'FINAL')) : NaN;
