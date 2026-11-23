@@ -14,7 +14,6 @@ let columnaOrdenActual = 'REMESA';
 let ordenAscendente = false; 
 let idmacEdicionActual = null;
 
-// Control visual del semáforo de conexión Online/Offline
 database.ref(".info/connected").on("value", (snap) => {
     let sem = document.getElementById("semaforoConexion");
     if(!sem) return;
@@ -27,10 +26,38 @@ database.ref(".info/connected").on("value", (snap) => {
     }
 });
 
+function aNum(val) {
+    if (val === undefined || val === null) return 0;
+    const limpio = String(val).replace(/,/g, "").trim();
+    const num = parseFloat(limpio);
+    return isNaN(num) ? 0 : num;
+}
+
 function getProp(obj, key) {
-    if (!obj) return '';
-    let foundKey = Object.keys(obj).find(k => k.toUpperCase().trim() === key.toUpperCase().trim());
+    if (!obj || !key) return '';
+    let foundKey = Object.keys(obj).find(k => k && k.toUpperCase().trim() === key.toUpperCase().trim());
     return foundKey !== undefined ? obj[foundKey] : '';
+}
+
+function normalizarRegistroTotales(item) {
+    if (!item || typeof item !== 'object') return item;
+    const copia = { ...item };
+    delete copia.undefined;
+
+    const repo = aNum(getProp(copia, 'REPOSICION'));
+    const reimp = aNum(getProp(copia, 'REIMPRESION'));
+    const sumaRepoReimp = String(repo + reimp);
+
+    copia.REPOSICION_REIMPRESIONES = sumaRepoReimp;
+    copia.REPOSICION_IMPRESIONES = sumaRepoReimp;
+    delete copia.REPOSISION_REIMPRESIONES;
+
+    const tramites = getProp(copia, 'TOTAL_DE_TRAMITES');
+    if (tramites !== '' && tramites !== undefined && tramites !== null) {
+        copia.TOTAL_DE_MOVIMIENTOS = String(aNum(tramites));
+    }
+
+    return copia;
 }
 
 function generarIdMac(remesa, modulo) {
@@ -51,108 +78,59 @@ function generarIdMac(remesa, modulo) {
     return `${modDigits}${numPart}${suffix}`;
 }
 
+// Lista sin duplicados (se eliminó RETIRADAS_POR_CAUSA repetido y se unificó REPOSICION_REIMPRESIONES)
 const ordenDeseado = [
-   'IDMAC', 'REMESA',
-    'DTTO',
-    'MODULO',
-    'INICIAL',
-    'FINAL',
-    'TOTAL_DE_FOLIOS',
-    'NO_UTILIZADOS',
-    'INSCRIPCIONES',
-    'CORRECCION_DE_DATOS_PERSONALES',
-    'CAMBIO_DE_DOMICILIO',
-    'REPOSICION',
-    'REIMPRESION',
-    'REPOSICION_REIMPRESIONES',
-    'CORR_DE_DATOS_DIRECCION',
-    'REINCORPORACION',
-    'REEMPLAZO',
-    'TOTAL_DE_TRAMITES',
-    'RECHAZOS_DE_MAC_34',
-    'RECHAZOS_DE_MAC_35',
-    'CANCELADOS',
-    'TOTAL_DE_MOVIMIENTOS',
-    'CIF-05',
-    'SOLICITUD_EXPEDICION_ORDINARIA',
-    'SOLICITUD_DE_RECTIFICACION',
-    'DEMANDA_DE_JUICIO',
-    'INICIALES_A',
-    'INICIALES_C',
-    'INICIALES_S',
-    'RECIBIDAS',
-    'ACTUALIZACION',
-    'RECIBIDAS_DE_OTROS_TIPOS',
-    'IMPORTADAS',
-    'EXPORTADAS',
-    'ENTREGADAS',
-    'ANEXAS_A_FUAR',
-    'RESGUARDO',
-    'SOLICITUD_DE_REIMPRESION',
-    'ROBO_Y_O_EXTRAVIO',
-    'RETIRADAS_POR_CAUSA',
-    'SOBRANTES',
-    'DUPLICADOS',
-    'DISPONIBLES_TOTAL',
-    'DISPONIBLES_AL_DIA_ANTERIOR',
-    'REIMPRE_FUERA_DEL_SISTEMA',
-    'CREDEN_DEVUELTAS_POR_TERCEROS',
-    'CRED_PRODUCTO_DE_REGISTRO_DUPLICADO',
-    'CRED_PROD_CANJE_POR_NUEVA',
-    'DIAS_TRABAJADOS',
-    'CONFIGURACION',
-    'FICHAS_ENTREGADAS',
-    'FICHAS_ATENDIDAS',
-    'DISPONIBLES_DE_SOL_DE_EXP',
-    'DATOS_ERRONEOS',
-    'FOTO_MAL_IMPRESA',
-    'SOLICITUD_EXPEDICION_REPATRIADOS',
-    '34_IMAGEN_INCONSISTENTE',
-    '35_MOVIMIENTO_POSTERIOR',
-    'ENT',
-    'SRIPT_EJECUTADO',
-    'FOLIO_NEC',
-    'CARTOGRAFIA',
-    'LOTES_DE_CREDENCIALES',
-    'REGISTRADAS_POR_DIA',
-    'FALTANTES',
-    'OBSERVACIONES',
-    'MAC_QUE_RECIBE',
-    'MAC_QUE_ENTREGA',
-    'MAL_IMPRESA',
-    'ERROR_EN_CARTOGRAFIA',
-    'DEFUNCION',
-    'SUSPENSION',
-    'ERROR_EN_NUM_DE_EMISION',
-    'PERDIDA_DE_VIGENCIA',
-    'MOV_POST',
-    'ANEXAS_A_SOLICITUD',
-    'OTRAS_BAJAS',
-    'TOTAL_DE_ANEXO_DE_RECHAZO',
-    'RETIRADAS_POR_CAUSA',
-    ];
+    'IDMAC', 'REMESA', 'DTTO', 'MODULO',
+    'INICIAL', 'FINAL', 'TOTAL_DE_FOLIOS', 'NO_UTILIZADOS',
+    'INSCRIPCIONES', 'CORRECCION_DE_DATOS_PERSONALES', 'CAMBIO_DE_DOMICILIO',
+    'REPOSICION', 'REIMPRESION', 'REPOSICION_REIMPRESIONES', 'REPOSICION_IMPRESIONES',
+    'CORR_DE_DATOS_DIRECCION', 'REINCORPORACION', 'REEMPLAZO',
+    'TOTAL_DE_TRAMITES', 'RECHAZOS_DE_MAC_34', 'RECHAZOS_DE_MAC_35', 'CANCELADOS',
+    'TOTAL_DE_MOVIMIENTOS', 'CIF-05',
+    'SOLICITUD_EXPEDICION_ORDINARIA', 'SOLICITUD_DE_RECTIFICACION', 'DEMANDA_DE_JUICIO',
+    'INICIALES_A', 'INICIALES_C', 'INICIALES_S',
+    'RECIBIDAS', 'ACTUALIZACION', 'RECIBIDAS_DE_OTROS_TIPOS',
+    'IMPORTADAS', 'EXPORTADAS', 'ENTREGADAS', 'ANEXAS_A_FUAR',
+    'RESGUARDO', 'SOLICITUD_DE_REIMPRESION', 'ROBO_Y_O_EXTRAVIO', 'RETIRADAS_POR_CAUSA',
+    'SOBRANTES', 'DUPLICADOS', 'DISPONIBLES_TOTAL', 'DISPONIBLES_AL_DIA_ANTERIOR',
+    'REIMPRE_FUERA_DEL_SISTEMA', 'CREDEN_DEVUELTAS_POR_TERCEROS',
+    'CRED_PRODUCTO_DE_REGISTRO_DUPLICADO', 'CRED_PROD_CANJE_POR_NUEVA',
+    'DIAS_TRABAJADOS', 'CONFIGURACION', 'FICHAS_ENTREGADAS', 'FICHAS_ATENDIDAS',
+    'DISPONIBLES_DE_SOL_DE_EXP', 'DATOS_ERRONEOS', 'FOTO_MAL_IMPRESA',
+    'SOLICITUD_EXPEDICION_REPATRIADOS', '34_IMAGEN_INCONSISTENTE', '35_MOVIMIENTO_POSTERIOR',
+    'ENT', 'SRIPT_EJECUTADO', 'FOLIO_NEC', 'CARTOGRAFIA', 'LOTES_DE_CREDENCIALES',
+    'REGISTRADAS_POR_DIA', 'FALTANTES', 'OBSERVACIONES', 'MAC_QUE_RECIBE', 'MAC_QUE_ENTREGA',
+    'MAL_IMPRESA', 'ERROR_EN_CARTOGRAFIA', 'DEFUNCION', 'SUSPENSION',
+    'ERROR_EN_NUM_DE_EMISION', 'PERDIDA_DE_VIGENCIA', 'MOV_POST',
+    'ANEXAS_A_SOLICITUD', 'OTRAS_BAJAS', 'TOTAL_DE_ANEXO_DE_RECHAZO'
+];
 
 function obtenerIndiceOrden(k) { 
     let idx = ordenDeseado.indexOf(k.toUpperCase().trim()); 
     return idx !== -1 ? idx : 9999; 
 }
 
-// Función robusta que extrae TODAS las columnas existentes en todo el conjunto de datos (garantizando los 85+ campos)
 function obtenerTodasLasColumnas() {
-    let colSet = new Set(ordenDeseado);
+    let colSet = new Set(ordenDeseado.map(c => c.toUpperCase().trim()).filter(Boolean));
     datosGlobalesBd.forEach(i => {
-        Object.keys(i).forEach(k => colSet.add(k.toUpperCase().trim()));
+        if (!i || typeof i !== 'object') return;
+        Object.keys(i).forEach(k => {
+            const limpia = String(k || '').toUpperCase().trim();
+            if (limpia && limpia !== 'UNDEFINED' && limpia !== 'REPOSISION_REIMPRESIONES') {
+                colSet.add(limpia);
+            }
+        });
     });
     return Array.from(colSet).sort((a, b) => obtenerIndiceOrden(a) - obtenerIndiceOrden(b));
 }
 
 database.ref('bdtotales').on('value', (snap) => {
     let datos = snap.val(); 
-    datosGlobalesBd = datos ? (Array.isArray(datos) ? datos : Object.values(datos)) : [];
+    let arr = datos ? (Array.isArray(datos) ? datos : Object.values(datos)) : [];
+    datosGlobalesBd = arr.filter(Boolean).map(normalizarRegistroTotales);
     ejecutarOrdenamiento(datosGlobalesBd);
 });
 
-// Buscador Global Multicampo
 document.addEventListener('DOMContentLoaded', () => {
     const b = document.getElementById('buscadorBdTotales');
     if(b) b.addEventListener('input', e => {
@@ -170,7 +148,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// ORDENAMIENTO ESTRICTO: Remesa de mayor a menor y módulos en orden 050351 -> 050353 -> 050354
 function ejecutarOrdenamiento(arr) {
     if(!arr || arr.length === 0) { dibujarTabla([]); return; }
     let o = [...arr];
@@ -242,6 +219,7 @@ function dibujarTabla(arr) {
         
         columnas.forEach(col => {
             let val = getProp(fila, col);
+            if (val === undefined || val === null) val = '';
             if(typeof val === 'string' && val.includes('T00:00:00')) val = val.split('T')[0];
             htmlB += `<td>${val}</td>`;
         });
@@ -250,9 +228,98 @@ function dibujarTabla(arr) {
     tbody.innerHTML = htmlB;
 }
 
-// ==========================================
-// EDICIÓN DE REGISTROS EXISTENTES
-// ==========================================
+// Reparar INICIALES_S y REPOSICION_REIMPRESIONES en bdtotales usando bd_madre
+window.repararInicialesSBdtotales = async function() {
+    if (!confirm("¿Deseas actualizar INICIALES_S y REPOSICION_REIMPRESIONES en bdtotales a partir de bd_madre?")) return;
+
+    try {
+        const [snapMadre, snapTotales] = await Promise.all([
+            database.ref('bd_madre').once('value'),
+            database.ref('bdtotales').once('value')
+        ]);
+
+        if (!snapMadre.exists() || !snapTotales.exists()) {
+            alert("No hay datos suficientes en bd_madre o bdtotales para reparar.");
+            return;
+        }
+
+        const rawMadre = snapMadre.val();
+        const listaMadre = Array.isArray(rawMadre) ? rawMadre.filter(Boolean) : Object.values(rawMadre || {});
+
+        const rawTotales = snapTotales.val();
+        const esArreglo = Array.isArray(rawTotales);
+        const listaTotales = esArreglo ? rawTotales : Object.values(rawTotales || {});
+        const llavesTotales = esArreglo ? null : Object.keys(rawTotales || {});
+
+        const grupos = {};
+        listaMadre.forEach(reg => {
+            const mod = String(getProp(reg, 'MODULO') || '').trim();
+            const rem = String(getProp(reg, 'REMESA') || '').trim();
+            if (!mod || !rem) return;
+            const clave = `${mod}__${rem}`;
+            if (!grupos[clave]) grupos[clave] = [];
+            grupos[clave].push(reg);
+        });
+
+        let corregidos = 0;
+
+        const actualizados = listaTotales.map(item => {
+            if (!item) return item;
+            const base = normalizarRegistroTotales(item);
+            const mod = String(getProp(base, 'MODULO') || '').trim();
+            const rem = String(getProp(base, 'REMESA') || '').trim();
+            const clave = `${mod}__${rem}`;
+            const filasDia = grupos[clave] || [];
+
+            let nuevoInicialesS = getProp(base, 'INICIALES_S') || "0";
+
+            if (filasDia.length > 0) {
+                let primerValor = "0";
+                let encontrado = false;
+                let valorCorrecto = null;
+
+                for (const fila of filasDia) {
+                    const rawDisp = getProp(fila, 'DISPONIBLES_AL_DIA_ANTERIOR');
+                    const txt = rawDisp !== undefined && rawDisp !== null ? String(rawDisp).trim() : "";
+                    if (!encontrado && txt !== "") {
+                        primerValor = txt;
+                        encontrado = true;
+                    }
+                    if (aNum(txt) > 0) {
+                        valorCorrecto = txt;
+                        break;
+                    }
+                }
+                nuevoInicialesS = valorCorrecto !== null ? valorCorrecto : (primerValor || "0");
+            }
+
+            if (String(base.INICIALES_S ?? "") !== String(nuevoInicialesS)) {
+                corregidos++;
+            }
+
+            return {
+                ...base,
+                INICIALES_S: nuevoInicialesS
+            };
+        });
+
+        if (esArreglo) {
+            await database.ref('bdtotales').set(actualizados);
+        } else {
+            const objAct = {};
+            llavesTotales.forEach((k, idx) => {
+                objAct[k] = actualizados[idx];
+            });
+            await database.ref('bdtotales').set(objAct);
+        }
+
+        alert(`¡Listo! Se revisó bdtotales y se corrigieron ${corregidos} registro(s) de INICIALES_S.`);
+    } catch (err) {
+        console.error("Error al reparar INICIALES_S:", err);
+        alert("Hubo un error al actualizar INICIALES_S en bdtotales.");
+    }
+};
+
 window.editarRegistro = function(id) {
     let registroOriginal = datosGlobalesBd.find(i => {
         let r = getProp(i, 'REMESA');
@@ -306,8 +373,9 @@ window.guardarEdicionBdTotales = function() {
     });
 
     let remActualizada = getProp(datosGlobalesBd[indexRegistro], 'REMESA');
-    let modActualizado = getProp(datosGlobalesBd[indexRegistro], 'MODULO');
-    datosGlobalesBd[indexRegistro]['IDMAC'] = generarIdMac(remActualizada, modActualizado);
+    let modActualizada = getProp(datosGlobalesBd[indexRegistro], 'MODULO');
+    datosGlobalesBd[indexRegistro]['IDMAC'] = generarIdMac(remActualizada, modActualizada);
+    datosGlobalesBd[indexRegistro] = normalizarRegistroTotales(datosGlobalesBd[indexRegistro]);
 
     database.ref('bdtotales').set(datosGlobalesBd)
         .then(() => {
@@ -319,13 +387,10 @@ window.guardarEdicionBdTotales = function() {
         })
         .catch((error) => {
             console.error("Error al actualizar en Firebase:", error);
-            alert("Hubo an error al guardar los cambios en Firebase.");
+            alert("Hubo un error al guardar los cambios en Firebase.");
         });
 };
 
-// ==========================================
-// CREAR NUEVO REGISTRO MANUALMENTE
-// ==========================================
 window.abrirModalNuevoRegistro = function() {
     const contenedor = document.getElementById('contenedorInputsNuevo');
     contenedor.innerHTML = '';
@@ -366,6 +431,7 @@ window.guardarNuevoRegistroManual = function() {
     }
 
     nuevoObj['IDMAC'] = generarIdMac(remNueva, modNuevo);
+    nuevoObj = normalizarRegistroTotales(nuevoObj);
     datosGlobalesBd.push(nuevoObj);
 
     database.ref('bdtotales').set(datosGlobalesBd)
@@ -382,9 +448,6 @@ window.guardarNuevoRegistroManual = function() {
         });
 };
 
-// ==========================================
-// SUBIR, DESCARGAR Y VACIAR RESPALDOS JSON
-// ==========================================
 window.subirRespaldoTotalesJSON = function(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -392,7 +455,9 @@ window.subirRespaldoTotalesJSON = function(event) {
     reader.onload = function(e) {
         try {
             const contenido = JSON.parse(e.target.result);
-            const datosNuevos = Array.isArray(contenido) ? contenido : Object.values(contenido);
+            const datosNuevos = (Array.isArray(contenido) ? contenido : Object.values(contenido))
+                .filter(Boolean)
+                .map(normalizarRegistroTotales);
             if(confirm(`¿Deseas fusionar/subir ${datosNuevos.length} registros a la BD Totales en Firebase?`)) {
                 database.ref('bdtotales').set(datosNuevos)
                 .then(() => {
@@ -419,9 +484,6 @@ window.vaciarBdTotales = function() {
     }
 };
 
-// ==========================================
-// BORRAR REGISTRO INDIVIDUAL
-// ==========================================
 window.borrarRegistro = function(id) {
     if(confirm(`¿Estás seguro de eliminar el registro con ID ${id}?`)) {
         database.ref('bdtotales').set(datosGlobalesBd.filter(i => {
