@@ -15,9 +15,8 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 const MODULOS = ["050351", "050353", "050354"];
-const TOTAL_COLUMNAS = 75;
 
-// Lista exacta de las 75 columnas (índice 0 = DÍA, índices 1..74 = campos)
+// Lista exacta de columnas (índice 0 = DÍA, índices 1..73 = campos; termina en OTRAS_BAJAS)[cite: 2]
 const NOMBRES_ESTANDAR_BD = [
     "DIA", "FECHA", "HORAS_TRABAJADAS", "SEDES", "INICIAL", "FINAL", "TOTAL_DE_FOLIOS",
     "INSCRIPCIONES", "CORRECCION_DE_DATOS_PERSONALES", "CAMBIO_DE_DOMICILIO", "REPOSICION", "CORR_DE_DATOS_DIRECCION", 
@@ -38,16 +37,18 @@ const NOMBRES_ESTANDAR_BD = [
     "ERROR_EN_NUM_DE_EMISION", "PERDIDA_DE_VIGENCIA", "MOV_POST", "ANEXAS_A_SOLICITUD", "OTRAS_BAJAS"
 ];
 
+const TOTAL_COLUMNAS = NOMBRES_ESTANDAR_BD.length;
+
 const INDEX_COLUMNA_REMESA = 38; 
 const INDEX_COLUMNA_FECHA = 1;   
 const INDEX_COLUMNA_MODULO = 46; 
 
-const IDX_REPOSICION = NOMBRES_ESTANDAR_BD.indexOf("REPOSICION");                         // 10 -> inputs[9]
-const IDX_REIMPRESION = NOMBRES_ESTANDAR_BD.indexOf("REIMPRESION");                       // 14 -> inputs[13]
-const IDX_TOTAL_DE_TRAMITES = NOMBRES_ESTANDAR_BD.indexOf("TOTAL_DE_TRAMITES");           // 15 -> inputs[14]
-const IDX_DISP_DIA_ANTERIOR = NOMBRES_ESTANDAR_BD.indexOf("DISPONIBLES_AL_DIA_ANTERIOR"); // 19 -> inputs[18]
-const IDX_TOTAL_DE_MOVIMIENTOS = NOMBRES_ESTANDAR_BD.indexOf("TOTAL_DE_MOVIMIENTOS");      // 39 -> inputs[38]
-const IDX_REPO_REIMP = NOMBRES_ESTANDAR_BD.indexOf("REPOSICION_REIMPRESIONES");           // 64 -> inputs[63]
+const IDX_REPOSICION = NOMBRES_ESTANDAR_BD.indexOf("REPOSICION");
+const IDX_REIMPRESION = NOMBRES_ESTANDAR_BD.indexOf("REIMPRESION");
+const IDX_TOTAL_DE_TRAMITES = NOMBRES_ESTANDAR_BD.indexOf("TOTAL_DE_TRAMITES");
+const IDX_DISP_DIA_ANTERIOR = NOMBRES_ESTANDAR_BD.indexOf("DISPONIBLES_AL_DIA_ANTERIOR");
+const IDX_TOTAL_DE_MOVIMIENTOS = NOMBRES_ESTANDAR_BD.indexOf("TOTAL_DE_MOVIMIENTOS");
+const IDX_REPO_REIMP = NOMBRES_ESTANDAR_BD.indexOf("REPOSICION_REIMPRESIONES");
 
 function aNumero(val) {
     if (val === undefined || val === null) return 0;
@@ -495,7 +496,7 @@ function cargarDatosDesdeFirebase() {
                         data[mod].tabla.forEach((filaArr, rIdx) => {
                             if (filas[rIdx]) {
                                 let inputs = filas[rIdx].querySelectorAll('input');
-                                filaArr.forEach((val, cIdx) => {
+                                filaArr.slice(0, TOTAL_COLUMNAS).forEach((val, cIdx) => {
                                     if (cIdx === 0) return;
                                     if (inputs[cIdx - 1]) {
                                         inputs[cIdx - 1].value = (val !== "" && val !== undefined && val !== null ? val : "0");
@@ -545,6 +546,7 @@ function guardarBasesEnFirebase() {
             const idMacGenerado = generarIdMacCustom(mod, remesaActual, fechaCelda);
 
             fila.querySelectorAll('td').forEach((td, colIdx) => {
+                if (colIdx >= TOTAL_COLUMNAS) return;
                 let valCelda = "";
                 if (colIdx === 0) {
                     valCelda = td.innerText.trim();
@@ -578,7 +580,6 @@ function guardarBasesEnFirebase() {
                 }
             });
 
-            // Garantizar suma de REPOSICION + REIMPRESION en cada renglón
             const sumaRepoReimpRenglon = String(aNumero(objFilaDia["REPOSICION"]) + aNumero(objFilaDia["REIMPRESION"]));
             objFilaDia["REPOSICION_REIMPRESIONES"] = sumaRepoReimpRenglon;
             objFilaDia["REPOSICION_IMPRESIONES"] = sumaRepoReimpRenglon;
@@ -622,6 +623,7 @@ function guardarBasesEnFirebase() {
             const inicialesSDesdeCaptura = obtenerInicialesSDesdeCaptura(mod);
 
             filaModulo.querySelectorAll('td').forEach((td, colIdx) => {
+                if (colIdx >= TOTAL_COLUMNAS) return;
                 let valCelda = "";
                 if (colIdx === 0) {
                     valCelda = `Módulo ${mod}`;
